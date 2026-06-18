@@ -10,8 +10,16 @@ When working in this repo:
 - Reuse existing custom components before adding markup.
 - New UI must live in `src/components/[component-name]/[component-file].tsx`.
 - Every new component must include a colocated story in `src/components/[component-name]/stories/[component-name].stories.tsx`.
+- If a UI area contains a distinct reusable subpart, create it as its own component with its own story instead of embedding the markup inline.
 - Marketing website components belong under `src/components/website`.
 - Main app shell pieces should stay separated: `app-shell`, `sidebar`, `topbar`, and `content-container`. Do not prefix these component names with `dashboard`.
+- Use the global `dropdown` component for dropdown UI. Dropdowns must close when clicking outside and on Escape.
+- The topbar user menu lives in `user-dropdown`; do not show the user email in the topbar trigger.
+- The topbar lives on the dark app background above the white main content panel and aligns with the sidebar logo row.
+- The topbar shows only the page title plus right-side actions. Personalized page copy such as `Hello, Anthony!` belongs in the page content inside the white panel.
+- When the desktop sidebar is collapsed, clicking the logo expands it. Do not show a duplicate sidebar toggle icon in the collapsed sidebar.
+- Keep collapsed sidebar logo and nav icons aligned on the same vertical centerline.
+- Sidebar bottom controls are separate components: `theme-toggle` above `settings-nav-item`.
 - Keep spacing consistent by sharing the same gutters between related areas. The white main content panel owns the topbar and body spacing.
 - On mobile and tablet, the main content panel must take the full viewport height and width. The topbar stays fixed/sticky and exposes a navigation toggle beside the title that opens the sidebar as an off-canvas mobile nav.
 - Use Tailwind tokens and DaisyUI classes from `src/app/globals.css`; avoid hardcoded colors and arbitrary spacing unless the existing design tokens cannot express the layout.

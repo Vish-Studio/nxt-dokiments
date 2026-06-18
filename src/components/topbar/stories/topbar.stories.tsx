@@ -16,23 +16,22 @@ type Story = StoryObj<typeof meta>;
 
 export const Default: Story = {
   render: (args) => (
-    <div className="bg-background">
+    <div className="bg-nox-noir">
       <Topbar {...args} />
     </div>
   ),
   play: async ({ canvas }) => {
-    await expect(canvas.getByRole("heading", { name: /hello, anthony/i })).toBeVisible();
+    await expect(canvas.getByRole("heading", { name: /dashboard/i })).toBeVisible();
   },
 };
 
 export const CustomUser: Story = {
   args: {
-    userEmail: "product@nudocuments.com",
     userInitials: "ND",
     userName: "NuDocuments Team",
   },
   render: (args) => (
-    <div className="bg-background">
+    <div className="bg-nox-noir">
       <Topbar {...args} />
     </div>
   ),

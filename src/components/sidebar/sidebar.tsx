@@ -1,6 +1,4 @@
 import {
-  CaretLeft,
-  CaretRight,
   FileText,
   House,
   Layout,
@@ -10,6 +8,8 @@ import {
 } from "@phosphor-icons/react";
 
 import { Button } from "@/components/button/button";
+import { SettingsNavItem } from "@/components/settings-nav-item/settings-nav-item";
+import { ThemeToggle } from "@/components/theme-toggle/theme-toggle";
 import { cn } from "@/lib/utils";
 
 type SidebarItem = {
@@ -28,9 +28,13 @@ export type SidebarProps = {
 
 const sidebarItems: SidebarItem[] = [
   { label: "Dashboard", href: "/dashboard", icon: House },
-  { label: "Documents", href: "/dashboard", icon: FileText },
-  { label: "My Templates", href: "/dashboard", icon: Layout },
-  { label: "Template Marketplace", href: "/dashboard", icon: Storefront },
+  { label: "Documents", href: "/documents", icon: FileText },
+  { label: "My Templates", href: "/my-templates", icon: Layout },
+  {
+    label: "Template Marketplace",
+    href: "/template-marketplace",
+    icon: Storefront,
+  },
 ];
 
 export function Sidebar({
@@ -43,43 +47,51 @@ export function Sidebar({
   return (
     <aside
       className={cn(
-        "fixed inset-y-0 left-0 z-40 flex w-70 shrink-0 flex-col bg-nox-noir px-5 py-7 text-white transition-all duration-300 lg:static lg:translate-x-0",
+        "fixed inset-y-0 left-0 z-40 flex w-70 shrink-0 flex-col bg-nox-noir px-5 pt-7 pb-14 text-white transition-all duration-300 lg:static lg:translate-x-0",
         isMobileOpen ? "translate-x-0" : "-translate-x-full",
         isCollapsed ? "lg:w-24" : "lg:w-70",
       )}
     >
-      <div className="flex items-center justify-between gap-3">
+      <div
+        className={cn(
+          "flex items-center justify-between gap-3",
+          isCollapsed && "lg:justify-center",
+        )}
+      >
         <div className="flex min-w-0 items-center gap-3">
-          <div className="flex size-9 shrink-0 items-center justify-center rounded-full bg-golden-harvest font-title text-sm font-bold text-bloodwood-deep">
+          <button
+            aria-label={isCollapsed ? "Expand sidebar" : "NuDocuments home"}
+            className="flex size-9 shrink-0 items-center justify-center rounded-full bg-golden-harvest font-title text-sm font-bold text-bloodwood-deep transition-transform hover:scale-105 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-golden-harvest"
+            onClick={isCollapsed ? onToggleCollapse : undefined}
+            type="button"
+          >
             D
-          </div>
+          </button>
           <span
             className={cn(
               "truncate font-title text-lg font-semibold transition-opacity",
               isCollapsed && "lg:sr-only lg:opacity-0",
             )}
           >
-            Dokiments
+            NuDocuments
           </span>
         </div>
-        <Button
-          aria-label={isMobileOpen ? "Close navigation" : isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
-          className="btn-circle btn-sm text-white/75 hover:bg-white/10 shadow-none border-none"
-          icon={null}
-          onClick={isMobileOpen ? onCloseMobile : onToggleCollapse}
-          variant="ghost"
-        >
-          <span className="lg:hidden">
-            <X aria-hidden size={16} weight="bold" />
-          </span>
-          <span className="hidden lg:inline-flex">
-            {isCollapsed ? (
+        {isCollapsed && !isMobileOpen ? null : (
+          <Button
+            aria-label={isMobileOpen ? "Close navigation" : "Collapse sidebar"}
+            className="btn-circle btn-sm border-none text-white/75 shadow-none hover:bg-white/10"
+            icon={null}
+            onClick={isMobileOpen ? onCloseMobile : onToggleCollapse}
+            variant="ghost"
+          >
+            <span className="lg:hidden">
+              <X aria-hidden size={16} weight="bold" />
+            </span>
+            <span className="hidden lg:inline-flex">
               <SidebarIcon aria-hidden size={16} weight="bold" />
-            ) : (
-              <SidebarIcon aria-hidden size={16} weight="bold" />
-            )}
-          </span>
-        </Button>
+            </span>
+          </Button>
+        )}
       </div>
 
       <nav className="mt-10 grid gap-3">
@@ -114,6 +126,14 @@ export function Sidebar({
           );
         })}
       </nav>
+
+      <div className="mt-auto grid gap-3 pt-8">
+        <ThemeToggle isCollapsed={isCollapsed} />
+        <SettingsNavItem
+          isActive={activeItem === "Settings"}
+          isCollapsed={isCollapsed}
+        />
+      </div>
     </aside>
   );
 }

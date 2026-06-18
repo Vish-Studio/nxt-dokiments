@@ -40,6 +40,9 @@ export const Collapsed: Story = {
       <Sidebar {...args} />
     </div>
   ),
+  play: async ({ canvas }) => {
+    await expect(canvas.getByRole("button", { name: /expand sidebar/i })).toBeVisible();
+  },
 };
 
 export const MobileOpen: Story = {
