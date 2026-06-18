@@ -1,26 +1,67 @@
 @import "tailwindcss";
+@plugin "daisyui";
+@plugin "daisyui/theme" {
+  name: "nudocuments";
+  default: true;
+  prefersdark: false;
+  color-scheme: light;
+  --color-base-100: #ffffff;
+  --color-base-200: #f6f6f6;
+  --color-base-300: #cfcfcf;
+  --color-base-content: #141414;
+  --color-primary: #200d2d;
+  --color-primary-content: #ffd066;
+  --color-secondary: #ffd066;
+  --color-secondary-content: #200d2d;
+  --color-accent: #141414;
+  --color-accent-content: #ffffff;
+  --color-neutral: #141414;
+  --color-neutral-content: #ffffff;
+  --color-info: #200d2d;
+  --color-info-content: #ffffff;
+  --color-success: #2f6f4e;
+  --color-success-content: #ffffff;
+  --color-warning: #ffd066;
+  --color-warning-content: #200d2d;
+  --color-error: #b42318;
+  --color-error-content: #ffffff;
+  --radius-selector: 0.5rem;
+  --radius-field: 0.5rem;
+  --radius-box: 0.5rem;
+  --size-selector: 0.25rem;
+  --size-field: 0.25rem;
+  --border: 1px;
+  --depth: 1;
+  --noise: 0;
+}
 
 :root {
   --background: #ffffff;
-  --foreground: #171717;
+  --foreground: #141414;
+  --font-title: var(--font-host-grotesk), "Host Grotesk", Arial, sans-serif;
+  --font-body: "Elms Sans", Arial, Helvetica, sans-serif;
+  --color-bloodwood-deep: #200d2d;
+  --color-golden-harvest: #ffd066;
+  --color-nox-noir: #141414;
+  --color-steel-mist: #cfcfcf;
+  --shadow-soft: 0 16px 40px rgb(20 20 20 / 0.08);
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+  --color-bloodwood-deep: var(--color-bloodwood-deep);
+  --color-golden-harvest: var(--color-golden-harvest);
+  --color-nox-noir: var(--color-nox-noir);
+  --color-steel-mist: var(--color-steel-mist);
+  --font-sans: var(--font-body);
+  --font-title: var(--font-title);
+  --font-body: var(--font-body);
+  --shadow-soft: var(--shadow-soft);
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-body);
 }
