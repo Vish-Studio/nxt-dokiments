@@ -1,6 +1,6 @@
 import { AppShell } from "@/components/app-shell/app-shell";
 
-export default function DashboardPage() {
+const DashboardPage = () => {
   return (
     <AppShell
       activeItem="Dashboard"
@@ -8,4 +8,6 @@ export default function DashboardPage() {
       title="Dashboard"
     />
   );
-}
+};
+
+export default DashboardPage;

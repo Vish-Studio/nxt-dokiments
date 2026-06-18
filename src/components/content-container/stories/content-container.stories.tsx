@@ -16,7 +16,7 @@ type Story = StoryObj<typeof meta>;
 
 export const Empty: Story = {
   render: (args) => (
-    <div className="flex h-[520px] bg-background pt-8">
+    <div className="flex h-[520px] bg-app-panel pt-8">
       <ContentContainer {...args} />
     </div>
   ),
@@ -27,7 +27,7 @@ export const Empty: Story = {
 
 export const WithContent: Story = {
   render: (args) => (
-    <div className="flex h-[520px] bg-background pt-8">
+    <div className="flex h-[520px] bg-app-panel pt-8">
       <ContentContainer {...args}>
         <div className="font-title text-sm font-semibold text-nox-noir/60">
           Dashboard content slot

@@ -31,23 +31,23 @@ const sidebarItems: SidebarItem[] = [
   { label: "Documents", href: "/documents", icon: FileText },
   { label: "My Templates", href: "/my-templates", icon: Layout },
   {
-    label: "Template Marketplace",
-    href: "/template-marketplace",
+    label: "Marketplace",
+    href: "/marketplace",
     icon: Storefront,
   },
 ];
 
-export function Sidebar({
+export const Sidebar = ({
   activeItem = "Dashboard",
   isCollapsed = false,
   isMobileOpen = false,
   onCloseMobile,
   onToggleCollapse,
-}: SidebarProps) {
+}: SidebarProps) => {
   return (
     <aside
       className={cn(
-        "fixed inset-y-0 left-0 z-40 flex w-70 shrink-0 flex-col bg-nox-noir px-5 pt-7 pb-14 text-white transition-all duration-300 lg:static lg:translate-x-0",
+        "fixed inset-y-0 left-0 z-40 flex w-70 shrink-0 flex-col bg-app-chrome px-5 pt-9 pb-5 text-app-chrome-content transition-all duration-300 lg:static lg:translate-x-0",
         isMobileOpen ? "translate-x-0" : "-translate-x-full",
         isCollapsed ? "lg:w-24" : "lg:w-70",
       )}
@@ -61,7 +61,7 @@ export function Sidebar({
         <div className="flex min-w-0 items-center gap-3">
           <button
             aria-label={isCollapsed ? "Expand sidebar" : "NuDocuments home"}
-            className="flex size-9 shrink-0 items-center justify-center rounded-full bg-golden-harvest font-title text-sm font-bold text-bloodwood-deep transition-transform hover:scale-105 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-golden-harvest"
+            className="flex size-9 shrink-0 items-center justify-center rounded-full bg-app-brand font-title text-sm font-bold text-app-brand-content transition-transform hover:scale-105 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-app-active"
             onClick={isCollapsed ? onToggleCollapse : undefined}
             type="button"
           >
@@ -79,7 +79,7 @@ export function Sidebar({
         {isCollapsed && !isMobileOpen ? null : (
           <Button
             aria-label={isMobileOpen ? "Close navigation" : "Collapse sidebar"}
-            className="btn-circle btn-sm border-none text-white/75 shadow-none hover:bg-white/10"
+            className="btn-circle btn-sm border-none text-app-nav shadow-none hover:bg-app-nav-hover hover:text-app-chrome-content"
             icon={null}
             onClick={isMobileOpen ? onCloseMobile : onToggleCollapse}
             variant="ghost"
@@ -105,8 +105,8 @@ export function Sidebar({
               className={cn(
                 "group flex h-12 items-center gap-3 rounded-box px-3 font-title text-sm font-semibold transition-colors",
                 isActive
-                  ? "bg-golden-harvest text-bloodwood-deep"
-                  : "text-white/75 hover:bg-white/10 hover:text-white",
+                  ? "bg-app-active text-app-active-content"
+                  : "text-app-nav hover:bg-app-nav-hover hover:text-app-chrome-content",
                 isCollapsed && "lg:justify-center lg:px-0",
               )}
               href={item.href}
@@ -136,4 +136,4 @@ export function Sidebar({
       </div>
     </aside>
   );
-}
+};

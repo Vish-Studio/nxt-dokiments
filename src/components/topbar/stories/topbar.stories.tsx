@@ -16,7 +16,7 @@ type Story = StoryObj<typeof meta>;
 
 export const Default: Story = {
   render: (args) => (
-    <div className="bg-nox-noir">
+    <div className="bg-app-chrome">
       <Topbar {...args} />
     </div>
   ),
@@ -31,7 +31,7 @@ export const CustomUser: Story = {
     userName: "NuDocuments Team",
   },
   render: (args) => (
-    <div className="bg-nox-noir">
+    <div className="bg-app-chrome">
       <Topbar {...args} />
     </div>
   ),

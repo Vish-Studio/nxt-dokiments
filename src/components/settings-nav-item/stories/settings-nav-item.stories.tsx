@@ -16,7 +16,7 @@ type Story = StoryObj<typeof meta>;
 
 export const Expanded: Story = {
   render: (args) => (
-    <div className="w-64 bg-nox-noir p-4">
+    <div className="w-64 bg-app-chrome p-4">
       <SettingsNavItem {...args} />
     </div>
   ),
@@ -33,7 +33,7 @@ export const Collapsed: Story = {
     isCollapsed: true,
   },
   render: (args) => (
-    <div className="hidden bg-nox-noir p-4 lg:block">
+    <div className="hidden bg-app-chrome p-4 lg:block">
       <SettingsNavItem {...args} />
     </div>
   ),
@@ -44,7 +44,7 @@ export const Active: Story = {
     isActive: true,
   },
   render: (args) => (
-    <div className="w-64 bg-nox-noir p-4">
+    <div className="w-64 bg-app-chrome p-4">
       <SettingsNavItem {...args} />
     </div>
   ),

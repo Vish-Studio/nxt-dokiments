@@ -1,6 +1,6 @@
 import { AppShell } from "@/components/app-shell/app-shell";
 
-export default function MyTemplatesPage() {
+const MyTemplatesPage = () => {
   return (
     <AppShell
       activeItem="My Templates"
@@ -9,4 +9,6 @@ export default function MyTemplatesPage() {
       title="My Templates"
     />
   );
-}
+};
+
+export default MyTemplatesPage;

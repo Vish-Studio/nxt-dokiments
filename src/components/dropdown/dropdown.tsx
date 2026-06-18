@@ -15,7 +15,7 @@ export type DropdownProps = {
   menuClassName?: string;
 };
 
-export function Dropdown({
+export const Dropdown = ({
   align = "end",
   ariaLabel,
   buttonClassName,
@@ -23,7 +23,7 @@ export function Dropdown({
   className,
   menuClassName,
   trigger,
-}: DropdownProps) {
+}: DropdownProps) => {
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
@@ -32,17 +32,17 @@ export function Dropdown({
       return;
     }
 
-    function handlePointerDown(event: PointerEvent) {
+    const handlePointerDown = (event: PointerEvent) => {
       if (!dropdownRef.current?.contains(event.target as Node)) {
         setIsOpen(false);
       }
-    }
+    };
 
-    function handleKeyDown(event: KeyboardEvent) {
+    const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === "Escape") {
         setIsOpen(false);
       }
-    }
+    };
 
     document.addEventListener("pointerdown", handlePointerDown);
     document.addEventListener("keydown", handleKeyDown);
@@ -77,4 +77,4 @@ export function Dropdown({
       ) : null}
     </div>
   );
-}
+};

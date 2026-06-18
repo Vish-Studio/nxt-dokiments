@@ -7,18 +7,18 @@ export type SettingsNavItemProps = {
   isCollapsed?: boolean;
 };
 
-export function SettingsNavItem({
+export const SettingsNavItem = ({
   isActive = false,
   isCollapsed = false,
-}: SettingsNavItemProps) {
+}: SettingsNavItemProps) => {
   return (
     <a
       aria-current={isActive ? "page" : undefined}
       className={cn(
         "group flex h-12 items-center gap-3 rounded-box px-3 font-title text-sm font-semibold transition-colors",
         isActive
-          ? "bg-golden-harvest text-bloodwood-deep"
-          : "text-white/75 hover:bg-white/10 hover:text-white",
+          ? "bg-app-active text-app-active-content"
+          : "text-app-nav hover:bg-app-nav-hover hover:text-app-chrome-content",
         isCollapsed && "lg:justify-center lg:px-0",
       )}
       href="/settings"
@@ -35,4 +35,4 @@ export function SettingsNavItem({
       </span>
     </a>
   );
-}
+};

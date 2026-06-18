@@ -44,7 +44,44 @@
   --color-golden-harvest: #ffd066;
   --color-nox-noir: #141414;
   --color-steel-mist: #cfcfcf;
+  --color-app-chrome: var(--color-nox-noir);
+  --color-app-chrome-content: #ffffff;
+  --color-app-panel: #ffffff;
+  --color-app-muted: var(--color-steel-mist);
+  --color-app-control: rgb(255 255 255 / 0.1);
+  --color-app-nav: rgb(255 255 255 / 0.75);
+  --color-app-nav-hover: rgb(255 255 255 / 0.1);
+  --color-app-active: var(--color-golden-harvest);
+  --color-app-active-content: var(--color-bloodwood-deep);
+  --color-app-brand: var(--color-golden-harvest);
+  --color-app-brand-content: var(--color-bloodwood-deep);
   --shadow-soft: 0 16px 40px rgb(20 20 20 / 0.08);
+}
+
+[data-palette="golden"] {
+  --color-app-chrome: var(--color-golden-harvest);
+  --color-app-chrome-content: var(--color-bloodwood-deep);
+  --color-app-panel: #ffffff;
+  --color-app-control: rgb(32 13 45 / 0.1);
+  --color-app-nav: rgb(32 13 45 / 0.7);
+  --color-app-nav-hover: rgb(32 13 45 / 0.1);
+  --color-app-active: var(--color-bloodwood-deep);
+  --color-app-active-content: var(--color-golden-harvest);
+  --color-app-brand: var(--color-bloodwood-deep);
+  --color-app-brand-content: var(--color-golden-harvest);
+}
+
+[data-palette="bloodwood"] {
+  --color-app-chrome: var(--color-bloodwood-deep);
+  --color-app-chrome-content: #ffffff;
+  --color-app-panel: color-mix(in srgb, var(--color-steel-mist) 14%, #ffffff);
+  --color-app-control: rgb(255 208 102 / 0.16);
+  --color-app-nav: rgb(255 255 255 / 0.75);
+  --color-app-nav-hover: rgb(255 208 102 / 0.15);
+  --color-app-active: var(--color-golden-harvest);
+  --color-app-active-content: var(--color-bloodwood-deep);
+  --color-app-brand: var(--color-golden-harvest);
+  --color-app-brand-content: var(--color-bloodwood-deep);
 }
 
 @theme inline {
@@ -54,6 +91,17 @@
   --color-golden-harvest: var(--color-golden-harvest);
   --color-nox-noir: var(--color-nox-noir);
   --color-steel-mist: var(--color-steel-mist);
+  --color-app-chrome: var(--color-app-chrome);
+  --color-app-chrome-content: var(--color-app-chrome-content);
+  --color-app-panel: var(--color-app-panel);
+  --color-app-muted: var(--color-app-muted);
+  --color-app-control: var(--color-app-control);
+  --color-app-nav: var(--color-app-nav);
+  --color-app-nav-hover: var(--color-app-nav-hover);
+  --color-app-active: var(--color-app-active);
+  --color-app-active-content: var(--color-app-active-content);
+  --color-app-brand: var(--color-app-brand);
+  --color-app-brand-content: var(--color-app-brand-content);
   --font-sans: var(--font-body);
   --font-title: var(--font-title);
   --font-body: var(--font-body);

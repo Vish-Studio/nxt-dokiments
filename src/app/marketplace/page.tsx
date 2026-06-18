@@ -1,6 +1,6 @@
 import { AppShell } from "@/components/app-shell/app-shell";
 
-export default function TemplateMarketplacePage() {
+const TemplateMarketplacePage = () => {
   return (
     <AppShell
       activeItem="Template Marketplace"
@@ -9,4 +9,6 @@ export default function TemplateMarketplacePage() {
       title="Template Marketplace"
     />
   );
-}
+};
+
+export default TemplateMarketplacePage;

@@ -19,7 +19,7 @@ type Story = StoryObj<typeof meta>;
 
 export const Expanded: Story = {
   render: (args) => (
-    <div className="min-h-screen bg-nox-noir">
+    <div className="min-h-screen bg-app-chrome">
       <Sidebar {...args} isMobileOpen />
     </div>
   ),
@@ -36,7 +36,7 @@ export const Collapsed: Story = {
     isCollapsed: true,
   },
   render: (args) => (
-    <div className="hidden min-h-screen bg-nox-noir lg:block">
+    <div className="hidden min-h-screen bg-app-chrome lg:block">
       <Sidebar {...args} />
     </div>
   ),
@@ -50,7 +50,7 @@ export const MobileOpen: Story = {
     isMobileOpen: true,
   },
   render: (args) => (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-app-panel">
       <Sidebar {...args} />
     </div>
   ),

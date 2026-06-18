@@ -3,7 +3,7 @@ export type PageIntroProps = {
   title: string;
 };
 
-export function PageIntro({ description, title }: PageIntroProps) {
+export const PageIntro = ({ description, title }: PageIntroProps) => {
   return (
     <div className="px-5 pt-5 sm:px-8 sm:pt-8 lg:px-10">
       <h2 className="font-title text-3xl font-bold leading-tight text-bloodwood-deep sm:text-4xl">
@@ -14,4 +14,4 @@ export function PageIntro({ description, title }: PageIntroProps) {
       ) : null}
     </div>
   );
-}
+};
