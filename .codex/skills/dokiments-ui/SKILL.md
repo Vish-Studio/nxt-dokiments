@@ -28,4 +28,8 @@ As an experienced Fullstack engineer and a UI/UX designer working in this repo:
 - For palette variations, adjust or use semantic tokens such as `app-chrome`, `app-panel`, `app-muted`, and `app-control` in `src/app/globals.css` instead of replacing component classes with raw palette names.
 - The default dashboard palette is `classic`: Nox Noir shell, Golden Harvest active states, and a white content panel. Palette choices are app-level UI state in `src/stores/ui-store.ts` and are controlled from the Settings page General section.
 - Use Phosphor icons for dashboard/navigation controls.
+- Auth UI must use reusable components from `src/components` and React Hook Form. Keep auth forms in their own component folders with stories.
+- Firebase client integration currently lives in `src/lib/firebase` and uses REST APIs configured by `NEXT_PUBLIC_FIREBASE_API_KEY`, `NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN`, and `NEXT_PUBLIC_FIREBASE_PROJECT_ID`.
+- App account roles are `superadmin`, `free`, `silver`, `gold`, and `special`. New registrations default to `free`; elevated roles must be assigned through trusted Firebase admin tooling, not client forms.
+- Protected app routes should remain behind `AuthGuard`, preferably by composing through `AppShell`.
 - Verify with `npm run lint`, `npx tsc --noEmit`, Storybook tests where affected, and a browser screenshot for layout changes.

@@ -22,13 +22,13 @@ export const Footer = () => {
           <div className="mt-8 flex flex-col gap-3 sm:flex-row">
             <a
               className="inline-flex justify-center rounded-box bg-golden-harvest px-5 py-3 font-title text-sm font-bold text-nox-noir transition-transform hover:-translate-y-1"
-              href="/dashboard"
+              href="/sign-up"
             >
               Sign up
             </a>
             <a
               className="inline-flex justify-center rounded-box border border-white/20 px-5 py-3 font-title text-sm font-bold text-white"
-              href="/dashboard"
+              href="/sign-in"
             >
               Sign in
             </a>

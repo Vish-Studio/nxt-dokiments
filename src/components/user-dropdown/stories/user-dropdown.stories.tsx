@@ -8,6 +8,9 @@ const meta = {
   tags: ["ai-generated"],
   parameters: {
     layout: "centered",
+    nextjs: {
+      appDirectory: true,
+    },
   },
 } satisfies Meta<typeof UserDropdown>;
 

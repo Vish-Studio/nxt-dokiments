@@ -72,13 +72,13 @@ export const MobileNav = ({
         <div className="mt-auto grid gap-3">
           <a
             className="inline-flex justify-center rounded-box bg-golden-harvest px-5 py-4 font-title text-sm font-bold text-nox-noir"
-            href="/dashboard"
+            href="/sign-up"
           >
             Sign up
           </a>
           <a
             className="inline-flex justify-center rounded-box border border-white/18 px-5 py-4 font-title text-sm font-bold text-white"
-            href="/dashboard"
+            href="/sign-in"
           >
             Sign in
           </a>

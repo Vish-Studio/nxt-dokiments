@@ -3,23 +3,25 @@ import { expect } from "storybook/test";
 
 import { useAuthStore } from "@/stores/auth-store";
 
-import { AppShell } from "../app-shell";
+import { AuthGuard } from "../auth-guard";
 
 const meta = {
-  component: AppShell,
+  component: AuthGuard,
   tags: ["ai-generated"],
+  args: {
+    children: <p>Protected content</p>,
+  },
   parameters: {
-    layout: "fullscreen",
     nextjs: {
       appDirectory: true,
     },
   },
-} satisfies Meta<typeof AppShell>;
+} satisfies Meta<typeof AuthGuard>;
 
 export default meta;
 type Story = StoryObj<typeof meta>;
 
-export const Default: Story = {
+export const Authenticated: Story = {
   beforeEach: () => {
     useAuthStore.setState({
       session: {
@@ -27,22 +29,31 @@ export const Default: Story = {
         idToken: "story-token",
         refreshToken: "story-refresh",
         user: {
-          displayName: "Anthony Alverizko",
-          email: "anthony@dokiments.test",
+          displayName: "Story User",
+          email: "story@dokiments.test",
           role: "free",
           uid: "story-user",
         },
       },
       status: "authenticated",
       user: {
-        displayName: "Anthony Alverizko",
-        email: "anthony@dokiments.test",
+        displayName: "Story User",
+        email: "story@dokiments.test",
         role: "free",
         uid: "story-user",
       },
     });
   },
   play: async ({ canvas }) => {
-    await expect(canvas.getByRole("button", { name: /collapse sidebar/i })).toBeVisible();
+    await expect(canvas.getByText("Protected content")).toBeVisible();
+  },
+};
+
+export const Loading: Story = {
+  beforeEach: () => {
+    useAuthStore.setState({ session: null, status: "loading", user: null });
+  },
+  play: async ({ canvas }) => {
+    await expect(canvas.getByText("Checking account access")).toBeVisible();
   },
 };

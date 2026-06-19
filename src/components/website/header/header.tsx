@@ -43,13 +43,13 @@ export const Header = () => {
           <div className="flex items-center gap-2">
             <a
               className="hidden rounded-box px-4 py-2 font-title text-sm font-semibold text-white transition-colors hover:bg-white/10 sm:inline-flex"
-              href="/dashboard"
+              href="/sign-in"
             >
               Sign in
             </a>
             <a
               className="hidden rounded-box bg-golden-harvest px-4 py-2 font-title text-sm font-bold text-nox-noir shadow-soft transition-transform hover:-translate-y-0.5 sm:inline-flex"
-              href="/dashboard"
+              href="/sign-up"
             >
               Sign up
             </a>

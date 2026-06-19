@@ -1,6 +1,9 @@
+"use client";
+
 import { CaretDownIcon } from "@phosphor-icons/react";
 
 import { Dropdown } from "@/components/dropdown/dropdown";
+import { useAuthStore } from "@/stores/auth-store";
 
 export type UserDropdownProps = {
   userName?: string;
@@ -11,6 +14,13 @@ export const UserDropdown = ({
   userInitials = "AA",
   userName = "Anthony Alverizko",
 }: UserDropdownProps) => {
+  const clearSession = useAuthStore((state) => state.clearSession);
+
+  const handleSignOut = () => {
+    clearSession();
+    window.location.assign("/sign-in");
+  };
+
   return (
     <Dropdown
       ariaLabel="User menu"
@@ -34,6 +44,11 @@ export const UserDropdown = ({
         </li>
         <li>
           <a>Account settings</a>
+        </li>
+        <li>
+          <button onClick={handleSignOut} type="button">
+            Sign out
+          </button>
         </li>
       </ul>
     </Dropdown>

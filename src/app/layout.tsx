@@ -1,5 +1,8 @@
 import type { Metadata } from "next";
 import { Host_Grotesk, Elms_Sans } from "next/font/google";
+
+import { AuthProvider } from "@/components/auth-provider/auth-provider";
+
 import "./globals.css";
 
 const hostGrotesk = Host_Grotesk({
@@ -28,7 +31,9 @@ const RootLayout = ({
       data-theme="dokiments"
       className={`${hostGrotesk.variable} ${elmsSans.variable} h-full bg-background antialiased`}
     >
-      <body className="min-h-full flex flex-col">{children}</body>
+      <body className="min-h-full flex flex-col">
+        <AuthProvider>{children}</AuthProvider>
+      </body>
     </html>
   );
 };

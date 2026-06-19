@@ -41,7 +41,7 @@ export const Hero = () => {
           <div className="mt-7 flex flex-col gap-3 sm:flex-row lg:mt-9">
             <a
               className="inline-flex items-center justify-center gap-2 rounded-box bg-golden-harvest px-6 py-4 font-title text-sm font-bold text-nox-noir shadow-soft transition-transform hover:-translate-y-1 hover:shadow-[0_22px_60px_rgb(255_208_102_/_0.24)]"
-              href="/dashboard"
+              href="/sign-up"
             >
               Sign up
               <ArrowRight aria-hidden size={18} weight="bold" />

@@ -55,7 +55,7 @@ export const Pricing = () => {
               </ul>
               <a
                 className="mt-auto inline-flex justify-center rounded-box bg-nox-noir px-5 py-3 font-title text-sm font-bold text-golden-harvest transition-transform hover:-translate-y-1"
-                href="/dashboard"
+                href="/sign-up"
               >
                 Sign up
               </a>
