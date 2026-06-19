@@ -1,0 +1,58 @@
+import type { Meta, StoryObj } from "@storybook/nextjs-vite";
+import { expect, userEvent, within } from "storybook/test";
+
+import { useAuthStore } from "@/stores/auth-store";
+
+import { SettingsTabs } from "../settings-tabs";
+
+const meta = {
+  component: SettingsTabs,
+  tags: ["ai-generated"],
+  parameters: {
+    layout: "fullscreen",
+  },
+  decorators: [
+    (Story) => {
+      useAuthStore.setState({
+        session: {
+          expiresAt: Date.now() + 3_600_000,
+          idToken: "story-id-token",
+          refreshToken: "story-refresh-token",
+          user: {
+            displayName: "Anthony Alverizko",
+            email: "anthony@dokiments.com",
+            role: "free",
+            uid: "story-uid",
+          },
+        },
+        status: "authenticated",
+        user: {
+          displayName: "Anthony Alverizko",
+          email: "anthony@dokiments.com",
+          role: "free",
+          uid: "story-uid",
+        },
+      });
+      return (
+        <div className="min-h-screen bg-app-panel">
+          <Story />
+        </div>
+      );
+    },
+  ],
+} satisfies Meta<typeof SettingsTabs>;
+
+export default meta;
+type Story = StoryObj<typeof meta>;
+
+export const Default: Story = {
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await expect(canvas.getByRole("tab", { name: /profile/i })).toHaveAttribute(
+      "aria-selected",
+      "true",
+    );
+    await userEvent.click(canvas.getByRole("tab", { name: /password/i }));
+    await expect(canvas.getByRole("heading", { name: /password/i })).toBeVisible();
+  },
+};

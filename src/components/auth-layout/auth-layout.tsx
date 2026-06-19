@@ -13,10 +13,10 @@ export const AuthLayout = ({ children, description, footer, title }: AuthLayoutP
     <main className="grid min-h-dvh bg-nox-noir px-5 py-8 text-white sm:px-8 lg:grid-cols-[0.9fr_1.1fr] lg:px-10">
       <section className="flex min-h-full flex-col">
         <Link aria-label="Dokiments home" className="flex items-center gap-3" href="/">
-          <span className="flex size-10 items-center justify-center rounded-full bg-golden-harvest font-title text-sm font-bold text-nox-noir">
+          <span className="flex size-10 items-center justify-center rounded-full bg-golden-harvest font-logo text-sm font-black text-nox-noir">
             D
           </span>
-          <span className="font-title text-lg font-bold">Dokiments</span>
+          <span className="font-logo text-lg font-black">Dokiments</span>
         </Link>
 
         <div className="my-auto max-w-xl py-14">
@@ -30,7 +30,7 @@ export const AuthLayout = ({ children, description, footer, title }: AuthLayoutP
       </section>
 
       <section className="flex items-center justify-center">
-        <div className="w-full max-w-xl rounded-box bg-white p-6 text-nox-noir shadow-[0_30px_90px_rgb(0_0_0_/_0.28)] sm:p-8">
+        <div className="w-full max-w-xl rounded-box border border-steel-mist bg-white p-6 text-nox-noir sm:p-8">
           <div>
             <h2 className="font-title text-3xl font-bold">{title}</h2>
             <p className="mt-2 text-sm leading-6 text-nox-noir/60">{description}</p>

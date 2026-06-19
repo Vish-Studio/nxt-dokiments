@@ -10,7 +10,7 @@
   --color-base-300: #cfcfcf;
   --color-base-content: #141414;
   --color-primary: #200d2d;
-  --color-primary-content: #ffd066;
+  --color-primary-content: #ffffff;
   --color-secondary: #ffd066;
   --color-secondary-content: #200d2d;
   --color-accent: #141414;
@@ -31,15 +31,16 @@
   --size-selector: 0.25rem;
   --size-field: 0.25rem;
   --border: 1px;
-  --depth: 1;
+  --depth: 0;
   --noise: 0;
 }
 
 :root {
   --background: #ffffff;
   --foreground: #141414;
-  --font-title: var(--font-host-grotesk), "Host Grotesk", Arial, sans-serif;
-  --font-body: "Elms Sans", Arial, Helvetica, sans-serif;
+  --font-title: var(--font-urbanist), "Urbanist", Arial, Helvetica, sans-serif;
+  --font-body: var(--font-urbanist), "Urbanist", Arial, Helvetica, sans-serif;
+  --font-logo: var(--font-raleway), "Raleway", Arial, Helvetica, sans-serif;
   --color-bloodwood-deep: #200d2d;
   --color-golden-harvest: #ffd066;
   --color-nox-noir: #141414;
@@ -47,7 +48,6 @@
   --color-app-chrome: var(--color-nox-noir);
   --color-app-chrome-content: #ffffff;
   --color-app-panel: #ffffff;
-  --color-app-muted: var(--color-steel-mist);
   --color-app-control: rgb(255 255 255 / 0.1);
   --color-app-nav: rgb(255 255 255 / 0.75);
   --color-app-nav-hover: rgb(255 255 255 / 0.1);
@@ -56,32 +56,6 @@
   --color-app-brand: var(--color-golden-harvest);
   --color-app-brand-content: var(--color-bloodwood-deep);
   --shadow-soft: 0 16px 40px rgb(20 20 20 / 0.08);
-}
-
-[data-palette="golden"] {
-  --color-app-chrome: var(--color-golden-harvest);
-  --color-app-chrome-content: var(--color-bloodwood-deep);
-  --color-app-panel: #ffffff;
-  --color-app-control: rgb(32 13 45 / 0.1);
-  --color-app-nav: rgb(32 13 45 / 0.7);
-  --color-app-nav-hover: rgb(32 13 45 / 0.1);
-  --color-app-active: var(--color-bloodwood-deep);
-  --color-app-active-content: var(--color-golden-harvest);
-  --color-app-brand: var(--color-bloodwood-deep);
-  --color-app-brand-content: var(--color-golden-harvest);
-}
-
-[data-palette="bloodwood"] {
-  --color-app-chrome: var(--color-bloodwood-deep);
-  --color-app-chrome-content: #ffffff;
-  --color-app-panel: color-mix(in srgb, var(--color-steel-mist) 14%, #ffffff);
-  --color-app-control: rgb(255 208 102 / 0.16);
-  --color-app-nav: rgb(255 255 255 / 0.75);
-  --color-app-nav-hover: rgb(255 208 102 / 0.15);
-  --color-app-active: var(--color-golden-harvest);
-  --color-app-active-content: var(--color-bloodwood-deep);
-  --color-app-brand: var(--color-golden-harvest);
-  --color-app-brand-content: var(--color-bloodwood-deep);
 }
 
 @theme inline {
@@ -94,7 +68,6 @@
   --color-app-chrome: var(--color-app-chrome);
   --color-app-chrome-content: var(--color-app-chrome-content);
   --color-app-panel: var(--color-app-panel);
-  --color-app-muted: var(--color-app-muted);
   --color-app-control: var(--color-app-control);
   --color-app-nav: var(--color-app-nav);
   --color-app-nav-hover: var(--color-app-nav-hover);
@@ -105,6 +78,7 @@
   --font-sans: var(--font-body);
   --font-title: var(--font-title);
   --font-body: var(--font-body);
+  --font-logo: var(--font-logo);
   --shadow-soft: var(--shadow-soft);
 }
 

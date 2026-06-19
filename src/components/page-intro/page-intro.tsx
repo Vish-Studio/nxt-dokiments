@@ -1,6 +1,6 @@
 export type PageIntroProps = {
   description?: string;
-  title: string;
+  title?: string;
 };
 
 export const PageIntro = ({ description, title }: PageIntroProps) => {

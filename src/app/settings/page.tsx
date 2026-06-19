@@ -1,5 +1,5 @@
 import { AppShell } from "@/components/app-shell/app-shell";
-import { GeneralSettings } from "@/components/general-settings/general-settings";
+import { SettingsTabs } from "@/components/settings-tabs/settings-tabs";
 
 const SettingsPage = () => {
   return (
@@ -9,7 +9,7 @@ const SettingsPage = () => {
       pageTitle="Settings"
       title="Settings"
     >
-      <GeneralSettings />
+      <SettingsTabs />
     </AppShell>
   );
 };

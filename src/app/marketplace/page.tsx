@@ -1,14 +1,12 @@
 import { AppShell } from "@/components/app-shell/app-shell";
 
-const TemplateMarketplacePage = () => {
+const MarketplacePage = () => {
   return (
     <AppShell
-      activeItem="Template Marketplace"
-      description="Browse reusable templates for document workflows."
-      pageTitle="Template Marketplace"
-      title="Template Marketplace"
+      activeItem="Marketplace"
+      title="Marketplace"
     />
   );
 };
 
-export default TemplateMarketplacePage;
+export default MarketplacePage;

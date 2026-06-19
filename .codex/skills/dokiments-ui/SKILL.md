@@ -1,35 +1,56 @@
 ---
 name: dokiments-ui
-description: Use when modifying Dokiments frontend UI, dashboard shell, marketing components, or reusable components in this repo. Enforces component-folder structure, Storybook coverage, design-token usage, and consistent spacing.
+description: Use when modifying Dokiments frontend UI, dashboard shell, marketing components, or reusable components in this repo. Enforces strict modular folder structures, Bento-grid layouts, flat/neo-brutalist aesthetics, and consistent spacing tokens.
 ---
 
 # Dokiments UI
 
-As an experienced Fullstack engineer and a UI/UX designer working in this repo:
+As an elite Fullstack Engineer and Award-Winning UI/UX Designer specialized in high-conversion marketing sites and ultra-clean dashboard apps:
 
-- Reuse existing custom components before adding markup.
-- New UI must live in `src/components/[component-name]/[component-file].tsx`.
-- Every new component must include a colocated story in `src/components/[component-name]/stories/[component-name].stories.tsx`.
-- If a UI area contains a distinct reusable subpart, create it as its own component with its own story instead of embedding the markup inline.
-- Components must be written as arrow-function components. Route page files may use Next.js page conventions.
-- Shared app UI state belongs in `src/stores/ui-store.ts`. Only store state that must be known across distant component hierarchy; prefer props or local React state for nearby ownership.
-- Marketing website components belong under `src/components/website`.
-- Main app shell pieces should stay separated: `app-shell`, `sidebar`, `topbar`, and `content-container`. Do not prefix these component names with `dashboard`.
-- Use the global `dropdown` component for dropdown UI. Dropdowns must close when clicking outside and on Escape.
-- The topbar user menu lives in `user-dropdown`; do not show the user email in the topbar trigger.
-- The topbar lives on the dark app background above the white main content panel and aligns with the sidebar logo row.
-- The topbar shows only the page title plus right-side actions. Personalized page copy such as `Hello, Anthony!` belongs in the page content inside the white panel.
-- When the desktop sidebar is collapsed, clicking the logo expands it. Do not show a duplicate sidebar toggle icon in the collapsed sidebar.
-- Keep collapsed sidebar logo and nav icons aligned on the same vertical centerline.
-- Sidebar bottom controls are separate components: `theme-toggle` above `settings-nav-item`.
-- Keep spacing consistent by sharing the same gutters between related areas. The white main content panel owns the topbar and body spacing.
-- On mobile and tablet, the main content panel must take the full viewport height and width. The topbar stays fixed/sticky and exposes a navigation toggle beside the title that opens the sidebar as an off-canvas mobile nav.
-- Use Tailwind tokens and DaisyUI classes from `src/app/globals.css`; avoid hardcoded colors and arbitrary spacing unless the existing design tokens cannot express the layout.
-- For palette variations, adjust or use semantic tokens such as `app-chrome`, `app-panel`, `app-muted`, and `app-control` in `src/app/globals.css` instead of replacing component classes with raw palette names.
-- The default dashboard palette is `classic`: Nox Noir shell, Golden Harvest active states, and a white content panel. Palette choices are app-level UI state in `src/stores/ui-store.ts` and are controlled from the Settings page General section.
-- Use Phosphor icons for dashboard/navigation controls.
-- Auth UI must use reusable components from `src/components` and React Hook Form. Keep auth forms in their own component folders with stories.
-- Firebase client integration currently lives in `src/lib/firebase` and uses REST APIs configured by `NEXT_PUBLIC_FIREBASE_API_KEY`, `NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN`, and `NEXT_PUBLIC_FIREBASE_PROJECT_ID`.
-- App account roles are `superadmin`, `free`, `silver`, `gold`, and `special`. New registrations default to `free`; elevated roles must be assigned through trusted Firebase admin tooling, not client forms.
-- Protected app routes should remain behind `AuthGuard`, preferably by composing through `AppShell`.
-- Verify with `npm run lint`, `npx tsc --noEmit`, Storybook tests where affected, and a browser screenshot for layout changes.
+## 1. Code Architecture & Component Hygiene
+
+- **Strict Anti-Bloat Rule:** NEVER write multiple sub-components within the same file. If a UI area contains a distinct, reusable subpart, it _must_ be extracted into its own file inside its respective directory. Keep component files short, focused, and single-purpose to maintain an accessible codebase for junior/mid-level developers.
+- **Component Style:** All components must be written as TypeScript arrow functions with explicit prop interfaces (`interface Props {}`).
+- **Storybook Coverage:** Every new component must include a colocated story file within its folder (`stories/[component-name].stories.tsx`).
+- **State Management:** Shared global UI state belongs in `src/stores/ui-store.ts`. Use it sparingly (e.g., sidebar state, theme tracking); prefer props or local React state for localized hierarchies.
+
+## 2. Strict Directory Structure
+
+All UI components must reside exactly within one of these four subdirectories under `src/components/`:
+
+- `src/components/commons/` — Globally reusable foundational atomic elements (buttons, inputs, dropdowns, modals, loaders) that extend DaisyUI with a flat design language.
+- `src/components/website/` — High-converting marketing components matching an Awwwards-winning visual standard (editorial typography, sophisticated layouts, immersive dark sections).
+- `src/components/dashboard/` — Modular components specifically built for the core user application (data cards, metric tracking, bento modules).
+- `src/components/admin/` — Management views, configuration tables, and analytics modules reserved exclusively for privileged accounts.
+
+## 3. Visual & Aesthetic Guidelines (Awwwards x Bento Style)
+
+- **Aesthetic Direction:** Merge a premium, minimalist dark-mode canvas with "flat design" principles. Avoid heavy gradients, soft outer blurs, or realistic skeuomorphism. Use sharp borders, high-contrast typography hierarchies, and intentional whitespace.
+- **Bento Grid Dashboard:** Construct dashboard layouts using structured CSS Grid tracks (`grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4`). Every card inside the Bento layout must be a dedicated module from `components/dashboard/`, utilizing flat borders, unified internal padding (`p-6`), and clear structural boundaries.
+- **DaisyUI Extension Strategy:** Utilize semantic DaisyUI utility classes, but enforce a flat design aesthetic by overriding radiuses and soft shadows with sharp utility classes (`rounded-md`, `border`, `border-base-content/10`, `shadow-none`).
+- **Tokens Over Magic Numbers:** Use Tailwind tokens and DaisyUI classes configured in `src/app/globals.css`. Never use hardcoded hexadecimal colors or arbitrary spacing utilities (e.g., use `p-6` or `gap-4` instead of `p-[23px]`).
+- **Typography (two families only):** `Urbanist` is the sole typeface for all body copy and headings — always go through the `font-body`/`font-title` tokens (both resolve to Urbanist) and never reintroduce another family. `Raleway` at weight 900 ("Black") is reserved exclusively for the Dokiments logo — apply `font-logo` + `font-black` to the wordmark and the "D" mark, nowhere else. Fonts are loaded via `next/font/google` in `src/app/layout.tsx` (`--font-urbanist`, `--font-raleway`).
+- **Control Hierarchy:** Keep buttons, inputs, and tabs visually distinct. Primary buttons are solid (`btn-primary`, white text — never golden); `secondary` is a soft grey fill; `outline` is bordered; `ghost` is text-only. Inputs/selects use a slight grey fill (`bg-base-200`) with a calm focus treatment (`focus:border-bloodwood-deep focus:ring-2 focus:ring-bloodwood-deep/15`), never heavy double outlines. Tabs use an underline (bottom-border) indicator so they never read as buttons.
+
+## 4. App Shell & Layout Rules
+
+- **Shell Division:** Main app shell pieces live under `src/components/dashboard/` and are broken down into: `app-shell`, `sidebar`, `topbar`, and `content-container`. Do not prefix these component names with `dashboard`.
+- **Topbar Control:** The topbar sits on the dark app background above the white main content panel and aligns with the sidebar logo row. It shows _only_ the page title and right-side action items. Personalized copy like `Hello, Anthony!` belongs inside the main canvas panel, never the topbar.
+- **User Navigation:** The topbar user menu lives in `user-dropdown`; never render the raw user email inside the topbar trigger.
+- **Sidebar UX:** When the desktop sidebar is collapsed, clicking the logo expands it. Do not show a duplicate hamburger or toggle icon in the collapsed view. Keep the logo and nav icons perfectly centered on the vertical centerline. Sidebar bottom controls must separate into `theme-toggle` placed directly above `settings-nav-item`.
+- **Responsive Viewports:** On mobile/tablet, the main content panel scales to full viewport dimensions. The topbar remains pinned/sticky, introducing a navigation trigger beside the title that toggles the sidebar as an off-canvas overlay.
+
+## 5. Integrations & Guards
+
+- **Icons:** Use Phosphor Icons (`@phosphor-icons/react`) exclusively for all dashboard controls, navigation, and state indicators.
+- **Forms & Validation:** Auth and settings UI must use React Hook Form combined with the modular inputs from `src/components/commons/`. Keep form containers isolated in their own folder tracks.
+- **Firebase Infrastructure:** Client integrations live in `src/lib/firebase`, consuming REST APIs wired through `NEXT_PUBLIC_FIREBASE_API_KEY`, `NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN`, and `NEXT_PUBLIC_FIREBASE_PROJECT_ID`.
+- **RBAC:** Application roles map to `superadmin`, `free`, `silver`, `gold`, and `special`. Defaults to `free`. Client-side route blocking is enforced by wrapping views with `AuthGuard`, composed within the `AppShell`.
+
+## 6. Verification Checklist
+
+Before declaring a task complete, verify stability with:
+
+1. `npm run lint` — Zero syntax or formatting style errors.
+2. `npx tsc --noEmit` — Compiles cleanly without TypeScript type mismatches.
+3. Verify component isolation across Storybook variations.

@@ -1,5 +1,5 @@
 import { firebaseConfig, hasFirebaseConfig } from "@/lib/firebase/config";
-import type { AuthSession, AuthUser, UserRole } from "@/types/auth";
+import type { AuthProfileDetails, AuthSession, AuthUser, UserRole } from "@/types/auth";
 import { userRoles } from "@/types/auth";
 
 type FirebaseAuthResponse = {
@@ -104,14 +104,21 @@ const isUserRole = (role?: string): role is UserRole => {
   return userRoles.includes(role as UserRole);
 };
 
+const optionalString = (value?: string) => (value ? value : undefined);
+
 const parseProfile = (uid: string, fallbackEmail: string, document: FirestoreDocument): AuthUser => {
   const fields = document.fields ?? {};
   const role = fields.role?.stringValue;
 
   return {
+    address: optionalString(fields.address?.stringValue),
+    companyName: optionalString(fields.companyName?.stringValue),
     displayName: fields.displayName?.stringValue ?? fallbackEmail.split("@")[0],
     email: fields.email?.stringValue ?? fallbackEmail,
+    fullName: optionalString(fields.fullName?.stringValue),
+    phone: optionalString(fields.phone?.stringValue),
     role: isUserRole(role) ? role : "free",
+    tel: optionalString(fields.tel?.stringValue),
     uid,
   };
 };
@@ -233,6 +240,96 @@ export const sendPasswordResetEmail = async (email: string) => {
     }),
     method: "POST",
   });
+};
+
+type FirebaseUpdateResponse = {
+  displayName?: string;
+  email?: string;
+  expiresIn?: string;
+  idToken?: string;
+  localId?: string;
+  refreshToken?: string;
+};
+
+export type ProfileUpdate = {
+  displayName: string;
+} & AuthProfileDetails;
+
+const patchProfileFields = async (uid: string, idToken: string, profile: ProfileUpdate) => {
+  const fields: Record<string, FirestoreValue> = {
+    address: { stringValue: profile.address ?? "" },
+    companyName: { stringValue: profile.companyName ?? "" },
+    displayName: { stringValue: profile.displayName },
+    fullName: { stringValue: profile.fullName ?? "" },
+    phone: { stringValue: profile.phone ?? "" },
+    tel: { stringValue: profile.tel ?? "" },
+    updatedAt: { timestampValue: new Date().toISOString() },
+  };
+
+  const mask = Object.keys(fields)
+    .map((path) => `updateMask.fieldPaths=${path}`)
+    .join("&");
+
+  await requestJson<FirestoreDocument>(`${userDocumentUrl(uid)}?${mask}`, {
+    body: JSON.stringify({ fields }),
+    headers: {
+      Authorization: `Bearer ${idToken}`,
+    },
+    method: "PATCH",
+  });
+};
+
+export const updateAccountProfile = async (
+  session: AuthSession,
+  profile: ProfileUpdate,
+): Promise<AuthSession> => {
+  const response = await requestJson<FirebaseUpdateResponse>(authUrl("accounts:update"), {
+    body: JSON.stringify({
+      displayName: profile.displayName,
+      idToken: session.idToken,
+      returnSecureToken: true,
+    }),
+    method: "POST",
+  });
+
+  const idToken = response.idToken ?? session.idToken;
+  await patchProfileFields(session.user.uid, idToken, profile);
+
+  return {
+    expiresAt: response.expiresIn ? getExpiry(response.expiresIn) : session.expiresAt,
+    idToken,
+    refreshToken: response.refreshToken ?? session.refreshToken,
+    user: {
+      ...session.user,
+      address: profile.address,
+      companyName: profile.companyName,
+      displayName: profile.displayName,
+      fullName: profile.fullName,
+      phone: profile.phone,
+      tel: profile.tel,
+    },
+  };
+};
+
+export const updateAccountPassword = async (
+  session: AuthSession,
+  password: string,
+): Promise<AuthSession> => {
+  const response = await requestJson<FirebaseUpdateResponse>(authUrl("accounts:update"), {
+    body: JSON.stringify({
+      idToken: session.idToken,
+      password,
+      returnSecureToken: true,
+    }),
+    method: "POST",
+  });
+
+  return {
+    expiresAt: response.expiresIn ? getExpiry(response.expiresIn) : session.expiresAt,
+    idToken: response.idToken ?? session.idToken,
+    refreshToken: response.refreshToken ?? session.refreshToken,
+    user: session.user,
+  };
 };
 
 export const refreshFirebaseSession = async (session: AuthSession): Promise<AuthSession> => {

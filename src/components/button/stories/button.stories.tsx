@@ -30,6 +30,20 @@ export const Ghost: Story = {
   },
 };
 
+export const Outline: Story = {
+  args: {
+    variant: "outline",
+    children: "Preview",
+  },
+};
+
+export const Danger: Story = {
+  args: {
+    variant: "danger",
+    children: "Delete document",
+  },
+};
+
 export const WithoutIcon: Story = {
   args: {
     icon: null,

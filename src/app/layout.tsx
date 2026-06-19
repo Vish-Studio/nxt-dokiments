@@ -1,17 +1,18 @@
 import type { Metadata } from "next";
-import { Host_Grotesk, Elms_Sans } from "next/font/google";
+import { Urbanist, Raleway } from "next/font/google";
 
 import { AuthProvider } from "@/components/auth-provider/auth-provider";
 
 import "./globals.css";
 
-const hostGrotesk = Host_Grotesk({
-  variable: "--font-host-grotesk",
+const urbanist = Urbanist({
+  variable: "--font-urbanist",
   subsets: ["latin"],
 });
 
-const elmsSans = Elms_Sans({
-  variable: "--font-elms-sans",
+const raleway = Raleway({
+  variable: "--font-raleway",
+  weight: "900",
   subsets: ["latin"],
 });
 
@@ -29,7 +30,7 @@ const RootLayout = ({
     <html
       lang="en"
       data-theme="dokiments"
-      className={`${hostGrotesk.variable} ${elmsSans.variable} h-full bg-background antialiased`}
+      className={`${urbanist.variable} ${raleway.variable} h-full bg-background antialiased`}
     >
       <body className="min-h-full flex flex-col">
         <AuthProvider>{children}</AuthProvider>

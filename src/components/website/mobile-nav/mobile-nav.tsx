@@ -1,4 +1,5 @@
 import { X } from "@phosphor-icons/react";
+import Link from "next/link";
 
 export type MobileNavItem = {
   href: string;
@@ -7,6 +8,7 @@ export type MobileNavItem = {
 
 export type MobileNavProps = {
   forceVisible?: boolean;
+  isAuthenticated?: boolean;
   isOpen?: boolean;
   items: MobileNavItem[];
   onClose?: () => void;
@@ -14,6 +16,7 @@ export type MobileNavProps = {
 
 export const MobileNav = ({
   forceVisible = false,
+  isAuthenticated = false,
   isOpen = false,
   items,
   onClose,
@@ -36,10 +39,10 @@ export const MobileNav = ({
             href="#top"
             onClick={onClose}
           >
-            <span className="flex size-10 items-center justify-center rounded-full bg-golden-harvest font-title text-sm font-bold text-nox-noir">
+            <span className="flex size-10 items-center justify-center rounded-full bg-golden-harvest font-logo text-sm font-black text-nox-noir">
               D
             </span>
-            <span className="font-title text-xl font-bold text-golden-harvest">
+            <span className="font-logo text-xl font-black text-golden-harvest">
               Dokiments
             </span>
           </a>
@@ -70,18 +73,32 @@ export const MobileNav = ({
         </nav>
 
         <div className="mt-auto grid gap-3">
-          <a
-            className="inline-flex justify-center rounded-box bg-golden-harvest px-5 py-4 font-title text-sm font-bold text-nox-noir"
-            href="/sign-up"
-          >
-            Sign up
-          </a>
-          <a
-            className="inline-flex justify-center rounded-box border border-white/18 px-5 py-4 font-title text-sm font-bold text-white"
-            href="/sign-in"
-          >
-            Sign in
-          </a>
+          {isAuthenticated ? (
+            <Link
+              className="inline-flex justify-center rounded-box bg-golden-harvest px-5 py-4 font-title text-sm font-bold text-nox-noir"
+              href="/dashboard"
+              onClick={onClose}
+            >
+              Go to dashboard
+            </Link>
+          ) : (
+            <>
+              <Link
+                className="inline-flex justify-center rounded-box bg-golden-harvest px-5 py-4 font-title text-sm font-bold text-nox-noir"
+                href="/sign-up"
+                onClick={onClose}
+              >
+                Sign up
+              </Link>
+              <Link
+                className="inline-flex justify-center rounded-box border border-white/18 px-5 py-4 font-title text-sm font-bold text-white"
+                href="/sign-in"
+                onClick={onClose}
+              >
+                Sign in
+              </Link>
+            </>
+          )}
         </div>
       </div>
     </div>

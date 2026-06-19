@@ -1,4 +1,5 @@
 import { GearSix } from "@phosphor-icons/react";
+import Link from "next/link";
 
 import { cn } from "@/lib/utils";
 
@@ -12,10 +13,10 @@ export const SettingsNavItem = ({
   isCollapsed = false,
 }: SettingsNavItemProps) => {
   return (
-    <a
+    <Link
       aria-current={isActive ? "page" : undefined}
       className={cn(
-        "group flex h-12 items-center gap-3 rounded-box px-3 font-title text-sm font-semibold transition-colors",
+        "group flex h-10 items-center gap-3 rounded-box px-3 font-title text-sm font-semibold transition-colors",
         isActive
           ? "bg-app-active text-app-active-content"
           : "text-app-nav hover:bg-app-nav-hover hover:text-app-chrome-content",
@@ -33,6 +34,6 @@ export const SettingsNavItem = ({
       >
         Settings
       </span>
-    </a>
+    </Link>
   );
 };
