@@ -1,5 +1,7 @@
-const WebsitePage = () => {
-  return <main className="min-h-screen bg-background" />;
+import { Landing } from "@/components/website/landing/landing";
+
+const Page = () => {
+  return <Landing />;
 };
 
-export default WebsitePage;
+export default Page;

@@ -28,7 +28,7 @@ export const Default: Story = {
 export const CustomUser: Story = {
   args: {
     userInitials: "ND",
-    userName: "NuDocuments Team",
+    userName: "Dokiments Team",
   },
   render: (args) => (
     <div className="bg-app-chrome">

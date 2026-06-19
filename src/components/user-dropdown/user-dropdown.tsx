@@ -1,4 +1,4 @@
-import { CaretDown, CaretDownIcon } from "@phosphor-icons/react";
+import { CaretDownIcon } from "@phosphor-icons/react";
 
 import { Dropdown } from "@/components/dropdown/dropdown";
 

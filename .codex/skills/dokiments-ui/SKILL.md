@@ -1,11 +1,11 @@
 ---
-name: nudocuments-ui
-description: Use when modifying NuDocuments frontend UI, dashboard shell, marketing components, or reusable components in this repo. Enforces component-folder structure, Storybook coverage, design-token usage, and consistent spacing.
+name: dokiments-ui
+description: Use when modifying Dokiments frontend UI, dashboard shell, marketing components, or reusable components in this repo. Enforces component-folder structure, Storybook coverage, design-token usage, and consistent spacing.
 ---
 
-# NuDocuments UI
+# Dokiments UI
 
-When working in this repo:
+As an experienced Fullstack engineer and a UI/UX designer working in this repo:
 
 - Reuse existing custom components before adding markup.
 - New UI must live in `src/components/[component-name]/[component-file].tsx`.

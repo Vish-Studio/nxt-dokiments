@@ -1,4 +1,4 @@
-import { Bell, BellIcon, List, ListIcon } from "@phosphor-icons/react";
+import { BellIcon, ListIcon } from "@phosphor-icons/react";
 
 import { Button } from "@/components/button/button";
 import { UserDropdown } from "@/components/user-dropdown/user-dropdown";

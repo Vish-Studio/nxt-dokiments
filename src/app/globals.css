@@ -1,7 +1,7 @@
 @import "tailwindcss";
 @plugin "daisyui";
 @plugin "daisyui/theme" {
-  name: "nudocuments";
+  name: "dokiments";
   default: true;
   prefersdark: false;
   color-scheme: light;
@@ -112,4 +112,137 @@ body {
   background: var(--background);
   color: var(--foreground);
   font-family: var(--font-body);
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+@keyframes website-reveal {
+  from {
+    opacity: 0;
+    filter: blur(10px);
+    transform: translateY(42px) scale(0.97);
+  }
+
+  to {
+    opacity: 1;
+    filter: blur(0);
+    transform: translateY(0);
+  }
+}
+
+@keyframes website-hero-copy {
+  from {
+    opacity: 0;
+    filter: blur(14px);
+    transform: translateY(34px);
+  }
+
+  to {
+    opacity: 1;
+    filter: blur(0);
+    transform: translateY(0);
+  }
+}
+
+@keyframes website-hero-visual {
+  from {
+    opacity: 0;
+    filter: blur(16px);
+    transform: translateX(42px) scale(0.94);
+  }
+
+  to {
+    opacity: 1;
+    filter: blur(0);
+    transform: translateX(0) scale(1);
+  }
+}
+
+@keyframes website-hero-sheen {
+  from {
+    transform: translateX(-120%) skewX(-18deg);
+  }
+
+  to {
+    transform: translateX(220%) skewX(-18deg);
+  }
+}
+
+@keyframes website-float {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0) rotate(0deg);
+  }
+
+  50% {
+    transform: translate3d(0, -16px, 0) rotate(1deg);
+  }
+}
+
+@keyframes website-drift {
+  from {
+    transform: translateX(-12%);
+  }
+
+  to {
+    transform: translateX(12%);
+  }
+}
+
+.website-reveal {
+  animation: website-reveal 0.95s cubic-bezier(0.2, 0.85, 0.2, 1);
+  animation-timeline: view();
+  animation-range: entry 0% cover 34%;
+}
+
+.website-hero-copy {
+  animation: website-hero-copy 0.95s cubic-bezier(0.2, 0.85, 0.2, 1) both;
+}
+
+.website-hero-visual {
+  animation: website-hero-visual 1s cubic-bezier(0.2, 0.85, 0.2, 1) 0.18s both;
+}
+
+.website-hero-proof {
+  animation: website-hero-copy 0.85s cubic-bezier(0.2, 0.85, 0.2, 1) 0.28s both;
+}
+
+.website-hero-sheen::after {
+  animation: website-hero-sheen 3.8s ease-in-out 1.15s infinite;
+  background: linear-gradient(90deg, transparent, rgb(255 255 255 / 0.38), transparent);
+  content: "";
+  inset: 0 auto 0 0;
+  position: absolute;
+  width: 34%;
+}
+
+.website-float {
+  animation: website-float 7s ease-in-out infinite;
+}
+
+.website-float-delayed {
+  animation: website-float 8s ease-in-out 0.8s infinite;
+}
+
+.website-drift {
+  animation: website-drift 12s ease-in-out alternate infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  .website-reveal,
+  .website-hero-copy,
+  .website-hero-visual,
+  .website-hero-proof,
+  .website-hero-sheen::after,
+  .website-float,
+  .website-float-delayed,
+  .website-drift {
+    animation: none;
+  }
 }

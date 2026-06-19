@@ -13,7 +13,7 @@ const elmsSans = Elms_Sans({
 });
 
 export const metadata: Metadata = {
-  title: "NuDocuments",
+  title: "Dokiments",
   description: "Document workflows for modern teams.",
 };
 
@@ -25,7 +25,7 @@ const RootLayout = ({
   return (
     <html
       lang="en"
-      data-theme="nudocuments"
+      data-theme="dokiments"
       className={`${hostGrotesk.variable} ${elmsSans.variable} h-full bg-background antialiased`}
     >
       <body className="min-h-full flex flex-col">{children}</body>

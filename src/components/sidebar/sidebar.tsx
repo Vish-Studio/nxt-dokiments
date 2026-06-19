@@ -60,7 +60,7 @@ export const Sidebar = ({
       >
         <div className="flex min-w-0 items-center gap-3">
           <button
-            aria-label={isCollapsed ? "Expand sidebar" : "NuDocuments home"}
+            aria-label={isCollapsed ? "Expand sidebar" : "Dokiments home"}
             className="flex size-9 shrink-0 items-center justify-center rounded-full bg-app-brand font-title text-sm font-bold text-app-brand-content transition-transform hover:scale-105 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-app-active"
             onClick={isCollapsed ? onToggleCollapse : undefined}
             type="button"
@@ -73,7 +73,7 @@ export const Sidebar = ({
               isCollapsed && "lg:sr-only lg:opacity-0",
             )}
           >
-            NuDocuments
+            Dokiments
           </span>
         </div>
         {isCollapsed && !isMobileOpen ? null : (

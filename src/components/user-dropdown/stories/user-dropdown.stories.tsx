@@ -23,6 +23,6 @@ export const Default: Story = {
 export const CompactName: Story = {
   args: {
     userInitials: "ND",
-    userName: "NuDocuments Team",
+    userName: "Dokiments Team",
   },
 };
