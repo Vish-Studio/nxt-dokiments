@@ -1,6 +1,6 @@
 "use client";
 
-import { CaretDownIcon, GearSixIcon, SignOutIcon, UserIcon } from "@phosphor-icons/react";
+import { CaretDownIcon, SignOutIcon, UserIcon } from "@phosphor-icons/react";
 import Link from "next/link";
 
 import { Dropdown } from "@/components/dropdown/dropdown";
@@ -51,12 +51,6 @@ export const UserDropdown = ({ userName = "Anthony Alverizko" }: UserDropdownPro
           <Link className={itemClassName} href="/settings">
             <UserIcon aria-hidden size={16} weight="bold" />
             Profile
-          </Link>
-        </li>
-        <li>
-          <Link className={itemClassName} href="/settings">
-            <GearSixIcon aria-hidden size={16} weight="bold" />
-            Account settings
           </Link>
         </li>
         <li>

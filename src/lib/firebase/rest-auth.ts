@@ -61,17 +61,24 @@ const userDocumentUrl = (uid: string) => {
 
 const mapFirebaseError = (message?: string) => {
   const errorMessages: Record<string, string> = {
+    CREDENTIAL_TOO_OLD_LOGIN_AGAIN:
+      "For your security, please sign out and sign in again before changing your password.",
     EMAIL_EXISTS: "An account already exists for this email.",
     EMAIL_NOT_FOUND: "No account was found for this email.",
+    INVALID_ID_TOKEN: "Your session is no longer valid. Please sign in again.",
     INVALID_LOGIN_CREDENTIALS: "The email or password is incorrect.",
     INVALID_PASSWORD: "The email or password is incorrect.",
     OPERATION_NOT_ALLOWED: "Email and password sign-in is not enabled in Firebase.",
+    TOKEN_EXPIRED: "Your session expired. Please sign in again.",
     TOO_MANY_ATTEMPTS_TRY_LATER: "Too many attempts. Please try again later.",
     USER_DISABLED: "This account has been disabled.",
     WEAK_PASSWORD: "Use a stronger password with at least 6 characters.",
   };
 
-  return errorMessages[message ?? ""] ?? "Something went wrong. Please try again.";
+  // Firebase often suffixes codes (e.g. "WEAK_PASSWORD : Password should be...").
+  const matchedCode = Object.keys(errorMessages).find((code) => message?.startsWith(code));
+
+  return matchedCode ? errorMessages[matchedCode] : "Something went wrong. Please try again.";
 };
 
 const requestJson = async <TResponse>(

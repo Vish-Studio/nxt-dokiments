@@ -65,7 +65,7 @@ export const AppShell = ({
               userInitials={userInitials}
               userName={displayName}
             />
-            <div className="flex min-h-0 flex-1 flex-col overflow-hidden bg-app-panel lg:mr-4 lg:mb-4 lg:rounded-2xl">
+            <div className="flex min-h-0 flex-1 flex-col overflow-hidden bg-app-panel lg:mr-4 lg:mb-4 lg:rounded-4xl">
               <ContentContainer>{children}</ContentContainer>
             </div>
           </section>
