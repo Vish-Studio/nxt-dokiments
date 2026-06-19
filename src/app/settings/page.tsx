@@ -5,8 +5,7 @@ const SettingsPage = () => {
   return (
     <AppShell
       activeItem="Settings"
-      description="Manage workspace preferences and account settings."
-      pageTitle="Settings"
+      description="Manage your account and preferences."
       title="Settings"
     >
       <SettingsTabs />

@@ -47,7 +47,17 @@ All UI components must reside exactly within one of these four subdirectories un
 - **Firebase Infrastructure:** Client integrations live in `src/lib/firebase`, consuming REST APIs wired through `NEXT_PUBLIC_FIREBASE_API_KEY`, `NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN`, and `NEXT_PUBLIC_FIREBASE_PROJECT_ID`.
 - **RBAC:** Application roles map to `superadmin`, `free`, `silver`, `gold`, and `special`. Defaults to `free`. Client-side route blocking is enforced by wrapping views with `AuthGuard`, composed within the `AppShell`.
 
-## 6. Verification Checklist
+## 6. Marketplace, Templates & Documents
+
+- **Template catalog:** Templates live in `src/lib/market-place/` as `<style>/<document>.ts` leaf files (e.g. `classic/contract.ts`), each composing a `style` (`styles.ts`) with a document `blueprint` (`documents.ts`, the shared field definitions). The barrel `index.ts` exposes helpers: `marketplaceTemplates`, `getTemplateById`, `listTemplatesByStyle`, `canUseTier`, `tierLabels`, `tierBadgeClasses`, `getSampleValues`. Add new documents by extending `documents.ts` + a leaf per style; add new styles by extending `styles.ts` + leaves.
+- **Sample content:** `sample-data.ts` holds realistic dummy values per document type. `TemplateThumbnail` and the preview default to these so users see a filled document, not empty placeholders.
+- **Styles & tiers:** Styles map to subscription tiers (Classic = free, Modern = silver, Minimal = gold). Tier badges use `tierBadgeClasses`: Free = green (`bg-success`), Silver = golden, Gold = bloodwood (mirrors the plan-card backgrounds). Gating is via `canUseTier(role, tier)` — any tier can be previewed, but saving/using a locked tier requires upgrading (`/subscription`).
+- **Marketplace layout:** Categorized by style; each style's cards render in a horizontal `Carousel`. The page opens with a squared accent-yellow overview banner.
+- **Preview:** Opens in the reusable right-hand `SidePanel` drawer (flat, slides in via `.side-panel-enter`), rendering the `TemplateDocument` with sample content.
+- **Persistence & flow:** Owned templates live in `templates-store` (ownership only — no values), created documents in `documents-store`; both are per-`uid` and persisted with zustand `persist`. Flow: Marketplace saves a template → **My Templates** is a read-only gallery of owned templates (thumbnails, no editing) → **Documents** creates/edits a concrete document from an owned template (name + `TemplateForm` on the left, live `TemplateDocument` render on the right).
+- **Reusable building blocks:** Prefer `PlanCard` (used by subscription + website pricing), `TemplateDocument` (style-aware renderer), `TemplateThumbnail`, `Carousel`, and `SidePanel` over re-implementing these patterns.
+
+## 7. Verification Checklist
 
 Before declaring a task complete, verify stability with:
 

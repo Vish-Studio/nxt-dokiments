@@ -3,7 +3,11 @@ import { MarketplaceBrowser } from "@/components/marketplace-browser/marketplace
 
 const MarketplacePage = () => {
   return (
-    <AppShell activeItem="Marketplace" title="Marketplace">
+    <AppShell
+      activeItem="Marketplace"
+      description="Ready-to-use business documents in three styles. Preview any template, then save the ones you need."
+      title="Marketplace"
+    >
       <MarketplaceBrowser />
     </AppShell>
   );

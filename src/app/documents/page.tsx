@@ -3,7 +3,11 @@ import { DocumentsView } from "@/components/documents-view/documents-view";
 
 const DocumentsPage = () => {
   return (
-    <AppShell activeItem="Documents" title="Documents">
+    <AppShell
+      activeItem="Documents"
+      description="Create and manage documents from your saved templates."
+      title="Documents"
+    >
       <DocumentsView />
     </AppShell>
   );

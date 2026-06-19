@@ -3,7 +3,7 @@ import Link from "next/link";
 
 import { Button } from "@/components/button/button";
 import { TemplateThumbnail } from "@/components/template-thumbnail/template-thumbnail";
-import { documentIcons, tierLabels } from "@/lib/market-place";
+import { documentIcons, tierBadgeClasses, tierLabels } from "@/lib/market-place";
 import { cn } from "@/lib/utils";
 import type { MarketplaceTemplate } from "@/types/template";
 
@@ -33,7 +33,7 @@ export const TemplateCard = ({
         <span
           className={cn(
             "absolute right-2 top-2 inline-flex items-center gap-1 rounded-field px-2 py-1 font-title text-[11px] font-semibold",
-            locked ? "bg-bloodwood-deep text-white" : "bg-base-100/90 text-nox-noir/70",
+            tierBadgeClasses[template.tier],
           )}
         >
           {locked ? <LockIcon aria-hidden size={11} weight="bold" /> : null}

@@ -23,6 +23,7 @@ import { modernQuotation } from "./modern/quotation";
 
 export { documentIcons } from "./documents";
 export { templateStyles } from "./styles";
+export { getSampleValues, sampleValues } from "./sample-data";
 
 export const marketplaceTemplates: MarketplaceTemplate[] = [
   classicContract,
@@ -68,6 +69,23 @@ export const tierLabels: Record<TemplateTier, string> = {
   gold: "Gold",
 };
 
+/**
+ * Tier badge colours. Free uses the conventional green; paid tiers mirror their
+ * subscription plan-card background (Silver = golden accent, Gold = bloodwood).
+ */
+export const tierBadgeClasses: Record<TemplateTier, string> = {
+  free: "bg-success text-success-content",
+  silver: "bg-golden-harvest text-bloodwood-deep",
+  gold: "bg-bloodwood-deep text-white",
+};
+
 /** Whether a user's role unlocks a given subscription tier. */
 export const canUseTier = (role: UserRole | undefined, tier: TemplateTier) =>
   roleRanks[role ?? "free"] >= tierRanks[tier];
+
+/** Free accounts may keep at most this many saved templates. */
+export const FREE_SAVED_TEMPLATE_LIMIT = 2;
+
+/** Max number of templates a user may save to their account (free is capped). */
+export const getSavedTemplateLimit = (role: UserRole | undefined) =>
+  !role || role === "free" ? FREE_SAVED_TEMPLATE_LIMIT : Number.POSITIVE_INFINITY;

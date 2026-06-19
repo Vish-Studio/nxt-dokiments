@@ -11,6 +11,7 @@ import Link from "next/link";
 
 import { ButtonIcon } from "@/components/button-icon/button-icon";
 import { SettingsNavItem } from "@/components/settings-nav-item/settings-nav-item";
+import { SidebarAccount } from "@/components/sidebar-account/sidebar-account";
 import { cn } from "@/lib/utils";
 
 type SidebarItem = {
@@ -138,6 +139,7 @@ export const Sidebar = ({
           isActive={activeItem === "Settings"}
           isCollapsed={isCollapsed}
         />
+        <SidebarAccount isCollapsed={isCollapsed} />
       </div>
     </aside>
   );

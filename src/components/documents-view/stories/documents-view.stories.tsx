@@ -52,8 +52,8 @@ export const Empty: Story = {
   ],
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    await expect(canvas.getByRole("heading", { name: "Documents" })).toBeVisible();
     await expect(canvas.getByText(/no documents yet/i)).toBeVisible();
+    await expect(canvas.getAllByRole("button", { name: /new document/i }).length).toBeGreaterThan(0);
   },
 };
 

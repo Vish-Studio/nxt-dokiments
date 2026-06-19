@@ -228,14 +228,13 @@ export const DocumentsView = () => {
   // --- Document list --------------------------------------------------------
   return (
     <div className="w-full">
-      <div className="flex flex-wrap items-end justify-between gap-3 border-b border-steel-mist pb-4">
-        <div>
-          <h3 className="font-title text-lg font-bold text-bloodwood-deep">Documents</h3>
-          <p className="mt-1 text-sm leading-6 text-nox-noir/60">
-            Documents you created from your saved templates.
-          </p>
-        </div>
-        <Button icon={<PlusIcon aria-hidden size={16} weight="bold" />} iconPosition="left" onClick={() => setMode("picker")} size="sm">
+      <div className="flex justify-end">
+        <Button
+          icon={<PlusIcon aria-hidden size={16} weight="bold" />}
+          iconPosition="left"
+          onClick={() => setMode("picker")}
+          size="sm"
+        >
           New document
         </Button>
       </div>

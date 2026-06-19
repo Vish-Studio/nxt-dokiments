@@ -1,4 +1,5 @@
 import { TemplateDocument } from "@/components/template-document/template-document";
+import { getSampleValues } from "@/lib/market-place";
 import { cn } from "@/lib/utils";
 import type { MarketplaceTemplate } from "@/types/template";
 
@@ -8,8 +9,13 @@ export type TemplateThumbnailProps = {
   values?: Record<string, string>;
 };
 
-/** A non-interactive, scaled-down preview of a rendered template. */
+/**
+ * A non-interactive, scaled-down preview of a rendered template. Defaults to
+ * sample content so marketplace previews show how a filled document looks.
+ */
 export const TemplateThumbnail = ({ className, template, values }: TemplateThumbnailProps) => {
+  const resolvedValues = values ?? getSampleValues(template.documentType);
+
   return (
     <div
       aria-hidden
@@ -19,7 +25,7 @@ export const TemplateThumbnail = ({ className, template, values }: TemplateThumb
       )}
     >
       <div className="pointer-events-none absolute left-0 top-0 w-[200%] origin-top-left scale-50">
-        <TemplateDocument template={template} values={values} />
+        <TemplateDocument template={template} values={resolvedValues} />
       </div>
     </div>
   );

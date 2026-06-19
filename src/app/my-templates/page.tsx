@@ -5,8 +5,7 @@ const MyTemplatesPage = () => {
   return (
     <AppShell
       activeItem="My Templates"
-      description="Organize templates saved to your account."
-      pageTitle="My Templates"
+      description="Templates saved to your account."
       title="My Templates"
     >
       <MyTemplatesView />

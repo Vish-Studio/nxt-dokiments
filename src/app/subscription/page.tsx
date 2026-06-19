@@ -6,7 +6,6 @@ const SubscriptionPage = () => {
     <AppShell
       activeItem="Subscription"
       description="Manage your plan and billing."
-      pageTitle="Subscription"
       title="Subscription"
     >
       <SubscriptionPlans />

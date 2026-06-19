@@ -4,7 +4,7 @@ const DashboardPage = () => {
   return (
     <AppShell
       activeItem="Dashboard"
-      pageTitle="Hello, Anthony!"
+      description="Your workspace at a glance."
       title="Dashboard"
     />
   );
