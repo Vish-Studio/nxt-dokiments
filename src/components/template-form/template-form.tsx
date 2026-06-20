@@ -20,7 +20,7 @@ export const TemplateForm = ({ fields, onChange, values }: TemplateFormProps) =>
                 </span>
               </span>
               <textarea
-                className="textarea min-h-28 w-full border border-steel-mist bg-base-200 text-base text-nox-noir transition-colors placeholder:text-nox-noir/40 focus:border-bloodwood-deep focus:bg-base-100 focus:outline-none focus:ring-2 focus:ring-bloodwood-deep/15"
+                className="textarea min-h-28 w-full border border-steel-mist bg-base-200 text-base text-nox-noir transition-colors placeholder:text-nox-noir/40 focus:border-nox-noir focus:bg-base-100 focus:outline-none focus:ring-2 focus:ring-nox-noir/15"
                 onChange={(event) => onChange(field.key, event.target.value)}
                 placeholder={field.placeholder}
                 value={values[field.key] ?? ""}

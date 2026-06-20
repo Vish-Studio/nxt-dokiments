@@ -20,6 +20,5 @@ export const Default: Story = {
       canvas.getByRole("heading", { name: /real templates/i }),
     ).toBeVisible();
     await expect(canvas.getAllByRole("button", { name: /preview/i }).length).toBeGreaterThan(3);
-    await expect(canvas.getAllByRole("link", { name: /save template/i }).length).toBeGreaterThan(3);
   },
 };

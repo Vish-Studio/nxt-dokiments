@@ -5,7 +5,7 @@ const MarketplacePage = () => {
   return (
     <AppShell
       activeItem="Marketplace"
-      description="Ready-to-use business documents in three styles. Preview any template, then save the ones you need."
+      description="Ready-to-use business documents in different styles that will fit your brand. Preview any template, then save the ones you need."
       title="Marketplace"
     >
       <MarketplaceBrowser />

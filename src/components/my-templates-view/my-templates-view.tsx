@@ -1,14 +1,21 @@
 "use client";
 
 import Link from "next/link";
+import { useState } from "react";
 
-import { TemplateThumbnail } from "@/components/template-thumbnail/template-thumbnail";
-import { getTemplateById, tierBadgeClasses, tierLabels } from "@/lib/market-place";
-import { cn } from "@/lib/utils";
+import { TemplateCard } from "@/components/template-card/template-card";
+import { TemplatePreviewDialog } from "@/components/template-preview-dialog/template-preview-dialog";
+import { getTemplateById } from "@/lib/market-place";
 import { useTemplateLibrary } from "@/stores/templates-store";
+import type { MarketplaceTemplate } from "@/types/template";
 
 export const MyTemplatesView = () => {
   const { saved } = useTemplateLibrary();
+  const [preview, setPreview] = useState<MarketplaceTemplate | null>(null);
+
+  const handlePrint = () => {
+    window.print();
+  };
 
   if (saved.length === 0) {
     return (
@@ -39,39 +46,24 @@ export const MyTemplatesView = () => {
           }
 
           return (
-            <article
-              className="flex flex-col rounded-box border border-steel-mist bg-base-100 p-4"
+            <TemplateCard
               key={item.savedId}
-            >
-              <div className="relative">
-                <TemplateThumbnail template={template} />
-                <span
-                  className={cn(
-                    "absolute right-2 top-2 inline-flex items-center rounded-field px-2 py-1 font-title text-[11px] font-semibold",
-                    tierBadgeClasses[template.tier],
-                  )}
-                >
-                  {tierLabels[template.tier]}
-                </span>
-              </div>
-
-              <div className="mt-4 min-w-0">
-                <h4 className="truncate font-title text-base font-bold text-nox-noir">
-                  {template.name}
-                </h4>
-                <p className="text-xs text-nox-noir/55">{template.style.name} style</p>
-              </div>
-
-              <Link
-                className="btn btn-sm btn-primary mt-4 font-title font-semibold tracking-normal"
-                href="/documents"
-              >
-                Use in document
-              </Link>
-            </article>
+              onPreview={() => setPreview(template)}
+              saved
+              template={template}
+            />
           );
         })}
       </div>
+
+      <TemplatePreviewDialog
+        mode="library"
+        onClose={() => setPreview(null)}
+        onPrint={handlePrint}
+        saved
+        template={preview}
+        useHref={preview ? `/documents?template=${preview.id}` : "/documents"}
+      />
     </div>
   );
 };

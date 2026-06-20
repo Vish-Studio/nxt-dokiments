@@ -75,8 +75,8 @@ export const Carousel = ({ ariaLabel, children, className, header }: CarouselPro
         </div>
       </div>
 
-      <div aria-label={ariaLabel} className="mt-4 overflow-hidden" ref={emblaRef}>
-        <div className="flex gap-4">{children}</div>
+      <div aria-label={ariaLabel} className="-mx-6 -my-6 mt-0 overflow-hidden px-6 py-6" ref={emblaRef}>
+        <div className="flex gap-6 overflow-visible">{children}</div>
       </div>
     </div>
   );

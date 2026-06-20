@@ -2,25 +2,49 @@
 
 import {
   ArrowRight,
-  BookmarkSimple,
-  Eye,
-  LockSimple,
 } from "@phosphor-icons/react/dist/ssr";
 import type { CSSProperties } from "react";
 import { useState } from "react";
 
-import { ButtonIcon } from "@/components/button-icon/button-icon";
+import { TemplateCard } from "@/components/template-card/template-card";
 import { TemplatePreviewDialog } from "@/components/template-preview-dialog/template-preview-dialog";
-import { TemplateThumbnail } from "@/components/template-thumbnail/template-thumbnail";
-import {
-  marketplaceTemplates,
-  tierBadgeClasses,
-  tierLabels,
-} from "@/lib/market-place";
+import { getTemplateById } from "@/lib/market-place";
 import { cn } from "@/lib/utils";
 import type { MarketplaceTemplate } from "@/types/template";
 
-const showcaseTemplates = marketplaceTemplates.slice(0, 5);
+const showcaseItems = [
+  {
+    className: "md:translate-y-10 md:rotate-[-3deg]",
+    id: "classic-proposal",
+    label: "Classic",
+  },
+  {
+    className: "md:-translate-y-2 md:rotate-[2deg]",
+    id: "modern-contract",
+    label: "Modern",
+  },
+  {
+    className: "md:translate-y-16 md:rotate-[3deg]",
+    id: "brutalist-change-order",
+    label: "Brutalist",
+  },
+  {
+    className: "md:translate-y-5 md:rotate-[-2deg]",
+    id: "minimalist-invoice",
+    label: "Minimalist",
+  },
+]
+  .map((item) => {
+    const template = getTemplateById(item.id);
+
+    return template ? { ...item, template } : null;
+  })
+  .filter((item): item is {
+    className: string;
+    id: string;
+    label: string;
+    template: MarketplaceTemplate;
+  } => Boolean(item));
 
 const getAuthUrl = (templateId: string) => {
   const next = `/marketplace?template=${encodeURIComponent(templateId)}`;
@@ -57,51 +81,25 @@ export const MarketplaceShowcase = () => {
           </div>
         </div>
 
-        <div className="mt-12 grid gap-4 md:grid-cols-2 xl:grid-cols-5">
-          {showcaseTemplates.map((template, index) => (
-            <article
-              className="website-card-reveal flex min-h-full flex-col rounded-box border border-steel-mist bg-base-100 p-4 transition-colors hover:bg-base-200"
-              key={template.id}
-              style={{ "--reveal-delay": `${index * 110}ms` } as CSSProperties}
+        <div className="mt-14 grid gap-8 overflow-visible md:grid-cols-2 xl:grid-cols-4 xl:items-start">
+          {showcaseItems.map((item, index) => (
+            <div
+              className={cn(
+                "website-card-reveal group relative flex flex-col items-center",
+                item.className,
+              )}
+              key={item.template.id}
+              style={{ "--reveal-delay": `${160 + index * 135}ms` } as CSSProperties}
             >
-              <div className="relative">
-                <TemplateThumbnail className="h-40" template={template} />
-                <span
-                  className={cn(
-                    "absolute right-2 top-2 inline-flex items-center gap-1 rounded-field px-2 py-1 font-title text-[11px] font-semibold",
-                    tierBadgeClasses[template.tier],
-                  )}
-                >
-                  {template.tier !== "free" ? <LockSimple aria-hidden size={11} weight="bold" /> : null}
-                  {tierLabels[template.tier]}
-                </span>
-              </div>
-
-              <div className="mt-4 flex flex-1 flex-col">
-                <p className="font-title text-base font-bold text-nox-noir">{template.name}</p>
-                <p className="mt-1 line-clamp-2 text-sm leading-6 text-nox-noir/60">
-                  {template.description}
-                </p>
-              </div>
-
-              <div className="mt-5 flex items-center gap-2">
-                <ButtonIcon
-                  aria-label={`Preview ${template.name}`}
-                  icon={<Eye aria-hidden size={17} weight="bold" />}
-                  onClick={() => setPreview(template)}
-                  shape="square"
-                  size="sm"
-                  variant="outline"
-                />
-                <a
-                  className="btn btn-sm btn-primary flex-1 font-title font-semibold tracking-normal"
-                  href={getAuthUrl(template.id)}
-                >
-                  <BookmarkSimple aria-hidden size={17} weight="bold" />
-                  Save template
-                </a>
-              </div>
-            </article>
+              <TemplateCard
+                className="w-60 sm:w-64 xl:w-72"
+                onPreview={() => setPreview(item.template)}
+                template={item.template}
+              />
+              <span className="mt-5 inline-flex rounded-full bg-nox-noir px-4 py-2 font-title text-xs font-bold uppercase tracking-normal text-golden-harvest transition group-hover:-translate-y-0.5">
+                {item.label}
+              </span>
+            </div>
           ))}
         </div>
       </div>

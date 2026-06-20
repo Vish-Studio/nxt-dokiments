@@ -20,12 +20,16 @@ export const TemplateThumbnail = ({ className, template, values }: TemplateThumb
     <div
       aria-hidden
       className={cn(
-        "relative h-44 overflow-hidden rounded-lg border border-steel-mist bg-base-200",
+        "relative aspect-[210/297] w-full overflow-visible bg-transparent",
         className,
       )}
     >
-      <div className="pointer-events-none absolute left-0 top-0 w-[200%] origin-top-left scale-50">
-        <TemplateDocument template={template} values={resolvedValues} />
+      <div className="pointer-events-none absolute left-0 top-0 h-[200%] w-[200%] origin-top-left scale-50 overflow-hidden">
+        <TemplateDocument
+          className="h-full min-h-full"
+          template={template}
+          values={resolvedValues}
+        />
       </div>
     </div>
   );

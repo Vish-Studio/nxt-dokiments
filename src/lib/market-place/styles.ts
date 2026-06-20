@@ -3,7 +3,7 @@ import type { TemplateStyle } from "@/types/template";
 export const classic: TemplateStyle = {
   description: "Clean, traditional layout with clearly separated sections.",
   id: "classic",
-  name: "Classic",
+  name: "Classic designs",
   tier: "free",
 };
 
@@ -14,11 +14,24 @@ export const modern: TemplateStyle = {
   tier: "silver",
 };
 
-export const minimal: TemplateStyle = {
-  description: "Spacious, understated typography for a premium feel.",
-  id: "minimal",
-  name: "Minimal",
+export const brutalist: TemplateStyle = {
+  description:
+    "High-contrast cards, assertive borders, and bold section treatments.",
+  id: "brutalist",
+  name: "Brutalist designs",
   tier: "gold",
 };
 
-export const templateStyles: TemplateStyle[] = [classic, modern, minimal];
+export const minimal: TemplateStyle = {
+  description: "Spacious, understated typography for a premium feel.",
+  id: "minimalist",
+  name: "Minimalist designs",
+  tier: "gold",
+};
+
+export const templateStyles: TemplateStyle[] = [
+  classic,
+  modern,
+  brutalist,
+  minimal,
+];

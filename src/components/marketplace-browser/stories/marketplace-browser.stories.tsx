@@ -12,7 +12,6 @@ const meta = {
   parameters: { layout: "fullscreen", nextjs: { appDirectory: true } },
   decorators: [
     (Story) => {
-      useTemplatesStore.setState({ savedByUser: {} });
       useAuthStore.setState({
         status: "authenticated",
         user: {
@@ -37,17 +36,39 @@ type Story = StoryObj<typeof meta>;
 export const FreeUser: Story = {
   beforeEach: () => {
     window.history.replaceState(null, "", "/");
+    useTemplatesStore.setState({ savedByUser: {} });
   },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    await expect(canvas.getByRole("heading", { name: "Classic" })).toBeVisible();
-    // Premium styles are locked for a free user.
-    await expect(canvas.getAllByRole("link", { name: /upgrade/i }).length).toBeGreaterThan(0);
+    await expect(canvas.getByRole("heading", { name: /classic/i })).toBeVisible();
+    await expect(canvas.getAllByRole("button", { name: /preview/i }).length).toBeGreaterThan(0);
+  },
+};
+
+export const SavedTemplatesFirst: Story = {
+  beforeEach: () => {
+    window.history.replaceState(null, "", "/");
+    useTemplatesStore.setState({
+      savedByUser: {
+        "story-uid": [
+          {
+            savedAt: Date.now(),
+            savedId: "saved-classic-invoice",
+            templateId: "classic-invoice",
+          },
+        ],
+      },
+    });
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await expect(canvas.getByRole("button", { name: /saved/i })).toBeVisible();
   },
 };
 
 export const PendingTemplateConfirmation: Story = {
   beforeEach: () => {
+    useTemplatesStore.setState({ savedByUser: {} });
     window.history.replaceState(null, "", "/marketplace?template=classic-invoice");
   },
   play: async ({ canvasElement }) => {

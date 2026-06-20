@@ -35,7 +35,7 @@ export const ProfileSummary = ({ user }: ProfileSummaryProps) => {
   return (
     <aside className="flex h-full flex-col rounded-box border border-steel-mist bg-base-100 p-6">
       <div className="flex items-center gap-4">
-        <span className="flex size-14 shrink-0 items-center justify-center rounded-full bg-bloodwood-deep font-title text-lg font-bold text-white">
+        <span className="flex size-14 shrink-0 items-center justify-center rounded-full bg-nox-noir font-title text-lg font-bold text-white">
           {user ? getInitials(user.displayName) : <UserIcon aria-hidden size={24} weight="bold" />}
         </span>
         <div className="min-w-0">
@@ -46,7 +46,7 @@ export const ProfileSummary = ({ user }: ProfileSummaryProps) => {
         </div>
       </div>
 
-      <span className="mt-4 inline-flex w-fit items-center rounded-box bg-golden-harvest px-3 py-1 font-title text-xs font-bold text-bloodwood-deep">
+      <span className="mt-4 inline-flex w-fit items-center rounded-box bg-golden-harvest px-3 py-1 font-title text-xs font-bold text-nox-noir">
         {user ? roleLabels[user.role] : "Free"} plan
       </span>
 

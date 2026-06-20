@@ -58,7 +58,7 @@ export const UpgradeDialog = ({
       />
 
       <div className="relative z-10 w-full max-w-sm rounded-box border border-steel-mist bg-base-100 p-6 text-center">
-        <div className="mx-auto flex size-12 items-center justify-center rounded-full bg-golden-harvest text-bloodwood-deep">
+        <div className="mx-auto flex size-12 items-center justify-center rounded-full bg-golden-harvest text-nox-noir">
           <CrownIcon aria-hidden size={24} weight="bold" />
         </div>
         <h3 className="mt-4 font-title text-lg font-bold text-nox-noir">{title}</h3>

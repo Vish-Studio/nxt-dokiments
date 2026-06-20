@@ -106,11 +106,11 @@ export const templateLayoutConfigs: Record<TemplateStyleCategory, TemplateLayout
     wrapperClassName: "bg-white text-nox-noir",
   },
   classic: {
-    accentClassName: "bg-golden-harvest text-bloodwood-deep",
+    accentClassName: "bg-golden-harvest text-nox-noir",
     bannerTreatment: "left-rail",
     borderClassName: "border border-steel-mist",
     cardClassName: "bg-base-100 text-nox-noir shadow-none",
-    controlClassName: "bg-bloodwood-deep text-white border border-bloodwood-deep",
+    controlClassName: "bg-nox-noir text-white border border-nox-noir",
     fontPairing: {
       body: "font-body",
       heading: "font-title",

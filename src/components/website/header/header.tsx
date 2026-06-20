@@ -23,10 +23,7 @@ export const Header = () => {
       <header className="fixed top-0 left-0 right-0 z-40 bg-nox-noir text-white">
         <div className="mx-auto flex h-20 max-w-8xl items-center justify-between gap-6 px-5 sm:px-8 lg:px-10">
           <a className="flex items-center gap-3" href="#top" aria-label="Dokiments home">
-            <span className="flex size-10 items-center justify-center rounded-full bg-golden-harvest font-logo text-sm font-black text-nox-noir transition-transform hover:scale-105">
-              D
-            </span>
-            <span className="font-logo text-lg font-black text-white">
+            <span className="font-logo text-3xl font-black text-white">
               Dokiments
             </span>
           </a>

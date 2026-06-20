@@ -5,43 +5,24 @@ import type {
 } from "@/types/template";
 import type { UserRole } from "@/types/auth";
 
-import { classicContract } from "./classic/contract";
-import { classicInvoice } from "./classic/invoice";
-import { classicNda } from "./classic/nda";
-import { classicProposal } from "./classic/proposal";
-import { classicQuotation } from "./classic/quotation";
-import { minimalContract } from "./minimal/contract";
-import { minimalInvoice } from "./minimal/invoice";
-import { minimalNda } from "./minimal/nda";
-import { minimalProposal } from "./minimal/proposal";
-import { minimalQuotation } from "./minimal/quotation";
-import { modernContract } from "./modern/contract";
-import { modernInvoice } from "./modern/invoice";
-import { modernNda } from "./modern/nda";
-import { modernProposal } from "./modern/proposal";
-import { modernQuotation } from "./modern/quotation";
+import { documentBlueprints } from "./documents";
+import { templateStyles } from "./styles";
 
 export { documentIcons } from "./documents";
 export { templateStyles } from "./styles";
 export { getSampleValues, sampleValues } from "./sample-data";
 
-export const marketplaceTemplates: MarketplaceTemplate[] = [
-  classicContract,
-  classicProposal,
-  classicQuotation,
-  classicInvoice,
-  classicNda,
-  modernContract,
-  modernProposal,
-  modernQuotation,
-  modernInvoice,
-  modernNda,
-  minimalContract,
-  minimalProposal,
-  minimalQuotation,
-  minimalInvoice,
-  minimalNda,
-];
+export const marketplaceTemplates: MarketplaceTemplate[] = templateStyles.flatMap((style) =>
+  Object.values(documentBlueprints).map((blueprint) => ({
+    description: blueprint.description,
+    documentType: blueprint.type,
+    fields: blueprint.fields,
+    id: `${style.id}-${blueprint.type}`,
+    name: blueprint.name,
+    style,
+    tier: style.tier,
+  })),
+);
 
 export const getTemplateById = (templateId: string): MarketplaceTemplate | undefined =>
   marketplaceTemplates.find((template) => template.id === templateId);
@@ -59,24 +40,24 @@ const roleRanks: Record<UserRole, number> = {
 
 const tierRanks: Record<TemplateTier, number> = {
   free: 0,
-  silver: 1,
   gold: 2,
+  silver: 1,
 };
 
 export const tierLabels: Record<TemplateTier, string> = {
   free: "Free",
-  silver: "Silver",
   gold: "Gold",
+  silver: "Silver",
 };
 
 /**
  * Tier badge colours. Free uses the conventional green; paid tiers mirror their
- * subscription plan-card background (Silver = golden accent, Gold = bloodwood).
+ * subscription plan-card background (Silver = golden accent, Gold = noir).
  */
 export const tierBadgeClasses: Record<TemplateTier, string> = {
   free: "bg-success text-success-content",
-  silver: "bg-golden-harvest text-bloodwood-deep",
-  gold: "bg-bloodwood-deep text-white",
+  gold: "bg-nox-noir text-white",
+  silver: "bg-golden-harvest text-nox-noir",
 };
 
 /** Whether a user's role unlocks a given subscription tier. */

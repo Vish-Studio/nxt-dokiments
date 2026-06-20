@@ -33,7 +33,7 @@ export type AppShellProps = {
 };
 
 const pageThemes: Record<string, { Icon: Icon; tone: PageBannerTone; variant?: PageBannerVariant }> = {
-  Dashboard: { Icon: HouseIcon, tone: "bloodwood" },
+  Dashboard: { Icon: HouseIcon, tone: "golden" },
   Documents: { Icon: FileTextIcon, tone: "blue" },
   "My Templates": { Icon: LayoutIcon, tone: "pink" },
   Marketplace: { Icon: StorefrontIcon, tone: "golden" },

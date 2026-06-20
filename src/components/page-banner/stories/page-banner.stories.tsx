@@ -33,10 +33,6 @@ export const Golden: Story = {
   },
 };
 
-export const Bloodwood: Story = {
-  args: { title: "Dashboard", tone: "bloodwood" },
-};
-
 export const Noir: Story = {
   args: { title: "Settings", tone: "noir" },
 };

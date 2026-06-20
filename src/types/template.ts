@@ -1,8 +1,23 @@
-export const documentTypes = ["contract", "proposal", "quotation", "invoice", "nda"] as const;
+export const documentTypes = [
+  "contract",
+  "proposal",
+  "nda",
+  "statement-of-work",
+  "invoice",
+  "quotation",
+  "receipt",
+  "change-order",
+  "contract-addendum",
+  "letter-of-intent",
+  "project-status-report",
+  "meeting-minutes-action-brief",
+  "formal-business-letter",
+  "purchase-order",
+] as const;
 
 export type DocumentType = (typeof documentTypes)[number];
 
-export const templateStyleIds = ["classic", "modern", "minimal"] as const;
+export const templateStyleIds = ["classic", "modern", "brutalist", "minimalist"] as const;
 
 export type TemplateStyleId = (typeof templateStyleIds)[number];
 

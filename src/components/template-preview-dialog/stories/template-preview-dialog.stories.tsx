@@ -36,3 +36,12 @@ export const Locked: Story = {
     await expect(canvas.getByRole("link", { name: /upgrade to use/i })).toBeVisible();
   },
 };
+
+export const LibraryActions: Story = {
+  args: { mode: "library", onPrint: () => {}, useHref: "/documents?template=modern-quotation" },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await expect(canvas.getByRole("button", { name: /print template/i })).toBeVisible();
+    await expect(canvas.getByRole("link", { name: /use document/i })).toBeVisible();
+  },
+};

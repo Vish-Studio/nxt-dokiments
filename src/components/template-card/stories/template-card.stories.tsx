@@ -21,7 +21,6 @@ const meta = {
   ],
   args: {
     onPreview: () => {},
-    onSave: () => {},
     template,
   },
 } satisfies Meta<typeof TemplateCard>;
@@ -33,7 +32,7 @@ export const Default: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     await expect(canvas.getByRole("button", { name: /preview/i })).toBeVisible();
-    await expect(canvas.getByRole("button", { name: /save template/i })).toBeVisible();
+    await expect(canvas.queryByText(template.name)).toBeNull();
   },
 };
 
@@ -41,7 +40,7 @@ export const Locked: Story = {
   args: { locked: true },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    await expect(canvas.getByRole("link", { name: /upgrade/i })).toBeVisible();
+    await expect(canvas.getByRole("button", { name: /locked/i })).toBeVisible();
   },
 };
 
@@ -49,6 +48,6 @@ export const Saved: Story = {
   args: { saved: true },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    await expect(canvas.getByRole("link", { name: /saved/i })).toBeVisible();
+    await expect(canvas.getByRole("button", { name: /saved/i })).toBeVisible();
   },
 };

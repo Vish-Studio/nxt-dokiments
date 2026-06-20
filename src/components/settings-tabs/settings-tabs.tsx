@@ -46,8 +46,8 @@ export const SettingsTabs = ({ defaultTab = "profile" }: SettingsTabsProps) => {
               className={cn(
                 "-mb-px inline-flex items-center gap-2 border-b-2 px-1 pb-3 font-title text-sm font-semibold transition-colors",
                 isActive
-                  ? "border-bloodwood-deep text-bloodwood-deep"
-                  : "border-transparent text-nox-noir/50 hover:text-bloodwood-deep",
+                  ? "border-nox-noir text-nox-noir"
+                  : "border-transparent text-nox-noir/50 hover:text-nox-noir",
               )}
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}

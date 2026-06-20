@@ -51,7 +51,7 @@ export const PasswordSettings = () => {
   return (
     <section className="max-w-md">
       <div className="border-b border-steel-mist pb-4">
-        <h3 className="font-title text-lg font-bold text-bloodwood-deep">Password</h3>
+        <h3 className="font-title text-lg font-bold text-nox-noir">Password</h3>
         <p className="mt-1 text-sm leading-6 text-nox-noir/60">
           Choose a new password with at least 6 characters.
         </p>

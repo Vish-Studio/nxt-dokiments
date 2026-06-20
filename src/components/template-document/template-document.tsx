@@ -18,25 +18,34 @@ type StyleConfig = {
 };
 
 const styleConfig: Record<TemplateStyleId, StyleConfig> = {
+  brutalist: {
+    body: "p-6",
+    eyebrow: "font-title text-xs font-black uppercase tracking-widest text-nox-noir",
+    header: "border-b-2 border-nox-noir bg-play-pink px-6 py-6",
+    label: "font-title text-[11px] font-black uppercase tracking-wide text-nox-noir",
+    paper: "rounded-md border-2 border-nox-noir",
+    sectionTitle: "font-title text-sm font-black uppercase text-nox-noir",
+    title: "mt-1 font-title text-2xl font-black text-nox-noir",
+  },
   classic: {
     body: "p-8 pt-6",
-    eyebrow: "font-title text-xs font-bold uppercase tracking-widest text-bloodwood-deep",
-    header: "border-b-2 border-bloodwood-deep px-8 pb-4 pt-8",
+    eyebrow: "font-title text-xs font-bold uppercase tracking-widest text-nox-noir",
+    header: "border-b-2 border-nox-noir px-8 pb-4 pt-8",
     label: "font-title text-xs font-semibold uppercase tracking-wide text-nox-noir/45",
     paper: "rounded-box border border-steel-mist",
-    sectionTitle: "font-title text-sm font-bold text-bloodwood-deep",
+    sectionTitle: "font-title text-sm font-bold text-nox-noir",
     title: "mt-1 font-title text-2xl font-bold text-nox-noir",
   },
   modern: {
     body: "p-6",
     eyebrow: "font-title text-xs font-bold uppercase tracking-widest text-golden-harvest",
-    header: "bg-bloodwood-deep px-6 py-6 text-white",
+    header: "bg-nox-noir px-6 py-6 text-white",
     label: "font-title text-xs font-semibold uppercase tracking-wide text-nox-noir/45",
     paper: "overflow-hidden rounded-box border border-steel-mist",
-    sectionTitle: "font-title text-sm font-bold text-bloodwood-deep",
+    sectionTitle: "font-title text-sm font-bold text-nox-noir",
     title: "mt-1 font-title text-2xl font-bold text-white",
   },
-  minimal: {
+  minimalist: {
     body: "px-10 pb-10 pt-4",
     eyebrow: "font-title text-[11px] font-semibold uppercase tracking-[0.3em] text-nox-noir/40",
     header: "px-10 pb-6 pt-10",

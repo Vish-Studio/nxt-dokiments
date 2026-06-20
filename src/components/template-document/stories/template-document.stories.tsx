@@ -30,9 +30,10 @@ export const Empty: Story = {};
 export const Filled: Story = {
   args: {
     values: {
-      clientName: "Acme Co.",
+      fromName: "Dokiments Studio",
       scope: "Design and build a marketing website.",
       title: "Website Build Agreement",
+      toName: "Acme Co.",
     },
   },
   play: async ({ canvasElement }) => {

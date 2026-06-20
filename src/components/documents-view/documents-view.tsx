@@ -2,14 +2,14 @@
 
 import { ArrowLeftIcon, PlusIcon, TrashIcon } from "@phosphor-icons/react";
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 import { Button } from "@/components/button/button";
-import { ButtonIcon } from "@/components/button-icon/button-icon";
 import { Input } from "@/components/input/input";
+import { TemplateCard } from "@/components/template-card/template-card";
 import { TemplateDocument } from "@/components/template-document/template-document";
 import { TemplateForm } from "@/components/template-form/template-form";
-import { TemplateThumbnail } from "@/components/template-thumbnail/template-thumbnail";
+import { TemplatePreviewDialog } from "@/components/template-preview-dialog/template-preview-dialog";
 import { getTemplateById } from "@/lib/market-place";
 import { useAuthStore } from "@/stores/auth-store";
 import { useDocumentsStore, useUserDocuments } from "@/stores/documents-store";
@@ -32,10 +32,16 @@ export const DocumentsView = () => {
   const [draftName, setDraftName] = useState("");
   const [draftValues, setDraftValues] = useState<Record<string, string>>({});
   const [isSavedFlash, setIsSavedFlash] = useState(false);
+  const [previewTemplate, setPreviewTemplate] = useState<MarketplaceTemplate | null>(null);
+  const [previewDocument, setPreviewDocument] = useState<UserDocument | null>(null);
 
-  const ownedTemplates = saved
-    .map((item) => getTemplateById(item.templateId))
-    .filter((template): template is MarketplaceTemplate => Boolean(template));
+  const ownedTemplates = useMemo(
+    () =>
+      saved
+        .map((item) => getTemplateById(item.templateId))
+        .filter((template): template is MarketplaceTemplate => Boolean(template)),
+    [saved],
+  );
 
   const goToList = () => {
     setMode("list");
@@ -52,6 +58,26 @@ export const DocumentsView = () => {
     setIsSavedFlash(false);
     setMode("editor");
   };
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const templateId = params.get("template");
+
+    if (!templateId || ownedTemplates.length === 0) {
+      return;
+    }
+
+    const template = ownedTemplates.find((item) => item.id === templateId);
+
+    if (!template) {
+      return;
+    }
+
+    const nextUrl = new URL(window.location.href);
+    nextUrl.searchParams.delete("template");
+    window.history.replaceState(null, "", `${nextUrl.pathname}${nextUrl.search}`);
+    window.setTimeout(() => startNewDocument(template), 0);
+  }, [ownedTemplates]);
 
   const openDocument = (document: UserDocument) => {
     setActiveTemplateId(document.templateId);
@@ -87,6 +113,17 @@ export const DocumentsView = () => {
     setIsSavedFlash(true);
   };
 
+  const handleUsePreviewTemplate = () => {
+    const template = previewTemplate;
+
+    if (!template) {
+      return;
+    }
+
+    setPreviewTemplate(null);
+    startNewDocument(template);
+  };
+
   // --- Editor ---------------------------------------------------------------
   const editorTemplate = activeTemplateId ? getTemplateById(activeTemplateId) : null;
 
@@ -94,7 +131,7 @@ export const DocumentsView = () => {
     return (
       <div className="w-full">
         <button
-          className="inline-flex items-center gap-2 font-title text-sm font-semibold text-nox-noir/60 transition-colors hover:text-bloodwood-deep"
+          className="inline-flex items-center gap-2 font-title text-sm font-semibold text-nox-noir/60 transition-colors hover:text-nox-noir"
           onClick={goToList}
           type="button"
         >
@@ -170,7 +207,7 @@ export const DocumentsView = () => {
     return (
       <div className="w-full">
         <button
-          className="inline-flex items-center gap-2 font-title text-sm font-semibold text-nox-noir/60 transition-colors hover:text-bloodwood-deep"
+          className="inline-flex items-center gap-2 font-title text-sm font-semibold text-nox-noir/60 transition-colors hover:text-nox-noir"
           onClick={goToList}
           type="button"
         >
@@ -179,7 +216,7 @@ export const DocumentsView = () => {
         </button>
 
         <div className="mt-5 border-b border-steel-mist pb-4">
-          <h3 className="font-title text-lg font-bold text-bloodwood-deep">Choose a template</h3>
+          <h3 className="font-title text-lg font-bold text-nox-noir">Choose a template</h3>
           <p className="mt-1 text-sm leading-6 text-nox-noir/60">
             Start a new document from one of your saved templates.
           </p>
@@ -201,26 +238,24 @@ export const DocumentsView = () => {
         ) : (
           <div className="mt-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
             {ownedTemplates.map((template) => (
-              <article
-                className="flex flex-col rounded-box border border-steel-mist bg-base-100 p-4"
+              <TemplateCard
                 key={template.id}
-              >
-                <TemplateThumbnail template={template} />
-                <h4 className="mt-4 font-title text-base font-bold text-nox-noir">
-                  {template.name}
-                </h4>
-                <p className="text-xs text-nox-noir/55">{template.style.name}</p>
-                <Button
-                  className="mt-4"
-                  onClick={() => startNewDocument(template)}
-                  size="sm"
-                >
-                  Use this template
-                </Button>
-              </article>
+                onPreview={() => setPreviewTemplate(template)}
+                saved
+                template={template}
+              />
             ))}
           </div>
         )}
+
+        <TemplatePreviewDialog
+          mode="library"
+          onClose={() => setPreviewTemplate(null)}
+          onPrint={() => window.print()}
+          onUse={handleUsePreviewTemplate}
+          saved
+          template={previewTemplate}
+        />
       </div>
     );
   }
@@ -259,37 +294,36 @@ export const DocumentsView = () => {
             }
 
             return (
-              <article
-                className="flex flex-col rounded-box border border-steel-mist bg-base-100 p-4"
+              <TemplateCard
                 key={document.id}
-              >
-                <TemplateThumbnail template={template} values={document.values} />
-
-                <div className="mt-4 flex items-start justify-between gap-2">
-                  <div className="min-w-0">
-                    <h4 className="truncate font-title text-base font-bold text-nox-noir">
-                      {document.name}
-                    </h4>
-                    <p className="text-xs text-nox-noir/55">{template.name}</p>
-                  </div>
-                  <ButtonIcon
-                    aria-label={`Delete ${document.name}`}
-                    icon={<TrashIcon aria-hidden size={16} weight="bold" />}
-                    onClick={() => handleRemove(document.id)}
-                    shape="square"
-                    size="sm"
-                    variant="outline"
-                  />
-                </div>
-
-                <Button className="mt-4" onClick={() => openDocument(document)} size="sm">
-                  Open
-                </Button>
-              </article>
+                onPreview={() => setPreviewDocument(document)}
+                template={template}
+                values={document.values}
+              />
             );
           })}
         </div>
       )}
+
+      <TemplatePreviewDialog
+        documentName={previewDocument?.name}
+        mode="document"
+        onClose={() => setPreviewDocument(null)}
+        onDelete={() => {
+          if (previewDocument) {
+            handleRemove(previewDocument.id);
+            setPreviewDocument(null);
+          }
+        }}
+        onEdit={() => {
+          if (previewDocument) {
+            openDocument(previewDocument);
+            setPreviewDocument(null);
+          }
+        }}
+        template={previewDocument ? (getTemplateById(previewDocument.templateId) ?? null) : null}
+        values={previewDocument?.values}
+      />
     </div>
   );
 };

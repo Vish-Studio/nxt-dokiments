@@ -8,7 +8,6 @@ import { cn } from "@/lib/utils";
 
 export type PageBannerTone =
   | "golden"
-  | "bloodwood"
   | "noir"
   | "pink"
   | "teal"
@@ -41,10 +40,10 @@ const toneStyles: Record<PageBannerTone, ToneStyle> = {
       soft: "border border-golden-harvest/40 bg-golden-harvest/18",
       outline: "border border-golden-harvest bg-transparent",
     },
-    description: "text-bloodwood-deep/75",
-    iconWrap: "bg-bloodwood-deep text-golden-harvest",
-    title: "text-bloodwood-deep",
-    toggle: "border-bloodwood-deep/20 text-bloodwood-deep hover:bg-bloodwood-deep/10",
+    description: "text-nox-noir/75",
+    iconWrap: "bg-nox-noir text-golden-harvest",
+    title: "text-nox-noir",
+    toggle: "border-nox-noir/20 text-nox-noir hover:bg-nox-noir/10",
   },
   pink: {
     container: {
@@ -89,17 +88,6 @@ const toneStyles: Record<PageBannerTone, ToneStyle> = {
     iconWrap: "bg-nox-noir text-play-blue",
     title: "text-nox-noir",
     toggle: "border-nox-noir/20 text-nox-noir hover:bg-nox-noir/10",
-  },
-  bloodwood: {
-    container: {
-      solid: "bg-bloodwood-deep",
-      soft: "border border-bloodwood-deep/20 bg-bloodwood-deep/8",
-      outline: "border border-bloodwood-deep bg-transparent",
-    },
-    description: "text-white/70",
-    iconWrap: "bg-golden-harvest text-bloodwood-deep",
-    title: "text-white group-data-[variant=soft]:text-bloodwood-deep group-data-[variant=outline]:text-bloodwood-deep",
-    toggle: "border-white/20 text-white hover:bg-white/10",
   },
   noir: {
     container: {

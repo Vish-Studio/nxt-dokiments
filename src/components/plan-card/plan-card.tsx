@@ -36,25 +36,25 @@ type VariantStyle = {
 
 const variantStyles: Record<PlanCardVariant, VariantStyle> = {
   default: {
-    badge: "bg-bloodwood-deep text-white",
+    badge: "bg-nox-noir text-white",
     card: "border-steel-mist bg-base-100 text-nox-noir",
-    check: "text-bloodwood-deep",
-    cta: "bg-bloodwood-deep text-white hover:bg-nox-noir",
+    check: "text-nox-noir",
+    cta: "bg-nox-noir text-white hover:bg-nox-noir",
     muted: "text-nox-noir/60",
   },
   featured: {
-    badge: "bg-golden-harvest text-bloodwood-deep",
-    card: "border-bloodwood-deep bg-bloodwood-deep text-white",
+    badge: "bg-golden-harvest text-nox-noir",
+    card: "border-nox-noir bg-nox-noir text-white",
     check: "text-golden-harvest",
-    cta: "bg-golden-harvest text-bloodwood-deep hover:brightness-105",
+    cta: "bg-golden-harvest text-nox-noir hover:brightness-105",
     muted: "text-white/70",
   },
   accent: {
-    badge: "bg-bloodwood-deep text-golden-harvest",
-    card: "border-golden-harvest bg-golden-harvest text-bloodwood-deep",
-    check: "text-bloodwood-deep",
-    cta: "bg-bloodwood-deep text-golden-harvest hover:bg-nox-noir",
-    muted: "text-bloodwood-deep/70",
+    badge: "bg-nox-noir text-golden-harvest",
+    card: "border-golden-harvest bg-golden-harvest text-nox-noir",
+    check: "text-nox-noir",
+    cta: "bg-nox-noir text-golden-harvest hover:bg-nox-noir",
+    muted: "text-nox-noir/70",
   },
 };
 

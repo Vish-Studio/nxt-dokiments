@@ -9,20 +9,20 @@
   --color-base-200: #f6f6f6;
   --color-base-300: #cfcfcf;
   --color-base-content: #141414;
-  --color-primary: #200d2d;
+  --color-primary: #141414;
   --color-primary-content: #ffffff;
   --color-secondary: #ffd066;
-  --color-secondary-content: #200d2d;
+  --color-secondary-content: #141414;
   --color-accent: #141414;
   --color-accent-content: #ffffff;
   --color-neutral: #141414;
   --color-neutral-content: #ffffff;
-  --color-info: #200d2d;
+  --color-info: #141414;
   --color-info-content: #ffffff;
   --color-success: #16a34a;
   --color-success-content: #ffffff;
   --color-warning: #ffd066;
-  --color-warning-content: #200d2d;
+  --color-warning-content: #141414;
   --color-error: #b42318;
   --color-error-content: #ffffff;
   --radius-selector: 0.5rem;
@@ -41,7 +41,6 @@
   --font-title: var(--font-urbanist), "Urbanist", Arial, Helvetica, sans-serif;
   --font-body: var(--font-urbanist), "Urbanist", Arial, Helvetica, sans-serif;
   --font-logo: var(--font-raleway), "Raleway", Arial, Helvetica, sans-serif;
-  --color-bloodwood-deep: #200d2d;
   --color-golden-harvest: #ffd066;
   --color-nox-noir: #141414;
   --color-steel-mist: #cfcfcf;
@@ -57,16 +56,15 @@
   --color-app-nav: rgb(255 255 255 / 0.75);
   --color-app-nav-hover: rgb(255 255 255 / 0.1);
   --color-app-active: var(--color-golden-harvest);
-  --color-app-active-content: var(--color-bloodwood-deep);
+  --color-app-active-content: var(--color-nox-noir);
   --color-app-brand: var(--color-golden-harvest);
-  --color-app-brand-content: var(--color-bloodwood-deep);
+  --color-app-brand-content: var(--color-nox-noir);
   --shadow-soft: 0 16px 40px rgb(20 20 20 / 0.08);
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --color-bloodwood-deep: var(--color-bloodwood-deep);
   --color-golden-harvest: var(--color-golden-harvest);
   --color-nox-noir: var(--color-nox-noir);
   --color-steel-mist: var(--color-steel-mist);

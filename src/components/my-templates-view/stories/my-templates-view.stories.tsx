@@ -64,7 +64,6 @@ export const WithTemplates: Story = {
   ],
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    await expect(canvas.getByRole("heading", { name: "Contract" })).toBeVisible();
-    await expect(canvas.getByRole("link", { name: /use in document/i })).toBeVisible();
+    await expect(canvas.getByRole("button", { name: /preview contract/i })).toBeVisible();
   },
 };

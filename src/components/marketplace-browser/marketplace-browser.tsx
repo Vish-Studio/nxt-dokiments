@@ -94,7 +94,16 @@ export const MarketplaceBrowser = () => {
     <div className="flex w-full min-w-0 flex-col gap-10 md:gap-18 lg:gap-24 mt-10">
       {templateStyles.map((style) => {
           const locked = !canUseTier(user?.role, style.tier);
-          const templates = listTemplatesByStyle(style.id);
+          const templates = [...listTemplatesByStyle(style.id)].sort((a, b) => {
+            const aSaved = savedIds.has(a.id);
+            const bSaved = savedIds.has(b.id);
+
+            if (aSaved === bSaved) {
+              return a.name.localeCompare(b.name);
+            }
+
+            return aSaved ? -1 : 1;
+          });
 
           return (
             <Carousel
@@ -102,7 +111,7 @@ export const MarketplaceBrowser = () => {
               header={
                 <div>
                   <div className="flex items-center gap-2">
-                    <h4 className="font-title text-base font-bold text-nox-noir">{style.name}</h4>
+                    <h4 className="font-title text-2xl font-bold text-nox-noir">{style.name}</h4>
                     <span
                       className={cn(
                         "inline-flex items-center gap-1 rounded-field px-2.5 py-1 font-title text-xs font-semibold",
@@ -119,11 +128,10 @@ export const MarketplaceBrowser = () => {
               key={style.id}
             >
               {templates.map((template) => (
-                <div className="w-72 shrink-0" key={template.id}>
+                <div className="flex w-76 shrink-0" key={template.id}>
                   <TemplateCard
                     locked={locked}
                     onPreview={() => setPreview(template)}
-                    onSave={() => handleSave(template)}
                     saved={savedIds.has(template.id)}
                     template={template}
                   />

@@ -90,7 +90,7 @@ export const ProfileSettings = () => {
   return (
     <div className="w-full">
       <div className="pb-4">
-        <h3 className="font-title text-lg font-bold text-bloodwood-deep">Profile</h3>
+        <h3 className="font-title text-lg font-bold text-nox-noir">Profile</h3>
         <p className="mt-1 text-sm leading-6 text-nox-noir/60">
           Add your contact and business details. This information stays on your account.
         </p>
