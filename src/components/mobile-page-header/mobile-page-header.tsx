@@ -4,27 +4,18 @@ import { ListIcon } from "@phosphor-icons/react";
 import type { Icon } from "@phosphor-icons/react";
 
 import { ButtonIcon } from "@/components/button-icon/button-icon";
+import type { PageBannerTone, PageBannerVariant } from "@/components/page-banner/page-banner";
 import { cn } from "@/lib/utils";
 
-export type PageBannerTone =
-  | "golden"
-  | "noir"
-  | "pink"
-  | "teal"
-  | "purple"
-  | "blue"
-  | "mist";
-export type PageBannerVariant = "solid" | "soft" | "outline";
-
-export type PageBannerProps = {
-  className?: string;
+export interface MobilePageHeaderProps {
   description?: string;
   icon?: Icon;
-  onOpenNavigation?: () => void;
+  isCompact?: boolean;
+  onOpenNavigation: () => void;
   title: string;
   tone?: PageBannerTone;
   variant?: PageBannerVariant;
-};
+}
 
 type ToneStyle = {
   container: Record<PageBannerVariant, string>;
@@ -114,61 +105,73 @@ const toneStyles: Record<PageBannerTone, ToneStyle> = {
   },
 };
 
-export const PageBanner = ({
-  className,
+export const MobilePageHeader = ({
   description,
-  icon: BannerIcon,
+  icon: HeaderIcon,
+  isCompact = false,
   onOpenNavigation,
   title,
   tone = "golden",
   variant = "solid",
-}: PageBannerProps) => {
+}: MobilePageHeaderProps) => {
   const style = toneStyles[tone];
 
   return (
-    <section
+    <header
       className={cn(
-        "group flex items-start gap-4 rounded-box p-6 sm:p-8",
+        "sticky top-0 z-20 rounded-box transition-all duration-300 ease-out lg:hidden",
         style.container[variant],
-        className,
+        isCompact ? "p-3 shadow-[0_12px_30px_rgb(20_20_20_/_0.10)]" : "p-5",
       )}
       data-variant={variant}
     >
-      {onOpenNavigation ? (
+      <div className="flex items-start gap-3">
         <ButtonIcon
           aria-label="Open navigation"
-          className={cn("border bg-transparent lg:hidden", style.toggle)}
+          className={cn("shrink-0 border bg-transparent", style.toggle)}
           icon={<ListIcon aria-hidden size={18} weight="bold" />}
           onClick={onOpenNavigation}
           variant="ghost"
         />
-      ) : null}
 
-      {BannerIcon ? (
-        <span
-          className={cn(
-            "hidden size-12 shrink-0 items-center justify-center rounded-box sm:flex",
-            style.iconWrap,
-          )}
-        >
-          <BannerIcon aria-hidden size={26} weight="bold" />
-        </span>
-      ) : null}
+        <div className="min-w-0 flex-1">
+          <div className="flex min-w-0 items-center gap-3">
+            {HeaderIcon ? (
+              <span
+                className={cn(
+                  "hidden lg:flex items-center justify-center rounded-box transition-all duration-300 ease-out",
+                  style.iconWrap,
+                  isCompact ? "size-0 opacity-0" : "size-11 opacity-100",
+                )}
+              >
+                <HeaderIcon aria-hidden size={22} weight="bold" />
+              </span>
+            ) : null}
+            <h1
+              className={cn(
+                "truncate font-title font-bold text-nox-noir transition-all duration-300 ease-out",
+                style.title,
+                isCompact ? "text-xl leading-10" : "text-2xl leading-11",
+              )}
+            >
+              {title}
+            </h1>
+          </div>
 
-      <div className="min-w-0">
-        <h2 className={cn("font-title text-2xl font-bold sm:text-3xl", style.title)}>{title}</h2>
-        {description ? (
-          <p
-            className={cn(
-              "mt-1 max-w-2xl text-sm leading-6",
-              style.description,
-              variant !== "solid" && "text-nox-noir/65",
-            )}
-          >
-            {description}
-          </p>
-        ) : null}
+          {description ? (
+            <p
+              className={cn(
+                "max-w-md overflow-hidden text-sm leading-6 text-nox-noir/60 transition-all duration-300 ease-out",
+                style.description,
+                variant !== "solid" && "text-nox-noir/65",
+                isCompact ? "mt-0 max-h-0 opacity-0" : "mt-2 max-h-20 opacity-100",
+              )}
+            >
+              {description}
+            </p>
+          ) : null}
+        </div>
       </div>
-    </section>
+    </header>
   );
 };

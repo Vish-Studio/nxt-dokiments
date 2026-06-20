@@ -81,27 +81,6 @@ export const DashboardView = () => {
 
   const recentDocuments = [...documents].sort((a, b) => b.updatedAt - a.updatedAt).slice(0, 3);
   const recentTemplates = saved.slice(-4).reverse();
-  const nextStep =
-    saved.length === 0
-      ? {
-          description:
-            "Start by saving one reusable business template. It will appear in My Templates and become available for document creation.",
-          href: "/marketplace",
-          label: "Browse marketplace",
-        }
-      : documents.length === 0
-        ? {
-            description:
-              "You already have saved templates. Create your first document and keep the filled copy in Documents.",
-            href: "/documents",
-            label: "Create document",
-          }
-        : {
-            description:
-              "Your workspace is active. Review the newest document or browse the marketplace for a better-fit template.",
-            href: "/documents",
-            label: "Continue work",
-          };
 
   return (
     <div className="flex flex-col gap-8">
@@ -120,17 +99,20 @@ export const DashboardView = () => {
           </p>
         </div>
 
-        <aside className="rounded-box border border-steel-mist bg-base-100 p-6">
-          <p className="font-title text-sm font-bold uppercase tracking-normal text-nox-noir/45">
-            Recommended next step
+        <aside className="rounded-box bg-nox-noir p-6 text-white">
+          <p className="font-title text-sm font-bold uppercase tracking-normal text-white/50">
+            Marketplace focus
           </p>
-          <h2 className="mt-3 font-title text-2xl font-bold text-nox-noir">{nextStep.label}</h2>
-          <p className="mt-2 text-sm leading-6 text-nox-noir/65">{nextStep.description}</p>
+          <h2 className="mt-3 font-title text-2xl font-bold">Business essentials</h2>
+          <p className="mt-2 text-sm leading-6 text-white/65">
+            Prioritize contracts, proposals, invoices, quotations, and receipts for repeatable SME
+            workflows.
+          </p>
           <Link
-            className="btn btn-primary mt-5 min-h-11 h-11 w-full font-title font-semibold tracking-normal"
-            href={nextStep.href}
+            className="btn mt-5 min-h-11 h-11 w-full border-0 bg-golden-harvest font-title font-semibold tracking-normal text-nox-noir hover:brightness-95"
+            href="/marketplace"
           >
-            {nextStep.label}
+            Explore templates
             <ArrowRightIcon aria-hidden size={18} weight="bold" />
           </Link>
         </aside>
@@ -142,7 +124,7 @@ export const DashboardView = () => {
         ))}
       </div>
 
-      <div className="grid gap-4 lg:grid-cols-[1fr_22rem]">
+      <div className="grid gap-4 lg:grid-cols-1">
         <section className="rounded-box border border-steel-mist bg-base-100 p-6">
           <div className="flex flex-wrap items-start justify-between gap-4">
             <div>
@@ -176,24 +158,6 @@ export const DashboardView = () => {
               </p>
             </div>
           </div>
-        </section>
-
-        <section className="rounded-box bg-nox-noir p-6 text-white">
-          <p className="font-title text-sm font-bold uppercase tracking-normal text-white/50">
-            Marketplace focus
-          </p>
-          <h2 className="mt-3 font-title text-2xl font-bold">Business essentials</h2>
-          <p className="mt-2 text-sm leading-6 text-white/65">
-            Prioritize contracts, proposals, invoices, quotations, and receipts for repeatable SME
-            workflows.
-          </p>
-          <Link
-            className="btn mt-5 min-h-11 h-11 w-full border-0 bg-golden-harvest font-title font-semibold tracking-normal text-nox-noir hover:brightness-95"
-            href="/marketplace"
-          >
-            Explore templates
-            <ArrowRightIcon aria-hidden size={18} weight="bold" />
-          </Link>
         </section>
       </div>
 

@@ -11,14 +11,17 @@ import {
 } from "@phosphor-icons/react";
 import type { Icon } from "@phosphor-icons/react";
 import { useState } from "react";
+import type { UIEvent } from "react";
 import type { ReactNode } from "react";
 
 import { AuthGuard } from "@/components/auth-guard/auth-guard";
 import { ButtonIcon } from "@/components/button-icon/button-icon";
 import { ContentContainer } from "@/components/content-container/content-container";
+import { MobilePageHeader } from "@/components/mobile-page-header/mobile-page-header";
 import { PageBanner } from "@/components/page-banner/page-banner";
 import type { PageBannerTone, PageBannerVariant } from "@/components/page-banner/page-banner";
 import { Sidebar } from "@/components/sidebar/sidebar";
+import { useAuthStore } from "@/stores/auth-store";
 import { useSyncSavedTemplates } from "@/stores/templates-store";
 import { useUiStore } from "@/stores/ui-store";
 
@@ -52,12 +55,23 @@ export const AppShell = ({
 }: AppShellProps) => {
   useSyncSavedTemplates();
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
+  const [isContentScrolled, setIsContentScrolled] = useState(false);
+  const user = useAuthStore((state) => state.user);
   const isSidebarCollapsed = useUiStore((state) => state.isSidebarCollapsed);
   const toggleSidebar = useUiStore((state) => state.toggleSidebar);
 
   const theme = pageThemes[activeItem] ?? { Icon: HouseIcon, tone: "golden" as PageBannerTone };
   const resolvedTone = bannerTone ?? theme.tone;
   const resolvedVariant = bannerVariant ?? theme.variant ?? "solid";
+  const firstName = (user?.displayName ?? "there").split(" ")[0];
+  const mobileTitle =
+    activeItem === "Dashboard" && isContentScrolled ? `Welcome back, ${firstName}` : title;
+  const mobileDescription = showBanner ? description : undefined;
+
+  const handleContentScroll = (event: UIEvent<HTMLDivElement>) => {
+    const nextScrolled = event.currentTarget.scrollTop > 24;
+    setIsContentScrolled((previous) => (previous === nextScrolled ? previous : nextScrolled));
+  };
 
   return (
     <AuthGuard>
@@ -82,12 +96,21 @@ export const AppShell = ({
 
           <section className="flex h-dvh min-w-0 flex-1 flex-col overflow-hidden bg-app-chrome">
             <div className="flex min-h-0 flex-1 flex-col overflow-hidden bg-app-panel lg:mr-4 lg:mb-4 lg:mt-4 lg:rounded-4xl">
-              <ContentContainer>
+              <ContentContainer onScroll={handleContentScroll}>
+                <MobilePageHeader
+                  description={mobileDescription}
+                  icon={showBanner ? theme.Icon : undefined}
+                  isCompact={isContentScrolled}
+                  onOpenNavigation={() => setIsMobileSidebarOpen(true)}
+                  title={mobileTitle}
+                  tone={resolvedTone}
+                  variant={resolvedVariant}
+                />
                 {showBanner ? (
                   <PageBanner
+                    className="hidden lg:flex"
                     description={description}
                     icon={theme.Icon}
-                    onOpenNavigation={() => setIsMobileSidebarOpen(true)}
                     title={title}
                     tone={resolvedTone}
                     variant={resolvedVariant}
@@ -95,7 +118,7 @@ export const AppShell = ({
                 ) : (
                   <ButtonIcon
                     aria-label="Open navigation"
-                    className="border border-steel-mist text-nox-noir hover:bg-base-200 lg:hidden"
+                    className="hidden border border-steel-mist text-nox-noir hover:bg-base-200"
                     icon={<ListIcon aria-hidden size={18} weight="bold" />}
                     onClick={() => setIsMobileSidebarOpen(true)}
                     variant="ghost"
