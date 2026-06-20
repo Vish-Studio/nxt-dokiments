@@ -4,6 +4,7 @@ import { expect } from "storybook/test";
 import { Workflow } from "../workflow";
 
 const meta = {
+  title: "Website/Workflow",
   component: Workflow,
   tags: ["ai-generated"],
   parameters: {

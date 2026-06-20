@@ -1,5 +1,5 @@
-import { AppShell } from "@/components/app-shell/app-shell";
-import { MarketplaceBrowser } from "@/components/marketplace-browser/marketplace-browser";
+import { AppShell } from "@/components/dashboard/app-shell/app-shell";
+import { MarketplaceBrowser } from "@/components/dashboard/marketplace-browser/marketplace-browser";
 
 const MarketplacePage = () => {
   return (

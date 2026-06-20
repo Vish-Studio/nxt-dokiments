@@ -1,7 +1,7 @@
 import type { CSSProperties } from "react";
 
-import { PlanCard } from "@/components/plan-card/plan-card";
-import type { PlanCardVariant } from "@/components/plan-card/plan-card";
+import { PlanCard } from "@/components/commons/plan-card/plan-card";
+import type { PlanCardVariant } from "@/components/commons/plan-card/plan-card";
 
 type PricingPlan = {
   description: string;

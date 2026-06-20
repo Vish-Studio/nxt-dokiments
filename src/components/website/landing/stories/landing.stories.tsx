@@ -4,6 +4,7 @@ import { expect, waitFor } from "storybook/test";
 import { Landing } from "../landing";
 
 const meta = {
+  title: "Website/Landing",
   component: Landing,
   tags: ["ai-generated"],
   parameters: {

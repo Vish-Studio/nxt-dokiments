@@ -4,6 +4,7 @@ import { expect } from "storybook/test";
 import { Overview } from "../overview";
 
 const meta = {
+  title: "Website/Overview",
   component: Overview,
   tags: ["ai-generated"],
   parameters: {

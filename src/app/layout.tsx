@@ -1,7 +1,7 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Urbanist, Raleway } from "next/font/google";
 
-import { AuthProvider } from "@/components/auth-provider/auth-provider";
+import { AuthProvider } from "@/components/commons/auth-provider/auth-provider";
 
 import "./globals.css";
 
@@ -19,6 +19,10 @@ const raleway = Raleway({
 export const metadata: Metadata = {
   title: "Dokiments",
   description: "Document workflows for modern teams.",
+};
+
+export const viewport: Viewport = {
+  themeColor: "#ffffff",
 };
 
 const RootLayout = ({

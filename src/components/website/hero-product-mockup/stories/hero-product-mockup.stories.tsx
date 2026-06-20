@@ -4,6 +4,7 @@ import { expect, waitFor } from "storybook/test";
 import { HeroProductMockup } from "../hero-product-mockup";
 
 const meta = {
+  title: "Website/Hero Product Mockup",
   component: HeroProductMockup,
   tags: ["ai-generated"],
   parameters: {

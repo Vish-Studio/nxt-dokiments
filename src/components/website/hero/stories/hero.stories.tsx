@@ -4,6 +4,7 @@ import { expect, waitFor } from "storybook/test";
 import { Hero } from "../hero";
 
 const meta = {
+  title: "Website/Hero",
   component: Hero,
   tags: ["ai-generated"],
   parameters: {

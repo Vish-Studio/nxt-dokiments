@@ -12,6 +12,7 @@ As an elite Fullstack Engineer and Award-Winning UI/UX Designer specialized in h
 - **Strict Anti-Bloat Rule:** NEVER write multiple sub-components within the same file. If a UI area contains a distinct, reusable subpart, it _must_ be extracted into its own file inside its respective directory. Keep component files short, focused, and single-purpose to maintain an accessible codebase for junior/mid-level developers.
 - **Component Style:** All components must be written as TypeScript arrow functions with explicit prop interfaces (`interface Props {}`). They should also include their component name as their first classname (e.g., `<div className="template-card">` for `TemplateCard`).
 - **Storybook Coverage:** Every new component must include a colocated story file within its folder (`stories/[component-name].stories.tsx`).
+- **Storybook Sidebar Titles:** Every story meta must set an explicit `title` grouped by component bucket only (`Commons/Button`, `Dashboard/Sidebar`, `Website/Hero`). Do not allow Storybook to infer paths that expose `stories` as a sidebar nesting level.
 - **State Management:** Shared global UI state belongs in `src/stores/ui-store.ts`. Use it sparingly (e.g., sidebar state, theme tracking); prefer props or local React state for localized hierarchies.
 
 ## 2. Strict Directory Structure
@@ -46,6 +47,7 @@ All UI components must reside exactly within one of these four subdirectories un
 - **Icons:** Use Phosphor Icons (`@phosphor-icons/react`) exclusively for all dashboard controls, navigation, and state indicators.
 - **Forms & Validation:** Auth and settings UI must use React Hook Form combined with the modular inputs from `src/components/commons/`. Keep form containers isolated in their own folder tracks.
 - **Firebase Infrastructure:** Client integrations live in `src/lib/firebase`, consuming REST APIs wired through `NEXT_PUBLIC_FIREBASE_API_KEY`, `NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN`, and `NEXT_PUBLIC_FIREBASE_PROJECT_ID`.
+- **Dev Auth Bypass:** Local development may bypass Firebase auth with `NEXT_PUBLIC_DEV_AUTH_BYPASS="true"`. The bypass must remain gated by `process.env.NODE_ENV === "development"` and should use `src/lib/dev-auth.ts` rather than scattering mock-user logic across components.
 - **RBAC:** Application roles map to `superadmin`, `free`, `silver`, `gold`, and `special`. Defaults to `free`. Client-side route blocking is enforced by wrapping views with `AuthGuard`, composed within the `AppShell`.
 
 ## 6. Marketplace, Templates & Documents

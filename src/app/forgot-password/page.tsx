@@ -1,5 +1,11 @@
-import { AuthLayout } from "@/components/auth-layout/auth-layout";
-import { ForgotPasswordForm } from "@/components/forgot-password-form/forgot-password-form";
+import type { Viewport } from "next";
+
+import { AuthLayout } from "@/components/commons/auth-layout/auth-layout";
+import { ForgotPasswordForm } from "@/components/commons/forgot-password-form/forgot-password-form";
+
+export const viewport: Viewport = {
+  themeColor: "#141414",
+};
 
 const ForgotPasswordPage = () => {
   return (

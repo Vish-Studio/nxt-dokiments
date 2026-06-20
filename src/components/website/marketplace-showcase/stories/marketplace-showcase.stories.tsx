@@ -4,6 +4,7 @@ import { expect } from "storybook/test";
 import { MarketplaceShowcase } from "../marketplace-showcase";
 
 const meta = {
+  title: "Website/Marketplace Showcase",
   component: MarketplaceShowcase,
   tags: ["ai-generated"],
   parameters: {

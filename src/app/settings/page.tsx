@@ -1,5 +1,5 @@
-import { AppShell } from "@/components/app-shell/app-shell";
-import { SettingsTabs } from "@/components/settings-tabs/settings-tabs";
+import { AppShell } from "@/components/dashboard/app-shell/app-shell";
+import { SettingsTabs } from "@/components/dashboard/settings-tabs/settings-tabs";
 
 const SettingsPage = () => {
   return (

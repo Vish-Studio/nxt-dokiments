@@ -1,7 +1,12 @@
 import Link from "next/link";
+import type { Viewport } from "next";
 
-import { AuthLayout } from "@/components/auth-layout/auth-layout";
-import { SignInForm } from "@/components/sign-in-form/sign-in-form";
+import { AuthLayout } from "@/components/commons/auth-layout/auth-layout";
+import { SignInForm } from "@/components/commons/sign-in-form/sign-in-form";
+
+export const viewport: Viewport = {
+  themeColor: "#141414",
+};
 
 const SignInPage = () => {
   return (

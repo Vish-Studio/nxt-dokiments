@@ -1,5 +1,5 @@
-import { AppShell } from "@/components/app-shell/app-shell";
-import { DashboardView } from "@/components/dashboard-view/dashboard-view";
+import { AppShell } from "@/components/dashboard/app-shell/app-shell";
+import { DashboardView } from "@/components/dashboard/dashboard-view/dashboard-view";
 
 const DashboardPage = () => {
   return (

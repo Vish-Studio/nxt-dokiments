@@ -6,8 +6,8 @@ import {
 import type { CSSProperties } from "react";
 import { useState } from "react";
 
-import { TemplateCard } from "@/components/template-card/template-card";
-import { TemplatePreviewDialog } from "@/components/template-preview-dialog/template-preview-dialog";
+import { TemplateCard } from "@/components/commons/template-card/template-card";
+import { TemplatePreviewDialog } from "@/components/commons/template-preview-dialog/template-preview-dialog";
 import { getTemplateById } from "@/lib/market-place";
 import { cn } from "@/lib/utils";
 import type { MarketplaceTemplate } from "@/types/template";

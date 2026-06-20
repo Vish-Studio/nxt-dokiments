@@ -5,6 +5,7 @@ import { expect, within } from "storybook/test";
 import { DashboardDestinationCard } from "../dashboard-destination-card";
 
 const meta = {
+  title: "Dashboard/Dashboard Destination Card",
   component: DashboardDestinationCard,
   tags: ["ai-generated"],
   parameters: { layout: "centered", nextjs: { appDirectory: true } },

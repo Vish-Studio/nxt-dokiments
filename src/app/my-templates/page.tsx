@@ -1,5 +1,5 @@
-import { AppShell } from "@/components/app-shell/app-shell";
-import { MyTemplatesView } from "@/components/my-templates-view/my-templates-view";
+import { AppShell } from "@/components/dashboard/app-shell/app-shell";
+import { MyTemplatesView } from "@/components/dashboard/my-templates-view/my-templates-view";
 
 const MyTemplatesPage = () => {
   return (
