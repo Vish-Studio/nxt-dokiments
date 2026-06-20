@@ -99,20 +99,5 @@ export const useTemplateLibrary = () => {
     }
   };
 
-  const removeTemplate = async (savedId: string) => {
-    if (!user || !session) {
-      return;
-    }
-
-    const next = saved.filter((item) => item.savedId !== savedId);
-    setSaved(user.uid, next);
-
-    try {
-      await persistSavedTemplates(session, next);
-    } catch {
-      setSaved(user.uid, saved);
-    }
-  };
-
-  return { addTemplate, isAtLimit, limit, removeTemplate, saved };
+  return { addTemplate, isAtLimit, limit, saved };
 };

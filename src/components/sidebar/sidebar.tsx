@@ -120,7 +120,12 @@ export const Sidebar = ({
               onClick={onCloseMobile}
               title={isCollapsed ? item.label : undefined}
             >
-              <Icon aria-hidden className="shrink-0" size={19} weight="bold" />
+              <Icon
+                aria-hidden
+                className={cn("shrink-0", isActive && "drop-shadow-[0_0_0_currentColor]")}
+                size={19}
+                weight={isActive ? "fill" : "bold"}
+              />
               <span
                 className={cn(
                   "truncate transition-opacity",

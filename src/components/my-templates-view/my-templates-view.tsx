@@ -1,20 +1,14 @@
 "use client";
 
-import { TrashIcon } from "@phosphor-icons/react";
 import Link from "next/link";
 
-import { ButtonIcon } from "@/components/button-icon/button-icon";
 import { TemplateThumbnail } from "@/components/template-thumbnail/template-thumbnail";
 import { getTemplateById, tierBadgeClasses, tierLabels } from "@/lib/market-place";
 import { cn } from "@/lib/utils";
 import { useTemplateLibrary } from "@/stores/templates-store";
 
 export const MyTemplatesView = () => {
-  const { removeTemplate, saved } = useTemplateLibrary();
-
-  const handleRemove = (savedId: string) => {
-    void removeTemplate(savedId);
-  };
+  const { saved } = useTemplateLibrary();
 
   if (saved.length === 0) {
     return (
@@ -61,21 +55,11 @@ export const MyTemplatesView = () => {
                 </span>
               </div>
 
-              <div className="mt-4 flex items-start justify-between gap-2">
-                <div className="min-w-0">
-                  <h4 className="truncate font-title text-base font-bold text-nox-noir">
-                    {template.name}
-                  </h4>
-                  <p className="text-xs text-nox-noir/55">{template.style.name} style</p>
-                </div>
-                <ButtonIcon
-                  aria-label={`Remove ${template.name} template`}
-                  icon={<TrashIcon aria-hidden size={16} weight="bold" />}
-                  onClick={() => handleRemove(item.savedId)}
-                  shape="square"
-                  size="sm"
-                  variant="outline"
-                />
+              <div className="mt-4 min-w-0">
+                <h4 className="truncate font-title text-base font-bold text-nox-noir">
+                  {template.name}
+                </h4>
+                <p className="text-xs text-nox-noir/55">{template.style.name} style</p>
               </div>
 
               <Link

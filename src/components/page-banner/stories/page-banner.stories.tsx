@@ -41,6 +41,30 @@ export const Noir: Story = {
   args: { title: "Settings", tone: "noir" },
 };
 
-export const Success: Story = {
-  args: { title: "My Templates", tone: "success" },
+export const Pink: Story = {
+  args: { title: "My Templates", tone: "pink" },
+};
+
+export const Teal: Story = {
+  args: { title: "Settings", tone: "teal" },
+};
+
+export const Purple: Story = {
+  args: { title: "Subscription", tone: "purple" },
+};
+
+export const Blue: Story = {
+  args: { title: "Documents", tone: "blue" },
+};
+
+export const Mist: Story = {
+  args: { title: "Archive", tone: "mist" },
+};
+
+export const Soft: Story = {
+  args: { title: "Subscription", tone: "purple", variant: "soft" },
+};
+
+export const Outline: Story = {
+  args: { title: "Documents", tone: "blue", variant: "outline" },
 };

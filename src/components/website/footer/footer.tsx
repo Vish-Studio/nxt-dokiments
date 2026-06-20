@@ -21,7 +21,7 @@ export const Footer = () => {
           </h2>
           <div className="mt-8 flex flex-col gap-3 sm:flex-row">
             <a
-              className="inline-flex justify-center rounded-box bg-golden-harvest px-5 py-3 font-title text-sm font-bold text-nox-noir transition-transform hover:-translate-y-1"
+              className="inline-flex justify-center rounded-box bg-golden-harvest px-5 py-3 font-title text-sm font-bold text-nox-noir transition hover:brightness-95"
               href="/sign-up"
             >
               Sign up
@@ -63,7 +63,7 @@ export const Footer = () => {
                   return (
                     <a
                       aria-label={social.label}
-                      className="flex size-11 items-center justify-center rounded-full bg-white/8 text-white transition-all hover:-translate-y-1 hover:bg-golden-harvest hover:text-nox-noir"
+                      className="flex size-11 items-center justify-center rounded-full bg-white/8 text-white transition-colors hover:bg-golden-harvest hover:text-nox-noir"
                       href={social.href}
                       key={social.label}
                       rel="noreferrer"

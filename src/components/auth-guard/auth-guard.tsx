@@ -15,8 +15,10 @@ export const AuthGuard = ({ children }: AuthGuardProps) => {
 
   useEffect(() => {
     if (status === "unauthenticated") {
+      const nextPath = `${window.location.pathname}${window.location.search}`;
+
       window.location.replace(
-        `/sign-in?next=${encodeURIComponent(window.location.pathname)}`,
+        `/sign-in?next=${encodeURIComponent(nextPath)}`,
       );
     }
   }, [status]);

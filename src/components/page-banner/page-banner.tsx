@@ -6,7 +6,16 @@ import type { Icon } from "@phosphor-icons/react";
 import { ButtonIcon } from "@/components/button-icon/button-icon";
 import { cn } from "@/lib/utils";
 
-export type PageBannerTone = "golden" | "bloodwood" | "noir" | "success";
+export type PageBannerTone =
+  | "golden"
+  | "bloodwood"
+  | "noir"
+  | "pink"
+  | "teal"
+  | "purple"
+  | "blue"
+  | "mist";
+export type PageBannerVariant = "solid" | "soft" | "outline";
 
 export type PageBannerProps = {
   description?: string;
@@ -14,10 +23,11 @@ export type PageBannerProps = {
   onOpenNavigation?: () => void;
   title: string;
   tone?: PageBannerTone;
+  variant?: PageBannerVariant;
 };
 
 type ToneStyle = {
-  container: string;
+  container: Record<PageBannerVariant, string>;
   description: string;
   iconWrap: string;
   title: string;
@@ -26,31 +36,91 @@ type ToneStyle = {
 
 const toneStyles: Record<PageBannerTone, ToneStyle> = {
   golden: {
-    container: "bg-golden-harvest",
+    container: {
+      solid: "bg-golden-harvest",
+      soft: "border border-golden-harvest/40 bg-golden-harvest/18",
+      outline: "border border-golden-harvest bg-transparent",
+    },
     description: "text-bloodwood-deep/75",
     iconWrap: "bg-bloodwood-deep text-golden-harvest",
     title: "text-bloodwood-deep",
     toggle: "border-bloodwood-deep/20 text-bloodwood-deep hover:bg-bloodwood-deep/10",
   },
+  pink: {
+    container: {
+      solid: "bg-play-pink",
+      soft: "border border-play-pink bg-play-pink/45",
+      outline: "border border-play-pink bg-transparent",
+    },
+    description: "text-nox-noir/70",
+    iconWrap: "bg-nox-noir text-play-pink",
+    title: "text-nox-noir",
+    toggle: "border-nox-noir/20 text-nox-noir hover:bg-nox-noir/10",
+  },
+  teal: {
+    container: {
+      solid: "bg-play-teal",
+      soft: "border border-play-teal bg-play-teal/35",
+      outline: "border border-play-teal bg-transparent",
+    },
+    description: "text-nox-noir/70",
+    iconWrap: "bg-nox-noir text-play-teal",
+    title: "text-nox-noir",
+    toggle: "border-nox-noir/20 text-nox-noir hover:bg-nox-noir/10",
+  },
+  purple: {
+    container: {
+      solid: "bg-play-purple",
+      soft: "border border-play-purple bg-play-purple/40",
+      outline: "border border-play-purple bg-transparent",
+    },
+    description: "text-nox-noir/70",
+    iconWrap: "bg-nox-noir text-play-purple",
+    title: "text-nox-noir",
+    toggle: "border-nox-noir/20 text-nox-noir hover:bg-nox-noir/10",
+  },
+  blue: {
+    container: {
+      solid: "bg-play-blue",
+      soft: "border border-play-blue bg-play-blue/35",
+      outline: "border border-play-blue bg-transparent",
+    },
+    description: "text-nox-noir/70",
+    iconWrap: "bg-nox-noir text-play-blue",
+    title: "text-nox-noir",
+    toggle: "border-nox-noir/20 text-nox-noir hover:bg-nox-noir/10",
+  },
   bloodwood: {
-    container: "bg-bloodwood-deep",
+    container: {
+      solid: "bg-bloodwood-deep",
+      soft: "border border-bloodwood-deep/20 bg-bloodwood-deep/8",
+      outline: "border border-bloodwood-deep bg-transparent",
+    },
     description: "text-white/70",
     iconWrap: "bg-golden-harvest text-bloodwood-deep",
-    title: "text-white",
+    title: "text-white group-data-[variant=soft]:text-bloodwood-deep group-data-[variant=outline]:text-bloodwood-deep",
     toggle: "border-white/20 text-white hover:bg-white/10",
   },
   noir: {
-    container: "bg-nox-noir",
+    container: {
+      solid: "bg-nox-noir",
+      soft: "border border-nox-noir/15 bg-nox-noir/6",
+      outline: "border border-nox-noir bg-transparent",
+    },
     description: "text-white/65",
     iconWrap: "bg-white/10 text-white",
-    title: "text-white",
+    title: "text-white group-data-[variant=soft]:text-nox-noir group-data-[variant=outline]:text-nox-noir",
     toggle: "border-white/20 text-white hover:bg-white/10",
   },
-  success: {
-    container: "bg-success",
-    description: "text-white/80",
-    iconWrap: "bg-white/15 text-white",
-    title: "text-white",
+  mist: {
+    container: {
+      solid: "bg-steel-mist",
+      soft: "border border-steel-mist bg-base-200",
+      outline: "border border-steel-mist bg-transparent",
+    },
+    description: "text-nox-noir",
+    iconWrap: "bg-nox-noir text-white",
+    title: "text-nox-noir",
     toggle: "border-white/25 text-white hover:bg-white/10",
   },
 };
@@ -61,11 +131,18 @@ export const PageBanner = ({
   onOpenNavigation,
   title,
   tone = "golden",
+  variant = "solid",
 }: PageBannerProps) => {
   const style = toneStyles[tone];
 
   return (
-    <section className={cn("flex items-start gap-4 rounded-box p-6 sm:p-8", style.container)}>
+    <section
+      className={cn(
+        "group flex items-start gap-4 rounded-box p-6 sm:p-8",
+        style.container[variant],
+      )}
+      data-variant={variant}
+    >
       {onOpenNavigation ? (
         <ButtonIcon
           aria-label="Open navigation"
@@ -90,7 +167,15 @@ export const PageBanner = ({
       <div className="min-w-0">
         <h2 className={cn("font-title text-2xl font-bold sm:text-3xl", style.title)}>{title}</h2>
         {description ? (
-          <p className={cn("mt-1 max-w-2xl text-sm leading-6", style.description)}>{description}</p>
+          <p
+            className={cn(
+              "mt-1 max-w-2xl text-sm leading-6",
+              style.description,
+              variant !== "solid" && "text-nox-noir/65",
+            )}
+          >
+            {description}
+          </p>
         ) : null}
       </div>
     </section>

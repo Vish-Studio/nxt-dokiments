@@ -89,14 +89,14 @@ export const ProfileSettings = () => {
 
   return (
     <div className="w-full">
-      <div className="border-b border-steel-mist pb-4">
+      <div className="pb-4">
         <h3 className="font-title text-lg font-bold text-bloodwood-deep">Profile</h3>
         <p className="mt-1 text-sm leading-6 text-nox-noir/60">
           Add your contact and business details. This information stays on your account.
         </p>
       </div>
 
-      <div className="mt-6 grid items-start gap-4 lg:grid-cols-2">
+      <div className="grid items-start gap-4 lg:grid-cols-2">
         <form
           className="grid gap-5 rounded-box border border-steel-mist bg-base-100 p-6"
           onSubmit={submitProfile}

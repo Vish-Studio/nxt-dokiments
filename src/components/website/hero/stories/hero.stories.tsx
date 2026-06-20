@@ -18,9 +18,9 @@ export const Default: Story = {
   play: async ({ canvas }) => {
     await waitFor(async () => {
       await expect(
-        canvas.getByRole("heading", { name: /business documents/i }),
+        canvas.getByRole("heading", { name: /business documents without the blank page/i }),
       ).toBeVisible();
     });
-    await expect(canvas.getByRole("link", { name: /browse marketplace/i })).toBeVisible();
+    await expect(canvas.getAllByRole("link", { name: /browse marketplace/i })[0]).toBeVisible();
   },
 };

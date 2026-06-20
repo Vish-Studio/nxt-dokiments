@@ -25,7 +25,7 @@ type Story = StoryObj<typeof meta>;
 export const Default: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    await expect(canvas.getByRole("button", { name: /save to my templates/i })).toBeVisible();
+    await expect(canvas.getByRole("button", { name: /save template/i })).toBeVisible();
   },
 };
 

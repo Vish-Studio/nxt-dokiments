@@ -1,14 +1,16 @@
 "use client";
 
 import { LockIcon } from "@phosphor-icons/react";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 import { Carousel } from "@/components/carousel/carousel";
+import { ConfirmDialog } from "@/components/confirm-dialog/confirm-dialog";
 import { TemplateCard } from "@/components/template-card/template-card";
 import { TemplatePreviewDialog } from "@/components/template-preview-dialog/template-preview-dialog";
 import { UpgradeDialog } from "@/components/upgrade-dialog/upgrade-dialog";
 import {
   canUseTier,
+  getTemplateById,
   listTemplatesByStyle,
   templateStyles,
   tierBadgeClasses,
@@ -21,27 +23,75 @@ import type { MarketplaceTemplate } from "@/types/template";
 
 export const MarketplaceBrowser = () => {
   const user = useAuthStore((state) => state.user);
-  const { addTemplate, saved } = useTemplateLibrary();
+  const { addTemplate, limit, saved } = useTemplateLibrary();
   const [preview, setPreview] = useState<MarketplaceTemplate | null>(null);
   const [isUpgradeOpen, setIsUpgradeOpen] = useState(false);
+  const [pendingTemplate, setPendingTemplate] = useState<MarketplaceTemplate | null>(null);
 
   const savedIds = useMemo(() => new Set(saved.map((item) => item.templateId)), [saved]);
+  const isFreeTier = !user || user.role === "free";
 
-  const handleSave = async (template: MarketplaceTemplate) => {
-    if (!canUseTier(user?.role, template.tier)) {
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const templateId = params.get("template");
+
+    if (!templateId) {
       return;
     }
 
-    const result = await addTemplate(template.id);
+    const nextUrl = new URL(window.location.href);
+    nextUrl.searchParams.delete("template");
+    window.history.replaceState(null, "", `${nextUrl.pathname}${nextUrl.search}`);
 
-    if (!result.ok && result.reason === "limit") {
+    const template = getTemplateById(templateId);
+
+    if (!template || savedIds.has(template.id)) {
+      return;
+    }
+
+    if (!canUseTier(user?.role, template.tier)) {
+      window.setTimeout(() => setIsUpgradeOpen(true), 0);
+      return;
+    }
+
+    window.setTimeout(() => {
+      setPreview(null);
+      setPendingTemplate(template);
+    }, 0);
+  }, [savedIds, user?.role]);
+
+  const handleSave = (template: MarketplaceTemplate) => {
+    if (!canUseTier(user?.role, template.tier) || savedIds.has(template.id)) {
+      return;
+    }
+
+    if (saved.length >= limit) {
       setPreview(null);
       setIsUpgradeOpen(true);
+      return;
+    }
+
+    // Free accounts get a reminder before committing one of their 2 permanent slots.
+    if (isFreeTier) {
+      setPreview(null);
+      setPendingTemplate(template);
+      return;
+    }
+
+    void addTemplate(template.id);
+  };
+
+  const confirmAdd = () => {
+    const template = pendingTemplate;
+    setPendingTemplate(null);
+
+    if (template) {
+      void addTemplate(template.id);
     }
   };
 
   return (
-    <div className="flex w-full min-w-0 flex-col gap-10">
+    <div className="flex w-full min-w-0 flex-col gap-10 md:gap-18 lg:gap-24 mt-10">
       {templateStyles.map((style) => {
           const locked = !canUseTier(user?.role, style.tier);
           const templates = listTemplatesByStyle(style.id);
@@ -93,6 +143,22 @@ export const MarketplaceBrowser = () => {
         }}
         saved={preview ? savedIds.has(preview.id) : false}
         template={preview}
+      />
+
+      <ConfirmDialog
+        cancelLabel="Browse later"
+        confirmLabel="Add template"
+        description={
+          pendingTemplate
+            ? isFreeTier
+              ? `Free accounts can keep ${limit} templates and can't remove them later. Add "${pendingTemplate.name}"? You'll have used ${saved.length + 1} of ${limit}.`
+              : `Add "${pendingTemplate.name}" to your templates so you can reuse it from your dashboard?`
+            : undefined
+        }
+        onClose={() => setPendingTemplate(null)}
+        onConfirm={confirmAdd}
+        open={Boolean(pendingTemplate)}
+        title="Add to My Templates?"
       />
 
       <UpgradeDialog onClose={() => setIsUpgradeOpen(false)} open={isUpgradeOpen} />

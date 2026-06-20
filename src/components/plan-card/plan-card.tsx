@@ -1,5 +1,6 @@
 import { CheckIcon } from "@phosphor-icons/react/dist/ssr";
 import Link from "next/link";
+import type { CSSProperties } from "react";
 
 import { cn } from "@/lib/utils";
 
@@ -21,6 +22,7 @@ export type PlanCardProps = {
   name: string;
   period?: string;
   price: string;
+  style?: CSSProperties;
   variant?: PlanCardVariant;
 };
 
@@ -65,17 +67,18 @@ export const PlanCard = ({
   name,
   period,
   price,
+  style,
   variant = "default",
 }: PlanCardProps) => {
   const styles = variantStyles[variant];
 
   const ctaClassName = cn(
-    "mt-auto inline-flex w-full items-center justify-center rounded-field px-5 py-3 font-title text-sm font-bold transition-transform hover:-translate-y-0.5 disabled:translate-y-0 disabled:cursor-default disabled:opacity-60",
+    "mt-auto inline-flex w-full items-center justify-center rounded-field px-5 py-3 font-title text-sm font-bold transition disabled:cursor-default disabled:opacity-60",
     styles.cta,
   );
 
   return (
-    <article className={cn("flex flex-col rounded-box border p-6", styles.card, className)}>
+    <article className={cn("flex flex-col rounded-box border p-6", styles.card, className)} style={style}>
       <div className="flex items-center justify-between gap-3">
         <h3 className="font-title text-lg font-bold">{name}</h3>
         {badge ? (

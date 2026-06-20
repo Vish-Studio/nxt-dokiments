@@ -25,7 +25,12 @@ export const SettingsNavItem = ({
       href="/settings"
       title={isCollapsed ? "Settings" : undefined}
     >
-      <GearSix aria-hidden className="shrink-0" size={19} weight="bold" />
+      <GearSix
+        aria-hidden
+        className={cn("shrink-0", isActive && "drop-shadow-[0_0_0_currentColor]")}
+        size={19}
+        weight={isActive ? "fill" : "bold"}
+      />
       <span
         className={cn(
           "truncate transition-opacity",

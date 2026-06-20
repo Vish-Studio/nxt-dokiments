@@ -45,7 +45,8 @@ export const SignUpForm = ({ onSubmit }: SignUpFormProps) => {
 
       const session = await signUpWithFirebase(values);
       setSession(session);
-      window.location.assign("/dashboard");
+      const params = new URLSearchParams(window.location.search);
+      window.location.assign(params.get("next") || "/dashboard");
     } catch (error) {
       setFormError(error instanceof Error ? error.message : "Unable to create account.");
     }

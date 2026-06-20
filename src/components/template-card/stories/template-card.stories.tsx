@@ -33,7 +33,7 @@ export const Default: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     await expect(canvas.getByRole("button", { name: /preview/i })).toBeVisible();
-    await expect(canvas.getByRole("button", { name: /^save$/i })).toBeVisible();
+    await expect(canvas.getByRole("button", { name: /save template/i })).toBeVisible();
   },
 };
 

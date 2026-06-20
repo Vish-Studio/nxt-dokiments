@@ -3,7 +3,7 @@ import type { ButtonHTMLAttributes, ReactNode } from "react";
 
 import { cn } from "@/lib/utils";
 
-type ButtonVariant = "primary" | "secondary" | "neutral" | "ghost" | "outline" | "danger";
+type ButtonVariant = "primary" | "accent" | "secondary" | "neutral" | "ghost" | "outline" | "danger";
 type ButtonSize = "sm" | "md" | "lg";
 
 export type ButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {
@@ -15,19 +15,19 @@ export type ButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {
 
 const variantClasses: Record<ButtonVariant, string> = {
   primary: "btn-primary",
+  accent: "border border-transparent bg-golden-harvest text-nox-noir hover:brightness-95",
   secondary:
     "border border-transparent bg-base-200 text-nox-noir hover:bg-base-300",
   neutral: "btn-neutral",
   ghost: "btn-ghost",
-  outline:
-    "border border-steel-mist bg-transparent text-nox-noir hover:border-bloodwood-deep hover:bg-base-200 hover:text-bloodwood-deep",
+  outline: "border border-steel-mist bg-transparent text-nox-noir hover:bg-base-200",
   danger: "btn-error",
 };
 
 const sizeClasses: Record<ButtonSize, string> = {
-  sm: "btn-sm",
-  md: "",
-  lg: "btn-lg",
+  sm: "btn-sm min-h-10 h-10 px-4 text-sm",
+  md: "min-h-11 h-11 px-5 text-sm",
+  lg: "btn-lg min-h-12 h-12 px-6 text-base",
 };
 
 export const Button = forwardRef<HTMLButtonElement, ButtonProps>(

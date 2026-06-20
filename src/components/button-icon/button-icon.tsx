@@ -22,15 +22,14 @@ const variantClasses: Record<ButtonIconVariant, string> = {
     "border border-transparent bg-base-200 text-nox-noir hover:bg-base-300",
   neutral: "btn-neutral",
   ghost: "btn-ghost",
-  outline:
-    "border border-steel-mist bg-transparent text-nox-noir hover:border-bloodwood-deep hover:bg-base-200 hover:text-bloodwood-deep",
+  outline: "border border-steel-mist bg-transparent text-nox-noir hover:bg-base-200",
   danger: "btn-error",
 };
 
 const sizeClasses: Record<ButtonIconSize, string> = {
-  sm: "btn-sm",
-  md: "",
-  lg: "btn-lg",
+  sm: "btn-sm size-10 min-h-10",
+  md: "size-11 min-h-11",
+  lg: "btn-lg size-12 min-h-12",
 };
 
 const shapeClasses: Record<ButtonIconShape, string> = {

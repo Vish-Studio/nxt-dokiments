@@ -23,6 +23,13 @@ export const Secondary: Story = {
   },
 };
 
+export const Accent: Story = {
+  args: {
+    variant: "accent",
+    children: "Save template",
+  },
+};
+
 export const Ghost: Story = {
   args: {
     variant: "ghost",

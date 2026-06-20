@@ -31,30 +31,35 @@ export const TemplatePreviewDialog = ({
       }
       footer={
         template ? (
-          <>
-            <Button onClick={onClose} size="sm" variant="outline">
+          <div className="grid w-full grid-cols-[0.78fr_1.22fr] gap-2">
+            <Button className="w-full" onClick={onClose} size="sm" variant="outline">
               Close
             </Button>
             {locked ? (
               <Link
-                className="btn btn-sm btn-primary font-title font-semibold tracking-normal"
+                className="btn btn-sm w-full bg-golden-harvest font-title font-semibold tracking-normal text-nox-noir hover:brightness-95"
                 href="/subscription"
               >
                 Upgrade to use
               </Link>
             ) : saved ? (
               <Link
-                className="btn btn-sm border border-steel-mist bg-base-100 font-title font-semibold tracking-normal text-nox-noir hover:bg-base-200"
+                className="btn btn-sm w-full border border-steel-mist bg-base-100 font-title font-semibold tracking-normal text-nox-noir hover:bg-base-200"
                 href="/my-templates"
               >
                 In My Templates
               </Link>
             ) : (
-              <Button onClick={onSave} size="sm">
-                Save to my templates
+              <Button
+                className="w-full"
+                onClick={onSave}
+                size="sm"
+                variant="accent"
+              >
+                Save template
               </Button>
             )}
-          </>
+          </div>
         ) : undefined
       }
       onClose={onClose}

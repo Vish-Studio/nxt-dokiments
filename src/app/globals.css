@@ -19,7 +19,7 @@
   --color-neutral-content: #ffffff;
   --color-info: #200d2d;
   --color-info-content: #ffffff;
-  --color-success: #2f6f4e;
+  --color-success: #16a34a;
   --color-success-content: #ffffff;
   --color-warning: #ffd066;
   --color-warning-content: #200d2d;
@@ -45,6 +45,11 @@
   --color-golden-harvest: #ffd066;
   --color-nox-noir: #141414;
   --color-steel-mist: #cfcfcf;
+  --color-play-pink: #f7cad8;
+  --color-play-teal: #6ccaba;
+  --color-play-purple: #c9b6f4;
+  --color-play-blue: #93cdf6;
+  --color-play-amber: #f4d06a;
   --color-app-chrome: var(--color-nox-noir);
   --color-app-chrome-content: #ffffff;
   --color-app-panel: #ffffff;
@@ -65,6 +70,11 @@
   --color-golden-harvest: var(--color-golden-harvest);
   --color-nox-noir: var(--color-nox-noir);
   --color-steel-mist: var(--color-steel-mist);
+  --color-play-pink: var(--color-play-pink);
+  --color-play-teal: var(--color-play-teal);
+  --color-play-purple: var(--color-play-purple);
+  --color-play-blue: var(--color-play-blue);
+  --color-play-amber: var(--color-play-amber);
   --color-app-chrome: var(--color-app-chrome);
   --color-app-chrome-content: var(--color-app-chrome-content);
   --color-app-panel: var(--color-app-panel);
@@ -90,6 +100,30 @@ body {
 
 html {
   scroll-behavior: smooth;
+}
+
+/* Tailwind v4 sets buttons to the default cursor; restore the pointer. */
+button:not(:disabled),
+label[role="button"],
+[role="button"]:not([aria-disabled="true"]) {
+  cursor: pointer;
+}
+
+button:disabled {
+  cursor: not-allowed;
+}
+
+.btn.btn-sm {
+  min-height: 2.5rem;
+  height: 2.5rem;
+  padding-inline: 1rem;
+  font-size: 0.875rem;
+}
+
+.btn.btn-square.btn-sm,
+.btn.btn-circle.btn-sm {
+  width: 2.5rem;
+  padding-inline: 0;
 }
 
 @keyframes side-panel-in {
@@ -164,6 +198,20 @@ html {
   }
 }
 
+@keyframes website-card-in {
+  from {
+    opacity: 0;
+    filter: blur(8px);
+    transform: translateY(34px) scale(0.98);
+  }
+
+  to {
+    opacity: 1;
+    filter: blur(0);
+    transform: translateY(0) scale(1);
+  }
+}
+
 @keyframes website-float {
   0%,
   100% {
@@ -191,6 +239,13 @@ html {
   animation-range: entry 0% cover 34%;
 }
 
+.website-card-reveal {
+  animation: website-card-in 0.9s cubic-bezier(0.2, 0.85, 0.2, 1) both;
+  animation-delay: var(--reveal-delay, 0ms);
+  animation-timeline: view();
+  animation-range: entry 4% cover 30%;
+}
+
 .website-hero-copy {
   animation: website-hero-copy 0.95s cubic-bezier(0.2, 0.85, 0.2, 1) both;
 }
@@ -212,6 +267,11 @@ html {
   width: 34%;
 }
 
+.website-hero-card {
+  animation: website-card-in 0.9s cubic-bezier(0.2, 0.85, 0.2, 1) both;
+  animation-delay: var(--hero-card-delay, 0ms);
+}
+
 .website-float {
   animation: website-float 7s ease-in-out infinite;
 }
@@ -230,6 +290,8 @@ html {
   }
 
   .website-reveal,
+  .website-card-reveal,
+  .website-hero-card,
   .website-hero-copy,
   .website-hero-visual,
   .website-hero-proof,
