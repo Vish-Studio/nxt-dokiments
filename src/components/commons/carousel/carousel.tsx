@@ -55,52 +55,66 @@ export const Carousel = ({ ariaLabel, children, className, header }: CarouselPro
   }, [emblaApi, onSelect]);
 
   const progress = snapCount > 0 ? ((selectedIndex + 1) / snapCount) * 100 : 0;
+  const currentSlide = String(selectedIndex + 1).padStart(2, "0");
+  const totalSlides = String(snapCount).padStart(2, "0");
 
   return (
     <div className={cn("app-carousel min-w-0", className)}>
-      <div className="flex items-start justify-between gap-2">
-        <div className="min-w-0">{header}</div>
-        <div className="flex shrink-0 items-center gap-2">
-          <ButtonIcon
-            aria-label="Scroll left"
-            disabled={!canScrollPrev}
-            icon={<CaretLeftIcon aria-hidden size={16} weight="bold" />}
-            onClick={() => emblaApi?.scrollPrev()}
-            shape="square"
-            size="sm"
-            variant="secondary"
-          />
-          <ButtonIcon
-            aria-label="Scroll right"
-            disabled={!canScrollNext}
-            icon={<CaretRightIcon aria-hidden size={16} weight="bold" />}
-            onClick={() => emblaApi?.scrollNext()}
-            shape="square"
-            size="sm"
-            variant="accent"
-          />
-        </div>
-      </div>
+      {header ? <div className="min-w-0">{header}</div> : null}
 
       <div
         aria-label={ariaLabel}
-        className="app-carousel-viewport -mx-2 mt-2 overflow-hidden px-2 py-4"
+        aria-roledescription="carousel"
+        className={cn(
+          "app-carousel-viewport overflow-hidden py-2",
+          header ? "mt-4" : "mt-0",
+        )}
         ref={emblaRef}
+        role="region"
       >
-        <div className="app-carousel-track flex touch-pan-y gap-2">{children}</div>
+        <div className="app-carousel-track flex touch-pan-y gap-4">{children}</div>
       </div>
 
       {snapCount > 1 ? (
-        <div className="mt-1 flex items-center gap-3">
-          <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-base-200">
+        <div className="mt-4 flex items-center gap-4 border-t border-nox-noir/10 pt-4">
+          <p
+            aria-live="polite"
+            className="min-w-14 font-title text-xs font-bold tabular-nums text-nox-noir/50"
+          >
+            <span className="text-nox-noir">{currentSlide}</span>
+            <span aria-hidden className="px-1 text-nox-noir/25">/</span>
+            {totalSlides}
+          </p>
+
+          <div className="h-px flex-1 overflow-hidden bg-nox-noir/10">
             <div
-              className="h-full rounded-full bg-golden-harvest transition-[width] duration-300 ease-out"
+              className="h-full bg-nox-noir transition-[width] duration-300 ease-out"
               style={{ width: `${progress}%` }}
             />
           </div>
-          <p className="min-w-10 text-right font-title text-xs font-bold text-nox-noir/45">
-            {selectedIndex + 1}/{snapCount}
-          </p>
+
+          <div className="flex shrink-0 items-center gap-2">
+            <ButtonIcon
+              aria-label="Previous slide"
+              className="border-nox-noir/15 bg-transparent text-nox-noir hover:bg-nox-noir/5 disabled:bg-transparent"
+              disabled={!canScrollPrev}
+              icon={<CaretLeftIcon aria-hidden size={16} weight="bold" />}
+              onClick={() => emblaApi?.scrollPrev()}
+              shape="square"
+              size="sm"
+              variant="outline"
+            />
+            <ButtonIcon
+              aria-label="Next slide"
+              className="border-nox-noir bg-nox-noir text-white hover:bg-nox-noir disabled:border-nox-noir/15 disabled:bg-transparent disabled:text-nox-noir/30"
+              disabled={!canScrollNext}
+              icon={<CaretRightIcon aria-hidden size={16} weight="bold" />}
+              onClick={() => emblaApi?.scrollNext()}
+              shape="square"
+              size="sm"
+              variant="primary"
+            />
+          </div>
         </div>
       ) : null}
     </div>

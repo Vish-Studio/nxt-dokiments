@@ -35,6 +35,6 @@ export const Default: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     await expect(canvas.getByText("Card 1")).toBeVisible();
-    await expect(canvas.getByRole("button", { name: /scroll right/i })).toBeVisible();
+    await expect(canvas.getByRole("button", { name: /next slide/i })).toBeVisible();
   },
 };

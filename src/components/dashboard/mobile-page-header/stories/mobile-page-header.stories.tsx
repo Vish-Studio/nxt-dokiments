@@ -1,6 +1,6 @@
 import { FileTextIcon } from "@phosphor-icons/react";
 import type { Meta, StoryObj } from "@storybook/nextjs-vite";
-import { expect, within } from "storybook/test";
+import { expect, fn, userEvent, within } from "storybook/test";
 
 import { MobilePageHeader } from "../mobile-page-header";
 
@@ -9,12 +9,16 @@ const meta = {
   component: MobilePageHeader,
   tags: ["ai-generated"],
   parameters: { layout: "fullscreen" },
+  globals: {
+    viewport: { value: "mobile1", isRotated: false },
+  },
   args: {
     description: "Create and manage documents from your saved templates.",
     icon: FileTextIcon,
-    onOpenNavigation: () => {},
+    onOpenNavigation: fn(),
     title: "Documents",
     tone: "blue",
+    visualVariant: "documents",
   },
 } satisfies Meta<typeof MobilePageHeader>;
 
@@ -31,8 +35,11 @@ export const Expanded: Story = {
   ],
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    await expect(canvas.getByRole("button", { name: /open navigation/i })).toBeVisible();
+    const navigationButton = canvas.getByRole("button", { name: /open navigation/i });
+    await expect(navigationButton).toBeVisible();
     await expect(canvas.getByRole("heading", { name: "Documents" })).toBeVisible();
+    await userEvent.click(navigationButton);
+    await expect(meta.args.onOpenNavigation).toHaveBeenCalledOnce();
   },
 };
 

@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from "@storybook/nextjs-vite";
 import { expect } from "storybook/test";
 
-import { SettingsNavItem } from "../settings-nav-item";
+import SettingsNavItem from "../settings-nav-item";
 
 const meta = {
   title: "Dashboard/Settings Nav Item",

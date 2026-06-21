@@ -53,7 +53,7 @@
   --color-app-chrome-content: #ffffff;
   --color-app-panel: #ffffff;
   --color-app-control: rgb(255 255 255 / 0.1);
-  --color-app-nav: rgb(255 255 255 / 0.75);
+  --color-app-nav: rgb(255 255 255 / 0.5);
   --color-app-nav-hover: rgb(255 255 255 / 0.1);
   --color-app-active: var(--color-golden-harvest);
   --color-app-active-content: var(--color-nox-noir);
@@ -258,7 +258,12 @@ button:disabled {
 
 .website-hero-sheen::after {
   animation: website-hero-sheen 3.8s ease-in-out 1.15s infinite;
-  background: linear-gradient(90deg, transparent, rgb(255 255 255 / 0.38), transparent);
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgb(255 255 255 / 0.38),
+    transparent
+  );
   content: "";
   inset: 0 auto 0 0;
   position: absolute;

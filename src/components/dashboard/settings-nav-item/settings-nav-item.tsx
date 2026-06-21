@@ -1,44 +1,31 @@
 import { GearSix } from "@phosphor-icons/react";
-import Link from "next/link";
+import type { FunctionComponent } from "react";
 
-import { cn } from "@/lib/utils";
+import SidebarItem from "@/components/dashboard/sidebar-item/sidebar-item";
 
-export type SettingsNavItemProps = {
+interface Props {
   isActive?: boolean;
   isCollapsed?: boolean;
-};
+  onCloseMobile?: () => void;
+}
 
-export const SettingsNavItem = ({
+const SettingsNavItem: FunctionComponent<Props> = ({
   isActive = false,
   isCollapsed = false,
-}: SettingsNavItemProps) => {
+  onCloseMobile,
+}) => {
   return (
-    <Link
-      aria-current={isActive ? "page" : undefined}
-      className={cn(
-        "group flex h-10 items-center gap-3 rounded-lg px-3 font-title text-sm font-semibold transition-colors",
-        isActive
-          ? "bg-app-active text-app-active-content"
-          : "text-app-nav hover:bg-app-nav-hover hover:text-app-chrome-content",
-        isCollapsed && "lg:justify-center lg:px-0",
-      )}
+    <SidebarItem
+      className="settings-nav-item"
+      icon={GearSix}
+      isActive={isActive}
+      isCollapsed={isCollapsed}
       href="/settings"
-      title={isCollapsed ? "Settings" : undefined}
-    >
-      <GearSix
-        aria-hidden
-        className={cn("shrink-0", isActive && "drop-shadow-[0_0_0_currentColor]")}
-        size={19}
-        weight={isActive ? "fill" : "bold"}
-      />
-      <span
-        className={cn(
-          "truncate transition-opacity",
-          isCollapsed && "lg:sr-only lg:opacity-0",
-        )}
-      >
-        Settings
-      </span>
-    </Link>
+      label="Settings"
+      onCloseMobile={onCloseMobile}
+    />
   );
 };
+
+SettingsNavItem.displayName = "SettingsNavItem";
+export default SettingsNavItem;

@@ -1,16 +1,17 @@
 "use client";
 
 import { SignOutIcon, UserIcon } from "@phosphor-icons/react";
+import type { FunctionComponent } from "react";
 
 import { ButtonIcon } from "@/components/commons/button-icon/button-icon";
 import { cn } from "@/lib/utils";
 import { useAuthStore } from "@/stores/auth-store";
 
-export type SidebarAccountProps = {
+interface Props {
   isCollapsed?: boolean;
-};
+}
 
-export const SidebarAccount = ({ isCollapsed = false }: SidebarAccountProps) => {
+const SidebarAccount: FunctionComponent<Props> = ({ isCollapsed = false }) => {
   const user = useAuthStore((state) => state.user);
   const clearSession = useAuthStore((state) => state.clearSession);
 
@@ -22,7 +23,7 @@ export const SidebarAccount = ({ isCollapsed = false }: SidebarAccountProps) => 
   };
 
   return (
-    <div>
+    <div className="sidebar-account">
       <div
         className={cn(
           "rounded-box border border-white/10 bg-app-control p-3",
@@ -70,3 +71,6 @@ export const SidebarAccount = ({ isCollapsed = false }: SidebarAccountProps) => 
     </div>
   );
 };
+
+SidebarAccount.displayName = "SidebarAccount";
+export default SidebarAccount;

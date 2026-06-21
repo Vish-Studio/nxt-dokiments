@@ -6,7 +6,6 @@ import {
   CreditCardIcon,
   FileTextIcon,
   LayoutIcon,
-  PlusIcon,
   SparkleIcon,
   StorefrontIcon,
 } from "@phosphor-icons/react";
@@ -57,26 +56,26 @@ export const DashboardView = () => {
     {
       icon: FileTextIcon,
       label: "Documents",
-      tone: "bg-play-blue/45",
+      tone: "bg-play-purple",
       value: `${documents.length} ${documentLabel}`,
     },
     {
       icon: LayoutIcon,
       label: "Saved templates",
-      tone: "bg-play-pink/55",
+      tone: "bg-play-pink",
       value: `${saved.length} ${templateLabel}`,
     },
     {
       icon: CreditCardIcon,
       label: "Plan",
-      tone: "bg-play-purple/55",
+      tone: "bg-golden-harvest",
       value: roleLabel,
     },
   ];
 
   const quickActions = [
     {
-      color: "bg-play-blue/45 hover:bg-play-blue/60",
+      color: "bg-play-purple hover:bg-play-purple/80",
       href: "/documents",
       icon: FileTextIcon,
       label: "Open documents",
@@ -84,13 +83,13 @@ export const DashboardView = () => {
     {
       href: "/my-templates",
       icon: LayoutIcon,
-      color: "bg-play-pink/55 hover:bg-play-pink/70",
+      color: "bg-play-pink hover:bg-play-pink/70",
       label: "My templates",
     },
     {
       href: "/marketplace",
       icon: StorefrontIcon,
-      color: "bg-golden-harvest hover:brightness-95",
+      color: "bg-play-teal hover:brightness-95",
       label: "Browse marketplace",
     },
   ];
@@ -135,6 +134,34 @@ export const DashboardView = () => {
         </aside>
       </div>
 
+
+      <section className="rounded-box border border-steel-mist bg-base-100 p-5 sm:p-6">
+        <div className="flex flex-wrap items-center justify-between gap-4">
+          <div>
+            <h2 className="font-title text-xl font-bold text-nox-noir">Quick paths</h2>
+            <p className="mt-1 text-sm text-nox-noir/60">Three places most users need from the dashboard.</p>
+          </div>
+        </div>
+        <div className="mt-5 grid gap-3 sm:grid-cols-3">
+          {quickActions.map((action) => {
+            const ActionIcon = action.icon;
+            return (
+              <Link
+                className={`flex items-center justify-between gap-3 rounded-box p-4 text-nox-noir transition ${action.color}`}
+                href={action.href}
+                key={action.label}
+              >
+                <span className="flex items-center gap-3 font-title text-sm font-bold">
+                  <ActionIcon aria-hidden size={19} weight="bold" />
+                  {action.label}
+                </span>
+                <ArrowRightIcon aria-hidden size={17} weight="bold" />
+              </Link>
+            );
+          })}
+        </div>
+      </section>
+
       <section className="grid gap-4 lg:grid-cols-[0.86fr_1.14fr]">
         <div className="rounded-box border border-steel-mist bg-base-100 p-5 sm:p-6">
           <div className="flex items-start justify-between gap-4">
@@ -178,7 +205,7 @@ export const DashboardView = () => {
           </div>
 
           {remainingTemplateSlots !== null ? (
-            <p className="mt-4 flex items-center gap-2 text-sm text-nox-noir/60">
+            <p className="mt-6 flex items-center gap-2 text-sm text-nox-noir/60">
               <CheckCircleIcon aria-hidden className="text-success" size={17} weight="fill" />
               {remainingTemplateSlots} free template {remainingTemplateSlots === 1 ? "slot" : "slots"} left.
             </p>
@@ -259,42 +286,6 @@ export const DashboardView = () => {
               </Link>
             </div>
           )}
-        </div>
-      </section>
-
-      <section className="rounded-box border border-steel-mist bg-base-100 p-5 sm:p-6">
-        <div className="flex flex-wrap items-center justify-between gap-4">
-          <div>
-            <h2 className="font-title text-xl font-bold text-nox-noir">Quick paths</h2>
-            <p className="mt-1 text-sm text-nox-noir/60">Three places most users need from the dashboard.</p>
-          </div>
-          <div className="flex flex-wrap gap-2">
-            <Link
-              className="btn btn-sm btn-primary font-title font-semibold tracking-normal"
-              href="/documents"
-            >
-              <PlusIcon aria-hidden size={16} weight="bold" />
-              New document
-            </Link>
-          </div>
-        </div>
-        <div className="mt-5 grid gap-3 sm:grid-cols-3">
-          {quickActions.map((action) => {
-            const ActionIcon = action.icon;
-            return (
-              <Link
-                className={`flex items-center justify-between gap-3 rounded-box p-4 text-nox-noir transition ${action.color}`}
-                href={action.href}
-                key={action.label}
-              >
-                <span className="flex items-center gap-3 font-title text-sm font-bold">
-                  <ActionIcon aria-hidden size={19} weight="bold" />
-                  {action.label}
-                </span>
-                <ArrowRightIcon aria-hidden size={17} weight="bold" />
-              </Link>
-            );
-          })}
         </div>
       </section>
 

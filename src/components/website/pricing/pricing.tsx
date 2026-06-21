@@ -1,5 +1,6 @@
 import type { CSSProperties } from "react";
 
+import { Carousel } from "@/components/commons/carousel/carousel";
 import { PlanCard } from "@/components/commons/plan-card/plan-card";
 import type { PlanCardVariant } from "@/components/commons/plan-card/plan-card";
 
@@ -52,22 +53,26 @@ export const Pricing = () => {
           </p>
         </div>
 
-        <div className="mt-14 grid gap-4 lg:grid-cols-3">
+        <Carousel ariaLabel="Pricing plans" className="mt-14">
           {plans.map((plan, index) => (
-            <PlanCard
-              action={{ href: "/sign-up", label: "Sign up" }}
-              className="website-reveal"
-              description={plan.description}
-              features={plan.features}
+            <div
+              className="flex min-w-0 shrink-0 basis-[88%] sm:basis-[48%] lg:basis-0 lg:flex-1"
               key={plan.name}
-              name={plan.name}
-              period={plan.period}
-              price={plan.price}
-              style={{ "--reveal-delay": `${index * 100}ms` } as CSSProperties}
-              variant={plan.variant}
-            />
+            >
+              <PlanCard
+                action={{ href: "/sign-up", label: "Sign up" }}
+                className="website-reveal h-full w-full"
+                description={plan.description}
+                features={plan.features}
+                name={plan.name}
+                period={plan.period}
+                price={plan.price}
+                style={{ "--reveal-delay": `${index * 100}ms` } as CSSProperties}
+                variant={plan.variant}
+              />
+            </div>
           ))}
-        </div>
+        </Carousel>
       </div>
     </section>
   );

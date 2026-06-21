@@ -21,6 +21,7 @@ const meta = {
     icon: StorefrontIcon,
     title: "Marketplace",
     tone: "golden",
+    visualVariant: "marketplace",
   },
 } satisfies Meta<typeof PageBanner>;
 

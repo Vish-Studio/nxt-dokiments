@@ -1,11 +1,12 @@
 "use client";
 
 import {
+  ChartLineUpIcon,
   CreditCardIcon,
-  FileTextIcon,
+  FilePlusIcon,
+  FolderSimpleStarIcon,
   GearSixIcon,
   HouseIcon,
-  LayoutIcon,
   ListIcon,
   StorefrontIcon,
 } from "@phosphor-icons/react";
@@ -20,7 +21,8 @@ import { ContentContainer } from "@/components/dashboard/content-container/conte
 import { MobilePageHeader } from "@/components/dashboard/mobile-page-header/mobile-page-header";
 import { PageBanner } from "@/components/dashboard/page-banner/page-banner";
 import type { PageBannerTone, PageBannerVariant } from "@/components/dashboard/page-banner/page-banner";
-import { Sidebar } from "@/components/dashboard/sidebar/sidebar";
+import type { PageHeaderVisualVariant } from "@/components/dashboard/page-header-visual/page-header-visual";
+import Sidebar from "@/components/dashboard/sidebar/sidebar";
 import { useAuthStore } from "@/stores/auth-store";
 import { useSyncSavedTemplates } from "@/stores/templates-store";
 import { useUiStore } from "@/stores/ui-store";
@@ -35,13 +37,20 @@ export type AppShellProps = {
   title?: string;
 };
 
-const pageThemes: Record<string, { Icon: Icon; tone: PageBannerTone; variant?: PageBannerVariant }> = {
-  Dashboard: { Icon: HouseIcon, tone: "golden" },
-  Documents: { Icon: FileTextIcon, tone: "blue" },
-  "My Templates": { Icon: LayoutIcon, tone: "pink" },
-  Marketplace: { Icon: StorefrontIcon, tone: "golden" },
-  Subscription: { Icon: CreditCardIcon, tone: "purple" },
-  Settings: { Icon: GearSixIcon, tone: "teal" },
+type PageTheme = {
+  Icon: Icon;
+  tone: PageBannerTone;
+  variant?: PageBannerVariant;
+  visual?: PageHeaderVisualVariant;
+};
+
+const pageThemes: Record<string, PageTheme> = {
+  Dashboard: { Icon: ChartLineUpIcon, tone: "golden" },
+  Documents: { Icon: FilePlusIcon, tone: "purple", visual: "documents" },
+  "My Templates": { Icon: FolderSimpleStarIcon, tone: "pink", visual: "templates" },
+  Marketplace: { Icon: StorefrontIcon, tone: "teal", visual: "marketplace" },
+  Subscription: { Icon: CreditCardIcon, tone: "purple", visual: "subscription" },
+  Settings: { Icon: GearSixIcon, tone: "golden", visual: "settings" },
 };
 
 export const AppShell = ({
@@ -105,6 +114,7 @@ export const AppShell = ({
                   title={mobileTitle}
                   tone={resolvedTone}
                   variant={resolvedVariant}
+                  visualVariant={showBanner ? theme.visual : undefined}
                 />
                 {showBanner ? (
                   <PageBanner
@@ -114,6 +124,7 @@ export const AppShell = ({
                     title={title}
                     tone={resolvedTone}
                     variant={resolvedVariant}
+                    visualVariant={theme.visual}
                   />
                 ) : (
                   <ButtonIcon

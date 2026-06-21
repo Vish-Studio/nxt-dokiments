@@ -6,6 +6,7 @@ import {
 import type { CSSProperties } from "react";
 import { useState } from "react";
 
+import { Carousel } from "@/components/commons/carousel/carousel";
 import { TemplateCard } from "@/components/commons/template-card/template-card";
 import { TemplatePreviewDialog } from "@/components/commons/template-preview-dialog/template-preview-dialog";
 import { getTemplateById } from "@/lib/market-place";
@@ -14,22 +15,22 @@ import type { MarketplaceTemplate } from "@/types/template";
 
 const showcaseItems = [
   {
-    className: "md:translate-y-10 md:rotate-[-3deg]",
+    className: "xl:translate-y-10 xl:rotate-[-3deg]",
     id: "classic-proposal",
     label: "Classic",
   },
   {
-    className: "md:-translate-y-2 md:rotate-[2deg]",
+    className: "xl:-translate-y-2 xl:rotate-[2deg]",
     id: "modern-contract",
     label: "Modern",
   },
   {
-    className: "md:translate-y-16 md:rotate-[3deg]",
+    className: "xl:translate-y-16 xl:rotate-[3deg]",
     id: "brutalist-change-order",
     label: "Brutalist",
   },
   {
-    className: "md:translate-y-5 md:rotate-[-2deg]",
+    className: "xl:translate-y-5 xl:rotate-[-2deg]",
     id: "minimalist-invoice",
     label: "Minimalist",
   },
@@ -81,18 +82,18 @@ export const MarketplaceShowcase = () => {
           </div>
         </div>
 
-        <div className="mt-14 grid gap-8 overflow-visible md:grid-cols-2 xl:grid-cols-4 xl:items-start">
+        <Carousel ariaLabel="Featured marketplace templates" className="mt-14">
           {showcaseItems.map((item, index) => (
             <div
               className={cn(
-                "website-card-reveal group relative flex flex-col items-center",
+                "website-card-reveal group relative flex min-w-0 shrink-0 basis-[82%] flex-col items-center sm:basis-[46%] xl:basis-0 xl:flex-1",
                 item.className,
               )}
               key={item.template.id}
               style={{ "--reveal-delay": `${160 + index * 135}ms` } as CSSProperties}
             >
               <TemplateCard
-                className="w-60 sm:w-64 xl:w-72"
+                className="w-full max-w-72"
                 onPreview={() => setPreview(item.template)}
                 template={item.template}
               />
@@ -101,7 +102,7 @@ export const MarketplaceShowcase = () => {
               </span>
             </div>
           ))}
-        </div>
+        </Carousel>
       </div>
 
       <TemplatePreviewDialog

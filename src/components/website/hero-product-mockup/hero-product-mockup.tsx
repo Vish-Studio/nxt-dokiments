@@ -31,7 +31,7 @@ const templateCards = [
 
 export const HeroProductMockup = () => {
   return (
-    <div className="website-hero-visual h-full p-3">
+    <div className="website-hero-visual h-full p-3 hidden lg:block">
       <div className="relative flex h-full min-h-[520px] items-center overflow-hidden rounded-[1.35rem] p-4 sm:p-6">
         <div className="absolute right-8 top-8 size-32 rounded-full bg-golden-harvest/35 blur-3xl website-float" />
         <div className="absolute bottom-10 left-8 size-24 rounded-full bg-play-teal/28 blur-2xl website-float-delayed" />

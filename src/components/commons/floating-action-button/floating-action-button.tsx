@@ -20,7 +20,7 @@ export const FloatingActionButton = ({
   return (
     <div
       className={cn(
-        "floating-action-button fixed bottom-20 right-5 z-50 sm:bottom-6 sm:right-6",
+        "floating-action-button fixed bottom-6 lg:bottom-10 right-5 z-50 sm:bottom-6 sm:right-10",
         className,
       )}
     >

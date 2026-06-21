@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from "@storybook/nextjs-vite";
 import { expect } from "storybook/test";
 
-import { Sidebar } from "../sidebar";
+import Sidebar from "../sidebar";
 
 const meta = {
   title: "Dashboard/Sidebar",

@@ -14,7 +14,7 @@ export const Hero = () => {
         <div className="website-hero-copy grid w-full overflow-hidden rounded-[1.75rem] bg-white text-nox-noir shadow-[0_30px_90px_rgb(0_0_0_/_0.36)] lg:grid-cols-[0.92fr_1.08fr]">
           <div className="flex min-h-[520px] flex-col justify-center p-6 sm:p-8 lg:min-h-[calc(100vh-8rem)] lg:p-12">
             <div>
-              <h1 className="max-w-3xl font-title text-4xl font-bold leading-[0.98] text-nox-noir sm:text-6xl lg:text-7xl">
+              <h1 className="max-w-3xl font-title text-4xl md:text-5xl lg:text-7xl font-bold leading-[0.98] text-nox-noir">
                 Business documents without the blank page.
               </h1>
               <p className="mt-6 max-w-2xl text-base leading-7 text-nox-noir/64 sm:text-lg sm:leading-8">

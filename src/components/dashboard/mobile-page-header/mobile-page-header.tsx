@@ -5,6 +5,8 @@ import type { Icon } from "@phosphor-icons/react";
 
 import { ButtonIcon } from "@/components/commons/button-icon/button-icon";
 import type { PageBannerTone, PageBannerVariant } from "@/components/dashboard/page-banner/page-banner";
+import { PageHeaderVisual } from "@/components/dashboard/page-header-visual/page-header-visual";
+import type { PageHeaderVisualVariant } from "@/components/dashboard/page-header-visual/page-header-visual";
 import { cn } from "@/lib/utils";
 
 export interface MobilePageHeaderProps {
@@ -15,6 +17,7 @@ export interface MobilePageHeaderProps {
   title: string;
   tone?: PageBannerTone;
   variant?: PageBannerVariant;
+  visualVariant?: PageHeaderVisualVariant;
 }
 
 type ToneStyle = {
@@ -113,6 +116,7 @@ export const MobilePageHeader = ({
   title,
   tone = "golden",
   variant = "solid",
+  visualVariant,
 }: MobilePageHeaderProps) => {
   const style = toneStyles[tone];
 
@@ -121,17 +125,18 @@ export const MobilePageHeader = ({
       className={cn(
         "sticky top-0 z-20 rounded-box transition-all duration-300 ease-out lg:hidden",
         style.container[variant],
-        isCompact ? "p-3 shadow-[0_12px_30px_rgb(20_20_20_/_0.10)]" : "p-5",
+        isCompact ? "p-1 shadow-[0_12px_30px_rgb(20_20_20_/_0.10)]" : "p-5",
       )}
       data-variant={variant}
     >
-      <div className="flex items-start gap-3">
+      <div className={cn("flex items-start gap-3", isCompact && 'items-center')}>
         <ButtonIcon
           aria-label="Open navigation"
-          className={cn("shrink-0 border bg-transparent", style.toggle)}
-          icon={<ListIcon aria-hidden size={18} weight="bold" />}
+          className={cn("shrink-0 border bg-transparent size-9! min-h-9!", style.toggle)}
+          icon={<ListIcon aria-hidden size={16} weight="bold" />}
           onClick={onOpenNavigation}
           variant="ghost"
+          // size="sm"
         />
 
         <div className="min-w-0 flex-1">
@@ -171,6 +176,16 @@ export const MobilePageHeader = ({
             </p>
           ) : null}
         </div>
+
+        {visualVariant ? (
+          <PageHeaderVisual
+            className={cn(
+              "size-14 transition-all duration-300 ease-out sm:size-16",
+              isCompact && "size-0 border-0 opacity-0 sm:size-0",
+            )}
+            variant={visualVariant}
+          />
+        ) : null}
       </div>
     </header>
   );

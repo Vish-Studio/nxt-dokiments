@@ -3,7 +3,7 @@ import { expect, within } from "storybook/test";
 
 import { useAuthStore } from "@/stores/auth-store";
 
-import { SidebarAccount } from "../sidebar-account";
+import SidebarAccount from "../sidebar-account";
 
 const meta = {
   title: "Dashboard/Sidebar Account",

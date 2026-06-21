@@ -4,6 +4,8 @@ import { ListIcon } from "@phosphor-icons/react";
 import type { Icon } from "@phosphor-icons/react";
 
 import { ButtonIcon } from "@/components/commons/button-icon/button-icon";
+import { PageHeaderVisual } from "@/components/dashboard/page-header-visual/page-header-visual";
+import type { PageHeaderVisualVariant } from "@/components/dashboard/page-header-visual/page-header-visual";
 import { cn } from "@/lib/utils";
 
 export type PageBannerTone =
@@ -24,6 +26,7 @@ export type PageBannerProps = {
   title: string;
   tone?: PageBannerTone;
   variant?: PageBannerVariant;
+  visualVariant?: PageHeaderVisualVariant;
 };
 
 type ToneStyle = {
@@ -122,6 +125,7 @@ export const PageBanner = ({
   title,
   tone = "golden",
   variant = "solid",
+  visualVariant,
 }: PageBannerProps) => {
   const style = toneStyles[tone];
 
@@ -169,6 +173,10 @@ export const PageBanner = ({
           </p>
         ) : null}
       </div>
+
+      {visualVariant ? (
+        <PageHeaderVisual className="ml-auto hidden size-24 sm:block lg:size-28" variant={visualVariant} />
+      ) : null}
     </section>
   );
 };
