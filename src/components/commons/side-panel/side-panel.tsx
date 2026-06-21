@@ -59,7 +59,7 @@ export const SidePanel = ({
         type="button"
       />
 
-      <div className="side-panel-enter absolute right-0 top-0 flex h-full w-full max-w-md flex-col border-l border-steel-mist bg-base-100">
+      <div className="side-panel-enter absolute right-0 top-0 flex h-full w-full max-w-xl flex-col border-l border-steel-mist bg-base-100">
         <header className="flex items-start justify-between gap-4 border-b border-steel-mist p-4">
           <div className="min-w-0">
             {title ? (

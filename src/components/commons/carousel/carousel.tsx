@@ -20,15 +20,20 @@ export const Carousel = ({ ariaLabel, children, className, header }: CarouselPro
   const [emblaRef, emblaApi] = useEmblaCarousel({
     align: "start",
     containScroll: "trimSnaps",
-    dragFree: true,
+    dragFree: false,
+    slidesToScroll: 1,
   });
   const [canScrollPrev, setCanScrollPrev] = useState(false);
   const [canScrollNext, setCanScrollNext] = useState(false);
+  const [selectedIndex, setSelectedIndex] = useState(0);
+  const [snapCount, setSnapCount] = useState(0);
 
   const onSelect = useCallback(() => {
     if (emblaApi) {
       setCanScrollPrev(emblaApi.canScrollPrev());
       setCanScrollNext(emblaApi.canScrollNext());
+      setSelectedIndex(emblaApi.selectedScrollSnap());
+      setSnapCount(emblaApi.scrollSnapList().length);
     }
   }, [emblaApi]);
 
@@ -49,11 +54,13 @@ export const Carousel = ({ ariaLabel, children, className, header }: CarouselPro
     };
   }, [emblaApi, onSelect]);
 
+  const progress = snapCount > 0 ? ((selectedIndex + 1) / snapCount) * 100 : 0;
+
   return (
-    <div className={cn("min-w-0", className)}>
-      <div className="flex items-start justify-between gap-3">
+    <div className={cn("app-carousel min-w-0", className)}>
+      <div className="flex items-start justify-between gap-2">
         <div className="min-w-0">{header}</div>
-        <div className="flex shrink-0 items-center gap-1.5">
+        <div className="flex shrink-0 items-center gap-2">
           <ButtonIcon
             aria-label="Scroll left"
             disabled={!canScrollPrev}
@@ -61,7 +68,7 @@ export const Carousel = ({ ariaLabel, children, className, header }: CarouselPro
             onClick={() => emblaApi?.scrollPrev()}
             shape="square"
             size="sm"
-            variant="outline"
+            variant="secondary"
           />
           <ButtonIcon
             aria-label="Scroll right"
@@ -70,14 +77,32 @@ export const Carousel = ({ ariaLabel, children, className, header }: CarouselPro
             onClick={() => emblaApi?.scrollNext()}
             shape="square"
             size="sm"
-            variant="outline"
+            variant="accent"
           />
         </div>
       </div>
 
-      <div aria-label={ariaLabel} className="-mx-6 -my-6 mt-0 overflow-hidden px-6 py-6" ref={emblaRef}>
-        <div className="flex gap-6 overflow-visible">{children}</div>
+      <div
+        aria-label={ariaLabel}
+        className="app-carousel-viewport -mx-2 mt-2 overflow-hidden px-2 py-4"
+        ref={emblaRef}
+      >
+        <div className="app-carousel-track flex touch-pan-y gap-2">{children}</div>
       </div>
+
+      {snapCount > 1 ? (
+        <div className="mt-1 flex items-center gap-3">
+          <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-base-200">
+            <div
+              className="h-full rounded-full bg-golden-harvest transition-[width] duration-300 ease-out"
+              style={{ width: `${progress}%` }}
+            />
+          </div>
+          <p className="min-w-10 text-right font-title text-xs font-bold text-nox-noir/45">
+            {selectedIndex + 1}/{snapCount}
+          </p>
+        </div>
+      ) : null}
     </div>
   );
 };

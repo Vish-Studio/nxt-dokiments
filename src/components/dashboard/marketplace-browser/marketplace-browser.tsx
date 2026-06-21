@@ -3,8 +3,10 @@
 import { LockIcon } from "@phosphor-icons/react";
 import { useEffect, useMemo, useState } from "react";
 
+import { Badge } from "@/components/commons/badge/badge";
 import { Carousel } from "@/components/commons/carousel/carousel";
 import { ConfirmDialog } from "@/components/commons/confirm-dialog/confirm-dialog";
+import { TabMenu } from "@/components/commons/tab-menu/tab-menu";
 import { TemplateCard } from "@/components/commons/template-card/template-card";
 import { TemplatePreviewDialog } from "@/components/commons/template-preview-dialog/template-preview-dialog";
 import { UpgradeDialog } from "@/components/commons/upgrade-dialog/upgrade-dialog";
@@ -13,23 +15,56 @@ import {
   getTemplateById,
   listTemplatesByStyle,
   templateStyles,
-  tierBadgeClasses,
   tierLabels,
 } from "@/lib/market-place";
-import { cn } from "@/lib/utils";
 import { useAuthStore } from "@/stores/auth-store";
 import { useTemplateLibrary } from "@/stores/templates-store";
 import type { MarketplaceTemplate } from "@/types/template";
+import type { TemplateStyleId } from "@/types/template";
 
 export const MarketplaceBrowser = () => {
   const user = useAuthStore((state) => state.user);
   const { addTemplate, limit, saved } = useTemplateLibrary();
+  const [activeStyleId, setActiveStyleId] = useState<TemplateStyleId>(templateStyles[0].id);
   const [preview, setPreview] = useState<MarketplaceTemplate | null>(null);
   const [isUpgradeOpen, setIsUpgradeOpen] = useState(false);
   const [pendingTemplate, setPendingTemplate] = useState<MarketplaceTemplate | null>(null);
 
   const savedIds = useMemo(() => new Set(saved.map((item) => item.templateId)), [saved]);
   const isFreeTier = !user || user.role === "free";
+  const activeStyle = templateStyles.find((style) => style.id === activeStyleId) ?? templateStyles[0];
+  const activeStyleLocked = !canUseTier(user?.role, activeStyle.tier);
+  const activeTemplates = useMemo(
+    () =>
+      [...listTemplatesByStyle(activeStyle.id)].sort((a, b) => {
+        const aSaved = savedIds.has(a.id);
+        const bSaved = savedIds.has(b.id);
+
+        if (aSaved === bSaved) {
+          return a.name.localeCompare(b.name);
+        }
+
+        return aSaved ? -1 : 1;
+      }),
+    [activeStyle.id, savedIds],
+  );
+
+  const tabItems = templateStyles.map((style) => {
+    const locked = !canUseTier(user?.role, style.tier);
+
+    return {
+      badge: (
+        <Badge
+          icon={locked ? <LockIcon aria-hidden size={12} weight="bold" /> : null}
+          variant={style.tier}
+        >
+          {tierLabels[style.tier]}
+        </Badge>
+      ),
+      id: style.id,
+      label: style.name,
+    };
+  });
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -48,6 +83,8 @@ export const MarketplaceBrowser = () => {
     if (!template || savedIds.has(template.id)) {
       return;
     }
+
+    window.setTimeout(() => setActiveStyleId(template.style.id), 0);
 
     if (!canUseTier(user?.role, template.tier)) {
       window.setTimeout(() => setIsUpgradeOpen(true), 0);
@@ -91,55 +128,44 @@ export const MarketplaceBrowser = () => {
   };
 
   return (
-    <div className="flex w-full min-w-0 flex-col gap-10 md:gap-18 lg:gap-24 mt-10">
-      {templateStyles.map((style) => {
-          const locked = !canUseTier(user?.role, style.tier);
-          const templates = [...listTemplatesByStyle(style.id)].sort((a, b) => {
-            const aSaved = savedIds.has(a.id);
-            const bSaved = savedIds.has(b.id);
+    <div className="flex w-full min-w-0 flex-col gap-14">
+      <TabMenu
+        ariaLabel="Template style categories"
+        items={tabItems}
+        onChange={(styleId) => setActiveStyleId(styleId as TemplateStyleId)}
+        value={activeStyleId}
+      />
 
-            if (aSaved === bSaved) {
-              return a.name.localeCompare(b.name);
-            }
-
-            return aSaved ? -1 : 1;
-          });
-
-          return (
-            <Carousel
-              ariaLabel={`${style.name} templates`}
-              header={
-                <div>
-                  <div className="flex items-center gap-2">
-                    <h4 className="font-title text-2xl font-bold text-nox-noir">{style.name}</h4>
-                    <span
-                      className={cn(
-                        "inline-flex items-center gap-1 rounded-field px-2.5 py-1 font-title text-xs font-semibold",
-                        tierBadgeClasses[style.tier],
-                      )}
-                    >
-                      {locked ? <LockIcon aria-hidden size={12} weight="bold" /> : null}
-                      {tierLabels[style.tier]}
-                    </span>
-                  </div>
-                  <p className="mt-0.5 truncate text-sm text-nox-noir/60">{style.description}</p>
-                </div>
-              }
-              key={style.id}
-            >
-              {templates.map((template) => (
-                <div className="flex w-76 shrink-0" key={template.id}>
-                  <TemplateCard
-                    locked={locked}
-                    onPreview={() => setPreview(template)}
-                    saved={savedIds.has(template.id)}
-                    template={template}
-                  />
-                </div>
-              ))}
-            </Carousel>
-          );
-        })}
+      <Carousel
+        ariaLabel={`${activeStyle.name} templates`}
+        header={
+          <div>
+            <div className="flex items-center gap-2">
+              <h4 className="font-title text-2xl font-bold text-nox-noir">{activeStyle.name}</h4>
+              <Badge
+                icon={activeStyleLocked ? <LockIcon aria-hidden size={12} weight="bold" /> : null}
+                variant={activeStyle.tier}
+              >
+                {tierLabels[activeStyle.tier]}
+              </Badge>
+            </div>
+            <p className="mt-0.5 truncate text-sm text-nox-noir/60">{activeStyle.description}</p>
+          </div>
+        }
+        key={activeStyle.id}
+      >
+        {activeTemplates.map((template) => (
+          <div className="flex w-56 shrink-0 sm:w-64 lg:w-72" key={template.id}>
+            <TemplateCard
+              className="w-56 sm:w-64 lg:w-72"
+              locked={activeStyleLocked}
+              onPreview={() => setPreview(template)}
+              saved={savedIds.has(template.id)}
+              template={template}
+            />
+          </div>
+        ))}
+      </Carousel>
 
       <TemplatePreviewDialog
         locked={preview ? !canUseTier(user?.role, preview.tier) : false}

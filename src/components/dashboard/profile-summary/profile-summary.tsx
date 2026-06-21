@@ -1,5 +1,6 @@
 import { UserIcon } from "@phosphor-icons/react";
 
+import { Badge } from "@/components/commons/badge/badge";
 import { cn } from "@/lib/utils";
 import type { AuthUser, UserRole } from "@/types/auth";
 
@@ -9,6 +10,14 @@ const roleLabels: Record<UserRole, string> = {
   silver: "Silver",
   special: "Special",
   superadmin: "Super admin",
+};
+
+const roleBadgeVariants: Record<UserRole, "free" | "gold" | "silver" | "special" | "superadmin"> = {
+  free: "free",
+  gold: "gold",
+  silver: "silver",
+  special: "special",
+  superadmin: "superadmin",
 };
 
 const getInitials = (name: string) =>
@@ -46,9 +55,9 @@ export const ProfileSummary = ({ user }: ProfileSummaryProps) => {
         </div>
       </div>
 
-      <span className="mt-4 inline-flex w-fit items-center rounded-box bg-golden-harvest px-3 py-1 font-title text-xs font-bold text-nox-noir">
+      <Badge className="mt-4 w-fit" variant={user ? roleBadgeVariants[user.role] : "free"}>
         {user ? roleLabels[user.role] : "Free"} plan
-      </span>
+      </Badge>
 
       <dl className="mt-6 grid gap-4 border-t border-steel-mist pt-6">
         {details.map((detail) => (

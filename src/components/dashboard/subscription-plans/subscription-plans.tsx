@@ -52,7 +52,7 @@ export const SubscriptionPlans = () => {
 
   return (
     <section className="w-full">
-      <div className="border-b border-steel-mist pb-4">
+      <div className="pb-4">
         <h3 className="font-title text-lg font-bold text-nox-noir">Plans</h3>
         <p className="mt-1 text-sm leading-6 text-nox-noir/60">
           Choose the plan that fits your workflow. Your current plan is highlighted below.

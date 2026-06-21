@@ -13,6 +13,7 @@ import {
 import Link from "next/link";
 import { useState } from "react";
 
+import { Badge } from "@/components/commons/badge/badge";
 import { TemplateCard } from "@/components/commons/template-card/template-card";
 import { TemplatePreviewDialog } from "@/components/commons/template-preview-dialog/template-preview-dialog";
 import { getTemplateById } from "@/lib/market-place";
@@ -29,6 +30,15 @@ const roleLabels: Record<UserRole, string> = {
   special: "Special",
   superadmin: "Super admin",
 };
+
+const roleBadgeVariants: Record<UserRole, "free" | "gold" | "silver" | "special" | "superadmin"> =
+  {
+    free: "free",
+    gold: "gold",
+    silver: "silver",
+    special: "special",
+    superadmin: "superadmin",
+  };
 
 export const DashboardView = () => {
   const user = useAuthStore((state) => state.user);
@@ -134,9 +144,12 @@ export const DashboardView = () => {
                 The numbers that matter before starting the next document.
               </p>
             </div>
-            <span className="rounded-full bg-base-200 px-3 py-1 font-title text-xs font-bold uppercase tracking-normal text-nox-noir/60">
+            <Badge
+              className="shrink-0"
+              variant={user ? roleBadgeVariants[user.role] : "free"}
+            >
               {roleLabel} plan
-            </span>
+            </Badge>
           </div>
 
           <div className="mt-5 grid gap-3">

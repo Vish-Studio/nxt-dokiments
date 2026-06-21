@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 
 import { Button } from "@/components/commons/button/button";
+import { FloatingActionButton } from "@/components/commons/floating-action-button/floating-action-button";
 import { Input } from "@/components/commons/input/input";
 import { TemplateCard } from "@/components/commons/template-card/template-card";
 import { TemplateDocument } from "@/components/commons/template-document/template-document";
@@ -263,29 +264,15 @@ export const DocumentsView = () => {
   // --- Document list --------------------------------------------------------
   return (
     <div className="w-full">
-      <div className="flex justify-end">
-        <Button
-          icon={<PlusIcon aria-hidden size={16} weight="bold" />}
-          iconPosition="left"
-          onClick={() => setMode("picker")}
-          size="sm"
-        >
-          New document
-        </Button>
-      </div>
-
       {documents.length === 0 ? (
-        <div className="mt-6 grid place-items-center rounded-box border border-dashed border-steel-mist bg-base-100 p-12 text-center">
+        <div className="grid place-items-center rounded-box border border-dashed border-steel-mist bg-base-100 p-12 text-center">
           <p className="font-title text-base font-bold text-nox-noir">No documents yet</p>
           <p className="mt-1 max-w-sm text-sm text-nox-noir/60">
             Create a document from one of your saved templates to get started.
           </p>
-          <Button className="mt-5" onClick={() => setMode("picker")} size="sm">
-            New document
-          </Button>
         </div>
       ) : (
-        <div className="mt-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
           {documents.map((document) => {
             const template = getTemplateById(document.templateId);
 
@@ -323,6 +310,12 @@ export const DocumentsView = () => {
         }}
         template={previewDocument ? (getTemplateById(previewDocument.templateId) ?? null) : null}
         values={previewDocument?.values}
+      />
+
+      <FloatingActionButton
+        icon={<PlusIcon aria-hidden size={18} weight="bold" />}
+        label="New document"
+        onClick={() => setMode("picker")}
       />
     </div>
   );

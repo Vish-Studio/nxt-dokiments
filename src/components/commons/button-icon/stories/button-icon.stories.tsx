@@ -23,6 +23,12 @@ export const Primary: Story = {
   },
 };
 
+export const Accent: Story = {
+  args: {
+    variant: "accent",
+  },
+};
+
 export const Ghost: Story = {
   args: {
     variant: "ghost",

@@ -2,6 +2,8 @@ import { CheckIcon } from "@phosphor-icons/react/dist/ssr";
 import Link from "next/link";
 import type { CSSProperties } from "react";
 
+import { Badge } from "@/components/commons/badge/badge";
+import type { BadgeVariant } from "@/components/commons/badge/badge";
 import { cn } from "@/lib/utils";
 
 export type PlanCardVariant = "default" | "featured" | "accent";
@@ -27,7 +29,7 @@ export type PlanCardProps = {
 };
 
 type VariantStyle = {
-  badge: string;
+  badge: BadgeVariant;
   card: string;
   check: string;
   cta: string;
@@ -36,21 +38,21 @@ type VariantStyle = {
 
 const variantStyles: Record<PlanCardVariant, VariantStyle> = {
   default: {
-    badge: "bg-nox-noir text-white",
+    badge: "noir",
     card: "border-steel-mist bg-base-100 text-nox-noir",
     check: "text-nox-noir",
     cta: "bg-nox-noir text-white hover:bg-nox-noir",
     muted: "text-nox-noir/60",
   },
-  featured: {
-    badge: "bg-golden-harvest text-nox-noir",
+  accent: {
+    badge: "silver",
     card: "border-nox-noir bg-nox-noir text-white",
     check: "text-golden-harvest",
     cta: "bg-golden-harvest text-nox-noir hover:brightness-105",
     muted: "text-white/70",
   },
-  accent: {
-    badge: "bg-nox-noir text-golden-harvest",
+  featured: {
+    badge: "superadmin",
     card: "border-golden-harvest bg-golden-harvest text-nox-noir",
     check: "text-nox-noir",
     cta: "bg-nox-noir text-golden-harvest hover:bg-nox-noir",
@@ -82,14 +84,7 @@ export const PlanCard = ({
       <div className="flex items-center justify-between gap-3">
         <h3 className="font-title text-lg font-bold">{name}</h3>
         {badge ? (
-          <span
-            className={cn(
-              "inline-flex items-center rounded-field px-2.5 py-1 font-title text-xs font-bold",
-              styles.badge,
-            )}
-          >
-            {badge}
-          </span>
+          <Badge variant={styles.badge}>{badge}</Badge>
         ) : null}
       </div>
 

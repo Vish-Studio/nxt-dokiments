@@ -3,11 +3,11 @@
 import { BookmarkSimpleIcon, PrinterIcon } from "@phosphor-icons/react";
 import Link from "next/link";
 
+import { Badge } from "@/components/commons/badge/badge";
 import { Button } from "@/components/commons/button/button";
 import { SidePanel } from "@/components/commons/side-panel/side-panel";
 import { TemplateDocument } from "@/components/commons/template-document/template-document";
-import { getSampleValues, tierBadgeClasses, tierLabels } from "@/lib/market-place";
-import { cn } from "@/lib/utils";
+import { getSampleValues, tierLabels } from "@/lib/market-place";
 import type { MarketplaceTemplate } from "@/types/template";
 
 export type TemplatePreviewDialogProps = {
@@ -128,20 +128,9 @@ export const TemplatePreviewDialog = ({
         <div className="bg-base-200 p-3">
           <section className="mb-4 rounded-box border border-steel-mist bg-base-100 p-4">
             <div className="flex flex-wrap items-center gap-2">
-              <span
-                className={cn(
-                  "rounded-field px-2.5 py-1 font-title text-xs font-semibold",
-                  tierBadgeClasses[template.tier],
-                )}
-              >
-                {tierLabels[template.tier]}
-              </span>
-              <span className="rounded-field bg-base-200 px-2.5 py-1 font-title text-xs font-semibold text-nox-noir/65">
-                {template.style.name} style
-              </span>
-              <span className="rounded-field bg-base-200 px-2.5 py-1 font-title text-xs font-semibold text-nox-noir/65">
-                {template.documentType}
-              </span>
+              <Badge variant={template.tier}>{tierLabels[template.tier]}</Badge>
+              <Badge variant="neutral">{template.style.name} style</Badge>
+              <Badge variant="neutral">{template.documentType}</Badge>
             </div>
             <p className="mt-3 text-sm leading-6 text-nox-noir/65">{template.description}</p>
           </section>

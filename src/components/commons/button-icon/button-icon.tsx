@@ -3,7 +3,14 @@ import type { ButtonHTMLAttributes, ReactNode } from "react";
 
 import { cn } from "@/lib/utils";
 
-type ButtonIconVariant = "primary" | "secondary" | "neutral" | "ghost" | "outline" | "danger";
+type ButtonIconVariant =
+  | "accent"
+  | "primary"
+  | "secondary"
+  | "neutral"
+  | "ghost"
+  | "outline"
+  | "danger";
 type ButtonIconSize = "sm" | "md" | "lg";
 type ButtonIconShape = "circle" | "square";
 
@@ -17,6 +24,7 @@ export type ButtonIconProps = ButtonHTMLAttributes<HTMLButtonElement> & {
 };
 
 const variantClasses: Record<ButtonIconVariant, string> = {
+  accent: "border border-transparent bg-golden-harvest text-nox-noir hover:brightness-95",
   primary: "btn-primary",
   secondary:
     "border border-transparent bg-base-200 text-nox-noir hover:bg-base-300",

@@ -50,16 +50,6 @@ export const tierLabels: Record<TemplateTier, string> = {
   silver: "Silver",
 };
 
-/**
- * Tier badge colours. Free uses the conventional green; paid tiers mirror their
- * subscription plan-card background (Silver = golden accent, Gold = noir).
- */
-export const tierBadgeClasses: Record<TemplateTier, string> = {
-  free: "bg-success text-success-content",
-  gold: "bg-nox-noir text-white",
-  silver: "bg-golden-harvest text-nox-noir",
-};
-
 /** Whether a user's role unlocks a given subscription tier. */
 export const canUseTier = (role: UserRole | undefined, tier: TemplateTier) =>
   roleRanks[role ?? "free"] >= tierRanks[tier];
