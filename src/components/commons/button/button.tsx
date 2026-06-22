@@ -14,7 +14,7 @@ export type ButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {
 };
 
 const variantClasses: Record<ButtonVariant, string> = {
-  primary: "btn-primary",
+  primary: "btn-primary hover:bg-steel-mist border-steel-mist hover:text-nox-noir",
   accent: "border border-transparent bg-golden-harvest text-nox-noir hover:brightness-95",
   secondary:
     "border border-transparent bg-base-200 text-nox-noir hover:bg-base-300",
@@ -51,7 +51,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
         ref={ref}
         type={type}
         className={cn(
-          "btn font-title font-semibold tracking-normal",
+          "btn font-title font-semibold transition-all duration-200",
           variantClasses[variant],
           sizeClasses[size],
           className,

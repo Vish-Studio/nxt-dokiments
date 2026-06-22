@@ -15,6 +15,8 @@
     "daisyui": "^5.5.23",
     "embla-carousel-react": "^8.6.0",
     "firebase": "^12.15.0",
+    "html-to-image": "^1.11.13",
+    "jspdf": "^4.2.1",
     "next": "16.2.9",
     "react": "19.2.4",
     "react-dom": "19.2.4",

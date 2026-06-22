@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from "@storybook/nextjs-vite";
-import { expect, within } from "storybook/test";
+import { expect, userEvent, within } from "storybook/test";
 
 import { useAuthStore } from "@/stores/auth-store";
 import { useDocumentsStore } from "@/stores/documents-store";
@@ -66,12 +66,20 @@ export const WithDocuments: Story = {
         documentsByUser: {
           "story-uid": [
             {
-              createdAt: Date.now(),
+              createdAt: new Date("2026-06-18T09:30:00Z").getTime(),
               id: "doc-1",
               name: "March Invoice",
               templateId: "classic-invoice",
-              updatedAt: Date.now(),
-              values: { invoiceNumber: "INV-0042" },
+              updatedAt: new Date("2026-06-18T09:30:00Z").getTime(),
+              values: { invoiceNumber: "INV-0042", title: "Lumina Events Invoice" },
+            },
+            {
+              createdAt: new Date("2026-06-12T11:00:00Z").getTime(),
+              id: "doc-2",
+              name: "Client Service Agreement",
+              templateId: "classic-contract",
+              updatedAt: new Date("2026-06-12T11:00:00Z").getTime(),
+              values: {},
             },
           ],
         },
@@ -81,6 +89,33 @@ export const WithDocuments: Story = {
   ],
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    await expect(canvas.getByText("March Invoice")).toBeVisible();
+    await expect(canvas.getByText("Lumina Events Invoice")).toBeVisible();
+    await expect(canvas.getByText("Invoice")).toBeVisible();
+    await expect(canvas.getByText("18 Jun 2026")).toBeVisible();
+    await userEvent.click(
+      canvas.getByRole("button", { name: "Open preview for Lumina Events Invoice" }),
+    );
+    await expect(canvas.getByRole("dialog", { name: "Standard Invoice preview" })).toBeVisible();
+  },
+};
+
+export const PrintableDocuments: Story = {
+  decorators: WithDocuments.decorators,
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await userEvent.click(canvas.getByRole("button", { name: "Print Lumina Events Invoice" }));
+    await expect(canvas.getByRole("dialog", { name: "Prepare Lumina Events Invoice" })).toBeVisible();
+    await expect(await canvas.findByRole("button", { name: "Download PDF" })).toBeVisible();
+  },
+};
+
+export const EditDocument: Story = {
+  decorators: WithDocuments.decorators,
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await userEvent.click(canvas.getByRole("button", { name: "Edit Lumina Events Invoice" }));
+    await expect(canvas.getByRole("heading", { name: "Edit document" })).toBeVisible();
+    await userEvent.click(canvas.getByRole("button", { name: "Save changes" }));
+    await expect(canvas.getByText("Lumina Events Invoice")).toBeVisible();
   },
 };

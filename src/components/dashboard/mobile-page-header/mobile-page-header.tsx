@@ -123,20 +123,20 @@ export const MobilePageHeader = ({
   return (
     <header
       className={cn(
-        "sticky top-0 z-20 rounded-box transition-all duration-300 ease-out lg:hidden",
+        "sticky top-0 z-50 rounded-box transition-all duration-300 ease-out lg:hidden",
         style.container[variant],
-        isCompact ? "p-1 shadow-[0_12px_30px_rgb(20_20_20_/_0.10)]" : "p-5",
+        isCompact ? "p-2 shadow-[0_12px_30px_rgb(20_20_20_/_0.10)]" : "p-5",
       )}
       data-variant={variant}
     >
-      <div className={cn("flex items-start gap-3", isCompact && 'items-center')}>
+      <div className={cn("flex gap-3", isCompact ? 'test items-center' : 'items-start')}>
         <ButtonIcon
           aria-label="Open navigation"
-          className={cn("shrink-0 border bg-transparent size-9! min-h-9!", style.toggle)}
-          icon={<ListIcon aria-hidden size={16} weight="bold" />}
+          className={cn("shrink-0 border bg-transparent", style.toggle)}
+          icon={<ListIcon aria-hidden size={18} weight="bold" />}
           onClick={onOpenNavigation}
+          size="sm"
           variant="ghost"
-          // size="sm"
         />
 
         <div className="min-w-0 flex-1">
@@ -156,7 +156,7 @@ export const MobilePageHeader = ({
               className={cn(
                 "truncate font-title font-bold text-nox-noir transition-all duration-300 ease-out",
                 style.title,
-                isCompact ? "text-xl leading-10" : "text-2xl leading-11",
+                isCompact ? "text-xl leading-tight" : "text-2xl leading-tight",
               )}
             >
               {title}

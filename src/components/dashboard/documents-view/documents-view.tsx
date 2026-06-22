@@ -2,6 +2,7 @@
 
 import { ArrowLeftIcon, PlusIcon, TrashIcon } from "@phosphor-icons/react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 
 import { Button } from "@/components/commons/button/button";
@@ -11,6 +12,8 @@ import { TemplateCard } from "@/components/commons/template-card/template-card";
 import { TemplateDocument } from "@/components/commons/template-document/template-document";
 import { TemplateForm } from "@/components/commons/template-form/template-form";
 import { TemplatePreviewDialog } from "@/components/commons/template-preview-dialog/template-preview-dialog";
+import { DocumentList } from "@/components/dashboard/document-list/document-list";
+import { DocumentExportDialog } from "@/components/dashboard/document-export-dialog/document-export-dialog";
 import { getTemplateById } from "@/lib/market-place";
 import { useAuthStore } from "@/stores/auth-store";
 import { useDocumentsStore, useUserDocuments } from "@/stores/documents-store";
@@ -20,6 +23,7 @@ import type { MarketplaceTemplate, UserDocument } from "@/types/template";
 type Mode = "list" | "picker" | "editor";
 
 export const DocumentsView = () => {
+  const router = useRouter();
   const user = useAuthStore((state) => state.user);
   const saved = useSavedTemplates(user?.uid);
   const documents = useUserDocuments(user?.uid);
@@ -32,6 +36,7 @@ export const DocumentsView = () => {
   const [activeDocumentId, setActiveDocumentId] = useState<string | null>(null);
   const [draftName, setDraftName] = useState("");
   const [draftValues, setDraftValues] = useState<Record<string, string>>({});
+  const [exportDocument, setExportDocument] = useState<UserDocument | null>(null);
   const [isSavedFlash, setIsSavedFlash] = useState(false);
   const [previewTemplate, setPreviewTemplate] = useState<MarketplaceTemplate | null>(null);
   const [previewDocument, setPreviewDocument] = useState<UserDocument | null>(null);
@@ -42,6 +47,11 @@ export const DocumentsView = () => {
         .map((item) => getTemplateById(item.templateId))
         .filter((template): template is MarketplaceTemplate => Boolean(template)),
     [saved],
+  );
+
+  const sortedDocuments = useMemo(
+    () => [...documents].sort((first, second) => second.createdAt - first.createdAt),
+    [documents],
   );
 
   const goToList = () => {
@@ -111,7 +121,8 @@ export const DocumentsView = () => {
       setActiveDocumentId(id);
     }
 
-    setIsSavedFlash(true);
+    goToList();
+    router.replace("/documents");
   };
 
   const handleUsePreviewTemplate = () => {
@@ -123,6 +134,10 @@ export const DocumentsView = () => {
 
     setPreviewTemplate(null);
     startNewDocument(template);
+  };
+
+  const handlePrintDocument = (document: UserDocument) => {
+    setExportDocument(document);
   };
 
   // --- Editor ---------------------------------------------------------------
@@ -272,28 +287,16 @@ export const DocumentsView = () => {
           </p>
         </div>
       ) : (
-        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-          {documents.map((document) => {
-            const template = getTemplateById(document.templateId);
-
-            if (!template) {
-              return null;
-            }
-
-            return (
-              <TemplateCard
-                key={document.id}
-                onPreview={() => setPreviewDocument(document)}
-                template={template}
-                values={document.values}
-              />
-            );
-          })}
-        </div>
+        <DocumentList
+          documents={sortedDocuments}
+          onEdit={openDocument}
+          onPreview={setPreviewDocument}
+          onPrint={handlePrintDocument}
+        />
       )}
 
       <TemplatePreviewDialog
-        documentName={previewDocument?.name}
+        documentName={previewDocument?.values.title?.trim() || previewDocument?.name}
         mode="document"
         onClose={() => setPreviewDocument(null)}
         onDelete={() => {
@@ -312,11 +315,21 @@ export const DocumentsView = () => {
         values={previewDocument?.values}
       />
 
-      <FloatingActionButton
-        icon={<PlusIcon aria-hidden size={18} weight="bold" />}
-        label="New document"
-        onClick={() => setMode("picker")}
+      <DocumentExportDialog
+        documentName={exportDocument?.values.title?.trim() || exportDocument?.name || "Document"}
+        onClose={() => setExportDocument(null)}
+        open={Boolean(exportDocument)}
+        template={exportDocument ? (getTemplateById(exportDocument.templateId) ?? null) : null}
+        values={exportDocument?.values}
       />
+
+      {previewDocument || exportDocument ? null : (
+        <FloatingActionButton
+          icon={<PlusIcon aria-hidden size={18} weight="bold" />}
+          label="New document"
+          onClick={() => setMode("picker")}
+        />
+      )}
     </div>
   );
 };

@@ -3,6 +3,7 @@ import type { MarketplaceTemplate, TemplateStyleId } from "@/types/template";
 
 export type TemplateDocumentProps = {
   className?: string;
+  layout?: "print" | "responsive";
   template: MarketplaceTemplate;
   values?: Record<string, string>;
 };
@@ -56,7 +57,12 @@ const styleConfig: Record<TemplateStyleId, StyleConfig> = {
   },
 };
 
-export const TemplateDocument = ({ className, template, values = {} }: TemplateDocumentProps) => {
+export const TemplateDocument = ({
+  className,
+  layout = "responsive",
+  template,
+  values = {},
+}: TemplateDocumentProps) => {
   const config = styleConfig[template.style.id];
   const title = values.title?.trim() || template.name;
   const metaFields = template.fields.filter((field) => field.type !== "textarea");
@@ -75,7 +81,7 @@ export const TemplateDocument = ({ className, template, values = {} }: TemplateD
       </header>
 
       <div className={config.body}>
-        <dl className="grid gap-4 sm:grid-cols-2">
+        <dl className={cn("grid gap-4", layout === "print" ? "grid-cols-2" : "sm:grid-cols-2")}>
           {metaFields.map((field) => {
             if (field.key === "title") {
               return null;
