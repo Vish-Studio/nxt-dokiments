@@ -29,3 +29,22 @@ export const Default: Story = {
     await expect(canvas.getByRole("button", { name: /add template/i })).toBeVisible();
   },
 };
+
+export const Success: Story = {
+  args: {
+    cancelLabel: null,
+    confirmLabel: "Continue",
+    description: '"Lumina Events Invoice" has been saved successfully.',
+    dismissible: false,
+    title: "Document saved",
+  },
+};
+
+export const Danger: Story = {
+  args: {
+    confirmLabel: "Delete document",
+    confirmVariant: "danger",
+    description: 'Delete "Lumina Events Invoice"? This action cannot be undone.',
+    title: "Delete document?",
+  },
+};

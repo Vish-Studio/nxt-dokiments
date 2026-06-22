@@ -1,3 +1,4 @@
+import { CookieConsent } from "@/components/website/cookie-consent/cookie-consent";
 import { Footer } from "@/components/website/footer/footer";
 import { Header } from "@/components/website/header/header";
 import { Hero } from "@/components/website/hero/hero";
@@ -16,6 +17,7 @@ export const Landing = () => {
       <Pricing />
       <Workflow />
       <Footer />
+      <CookieConsent />
     </main>
   );
 };

@@ -115,7 +115,77 @@ export const EditDocument: Story = {
     const canvas = within(canvasElement);
     await userEvent.click(canvas.getByRole("button", { name: "Edit Lumina Events Invoice" }));
     await expect(canvas.getByRole("heading", { name: "Edit document" })).toBeVisible();
+    await expect(canvas.getByRole("button", { name: "Back to documents" })).toBeVisible();
+    await expect(canvas.getByRole("button", { name: "Delete" })).toBeVisible();
     await userEvent.click(canvas.getByRole("button", { name: "Save changes" }));
+    await expect(canvas.getByRole("dialog", { name: "Document saved" })).toBeVisible();
+    await userEvent.click(canvas.getByRole("button", { name: "Continue" }));
     await expect(canvas.getByText("Lumina Events Invoice")).toBeVisible();
+  },
+};
+
+export const DeleteDocument: Story = {
+  decorators: WithDocuments.decorators,
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await userEvent.click(canvas.getByRole("button", { name: "Edit Lumina Events Invoice" }));
+    await userEvent.click(canvas.getByRole("button", { name: "Delete" }));
+    await expect(canvas.getByRole("dialog", { name: "Delete document?" })).toBeVisible();
+    await expect(canvas.getByRole("button", { name: "Delete document" })).toBeVisible();
+    await userEvent.click(canvas.getByRole("button", { name: "Cancel" }));
+    await expect(canvas.getByRole("heading", { name: "Edit document" })).toBeVisible();
+  },
+};
+
+export const SavedConfirmation: Story = {
+  decorators: WithDocuments.decorators,
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await userEvent.click(canvas.getByRole("button", { name: "Edit Lumina Events Invoice" }));
+    await userEvent.click(canvas.getByRole("button", { name: "Save changes" }));
+    await expect(canvas.getByRole("dialog", { name: "Document saved" })).toBeVisible();
+  },
+};
+
+export const DeleteConfirmation: Story = {
+  decorators: WithDocuments.decorators,
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await userEvent.click(canvas.getByRole("button", { name: "Edit Lumina Events Invoice" }));
+    await userEvent.click(canvas.getByRole("button", { name: "Delete" }));
+    await expect(canvas.getByRole("dialog", { name: "Delete document?" })).toBeVisible();
+  },
+};
+
+export const EditorReady: Story = {
+  decorators: WithDocuments.decorators,
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await userEvent.click(canvas.getByRole("button", { name: "Edit Lumina Events Invoice" }));
+    await expect(canvas.getByRole("heading", { name: "Edit document" })).toBeVisible();
+  },
+};
+
+export const MobileEditorReady: Story = {
+  decorators: WithDocuments.decorators,
+  globals: {
+    viewport: { value: "mobile1", isRotated: false },
+  },
+  play: EditorReady.play,
+};
+
+export const MobileEditorPreview: Story = {
+  decorators: WithDocuments.decorators,
+  globals: {
+    viewport: { value: "mobile1", isRotated: false },
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await userEvent.click(canvas.getByRole("button", { name: "Edit Lumina Events Invoice" }));
+    const previewButton = canvas.getByRole("button", { name: "Preview document" });
+    await expect(previewButton).toBeVisible();
+    await userEvent.click(previewButton);
+    await expect(canvas.getByRole("dialog", { name: "Document preview" })).toBeVisible();
+    await expect(canvas.getByRole("heading", { name: "Document preview" })).toBeVisible();
   },
 };

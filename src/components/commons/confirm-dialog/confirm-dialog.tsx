@@ -3,11 +3,14 @@
 import { useEffect } from "react";
 
 import { Button } from "@/components/commons/button/button";
+import type { ButtonProps } from "@/components/commons/button/button";
 
 export type ConfirmDialogProps = {
-  cancelLabel?: string;
+  cancelLabel?: string | null;
   confirmLabel?: string;
+  confirmVariant?: ButtonProps["variant"];
   description?: string;
+  dismissible?: boolean;
   onClose: () => void;
   onConfirm: () => void;
   open: boolean;
@@ -17,7 +20,9 @@ export type ConfirmDialogProps = {
 export const ConfirmDialog = ({
   cancelLabel = "Cancel",
   confirmLabel = "Confirm",
+  confirmVariant = "primary",
   description,
+  dismissible = true,
   onClose,
   onConfirm,
   open,
@@ -34,14 +39,18 @@ export const ConfirmDialog = ({
       }
     };
 
-    document.addEventListener("keydown", handleKeyDown);
+    if (dismissible) {
+      document.addEventListener("keydown", handleKeyDown);
+    }
     document.body.style.overflow = "hidden";
 
     return () => {
-      document.removeEventListener("keydown", handleKeyDown);
+      if (dismissible) {
+        document.removeEventListener("keydown", handleKeyDown);
+      }
       document.body.style.overflow = "";
     };
-  }, [open, onClose]);
+  }, [dismissible, open, onClose]);
 
   if (!open) {
     return null;
@@ -54,12 +63,16 @@ export const ConfirmDialog = ({
       className="fixed inset-0 z-50 flex items-center justify-center p-4"
       role="dialog"
     >
-      <button
-        aria-label="Close"
-        className="absolute inset-0 bg-nox-noir/55"
-        onClick={onClose}
-        type="button"
-      />
+      {dismissible ? (
+        <button
+          aria-label="Close"
+          className="absolute inset-0 bg-nox-noir/55"
+          onClick={onClose}
+          type="button"
+        />
+      ) : (
+        <div aria-hidden className="absolute inset-0 bg-nox-noir/55" />
+      )}
 
       <div className="relative z-10 w-full max-w-sm rounded-box border border-steel-mist bg-base-100 p-6">
         <h3 className="font-title text-lg font-bold text-nox-noir">{title}</h3>
@@ -68,10 +81,12 @@ export const ConfirmDialog = ({
         ) : null}
 
         <div className="mt-6 flex justify-end gap-2">
-          <Button onClick={onClose} size="sm" variant="ghost">
-            {cancelLabel}
-          </Button>
-          <Button onClick={onConfirm} size="sm">
+          {cancelLabel ? (
+            <Button onClick={onClose} size="sm" variant="ghost">
+              {cancelLabel}
+            </Button>
+          ) : null}
+          <Button onClick={onConfirm} size="sm" variant={confirmVariant}>
             {confirmLabel}
           </Button>
         </div>

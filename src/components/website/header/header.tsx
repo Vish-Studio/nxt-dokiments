@@ -3,15 +3,17 @@
 import { List } from "@phosphor-icons/react";
 import Link from "next/link";
 import { useState } from "react";
+import Image from "next/image";
 
 import { MobileNav } from "@/components/website/mobile-nav/mobile-nav";
 import { useAuthStore } from "@/stores/auth-store";
+import { cn } from "@/lib/utils";
 
 const navItems = [
-  { href: "#overview", label: "Overview" },
-  { href: "#marketplace", label: "Marketplace" },
-  { href: "#workflow", label: "Workflow" },
-  { href: "#pricing", label: "Pricing" },
+  { href: "/#overview", label: "Overview" },
+  { href: "/#marketplace", label: "Marketplace" },
+  { href: "/#workflow", label: "Workflow" },
+  { href: "/#pricing", label: "Pricing" },
 ];
 
 export const Header = () => {
@@ -21,13 +23,26 @@ export const Header = () => {
   return (
     <>
       <header className="fixed top-0 left-0 right-0 z-40 bg-nox-noir text-white">
-        <div className="mx-auto flex h-20 max-w-8xl items-center justify-between gap-6 px-5 sm:px-8 lg:px-10">
-          <a className="flex items-center gap-3" href="#top" aria-label="Dokiments home">
-            <span className="font-logo text-3xl font-black text-white">
-              Dokiments
-            </span>
-          </a>
+        <div className="mx-auto flex h-20 max-w-8xl items-center justify-start sm:justify-between gap-3 md:gap-6 px-5 sm:px-8 lg:px-10">
+          <div className="flex items-center gap-3">
+            <button
+              aria-label="Open navigation"
+              className="flex size-10 items-center justify-center rounded-full  text-white transition-colors hover:bg-white/16 md:hidden"
+              onClick={() => setIsMobileNavOpen(true)}
+              type="button"
+            >
+              <List aria-hidden size={22} weight="bold" />
+            </button>
 
+            <Link className="flex items-center gap-3" href="/" aria-label="Dokiments home">
+              <Image
+                src={'/images/svg/logo-white.svg'}
+                width={150}
+                height={150}
+                alt="Dokiments logo" />
+            </Link>
+
+          </div>
           <nav className="hidden items-center gap-7 md:flex" aria-label="Website navigation">
             {navItems.map((item) => (
               <a
@@ -64,14 +79,6 @@ export const Header = () => {
                 </Link>
               </>
             )}
-            <button
-              aria-label="Open navigation"
-              className="flex size-11 items-center justify-center rounded-full bg-white/10 text-white transition-colors hover:bg-white/16 md:hidden"
-              onClick={() => setIsMobileNavOpen(true)}
-              type="button"
-            >
-              <List aria-hidden size={20} weight="bold" />
-            </button>
           </div>
         </div>
       </header>

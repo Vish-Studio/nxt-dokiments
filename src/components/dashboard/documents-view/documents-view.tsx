@@ -1,13 +1,15 @@
 "use client";
 
-import { ArrowLeftIcon, PlusIcon, TrashIcon } from "@phosphor-icons/react";
+import { ArrowLeftIcon, EyeIcon, PlusIcon, TrashIcon } from "@phosphor-icons/react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 
 import { Button } from "@/components/commons/button/button";
+import { ConfirmDialog } from "@/components/commons/confirm-dialog/confirm-dialog";
 import { FloatingActionButton } from "@/components/commons/floating-action-button/floating-action-button";
 import { Input } from "@/components/commons/input/input";
+import { SidePanel } from "@/components/commons/side-panel/side-panel";
 import { TemplateCard } from "@/components/commons/template-card/template-card";
 import { TemplateDocument } from "@/components/commons/template-document/template-document";
 import { TemplateForm } from "@/components/commons/template-form/template-form";
@@ -37,9 +39,11 @@ export const DocumentsView = () => {
   const [draftName, setDraftName] = useState("");
   const [draftValues, setDraftValues] = useState<Record<string, string>>({});
   const [exportDocument, setExportDocument] = useState<UserDocument | null>(null);
-  const [isSavedFlash, setIsSavedFlash] = useState(false);
+  const [isDeleteConfirmationOpen, setIsDeleteConfirmationOpen] = useState(false);
+  const [isSaveConfirmationOpen, setIsSaveConfirmationOpen] = useState(false);
   const [previewTemplate, setPreviewTemplate] = useState<MarketplaceTemplate | null>(null);
   const [previewDocument, setPreviewDocument] = useState<UserDocument | null>(null);
+  const [isEditorPreviewOpen, setIsEditorPreviewOpen] = useState(false);
 
   const ownedTemplates = useMemo(
     () =>
@@ -58,7 +62,9 @@ export const DocumentsView = () => {
     setMode("list");
     setActiveTemplateId(null);
     setActiveDocumentId(null);
-    setIsSavedFlash(false);
+    setIsDeleteConfirmationOpen(false);
+    setIsSaveConfirmationOpen(false);
+    setIsEditorPreviewOpen(false);
   };
 
   const startNewDocument = (template: MarketplaceTemplate) => {
@@ -66,7 +72,9 @@ export const DocumentsView = () => {
     setActiveDocumentId(null);
     setDraftName(template.name);
     setDraftValues({});
-    setIsSavedFlash(false);
+    setIsDeleteConfirmationOpen(false);
+    setIsSaveConfirmationOpen(false);
+    setIsEditorPreviewOpen(false);
     setMode("editor");
   };
 
@@ -95,7 +103,9 @@ export const DocumentsView = () => {
     setActiveDocumentId(document.id);
     setDraftName(document.name);
     setDraftValues(document.values);
-    setIsSavedFlash(false);
+    setIsDeleteConfirmationOpen(false);
+    setIsSaveConfirmationOpen(false);
+    setIsEditorPreviewOpen(false);
     setMode("editor");
   };
 
@@ -121,6 +131,22 @@ export const DocumentsView = () => {
       setActiveDocumentId(id);
     }
 
+    setIsSaveConfirmationOpen(true);
+  };
+
+  const handleSavedContinue = () => {
+    setIsSaveConfirmationOpen(false);
+    goToList();
+    router.replace("/documents");
+  };
+
+  const handleDeleteConfirm = () => {
+    if (!activeDocumentId) {
+      return;
+    }
+
+    handleRemove(activeDocumentId);
+    setIsDeleteConfirmationOpen(false);
     goToList();
     router.replace("/documents");
   };
@@ -146,18 +172,19 @@ export const DocumentsView = () => {
   if (mode === "editor" && editorTemplate) {
     return (
       <div className="w-full">
-        <button
-          className="inline-flex items-center gap-2 font-title text-sm font-semibold text-nox-noir/60 transition-colors hover:text-nox-noir"
+        <Button
+          icon={<ArrowLeftIcon aria-hidden size={16} weight="bold" />}
+          iconPosition="left"
           onClick={goToList}
-          type="button"
+          size="sm"
+          variant="outline"
         >
-          <ArrowLeftIcon aria-hidden size={16} weight="bold" />
           Back to documents
-        </button>
+        </Button>
 
         <div className="mt-5 grid items-start gap-4 lg:grid-cols-2">
           <div className="rounded-box border border-steel-mist bg-base-100 p-6">
-            <div className="flex items-center justify-between gap-3 border-b border-steel-mist pb-4">
+            <div className="border-b border-steel-mist pb-4">
               <div>
                 <h3 className="font-title text-base font-bold text-nox-noir">
                   {activeDocumentId ? "Edit document" : "New document"}
@@ -166,20 +193,6 @@ export const DocumentsView = () => {
                   {editorTemplate.name} · {editorTemplate.style.name}
                 </p>
               </div>
-              {activeDocumentId ? (
-                <Button
-                  icon={<TrashIcon aria-hidden size={16} weight="bold" />}
-                  iconPosition="left"
-                  onClick={() => {
-                    handleRemove(activeDocumentId);
-                    goToList();
-                  }}
-                  size="sm"
-                  variant="outline"
-                >
-                  Delete
-                </Button>
-              ) : null}
             </div>
 
             <div className="mt-6 grid gap-5">
@@ -187,7 +200,6 @@ export const DocumentsView = () => {
                 label="Document name"
                 onChange={(event) => {
                   setDraftName(event.target.value);
-                  setIsSavedFlash(false);
                 }}
                 placeholder="e.g. Acme service contract"
                 value={draftName}
@@ -196,7 +208,6 @@ export const DocumentsView = () => {
                 fields={editorTemplate.fields}
                 onChange={(key, value) => {
                   setDraftValues((previous) => ({ ...previous, [key]: value }));
-                  setIsSavedFlash(false);
                 }}
                 values={draftValues}
               />
@@ -206,14 +217,65 @@ export const DocumentsView = () => {
               <Button onClick={handleSave} type="button">
                 {activeDocumentId ? "Save changes" : "Create document"}
               </Button>
-              {isSavedFlash ? <span className="text-sm font-medium text-success">Saved.</span> : null}
+              {activeDocumentId ? (
+                <Button
+                  icon={<TrashIcon aria-hidden size={16} weight="bold" />}
+                  iconPosition="left"
+                  onClick={() => setIsDeleteConfirmationOpen(true)}
+                  variant="danger"
+                >
+                  Delete
+                </Button>
+              ) : null}
             </div>
           </div>
 
-          <div className="lg:sticky lg:top-2">
+          <div className="hidden lg:sticky lg:top-2 lg:block">
             <TemplateDocument template={editorTemplate} values={draftValues} />
           </div>
         </div>
+
+        <SidePanel
+          ariaLabel="Document preview"
+          description={`${editorTemplate.name} · ${editorTemplate.style.name}`}
+          onClose={() => setIsEditorPreviewOpen(false)}
+          open={isEditorPreviewOpen}
+          title="Document preview"
+        >
+          <div className="min-h-full bg-app-panel p-3 sm:p-5">
+            <TemplateDocument template={editorTemplate} values={draftValues} />
+          </div>
+        </SidePanel>
+
+        {isEditorPreviewOpen ? null : (
+          <FloatingActionButton
+            className="lg:hidden"
+            icon={<EyeIcon aria-hidden size={20} weight="bold" />}
+            label="Preview document"
+            onClick={() => setIsEditorPreviewOpen(true)}
+          />
+        )}
+
+        <ConfirmDialog
+          cancelLabel={null}
+          confirmLabel="Continue"
+          description={`"${draftValues.title?.trim() || draftName || "Document"}" has been saved successfully.`}
+          dismissible={false}
+          onClose={handleSavedContinue}
+          onConfirm={handleSavedContinue}
+          open={isSaveConfirmationOpen}
+          title="Document saved"
+        />
+
+        <ConfirmDialog
+          confirmLabel="Delete document"
+          confirmVariant="danger"
+          description={`Delete "${draftValues.title?.trim() || draftName || "this document"}"? This action cannot be undone.`}
+          onClose={() => setIsDeleteConfirmationOpen(false)}
+          onConfirm={handleDeleteConfirm}
+          open={isDeleteConfirmationOpen}
+          title="Delete document?"
+        />
       </div>
     );
   }

@@ -15,6 +15,8 @@ import { ButtonIcon } from "@/components/commons/button-icon/button-icon";
 import SidebarAccount from "@/components/dashboard/sidebar-account/sidebar-account";
 import SidebarItem from "@/components/dashboard/sidebar-item/sidebar-item";
 import { cn } from "@/lib/utils";
+import Image from "next/image";
+import Link from "next/link";
 
 interface SidebarNavigationItem {
   href: string;
@@ -52,7 +54,7 @@ const Sidebar: FunctionComponent<Props> = ({
   return (
     <aside
       className={cn(
-        "sidebar fixed inset-y-0 left-0 z-40 flex w-70 shrink-0 flex-col bg-app-chrome px-5 pt-9 pb-5 text-app-chrome-content transition-all duration-300 lg:static lg:translate-x-0",
+        "sidebar fixed inset-y-0 left-0 z-40 flex w-70 shrink-0 flex-col bg-app-chrome px-5 pt-6 lg:pt-9 pb-5 text-app-chrome-content transition-all duration-300 lg:static lg:translate-x-0",
         isMobileOpen ? "translate-x-0" : "-translate-x-full",
         isCollapsed ? "lg:w-24" : "lg:w-60",
       )}
@@ -66,20 +68,36 @@ const Sidebar: FunctionComponent<Props> = ({
         <div className="flex min-w-0 items-center gap-3">
           <button
             aria-label={isCollapsed ? "Expand sidebar" : "Dokiments home"}
-            className="flex size-9 shrink-0 items-center justify-center rounded-full bg-app-brand font-logo text-sm font-black text-app-brand-content transition-transform hover:scale-105 focus-visible:outline focus-visible:outline-offset-2 focus-visible:outline-app-active"
+            className={cn(
+              "size-8 shrink-0 items-center justify-center transition-transform hover:scale-105",
+              isCollapsed ? "hidden lg:flex" : 'hidden',)}
             onClick={isCollapsed ? onToggleCollapse : undefined}
             type="button"
           >
-            D
+            <Image
+              src={'/images/svg/icon-white.svg'}
+              width={100}
+              height={100}
+              alt="Dokiments icon" />
           </button>
-          <span
+
+          <Link
             className={cn(
-              "truncate font-logo text-lg font-black transition-opacity",
-              isCollapsed && "lg:sr-only lg:opacity-0",
+              "items-center gap-3",
+              isCollapsed ? "flex lg:hidden" : "flex",
             )}
-          >
-            Dokiments
-          </span>
+            aria-label="Dokiments home"
+            href="/">
+            <Image
+              className={cn(
+                "mb-1",
+
+              )}
+              src={'/images/svg/logo-white.svg'}
+              width={120}
+              height={120}
+              alt="Dokiments logo" />
+          </Link>
         </div>
         {isCollapsed && !isMobileOpen ? null : (
           <ButtonIcon

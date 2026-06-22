@@ -17,6 +17,15 @@ type Story = StoryObj<typeof meta>;
 
 export const Default: Story = {
   play: async ({ canvas }) => {
+    await expect(canvas.getByRole("link", { name: "Privacy Policy" })).toHaveAttribute(
+      "href",
+      "/privacy",
+    );
+    await expect(canvas.getByRole("link", { name: "Cookie Policy" })).toHaveAttribute(
+      "href",
+      "/cookies",
+    );
+    await expect(canvas.getByRole("button", { name: "Cookie settings" })).toBeVisible();
     await expect(canvas.getByRole("link", { name: /vish studio/i })).toHaveAttribute(
       "href",
       "https://www.vish.studio",

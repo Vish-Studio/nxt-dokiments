@@ -1,5 +1,7 @@
+import { cn } from "@/lib/utils";
 import { X } from "@phosphor-icons/react";
 import Link from "next/link";
+import Image from "next/image";
 
 export type MobileNavItem = {
   href: string;
@@ -32,28 +34,28 @@ export const MobileNav = ({
       data-testid="mobile-nav"
     >
       <div className="flex h-full flex-col px-5 py-5">
-        <div className="flex items-center justify-between">
-          <a
-            aria-label="Dokiments home"
-            className="flex items-center gap-3"
-            href="#top"
-            onClick={onClose}
-          >
-            <span className="flex size-10 items-center justify-center rounded-full bg-golden-harvest font-logo text-sm font-black text-nox-noir">
-              D
-            </span>
-            <span className="font-logo text-xl font-black text-golden-harvest">
-              Dokiments
-            </span>
-          </a>
+        <div className="flex items-center justify-start gap-3">
           <button
             aria-label="Close navigation"
-            className="flex size-11 items-center justify-center rounded-full bg-white/10 text-white transition-colors hover:bg-white/16"
+            className="flex size-10 items-center justify-center rounded-full  text-white transition-colors hover:bg-white/16"
             onClick={onClose}
             type="button"
           >
-            <X aria-hidden size={20} weight="bold" />
+            <X aria-hidden size={22} weight="bold" />
           </button>
+
+          <Link
+            aria-label="Dokiments home"
+            className="flex items-center gap-3"
+            href="/"
+            onClick={onClose}
+          >
+            <Image
+              src={'/images/svg/logo-white.svg'}
+              width={150}
+              height={150}
+              alt="Dokiments logo" />
+          </Link>
         </div>
 
         <nav className="mt-16 grid gap-4" aria-label="Mobile website navigation">
