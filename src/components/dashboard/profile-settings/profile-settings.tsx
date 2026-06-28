@@ -7,7 +7,6 @@ import { Button } from "@/components/commons/button/button";
 import { Input } from "@/components/commons/input/input";
 import { ProfileFeedbackBanner } from "@/components/dashboard/profile-feedback-banner/profile-feedback-banner";
 import { ProfileSummary } from "@/components/dashboard/profile-summary/profile-summary";
-import { updateAccountProfile } from "@/lib/firebase/rest-auth";
 import { useAuthStore } from "@/stores/auth-store";
 
 type ProfileValues = {
@@ -25,9 +24,8 @@ type Feedback = {
 };
 
 export const ProfileSettings = () => {
-  const session = useAuthStore((state) => state.session);
   const user = useAuthStore((state) => state.user);
-  const setSession = useAuthStore((state) => state.setSession);
+  const setUser = useAuthStore((state) => state.setUser);
 
   const [profileFeedback, setProfileFeedback] = useState<Feedback | null>(null);
 
@@ -45,21 +43,25 @@ export const ProfileSettings = () => {
   const submitProfile = profileForm.handleSubmit(async (values) => {
     setProfileFeedback(null);
 
-    if (!session) {
-      setProfileFeedback({ message: "Your session expired. Please sign in again.", tone: "error" });
-      return;
-    }
-
     try {
-      const updatedSession = await updateAccountProfile(session, {
-        address: values.address.trim(),
-        companyName: values.companyName.trim(),
-        displayName: values.displayName.trim(),
-        fullName: values.fullName.trim(),
-        phone: values.phone.trim(),
-        tel: values.tel.trim(),
+      const res = await fetch("/api/auth/update-profile", {
+        body: JSON.stringify({
+          address: values.address.trim(),
+          companyName: values.companyName.trim(),
+          displayName: values.displayName.trim(),
+          fullName: values.fullName.trim(),
+          phone: values.phone.trim(),
+          tel: values.tel.trim(),
+        }),
+        headers: { "Content-Type": "application/json" },
+        method: "POST",
       });
-      setSession(updatedSession);
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.error ?? "Unable to update profile.");
+      }
+      const { user: updatedUser } = await res.json();
+      setUser(updatedUser);
       setProfileFeedback({ message: "Profile updated.", tone: "success" });
     } catch (error) {
       setProfileFeedback({

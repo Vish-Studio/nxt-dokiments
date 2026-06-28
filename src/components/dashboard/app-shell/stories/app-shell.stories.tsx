@@ -23,17 +23,6 @@ type Story = StoryObj<typeof meta>;
 export const Default: Story = {
   beforeEach: () => {
     useAuthStore.setState({
-      session: {
-        expiresAt: Date.now() + 60_000,
-        idToken: "story-token",
-        refreshToken: "story-refresh",
-        user: {
-          displayName: "Anthony Alverizko",
-          email: "anthony@dokiments.test",
-          role: "free",
-          uid: "story-user",
-        },
-      },
       status: "authenticated",
       user: {
         displayName: "Anthony Alverizko",

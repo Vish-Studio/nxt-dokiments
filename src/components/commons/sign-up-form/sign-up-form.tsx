@@ -6,7 +6,6 @@ import { useForm } from "react-hook-form";
 
 import { Button } from "@/components/commons/button/button";
 import { Input } from "@/components/commons/input/input";
-import { signUpWithFirebase } from "@/lib/firebase/rest-auth";
 import { useAuthStore } from "@/stores/auth-store";
 
 type SignUpValues = {
@@ -20,7 +19,7 @@ export type SignUpFormProps = {
 };
 
 export const SignUpForm = ({ onSubmit }: SignUpFormProps) => {
-  const setSession = useAuthStore((state) => state.setSession);
+  const setUser = useAuthStore((state) => state.setUser);
   const [formError, setFormError] = useState("");
   const {
     formState: { errors, isSubmitting },
@@ -43,8 +42,14 @@ export const SignUpForm = ({ onSubmit }: SignUpFormProps) => {
         return;
       }
 
-      const session = await signUpWithFirebase(values);
-      setSession(session);
+      const res = await fetch("/api/auth/sign-up", {
+        body: JSON.stringify(values),
+        headers: { "Content-Type": "application/json" },
+        method: "POST",
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error ?? "Unable to create account.");
+      setUser(data.user);
       const params = new URLSearchParams(window.location.search);
       window.location.assign(params.get("next") || "/dashboard");
     } catch (error) {

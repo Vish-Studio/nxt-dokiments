@@ -7,17 +7,6 @@ import { ProfileSettings } from "../profile-settings";
 
 const seedSession = () => {
   useAuthStore.setState({
-    session: {
-      expiresAt: Date.now() + 3_600_000,
-      idToken: "story-id-token",
-      refreshToken: "story-refresh-token",
-      user: {
-        displayName: "Anthony Alverizko",
-        email: "anthony@dokiments.com",
-        role: "free",
-        uid: "story-uid",
-      },
-    },
     status: "authenticated",
     user: {
       displayName: "Anthony Alverizko",

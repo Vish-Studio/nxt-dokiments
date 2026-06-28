@@ -16,6 +16,7 @@
     "embla-carousel-react": "^8.6.0",
     "firebase": "^12.15.0",
     "html-to-image": "^1.11.13",
+    "iron-session": "^8.0.4",
     "jspdf": "^4.2.1",
     "next": "16.2.9",
     "react": "19.2.4",

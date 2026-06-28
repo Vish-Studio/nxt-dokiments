@@ -3,61 +3,46 @@
 import { useEffect } from "react";
 import type { ReactNode } from "react";
 
-import { devAuthSession, isDevAuthBypassEnabled } from "@/lib/dev-auth";
-import { refreshFirebaseSession } from "@/lib/firebase/rest-auth";
 import { useAuthStore } from "@/stores/auth-store";
-
-const REFRESH_SKEW_MS = 60_000;
 
 export type AuthProviderProps = {
   children: ReactNode;
 };
 
+/**
+ * Root session hydration provider. Mount once in the root layout.
+ *
+ * On mount, calls `GET /api/auth/me` to read the HttpOnly session cookie
+ * server-side and return the authenticated user. This is the only place where
+ * the client learns about the current session — no tokens are ever exposed
+ * to the browser.
+ *
+ * The `active` flag prevents a stale `setUser` call if the component unmounts
+ * before the fetch resolves (e.g. during fast navigation in development).
+ */
 export const AuthProvider = ({ children }: AuthProviderProps) => {
-  const clearSession = useAuthStore((state) => state.clearSession);
-  const getStoredSession = useAuthStore((state) => state.getStoredSession);
-  const setSession = useAuthStore((state) => state.setSession);
+  const setUser = useAuthStore((state) => state.setUser);
 
   useEffect(() => {
-    let isMounted = true;
+    let active = true;
 
-    const hydrateSession = async () => {
-      if (isDevAuthBypassEnabled) {
-        setSession(devAuthSession);
-        return;
-      }
-
-      const storedSession = getStoredSession();
-
-      if (!storedSession) {
-        setSession(null);
-        return;
-      }
-
-      if (storedSession.expiresAt > Date.now() + REFRESH_SKEW_MS) {
-        setSession(storedSession);
-        return;
-      }
-
-      try {
-        const refreshedSession = await refreshFirebaseSession(storedSession);
-
-        if (isMounted) {
-          setSession(refreshedSession);
+    fetch("/api/auth/me")
+      .then(async (res) => {
+        if (!res.ok) {
+          if (active) setUser(null);
+          return;
         }
-      } catch {
-        if (isMounted) {
-          clearSession();
-        }
-      }
-    };
-
-    void hydrateSession();
+        const { user } = await res.json();
+        if (active) setUser(user);
+      })
+      .catch(() => {
+        if (active) setUser(null);
+      });
 
     return () => {
-      isMounted = false;
+      active = false;
     };
-  }, [clearSession, getStoredSession, setSession]);
+  }, [setUser]);
 
   return children;
 };
