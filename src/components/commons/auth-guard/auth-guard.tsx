@@ -1,34 +1,26 @@
 "use client";
 
 import { SpinnerGap } from "@phosphor-icons/react";
-import { useEffect } from "react";
 import type { ReactNode } from "react";
 
-import { isDevAuthBypassEnabled } from "@/lib/dev-auth";
 import { useAuthStore } from "@/stores/auth-store";
 
 export type AuthGuardProps = {
   children: ReactNode;
 };
 
+/**
+ * Client-side loading gate for protected routes.
+ *
+ * Hard redirects for unauthenticated users are handled server-side by
+ * `proxy.ts` before React renders, so this component's only job is to render
+ * a spinner while `AuthProvider` hydrates the session from `GET /api/auth/me`.
+ * Once `status` leaves `"loading"`, the page content is rendered.
+ */
 export const AuthGuard = ({ children }: AuthGuardProps) => {
   const status = useAuthStore((state) => state.status);
 
-  useEffect(() => {
-    if (isDevAuthBypassEnabled) {
-      return;
-    }
-
-    if (status === "unauthenticated") {
-      const nextPath = `${window.location.pathname}${window.location.search}`;
-
-      window.location.replace(
-        `/sign-in?next=${encodeURIComponent(nextPath)}`,
-      );
-    }
-  }, [status]);
-
-  if (!isDevAuthBypassEnabled && status !== "authenticated") {
+  if (status === "loading") {
     return (
       <main className="grid min-h-dvh place-items-center bg-app-chrome text-app-chrome-content">
         <div className="grid justify-items-center gap-4">

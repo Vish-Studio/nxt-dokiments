@@ -6,7 +6,6 @@ import { useForm } from "react-hook-form";
 
 import { Button } from "@/components/commons/button/button";
 import { Input } from "@/components/commons/input/input";
-import { sendPasswordResetEmail } from "@/lib/firebase/rest-auth";
 
 type ForgotPasswordValues = {
   email: string;
@@ -37,7 +36,15 @@ export const ForgotPasswordForm = ({ onSubmit }: ForgotPasswordFormProps) => {
       if (onSubmit) {
         await onSubmit(values);
       } else {
-        await sendPasswordResetEmail(values.email);
+        const res = await fetch("/api/auth/forgot-password", {
+          body: JSON.stringify({ email: values.email }),
+          headers: { "Content-Type": "application/json" },
+          method: "POST",
+        });
+        if (!res.ok) {
+          const data = await res.json();
+          throw new Error(data.error ?? "Unable to send reset email.");
+        }
       }
 
       setSuccessMessage("Password reset email sent. Check your inbox.");

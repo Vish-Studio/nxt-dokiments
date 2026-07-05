@@ -17,7 +17,8 @@ const SidebarAccount: FunctionComponent<Props> = ({ isCollapsed = false }) => {
 
   const name = user?.displayName ?? "Dokiments User";
 
-  const handleSignOut = () => {
+  const handleSignOut = async () => {
+    await fetch("/api/auth/sign-out", { method: "POST" });
     clearSession();
     window.location.assign("/sign-in");
   };

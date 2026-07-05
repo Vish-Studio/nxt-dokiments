@@ -6,7 +6,6 @@ import { useForm } from "react-hook-form";
 
 import { Button } from "@/components/commons/button/button";
 import { Input } from "@/components/commons/input/input";
-import { signInWithFirebase } from "@/lib/firebase/rest-auth";
 import { useAuthStore } from "@/stores/auth-store";
 
 type SignInValues = {
@@ -19,7 +18,7 @@ export type SignInFormProps = {
 };
 
 export const SignInForm = ({ onSubmit }: SignInFormProps) => {
-  const setSession = useAuthStore((state) => state.setSession);
+  const setUser = useAuthStore((state) => state.setUser);
   const [formError, setFormError] = useState("");
   const {
     formState: { errors, isSubmitting },
@@ -41,8 +40,14 @@ export const SignInForm = ({ onSubmit }: SignInFormProps) => {
         return;
       }
 
-      const session = await signInWithFirebase(values);
-      setSession(session);
+      const res = await fetch("/api/auth/sign-in", {
+        body: JSON.stringify(values),
+        headers: { "Content-Type": "application/json" },
+        method: "POST",
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error ?? "Unable to sign in.");
+      setUser(data.user);
       const params = new URLSearchParams(window.location.search);
       window.location.assign(params.get("next") || "/dashboard");
     } catch (error) {

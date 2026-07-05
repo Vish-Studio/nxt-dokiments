@@ -5,7 +5,6 @@ import { useForm } from "react-hook-form";
 
 import { Button } from "@/components/commons/button/button";
 import { Input } from "@/components/commons/input/input";
-import { updateAccountPassword } from "@/lib/firebase/rest-auth";
 import { useAuthStore } from "@/stores/auth-store";
 
 type PasswordValues = {
@@ -19,8 +18,6 @@ type Feedback = {
 };
 
 export const PasswordSettings = () => {
-  const session = useAuthStore((state) => state.session);
-  const setSession = useAuthStore((state) => state.setSession);
   const [feedback, setFeedback] = useState<Feedback | null>(null);
 
   const form = useForm<PasswordValues>({
@@ -30,14 +27,16 @@ export const PasswordSettings = () => {
   const submit = form.handleSubmit(async ({ password }) => {
     setFeedback(null);
 
-    if (!session) {
-      setFeedback({ message: "Your session expired. Please sign in again.", tone: "error" });
-      return;
-    }
-
     try {
-      const updatedSession = await updateAccountPassword(session, password);
-      setSession(updatedSession);
+      const res = await fetch("/api/auth/update-password", {
+        body: JSON.stringify({ password }),
+        headers: { "Content-Type": "application/json" },
+        method: "POST",
+      });
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.error ?? "Unable to change password.");
+      }
       form.reset({ confirmPassword: "", password: "" });
       setFeedback({ message: "Password changed.", tone: "success" });
     } catch (error) {

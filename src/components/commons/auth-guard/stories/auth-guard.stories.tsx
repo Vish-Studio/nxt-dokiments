@@ -25,17 +25,6 @@ type Story = StoryObj<typeof meta>;
 export const Authenticated: Story = {
   beforeEach: () => {
     useAuthStore.setState({
-      session: {
-        expiresAt: Date.now() + 60_000,
-        idToken: "story-token",
-        refreshToken: "story-refresh",
-        user: {
-          displayName: "Story User",
-          email: "story@dokiments.test",
-          role: "free",
-          uid: "story-user",
-        },
-      },
       status: "authenticated",
       user: {
         displayName: "Story User",
@@ -52,7 +41,7 @@ export const Authenticated: Story = {
 
 export const Loading: Story = {
   beforeEach: () => {
-    useAuthStore.setState({ session: null, status: "loading", user: null });
+    useAuthStore.setState({ status: "loading", user: null });
   },
   play: async ({ canvas }) => {
     await expect(canvas.getByText("Checking account access")).toBeVisible();
