@@ -1,6 +1,6 @@
 import { getIronSession } from "iron-session";
 
-import { fetchSavedTemplates, persistSavedTemplates } from "@/lib/firebase/server-templates";
+import { fetchSavedTemplates, persistSavedTemplates } from "@/lib/firebase/server-saved-templates";
 import { sessionOptions, type SessionData } from "@/lib/session";
 import type { SavedTemplate } from "@/types/template";
 
