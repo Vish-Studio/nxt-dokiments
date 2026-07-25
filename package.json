@@ -8,7 +8,8 @@
     "start": "next start",
     "lint": "eslint",
     "storybook": "storybook dev -p 6006",
-    "build-storybook": "storybook build"
+    "build-storybook": "storybook build",
+    "seed:templates": "tsc -p tsconfig.seed.json && node .scratch-seed/scripts/seed-templates.js"
   },
   "dependencies": {
     "@phosphor-icons/react": "^2.1.10",
