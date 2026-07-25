@@ -17,7 +17,12 @@ export const documentTypes = [
 
 export type DocumentType = (typeof documentTypes)[number];
 
-export const templateStyleIds = ["classic", "modern", "brutalist", "minimalist"] as const;
+export const templateStyleIds = [
+  "classic",
+  "modern",
+  "brutalist",
+  "minimalist",
+] as const;
 
 export type TemplateStyleId = (typeof templateStyleIds)[number];
 
@@ -64,12 +69,32 @@ export type SavedTemplate = {
   templateId: string;
 };
 
+/**
+ * A frozen copy of a template's shape, taken at the moment a `UserDocument` was
+ * created from it. Rendering/exporting a document always uses this, never a live
+ * lookup — so a later edit or deactivation of the source template in the catalog
+ * cannot retroactively change or break a document a user has already finished.
+ */
+export type TemplateSnapshot = {
+  fields: TemplateField[];
+  name: string;
+  style: TemplateStyle;
+};
+
 /** A concrete document the user created from one of their saved templates. */
 export type UserDocument = {
   createdAt: number;
   id: string;
   name: string;
+  /** ID of the template this document was created from — kept only for "recreate from this template" convenience. */
   templateId: string;
   updatedAt: number;
   values: Record<string, string>;
+  /**
+   * The template's shape as it was at creation time. See `TemplateSnapshot`.
+   * Optional because documents created before this field existed (or via the
+   * legacy localStorage-only `documents-store.ts`, not yet wired to the API)
+   * predate it — new documents created through `POST /api/documents` always have one.
+   */
+  templateSnapshot?: TemplateSnapshot;
 };

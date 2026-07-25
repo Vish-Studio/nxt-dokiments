@@ -1,12 +1,12 @@
 # API Plan — Templates, Saved Templates, Documents
 
-This documents the target shape of three route groups before implementation starts:
+Documents the shape of three route groups, all now implemented (see the "Status: implemented" note under each section for what to read for the actual code):
 
 - `/api/templates` — read-only marketplace catalog, served from Firestore instead of the static bundle in `src/lib/market-place/`.
-- `/api/saved-templates` — per-user library of templates a user has added from the marketplace (replaces the current `/api/templates` route and the `savedTemplates` array field on `users/{uid}`).
-- `/api/documents` — per-user documents created from a saved template (replaces the localStorage-only `documents-store.ts`).
+- `/api/saved-templates` — per-user library of templates a user has added from the marketplace (replaced the old `/api/templates` route and the `savedTemplates` array field on `users/{uid}`).
+- `/api/documents` — per-user documents created from a saved template (replaces the localStorage-only `documents-store.ts` at the API layer; the frontend itself is not yet wired to it — see that section for details).
 
-Build order: `templates` → `saved-templates` → `documents`, since each depends on the one before it (a saved template references a template; a document references a saved template's data).
+Build order was `templates` → `saved-templates` → `documents`, since each depended on the one before it (a saved template references a template; a document references a saved template's data).
 
 ## Firestore shape backing these routes
 
@@ -60,11 +60,17 @@ User-created documents — filled-in instances of a saved template. Replaces the
 |---|---|---|---|---|---|---|
 | `GET` | `/api/documents` | List all of the signed-in user's documents (for the Documents list view). | Session required. | Optional `templateId` filter. | `200 { documents: UserDocument[] }` | `GET` — straightforward list read, scoped to the caller's own subcollection so no `uid` needs to be passed. |
 | `GET` | `/api/documents/:id` | Fetch one document (used when opening the editor or the preview/export dialog on a full page load rather than from already-loaded list state). | Session required; must own the document. | — | `200 { document: UserDocument }` / `404`. | Separate single-item read so the editor doesn't depend on the list already being in memory — supports direct links/refreshes. |
-| `POST` | `/api/documents` | Create a new document from a saved template. | Session required. | `{ name, templateId, values }` | `201 { document: UserDocument }` | `POST` to create a new resource with a server-generated ID. At creation time the server snapshots the template's current `name`, `style`, and `fields` onto the document (`templateSnapshot`) rather than storing only a live `templateId` reference — so a later template edit or deletion in the admin catalog can't retroactively change or break a document a user already finished and possibly exported/signed. `templateId` is still stored for "recreate from this template" convenience, but rendering always uses the snapshot. |
-| `PATCH` | `/api/documents/:id` | Update a document's `name` and/or `values` (editing an existing document). | Session required; must own the document. | `{ name?, values? }` — partial. | `200 { document: UserDocument }` | `PATCH` rather than `PUT` because updates are partial (the editor only sends changed fields, matching the existing `updateDocument(uid, id, patch)` store signature) and the `templateSnapshot` is immutable after creation — this route never touches it. |
-| `DELETE` | `/api/documents/:id` | Delete a document. | Session required; must own the document. | — | `204` on success; `404` if not found / not owned. | Standard resource deletion, single-document write, matches the existing `removeDocument` action. |
+| `POST` | `/api/documents` | Create a new document from a saved template. | Session required. | `{ name, templateId, values }` — `values` capped at 50 keys, 20,000 chars each (see below). | `201 { document: UserDocument }` / `400` on a malformed or oversized body / `404` if `templateId` doesn't resolve to an active template. | `POST` to create a new resource with a server-generated ID. At creation time the server snapshots the template's current `name`, `style`, and `fields` onto the document (`templateSnapshot`) rather than storing only a live `templateId` reference — so a later template edit or deletion in the admin catalog can't retroactively change or break a document a user already finished and possibly exported/signed. `templateId` is still stored for "recreate from this template" convenience, but rendering always uses the snapshot. |
+| `PATCH` | `/api/documents/:id` | Update a document's `name` and/or `values` (editing an existing document). | Session required; must own the document. | `{ name?, values? }` — partial, at least one required. | `200 { document: UserDocument }` / `400` if the body is empty/malformed/oversized / `404` if not found or not owned. | `PATCH` rather than `PUT` because updates are partial (the editor only sends changed fields, matching the existing `updateDocument(uid, id, patch)` store signature) and the `templateSnapshot` is immutable after creation — this route never touches it. |
+| `DELETE` | `/api/documents/:id` | Delete a document. | Session required; must own the document. | — | `204` on success, including when the document wasn't found (idempotent delete, matching the same choice made for `saved-templates`). | Standard resource deletion, single-document write, matches the existing `removeDocument` action. |
 
 **Why a subcollection (`users/{uid}/documents/{docId}`) instead of a `documents` array field or a top-level collection:** each document can be edited independently without a read-modify-write of every other document (unlike the old `savedTemplates` array pattern), avoids the 1 MiB per-document Firestore size ceiling as a user accumulates documents, and keeps ownership checks trivial (`request.auth.uid` must equal the parent path segment) without needing a `uid` field + composite index the way a top-level collection would.
+
+**`TemplateSnapshot` shape** — `{ fields: TemplateField[], name: string, style: TemplateStyle }`, added to `UserDocument` as an optional `templateSnapshot` field (optional only because it predates existing localStorage-created documents from the not-yet-wired-up `documents-store.ts`; every document created through this API always has one).
+
+**`values` size bounds** — capped at 50 keys and 20,000 characters per value in the Zod schema, enforced before the request ever reaches Firestore. This is a deliberately generous ceiling (the largest template today has ~13 fields) meant to stop a deliberately oversized payload — e.g. via a direct Postman request — from writing a document that risks Firestore's 1 MiB per-document limit, not to constrain legitimate use.
+
+**Status: implemented** — see [`server-documents.ts`](../src/lib/firebase/server-documents.ts), [`route.ts`](../src/app/api/documents/route.ts), [`[id]/route.ts`](../src/app/api/documents/[id]/route.ts). `documents-store.ts` (the frontend Zustand store, still localStorage-only) is intentionally untouched in this pass — wiring the frontend to this API is separate follow-up work.
 
 ---
 
