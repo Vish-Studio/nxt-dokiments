@@ -136,14 +136,26 @@
             "header": [{ "key": "Content-Type", "value": "application/json" }],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"items\": [\n    {\n      \"templateId\": \"{{templateId}}\",\n      \"savedId\": \"{{templateId}}\",\n      \"savedAt\": 1737000000000\n    }\n  ]\n}"
+              "raw": "{\n  \"templateId\": \"{{templateId}}\"\n}"
             },
             "url": {
               "raw": "{{baseUrl}}/api/saved-templates",
               "host": ["{{baseUrl}}"],
               "path": ["api", "saved-templates"]
             },
-            "description": "POST /api/saved-templates. Current implementation overwrites the whole saved list with `items` (whole-array model, unchanged from before the Phase 0/1 relocation — Phase 2 migrates this to a per-template subcollection). Run \"List saved templates\" afterwards to confirm the write landed."
+            "description": "POST /api/saved-templates — saves one template, as a single-document upsert on users/{uid}/savedTemplates/{templateId}. Returns 201 on a new save, 200 if already saved (both idempotent, not errors). Run \"List saved templates\" afterwards to confirm the write landed. Try a template above your account's tier (e.g. a gold-tier template while signed in as a free user) to confirm you get 403 { error: \"Your plan does not include this template.\" } — this is the server-side tier re-validation check, which a client-side-only check would not catch from a direct Postman request."
+          }
+        },
+        {
+          "name": "Remove a saved template",
+          "request": {
+            "method": "DELETE",
+            "url": {
+              "raw": "{{baseUrl}}/api/saved-templates/{{templateId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "saved-templates", "{{templateId}}"]
+            },
+            "description": "DELETE /api/saved-templates/:templateId. Returns 204 with an empty body whether or not the template was actually saved (idempotent delete). Run \"List saved templates\" afterwards to confirm it's gone."
           }
         },
         {

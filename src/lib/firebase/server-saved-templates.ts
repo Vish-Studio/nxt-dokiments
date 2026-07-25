@@ -1,93 +1,102 @@
 import "server-only";
 
 import {
-  getFirestoreDocument,
+  deleteFirestoreDocument,
+  getDocumentId,
+  listFirestoreCollection,
   patchFirestoreDocument,
-  readArray,
   readInteger,
-  readMap,
-  readString,
-  toArrayValue,
   toIntegerValue,
-  toMapValue,
-  toStringValue,
-  toTimestampValue,
   type FirestoreDocument,
 } from "@/lib/firebase/server-firestore";
 import type { AuthSession } from "@/types/auth";
 import type { SavedTemplate } from "@/types/template";
 
-/** Firestore document path for a user's profile document (where `savedTemplates` lives). */
-const userProfilePath = (uid: string) => `users/${uid}`;
+/**
+ * Firestore subcollection path for a user's saved templates.
+ * Doc ID is the templateId itself, so saving is an idempotent upsert and
+ * removing is a single-document delete — no read-modify-write of a shared list.
+ */
+const savedTemplatesPath = (uid: string) => `users/${uid}/savedTemplates`;
+const savedTemplatePath = (uid: string, templateId: string) =>
+  `${savedTemplatesPath(uid)}/${templateId}`;
 
 /**
- * Deserialises the `savedTemplates` array field from a Firestore document.
- * Items with an empty `templateId` are filtered out to guard against partial writes.
+ * Deserialises a `users/{uid}/savedTemplates/{templateId}` document into a `SavedTemplate`.
  *
- * @param document - Firestore document fetched from `users/{uid}`, or `null` if it doesn't exist.
- * @returns The user's saved templates, or `[]` when the document is `null` or has no saves.
+ * @param document - Firestore document fetched from the subcollection.
+ * @returns The `SavedTemplate`, with `templateId`/`savedId` taken from the document's own ID.
  */
-const parseSavedTemplates = (
-  document: FirestoreDocument | null,
-): SavedTemplate[] =>
-  readArray(document?.fields?.savedTemplates)
-    .map((value): SavedTemplate => {
-      const fields = readMap(value);
-      const templateId = readString(fields.templateId) ?? "";
-      return {
-        savedAt: readInteger(fields.savedAt) ?? 0,
-        savedId: templateId,
-        templateId,
-      };
-    })
-    .filter((item) => item.templateId);
-
-/**
- * Reads the authenticated user's saved templates from their Firestore profile document.
- *
- * Returns an empty array when the document does not yet exist (new users).
- *
- * @param session - Active server-side session containing the Firebase `idToken` and user `uid`.
- * @returns The user's saved templates, or `[]` for a user who hasn't saved any yet.
- * @throws When the Firestore request fails for any reason other than a 404.
- */
-export const fetchSavedTemplates = async (
-  session: AuthSession,
-): Promise<SavedTemplate[]> => {
-  const document = await getFirestoreDocument(
-    userProfilePath(session.user.uid),
-    session.idToken,
-  );
-  return parseSavedTemplates(document);
+const parseSavedTemplate = (document: FirestoreDocument): SavedTemplate => {
+  const templateId = getDocumentId(document);
+  return {
+    savedAt: readInteger(document.fields?.savedAt) ?? 0,
+    savedId: templateId,
+    templateId,
+  };
 };
 
 /**
- * Overwrites the `savedTemplates` array field on the user's Firestore profile document.
+ * Lists the authenticated user's saved templates.
  *
- * Uses a field mask so only `savedTemplates` and `updatedAt` are touched — other
- * profile fields (displayName, role, etc.) are left unchanged.
+ * Returns an empty array for a user who hasn't saved any yet — there is nothing
+ * to create in advance, unlike the old whole-array-on-the-profile-document model.
  *
  * @param session - Active server-side session containing the Firebase `idToken` and user `uid`.
- * @param items - The complete updated list of saved templates to persist.
- * @throws When the Firestore PATCH request fails.
+ * @returns The user's saved templates, in server-returned order.
+ * @throws When the Firestore request fails.
  */
-export const persistSavedTemplates = async (
+export const listSavedTemplates = async (
   session: AuthSession,
-  items: SavedTemplate[],
-): Promise<void> => {
-  const savedTemplates = toArrayValue(
-    items.map((item) =>
-      toMapValue({
-        savedAt: toIntegerValue(item.savedAt),
-        templateId: toStringValue(item.templateId),
-      }),
-    ),
+): Promise<SavedTemplate[]> => {
+  const documents = await listFirestoreCollection(
+    savedTemplatesPath(session.user.uid),
+    session.idToken,
   );
+  return documents.map(parseSavedTemplate);
+};
+
+/**
+ * Saves one template to the user's library. Idempotent — saving an already-saved
+ * `templateId` overwrites its `savedAt` rather than creating a duplicate or erroring.
+ *
+ * Callers are responsible for any tier/limit checks before calling this — this
+ * function performs the write unconditionally.
+ *
+ * @param session - Active server-side session containing the Firebase `idToken` and user `uid`.
+ * @param templateId - ID of the marketplace template to save.
+ * @returns The saved template's record.
+ * @throws When the Firestore write fails.
+ */
+export const saveTemplate = async (
+  session: AuthSession,
+  templateId: string,
+): Promise<SavedTemplate> => {
+  const savedAt = Date.now();
 
   await patchFirestoreDocument(
-    userProfilePath(session.user.uid),
-    { savedTemplates, updatedAt: toTimestampValue() },
+    savedTemplatePath(session.user.uid, templateId),
+    { savedAt: toIntegerValue(savedAt) },
     session.idToken,
-    ["savedTemplates", "updatedAt"],
+  );
+
+  return { savedAt, savedId: templateId, templateId };
+};
+
+/**
+ * Removes one template from the user's library.
+ * Idempotent — removing a `templateId` that was never saved is not an error.
+ *
+ * @param session - Active server-side session containing the Firebase `idToken` and user `uid`.
+ * @param templateId - ID of the template to remove.
+ * @throws When the Firestore delete fails for a reason other than the document not existing.
+ */
+export const removeSavedTemplate = async (
+  session: AuthSession,
+  templateId: string,
+): Promise<void> => {
+  await deleteFirestoreDocument(
+    savedTemplatePath(session.user.uid, templateId),
+    session.idToken,
   );
 };
