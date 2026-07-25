@@ -68,12 +68,21 @@ export const useSyncSavedTemplates = () => {
 
     fetch("/api/saved-templates")
       .then((res) => res.json())
-      .then((items: SavedTemplate[]) => {
-        if (active) {
-          setSaved(user.uid, items);
-          markLoaded(user.uid);
-        }
-      })
+      .then(
+        (data: {
+          savedTemplates: Array<{ savedAt: number; templateId: string }>;
+        }) => {
+          if (active) {
+            const items: SavedTemplate[] = data.savedTemplates.map((item) => ({
+              savedAt: item.savedAt,
+              savedId: item.templateId,
+              templateId: item.templateId,
+            }));
+            setSaved(user.uid, items);
+            markLoaded(user.uid);
+          }
+        },
+      )
       .catch(() => {
         if (active) {
           markLoaded(user.uid);
@@ -135,11 +144,20 @@ export const useTemplateLibrary = () => {
     setSaved(user.uid, next);
 
     try {
-      await fetch("/api/saved-templates", {
-        body: JSON.stringify({ items: next }),
+      const response = await fetch("/api/saved-templates", {
+        body: JSON.stringify({ templateId }),
         headers: { "Content-Type": "application/json" },
         method: "POST",
       });
+
+      if (!response.ok) {
+        setSaved(user.uid, saved);
+        return {
+          ok: false,
+          reason: response.status === 403 ? "limit" : "error",
+        };
+      }
+
       return { ok: true };
     } catch {
       setSaved(user.uid, saved);
