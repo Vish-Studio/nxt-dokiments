@@ -65,20 +65,20 @@ service cloud.firestore {
 
     // --- templates/{templateId} — marketplace catalog ---------------------------
     //
-    // Read-only from the client's perspective. Writes only ever happen via the seed
-    // script (scripts/seed-templates.ts) or, later, admin CRUD routes authenticated
-    // with a service-account credential that bypasses these rules entirely — so
-    // `allow write: if false` here is correct and does not need an admin exception.
+    // Read-only for regular users. Writes are restricted to superadmin accounts —
+    // this is what scripts/seed-templates.ts authenticates as (a real Firebase user
+    // with role: superadmin, via the Identity Toolkit REST API, same trust model as
+    // the rest of this app), and what future admin CRUD routes will use too.
     match /templates/{templateId} {
       allow read: if signedIn();
-      allow write: if false;
+      allow write: if isSuperadmin();
     }
 
     // --- templateStyles/{styleId} — marketplace style catalog --------------------
 
     match /templateStyles/{styleId} {
       allow read: if signedIn();
-      allow write: if false;
+      allow write: if isSuperadmin();
     }
   }
 }

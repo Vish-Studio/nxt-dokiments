@@ -9,6 +9,10 @@ export type FirestoreValue =
       arrayValue: { values?: FirestoreValue[] };
     }
   | {
+      /** Plain boolean value. */
+      booleanValue: boolean;
+    }
+  | {
       /** Firestore encodes integers as decimal strings, not JSON numbers. */
       integerValue: string;
     }
@@ -50,6 +54,65 @@ const FIRESTORE_BASE_URL = "https://firestore.googleapis.com/v1";
 /** Builds the Firestore REST URL for a document path, e.g. `users/{uid}`. */
 const documentUrl = (path: string) =>
   `${FIRESTORE_BASE_URL}/projects/${serverFirebaseConfig.projectId}/databases/(default)/documents/${path}`;
+
+/** Shape of a Firestore REST `documents:list` response page. */
+type FirestoreListResponse = {
+  /** Documents on this page. Absent (not `[]`) when the collection is empty. */
+  documents?: FirestoreDocument[];
+  /** Opaque token for fetching the next page, or absent on the last page. */
+  nextPageToken?: string;
+};
+
+/**
+ * Extracts a document's ID from its full resource `name` path
+ * (`.../documents/{collection}/{docId}` → `{docId}`).
+ *
+ * @param document - A document as returned by any Firestore REST read.
+ * @returns The document's ID, or `""` if `name` is absent.
+ */
+export const getDocumentId = (document: FirestoreDocument): string =>
+  document.name?.split("/").pop() ?? "";
+
+/**
+ * Lists every document in a Firestore collection via the REST API, transparently
+ * paging through `nextPageToken` until the full collection has been fetched.
+ *
+ * @param collectionPath - Collection path relative to the database root, e.g. `templates`.
+ * @param idToken - Firebase ID token used to authorise the request.
+ * @returns All documents in the collection, in server-returned order.
+ * @throws When any page of the request fails.
+ */
+export const listFirestoreCollection = async (
+  collectionPath: string,
+  idToken: string,
+): Promise<FirestoreDocument[]> => {
+  const documents: FirestoreDocument[] = [];
+  let pageToken: string | undefined;
+
+  do {
+    const url = new URL(documentUrl(collectionPath));
+    if (pageToken) url.searchParams.set("pageToken", pageToken);
+
+    const response = await fetch(url, {
+      headers: { Authorization: `Bearer ${idToken}` },
+    });
+
+    const page = (await response.json().catch(() => null)) as
+      | (FirestoreListResponse & FirestoreErrorBody)
+      | null;
+
+    if (!response.ok) {
+      throw new Error(
+        page?.error?.message || "Unable to list the requested collection.",
+      );
+    }
+
+    documents.push(...(page?.documents ?? []));
+    pageToken = page?.nextPageToken;
+  } while (pageToken);
+
+  return documents;
+};
 
 /**
  * Reads a Firestore document via the REST API, authorised with the caller's own ID token.
@@ -153,6 +216,11 @@ export const deleteFirestoreDocument = async (
   }
 };
 
+/** Wraps a plain boolean as a Firestore REST `booleanValue` field. */
+export const toBooleanValue = (value: boolean): FirestoreValue => ({
+  booleanValue: value,
+});
+
 /** Wraps a plain string as a Firestore REST `stringValue` field. */
 export const toStringValue = (value: string): FirestoreValue => ({
   stringValue: value,
@@ -177,6 +245,12 @@ export const toArrayValue = (values: FirestoreValue[]): FirestoreValue => ({
 export const toMapValue = (fields: FirestoreFields): FirestoreValue => ({
   mapValue: { fields },
 });
+
+/** Reads a `booleanValue` field, or `undefined` if the value is absent or a different variant. */
+export const readBoolean = (
+  value: FirestoreValue | undefined,
+): boolean | undefined =>
+  value && "booleanValue" in value ? value.booleanValue : undefined;
 
 /** Reads a `stringValue` field, or `undefined` if the value is absent or a different variant. */
 export const readString = (

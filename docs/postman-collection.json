@@ -1,0 +1,164 @@
+{
+  "info": {
+    "name": "Dokiments",
+    "description": "Local API testing collection for the Firestore-backed routes built in Phase 0/1 (see docs/api-templates-documents.md). Auth is a session cookie, not a bearer token — Postman's built-in cookie jar handles it automatically once you run \"Sign in\", so no manual header wiring is needed between requests in this collection.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:3000" },
+    { "key": "email", "value": "you@example.com" },
+    { "key": "password", "value": "yourpassword" },
+    { "key": "templateId", "value": "classic-contract" }
+  ],
+  "item": [
+    {
+      "name": "Auth",
+      "item": [
+        {
+          "name": "Sign in",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{email}}\",\n  \"password\": \"{{password}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/sign-in",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "auth", "sign-in"]
+            },
+            "description": "Establishes the session cookie (dokiments-session) that every other request in this collection relies on. Response body is { user: AuthUser } only — tokens never leave the server. Check the collection's Cookies panel for localhost after sending this to confirm the cookie was set. If DEV_AUTH_BYPASS=true is set in .env.local, any email/password works and you'll get a fake session with role: \"special\" — useful for testing everything except the seed script, which needs a real superadmin account."
+          }
+        },
+        {
+          "name": "Get current session",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/me",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "auth", "me"]
+            },
+            "description": "Returns { user: AuthUser } if the session cookie is valid, or 401 null otherwise. Useful to confirm you're actually signed in before testing a protected route, and to check which role/tier the current session has."
+          }
+        },
+        {
+          "name": "Sign out",
+          "request": {
+            "method": "POST",
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/sign-out",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "auth", "sign-out"]
+            },
+            "description": "Destroys the session cookie. Run this between test scenarios to reset to a signed-out state, then use \"Unauthorised (401) check\" under each resource folder to confirm routes reject the request correctly."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Templates (catalog)",
+      "item": [
+        {
+          "name": "List catalog",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/templates",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "templates"]
+            },
+            "description": "GET /api/templates — full active catalog. Session required (401 without one). See docs/api-templates-documents.md for the response shape ({ templates: MarketplaceTemplate[] })."
+          }
+        },
+        {
+          "name": "List catalog filtered by style + tier",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/templates?styleId=classic&tier=free",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "templates"],
+              "query": [
+                { "key": "styleId", "value": "classic" },
+                { "key": "tier", "value": "free" }
+              ]
+            },
+            "description": "Same route with optional query filters. Try an invalid value (e.g. styleId=nonsense) to confirm the Zod query validation returns 400, not a silent empty result."
+          }
+        },
+        {
+          "name": "Get one template",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/templates/{{templateId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "templates", "{{templateId}}"]
+            },
+            "description": "GET /api/templates/:id. Try a nonexistent ID (e.g. does-not-exist) to confirm you get 404 { error: \"Template not found.\" }, not a 500."
+          }
+        },
+        {
+          "name": "Unauthorised (401) check",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/templates",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "templates"]
+            },
+            "description": "Run this AFTER \"Sign out\" (or in a fresh incognito-style environment with no prior sign-in) to confirm the route actually rejects an unauthenticated Postman request with 401 { error: \"Unauthorised.\" } — this is the concrete scenario withSession was built to close."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Saved Templates",
+      "item": [
+        {
+          "name": "List saved templates",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/saved-templates",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "saved-templates"]
+            },
+            "description": "GET /api/saved-templates — the signed-in user's saved-template list (empty array for a brand-new user). Session required."
+          }
+        },
+        {
+          "name": "Save a template",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"items\": [\n    {\n      \"templateId\": \"{{templateId}}\",\n      \"savedId\": \"{{templateId}}\",\n      \"savedAt\": 1737000000000\n    }\n  ]\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/saved-templates",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "saved-templates"]
+            },
+            "description": "POST /api/saved-templates. Current implementation overwrites the whole saved list with `items` (whole-array model, unchanged from before the Phase 0/1 relocation — Phase 2 migrates this to a per-template subcollection). Run \"List saved templates\" afterwards to confirm the write landed."
+          }
+        },
+        {
+          "name": "Unauthorised (401) check",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/saved-templates",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "saved-templates"]
+            },
+            "description": "Run AFTER \"Sign out\" to confirm this route also 401s without a session, same as the templates catalog check."
+          }
+        }
+      ]
+    }
+  ]
+}

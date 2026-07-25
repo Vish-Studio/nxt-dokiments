@@ -41,5 +41,8 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
+# ad hoc compilation output for scripts/seed-templates.ts (see tsconfig.seed.json)
+/.scratch-seed
+
 *storybook.log
 storybook-static

@@ -28,7 +28,8 @@ type TemplatesState = {
 export const useTemplatesStore = create<TemplatesState>((set) => ({
   loadedUsers: {},
   savedByUser: {},
-  markLoaded: (uid) => set((state) => ({ loadedUsers: { ...state.loadedUsers, [uid]: true } })),
+  markLoaded: (uid) =>
+    set((state) => ({ loadedUsers: { ...state.loadedUsers, [uid]: true } })),
   setSaved: (uid, items) =>
     set((state) => ({ savedByUser: { ...state.savedByUser, [uid]: items } })),
 }));
@@ -54,7 +55,9 @@ export const useSyncSavedTemplates = () => {
   const user = useAuthStore((state) => state.user);
   const setSaved = useTemplatesStore((state) => state.setSaved);
   const markLoaded = useTemplatesStore((state) => state.markLoaded);
-  const loaded = useTemplatesStore((state) => (user ? Boolean(state.loadedUsers[user.uid]) : false));
+  const loaded = useTemplatesStore((state) =>
+    user ? Boolean(state.loadedUsers[user.uid]) : false,
+  );
 
   useEffect(() => {
     if (!user || loaded) {
@@ -63,7 +66,7 @@ export const useSyncSavedTemplates = () => {
 
     let active = true;
 
-    fetch("/api/templates")
+    fetch("/api/saved-templates")
       .then((res) => res.json())
       .then((items: SavedTemplate[]) => {
         if (active) {
@@ -84,7 +87,9 @@ export const useSyncSavedTemplates = () => {
 };
 
 /** Possible outcomes of an `addTemplate` call. */
-export type AddTemplateResult = { ok: true } | { ok: false; reason: "auth" | "error" | "limit" };
+export type AddTemplateResult =
+  | { ok: true }
+  | { ok: false; reason: "auth" | "error" | "limit" };
 
 /**
  * Provides template save/remove actions with Firestore persistence and the
@@ -110,7 +115,9 @@ export const useTemplateLibrary = () => {
    * @returns `{ ok: false, reason: "limit" }` when the plan cap is reached.
    * @returns `{ ok: false, reason: "error" }` when the Firestore write fails.
    */
-  const addTemplate = async (templateId: string): Promise<AddTemplateResult> => {
+  const addTemplate = async (
+    templateId: string,
+  ): Promise<AddTemplateResult> => {
     if (!user) {
       return { ok: false, reason: "auth" };
     }
@@ -128,7 +135,7 @@ export const useTemplateLibrary = () => {
     setSaved(user.uid, next);
 
     try {
-      await fetch("/api/templates", {
+      await fetch("/api/saved-templates", {
         body: JSON.stringify({ items: next }),
         headers: { "Content-Type": "application/json" },
         method: "POST",
