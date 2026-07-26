@@ -1,11 +1,13 @@
 "use client";
 
+import { useQueryClient } from "@tanstack/react-query";
 import Link from "next/link";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 
 import { Button } from "@/components/commons/button/button";
 import { Input } from "@/components/commons/input/input";
+import { queryKeys } from "@/lib/query/keys";
 import { useAuthStore } from "@/stores/auth-store";
 
 type SignUpValues = {
@@ -20,6 +22,7 @@ export type SignUpFormProps = {
 
 export const SignUpForm = ({ onSubmit }: SignUpFormProps) => {
   const setUser = useAuthStore((state) => state.setUser);
+  const queryClient = useQueryClient();
   const [formError, setFormError] = useState("");
   const {
     formState: { errors, isSubmitting },
@@ -49,18 +52,27 @@ export const SignUpForm = ({ onSubmit }: SignUpFormProps) => {
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error ?? "Unable to create account.");
+      queryClient.setQueryData(queryKeys.session(), data.user);
       setUser(data.user);
       const params = new URLSearchParams(window.location.search);
       window.location.assign(params.get("next") || "/dashboard");
     } catch (error) {
-      setFormError(error instanceof Error ? error.message : "Unable to create account.");
+      setFormError(
+        error instanceof Error ? error.message : "Unable to create account.",
+      );
     }
   });
 
   return (
-    <form className="grid gap-5" onSubmit={submitForm}>
+    <form
+      className="grid gap-5"
+      onSubmit={submitForm}
+    >
       {formError ? (
-        <div className="rounded-box bg-error/10 px-4 py-3 text-sm text-error" role="alert">
+        <div
+          className="rounded-box bg-error/10 px-4 py-3 text-sm text-error"
+          role="alert"
+        >
           {formError}
         </div>
       ) : null}
@@ -103,13 +115,20 @@ export const SignUpForm = ({ onSubmit }: SignUpFormProps) => {
         })}
       />
 
-      <Button className="w-full" disabled={isSubmitting} type="submit">
+      <Button
+        className="w-full"
+        disabled={isSubmitting}
+        type="submit"
+      >
         {isSubmitting ? "Creating account..." : "Create account"}
       </Button>
 
       <p className="text-center text-sm text-nox-noir/60">
         Already have an account?{" "}
-        <Link className="font-title font-bold text-nox-noir hover:text-primary" href="/sign-in">
+        <Link
+          className="font-title font-bold text-nox-noir hover:text-primary"
+          href="/sign-in"
+        >
           Sign in
         </Link>
       </p>
