@@ -5,7 +5,6 @@ import { useForm } from "react-hook-form";
 
 import { Button } from "@/components/commons/button/button";
 import { Input } from "@/components/commons/input/input";
-import { useAuthStore } from "@/stores/auth-store";
 
 type PasswordValues = {
   confirmPassword: string;
@@ -41,7 +40,8 @@ export const PasswordSettings = () => {
       setFeedback({ message: "Password changed.", tone: "success" });
     } catch (error) {
       setFeedback({
-        message: error instanceof Error ? error.message : "Unable to change password.",
+        message:
+          error instanceof Error ? error.message : "Unable to change password.",
         tone: "error",
       });
     }
@@ -56,7 +56,10 @@ export const PasswordSettings = () => {
         </p>
       </div>
 
-      <form className="mt-6 grid gap-5" onSubmit={submit}>
+      <form
+        className="mt-6 grid gap-5"
+        onSubmit={submit}
+      >
         {feedback ? (
           <div
             className={
@@ -93,7 +96,10 @@ export const PasswordSettings = () => {
           })}
         />
         <div>
-          <Button disabled={form.formState.isSubmitting} type="submit">
+          <Button
+            disabled={form.formState.isSubmitting}
+            type="submit"
+          >
             {form.formState.isSubmitting ? "Updating..." : "Change password"}
           </Button>
         </div>

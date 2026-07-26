@@ -1,13 +1,12 @@
 "use client";
 
-import { List } from "@phosphor-icons/react";
+import { ListIcon } from "@phosphor-icons/react";
+import Image from "next/image";
 import Link from "next/link";
 import { useState } from "react";
-import Image from "next/image";
 
 import { MobileNav } from "@/components/website/mobile-nav/mobile-nav";
 import { useAuthStore } from "@/stores/auth-store";
-import { cn } from "@/lib/utils";
 
 const navItems = [
   { href: "/#overview", label: "Overview" },
@@ -18,7 +17,9 @@ const navItems = [
 
 export const Header = () => {
   const [isMobileNavOpen, setIsMobileNavOpen] = useState(false);
-  const isAuthenticated = useAuthStore((state) => state.status === "authenticated");
+  const isAuthenticated = useAuthStore(
+    (state) => state.status === "authenticated",
+  );
 
   return (
     <>
@@ -31,19 +32,30 @@ export const Header = () => {
               onClick={() => setIsMobileNavOpen(true)}
               type="button"
             >
-              <List aria-hidden size={22} weight="bold" />
+              <ListIcon
+                aria-hidden
+                size={22}
+                weight="bold"
+              />
             </button>
 
-            <Link className="flex items-center gap-3" href="/" aria-label="Dokiments home">
+            <Link
+              className="flex items-center gap-3"
+              href="/"
+              aria-label="Dokiments home"
+            >
               <Image
-                src={'/images/svg/logo-white.svg'}
+                src={"/images/svg/logo-white.svg"}
                 width={150}
                 height={150}
-                alt="Dokiments logo" />
+                alt="Dokiments logo"
+              />
             </Link>
-
           </div>
-          <nav className="hidden items-center gap-7 md:flex" aria-label="Website navigation">
+          <nav
+            className="hidden items-center gap-7 md:flex"
+            aria-label="Website navigation"
+          >
             {navItems.map((item) => (
               <a
                 className="font-title text-sm font-semibold text-white/70 transition-colors hover:text-golden-harvest"
