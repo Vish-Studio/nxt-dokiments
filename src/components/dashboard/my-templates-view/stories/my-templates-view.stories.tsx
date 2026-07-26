@@ -1,5 +1,5 @@
-import { QueryClientProvider } from "@tanstack/react-query";
 import type { Meta, StoryObj } from "@storybook/nextjs-vite";
+import { QueryClientProvider } from "@tanstack/react-query";
 import { expect, within } from "storybook/test";
 
 import { getTemplateById } from "@/lib/market-place";
@@ -21,7 +21,9 @@ const seedUser = () => {
 };
 
 /** Mocks `GET /api/saved-templates` so `useSavedTemplatesQuery` resolves with fixture data. */
-const mockSavedTemplates = (savedTemplates: Array<{ savedAt: number; templateId: string }>) => {
+const mockSavedTemplates = (
+  savedTemplates: Array<{ savedAt: number; templateId: string }>,
+) => {
   window.fetch = (async () =>
     new Response(
       JSON.stringify({
@@ -71,12 +73,18 @@ export const WithTemplates: Story = {
   decorators: [
     (Story) => {
       seedUser();
-      mockSavedTemplates([{ savedAt: Date.now(), templateId: "modern-contract" }]);
+      mockSavedTemplates([
+        { savedAt: Date.now(), templateId: "modern-contract" },
+      ]);
       return <Story />;
     },
   ],
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    await expect(await canvas.findByRole("button", { name: /preview contract/i })).toBeVisible();
+    await expect(
+      await canvas.findByRole("button", {
+        name: /preview client service agreement/i,
+      }),
+    ).toBeVisible();
   },
 };
