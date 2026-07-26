@@ -13,6 +13,7 @@
   },
   "dependencies": {
     "@phosphor-icons/react": "^2.1.10",
+    "@tanstack/react-query": "^5.101.4",
     "daisyui": "^5.5.23",
     "embla-carousel-react": "^8.6.0",
     "firebase": "^12.15.0",
@@ -34,6 +35,7 @@
     "@storybook/addon-vitest": "^10.4.6",
     "@storybook/nextjs-vite": "^10.4.6",
     "@tailwindcss/postcss": "^4",
+    "@tanstack/react-query-devtools": "^5.101.4",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
