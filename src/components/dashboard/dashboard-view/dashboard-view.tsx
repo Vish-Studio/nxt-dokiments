@@ -15,10 +15,10 @@ import { useState } from "react";
 import { Badge } from "@/components/commons/badge/badge";
 import { TemplateCard } from "@/components/commons/template-card/template-card";
 import { TemplatePreviewDialog } from "@/components/commons/template-preview-dialog/template-preview-dialog";
-import { getTemplateById } from "@/lib/market-place";
+import { useSavedTemplatesQuery } from "@/hooks/queries/use-saved-templates";
+import { getSavedTemplateLimit, getTemplateById } from "@/lib/market-place";
 import { useAuthStore } from "@/stores/auth-store";
 import { useUserDocuments } from "@/stores/documents-store";
-import { useTemplateLibrary } from "@/stores/templates-store";
 import type { UserRole } from "@/types/auth";
 import type { MarketplaceTemplate } from "@/types/template";
 
@@ -41,7 +41,8 @@ const roleBadgeVariants: Record<UserRole, "free" | "gold" | "silver" | "special"
 
 export const DashboardView = () => {
   const user = useAuthStore((state) => state.user);
-  const { limit, saved } = useTemplateLibrary();
+  const { data: saved = [] } = useSavedTemplatesQuery();
+  const limit = getSavedTemplateLimit(user?.role);
   const documents = useUserDocuments(user?.uid);
   const [previewTemplate, setPreviewTemplate] = useState<MarketplaceTemplate | null>(null);
 
@@ -96,7 +97,7 @@ export const DashboardView = () => {
 
   const recentDocuments = [...documents].sort((a, b) => b.updatedAt - a.updatedAt).slice(0, 4);
   const latestDocument = recentDocuments[0] ?? null;
-  const latestTemplate = saved.at(-1) ? getTemplateById(saved.at(-1)?.templateId ?? "") : null;
+  const latestTemplate = saved.at(-1)?.template ?? null;
 
   return (
     <div className="flex flex-col gap-8">

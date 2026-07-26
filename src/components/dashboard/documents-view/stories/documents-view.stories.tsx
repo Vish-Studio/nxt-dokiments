@@ -1,11 +1,30 @@
+import { QueryClientProvider } from "@tanstack/react-query";
 import type { Meta, StoryObj } from "@storybook/nextjs-vite";
 import { expect, userEvent, within } from "storybook/test";
 
+import { getTemplateById } from "@/lib/market-place";
+import { makeStoryQueryClient } from "@/lib/query/story-query-client";
 import { useAuthStore } from "@/stores/auth-store";
 import { useDocumentsStore } from "@/stores/documents-store";
-import { useTemplatesStore } from "@/stores/templates-store";
 
 import { DocumentsView } from "../documents-view";
+
+/** Mocks `GET /api/saved-templates` so `useSavedTemplatesQuery` resolves with fixture data. */
+const mockSavedTemplates = () => {
+  window.fetch = (async () =>
+    new Response(
+      JSON.stringify({
+        savedTemplates: [
+          {
+            savedAt: Date.now(),
+            template: getTemplateById("classic-invoice"),
+            templateId: "classic-invoice",
+          },
+        ],
+      }),
+      { status: 200 },
+    )) as typeof window.fetch;
+};
 
 const seed = () => {
   useAuthStore.setState({
@@ -17,13 +36,7 @@ const seed = () => {
       uid: "story-uid",
     },
   });
-  useTemplatesStore.setState({
-    savedByUser: {
-      "story-uid": [
-        { savedAt: Date.now(), savedId: "saved-1", templateId: "classic-invoice" },
-      ],
-    },
-  });
+  mockSavedTemplates();
 };
 
 const meta = {
@@ -33,9 +46,11 @@ const meta = {
   parameters: { layout: "fullscreen", nextjs: { appDirectory: true } },
   decorators: [
     (Story) => (
-      <div className="min-h-screen bg-app-panel p-6">
-        <Story />
-      </div>
+      <QueryClientProvider client={makeStoryQueryClient()}>
+        <div className="min-h-screen bg-app-panel p-6">
+          <Story />
+        </div>
+      </QueryClientProvider>
     ),
   ],
 } satisfies Meta<typeof DocumentsView>;

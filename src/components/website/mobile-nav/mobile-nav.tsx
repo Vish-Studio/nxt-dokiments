@@ -1,7 +1,6 @@
-import { cn } from "@/lib/utils";
-import { X } from "@phosphor-icons/react";
-import Link from "next/link";
+import { XIcon } from "@phosphor-icons/react";
 import Image from "next/image";
+import Link from "next/link";
 
 export type MobileNavItem = {
   href: string;
@@ -41,7 +40,11 @@ export const MobileNav = ({
             onClick={onClose}
             type="button"
           >
-            <X aria-hidden size={22} weight="bold" />
+            <XIcon
+              aria-hidden
+              size={22}
+              weight="bold"
+            />
           </button>
 
           <Link
@@ -51,14 +54,18 @@ export const MobileNav = ({
             onClick={onClose}
           >
             <Image
-              src={'/images/svg/logo-white.svg'}
+              src={"/images/svg/logo-white.svg"}
               width={150}
               height={150}
-              alt="Dokiments logo" />
+              alt="Dokiments logo"
+            />
           </Link>
         </div>
 
-        <nav className="mt-16 grid gap-4" aria-label="Mobile website navigation">
+        <nav
+          className="mt-16 grid gap-4"
+          aria-label="Mobile website navigation"
+        >
           {items.map((item, index) => (
             <a
               className="group flex items-center justify-between border-b border-white/12 py-5 font-title text-4xl font-bold text-white transition-colors hover:text-golden-harvest"

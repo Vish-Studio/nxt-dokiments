@@ -1,8 +1,10 @@
 import type { Meta, StoryObj } from "@storybook/nextjs-vite";
+import { QueryClientProvider } from "@tanstack/react-query";
 import { expect, within } from "storybook/test";
 
+import { getTemplateById } from "@/lib/market-place";
+import { makeStoryQueryClient } from "@/lib/query/story-query-client";
 import { useAuthStore } from "@/stores/auth-store";
-import { useTemplatesStore } from "@/stores/templates-store";
 
 import { MyTemplatesView } from "../my-templates-view";
 
@@ -18,6 +20,22 @@ const seedUser = () => {
   });
 };
 
+/** Mocks `GET /api/saved-templates` so `useSavedTemplatesQuery` resolves with fixture data. */
+const mockSavedTemplates = (
+  savedTemplates: Array<{ savedAt: number; templateId: string }>,
+) => {
+  window.fetch = (async () =>
+    new Response(
+      JSON.stringify({
+        savedTemplates: savedTemplates.map((item) => ({
+          ...item,
+          template: getTemplateById(item.templateId),
+        })),
+      }),
+      { status: 200 },
+    )) as typeof window.fetch;
+};
+
 const meta = {
   title: "Dashboard/My Templates View",
   component: MyTemplatesView,
@@ -25,9 +43,11 @@ const meta = {
   parameters: { layout: "fullscreen", nextjs: { appDirectory: true } },
   decorators: [
     (Story) => (
-      <div className="min-h-screen bg-app-panel p-6">
-        <Story />
-      </div>
+      <QueryClientProvider client={makeStoryQueryClient()}>
+        <div className="min-h-screen bg-app-panel p-6">
+          <Story />
+        </div>
+      </QueryClientProvider>
     ),
   ],
 } satisfies Meta<typeof MyTemplatesView>;
@@ -39,13 +59,13 @@ export const Empty: Story = {
   decorators: [
     (Story) => {
       seedUser();
-      useTemplatesStore.setState({ savedByUser: {} });
+      mockSavedTemplates([]);
       return <Story />;
     },
   ],
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    await expect(canvas.getByText(/no templates yet/i)).toBeVisible();
+    await expect(await canvas.findByText(/no templates yet/i)).toBeVisible();
   },
 };
 
@@ -53,18 +73,18 @@ export const WithTemplates: Story = {
   decorators: [
     (Story) => {
       seedUser();
-      useTemplatesStore.setState({
-        savedByUser: {
-          "story-uid": [
-            { savedAt: Date.now(), savedId: "saved-1", templateId: "modern-contract" },
-          ],
-        },
-      });
+      mockSavedTemplates([
+        { savedAt: Date.now(), templateId: "modern-contract" },
+      ]);
       return <Story />;
     },
   ],
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    await expect(canvas.getByRole("button", { name: /preview contract/i })).toBeVisible();
+    await expect(
+      await canvas.findByRole("button", {
+        name: /preview client service agreement/i,
+      }),
+    ).toBeVisible();
   },
 };

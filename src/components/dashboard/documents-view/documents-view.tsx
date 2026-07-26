@@ -16,10 +16,10 @@ import { TemplateForm } from "@/components/commons/template-form/template-form";
 import { TemplatePreviewDialog } from "@/components/commons/template-preview-dialog/template-preview-dialog";
 import { DocumentList } from "@/components/dashboard/document-list/document-list";
 import { DocumentExportDialog } from "@/components/dashboard/document-export-dialog/document-export-dialog";
+import { useSavedTemplatesQuery } from "@/hooks/queries/use-saved-templates";
 import { getTemplateById } from "@/lib/market-place";
 import { useAuthStore } from "@/stores/auth-store";
 import { useDocumentsStore, useUserDocuments } from "@/stores/documents-store";
-import { useSavedTemplates } from "@/stores/templates-store";
 import type { MarketplaceTemplate, UserDocument } from "@/types/template";
 
 type Mode = "list" | "picker" | "editor";
@@ -27,7 +27,7 @@ type Mode = "list" | "picker" | "editor";
 export const DocumentsView = () => {
   const router = useRouter();
   const user = useAuthStore((state) => state.user);
-  const saved = useSavedTemplates(user?.uid);
+  const { data: saved = [] } = useSavedTemplatesQuery();
   const documents = useUserDocuments(user?.uid);
   const createDocument = useDocumentsStore((state) => state.createDocument);
   const updateDocument = useDocumentsStore((state) => state.updateDocument);
@@ -45,13 +45,7 @@ export const DocumentsView = () => {
   const [previewDocument, setPreviewDocument] = useState<UserDocument | null>(null);
   const [isEditorPreviewOpen, setIsEditorPreviewOpen] = useState(false);
 
-  const ownedTemplates = useMemo(
-    () =>
-      saved
-        .map((item) => getTemplateById(item.templateId))
-        .filter((template): template is MarketplaceTemplate => Boolean(template)),
-    [saved],
-  );
+  const ownedTemplates = useMemo(() => saved.map((item) => item.template), [saved]);
 
   const sortedDocuments = useMemo(
     () => [...documents].sort((first, second) => second.createdAt - first.createdAt),
