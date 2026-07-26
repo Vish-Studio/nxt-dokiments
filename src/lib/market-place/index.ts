@@ -8,7 +8,6 @@ import type {
 import { documentBlueprints } from "./documents";
 import { templateStyles } from "./styles";
 
-export { documentIcons } from "./document-icons";
 export { getSampleValues, sampleValues } from "./sample-data";
 export { templateStyles } from "./styles";
 

@@ -8,7 +8,8 @@
     { "key": "baseUrl", "value": "http://localhost:3000" },
     { "key": "email", "value": "you@example.com" },
     { "key": "password", "value": "yourpassword" },
-    { "key": "templateId", "value": "classic-contract" }
+    { "key": "templateId", "value": "classic-contract" },
+    { "key": "documentId", "value": "" }
   ],
   "item": [
     {
@@ -168,6 +169,106 @@
               "path": ["api", "saved-templates"]
             },
             "description": "Run AFTER \"Sign out\" to confirm this route also 401s without a session, same as the templates catalog check."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Documents",
+      "item": [
+        {
+          "name": "List documents",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/documents",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "documents"]
+            },
+            "description": "GET /api/documents — the signed-in user's documents (empty array for a brand-new user). Session required."
+          }
+        },
+        {
+          "name": "List documents filtered by template",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/documents?templateId={{templateId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "documents"],
+              "query": [{ "key": "templateId", "value": "{{templateId}}" }]
+            },
+            "description": "Same route with the optional templateId filter."
+          }
+        },
+        {
+          "name": "Create a document",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Acme service contract\",\n  \"templateId\": \"{{templateId}}\",\n  \"values\": {\n    \"title\": \"Client Service Agreement\",\n    \"fromName\": \"Acme Inc\"\n  }\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/documents",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "documents"]
+            },
+            "description": "POST /api/documents — creates a document, snapshotting the template's current name/style/fields onto it (templateSnapshot). Copy the returned document.id into the documentId collection variable to use the requests below. Try a nonexistent templateId to confirm you get 404 { error: \"Template not found.\" }. Try more than 50 keys in `values`, or a value longer than 20,000 characters, to confirm the size-bound validation returns 400 rather than writing an oversized document."
+          }
+        },
+        {
+          "name": "Get one document",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/documents/{{documentId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "documents", "{{documentId}}"]
+            },
+            "description": "GET /api/documents/:id. Requires documentId to be set (from \"Create a document\"'s response). Try a nonexistent ID to confirm 404 { error: \"Document not found.\" }."
+          }
+        },
+        {
+          "name": "Update a document",
+          "request": {
+            "method": "PATCH",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Acme service contract (revised)\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/documents/{{documentId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "documents", "{{documentId}}"]
+            },
+            "description": "PATCH /api/documents/:id — partial update, name and/or values. Try sending {} (neither field) to confirm 400 { error: \"Invalid request body.\" }. Run \"Get one document\" afterwards to confirm templateId/templateSnapshot are unchanged — this route must never touch them."
+          }
+        },
+        {
+          "name": "Delete a document",
+          "request": {
+            "method": "DELETE",
+            "url": {
+              "raw": "{{baseUrl}}/api/documents/{{documentId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "documents", "{{documentId}}"]
+            },
+            "description": "DELETE /api/documents/:id. Returns 204 with an empty body whether or not the document existed (idempotent delete)."
+          }
+        },
+        {
+          "name": "Unauthorised (401) check",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/documents",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "documents"]
+            },
+            "description": "Run AFTER \"Sign out\" to confirm this route also 401s without a session."
           }
         }
       ]
