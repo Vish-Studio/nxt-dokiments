@@ -1,8 +1,9 @@
 "use client";
 
-import { useEffect } from "react";
 import type { ReactNode } from "react";
+import { useEffect } from "react";
 
+import { useSessionQuery } from "@/hooks/queries/use-session";
 import { useAuthStore } from "@/stores/auth-store";
 
 export type AuthProviderProps = {
@@ -12,37 +13,24 @@ export type AuthProviderProps = {
 /**
  * Root session hydration provider. Mount once in the root layout.
  *
- * On mount, calls `GET /api/auth/me` to read the HttpOnly session cookie
- * server-side and return the authenticated user. This is the only place where
- * the client learns about the current session — no tokens are ever exposed
- * to the browser.
+ * Reads the session via `useSessionQuery` (backed by `GET /api/auth/me`) and
+ * mirrors its result into `useAuthStore`, so no tokens are ever exposed to the
+ * browser — the store only ever holds the public `AuthUser` object.
  *
- * The `active` flag prevents a stale `setUser` call if the component unmounts
- * before the fetch resolves (e.g. during fast navigation in development).
+ * This mirroring is a deliberate transitional step: `useAuthStore` still exists
+ * because most components read session state from it directly rather than
+ * calling `useSessionQuery` themselves. As those call sites migrate, this sync
+ * effect (and eventually `auth-store.ts` itself) can be removed.
  */
 export const AuthProvider = ({ children }: AuthProviderProps) => {
+  const { data: user, isLoading } = useSessionQuery();
   const setUser = useAuthStore((state) => state.setUser);
 
   useEffect(() => {
-    let active = true;
-
-    fetch("/api/auth/me")
-      .then(async (res) => {
-        if (!res.ok) {
-          if (active) setUser(null);
-          return;
-        }
-        const { user } = await res.json();
-        if (active) setUser(user);
-      })
-      .catch(() => {
-        if (active) setUser(null);
-      });
-
-    return () => {
-      active = false;
-    };
-  }, [setUser]);
+    if (!isLoading) {
+      setUser(user ?? null);
+    }
+  }, [isLoading, user, setUser]);
 
   return children;
 };

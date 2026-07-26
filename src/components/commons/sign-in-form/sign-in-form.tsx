@@ -1,11 +1,13 @@
 "use client";
 
+import { useQueryClient } from "@tanstack/react-query";
 import Link from "next/link";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 
 import { Button } from "@/components/commons/button/button";
 import { Input } from "@/components/commons/input/input";
+import { queryKeys } from "@/lib/query/keys";
 import { useAuthStore } from "@/stores/auth-store";
 
 type SignInValues = {
@@ -19,6 +21,7 @@ export type SignInFormProps = {
 
 export const SignInForm = ({ onSubmit }: SignInFormProps) => {
   const setUser = useAuthStore((state) => state.setUser);
+  const queryClient = useQueryClient();
   const [formError, setFormError] = useState("");
   const {
     formState: { errors, isSubmitting },
@@ -47,18 +50,27 @@ export const SignInForm = ({ onSubmit }: SignInFormProps) => {
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error ?? "Unable to sign in.");
+      queryClient.setQueryData(queryKeys.session(), data.user);
       setUser(data.user);
       const params = new URLSearchParams(window.location.search);
       window.location.assign(params.get("next") || "/dashboard");
     } catch (error) {
-      setFormError(error instanceof Error ? error.message : "Unable to sign in.");
+      setFormError(
+        error instanceof Error ? error.message : "Unable to sign in.",
+      );
     }
   });
 
   return (
-    <form className="grid gap-5" onSubmit={submitForm}>
+    <form
+      className="grid gap-5"
+      onSubmit={submitForm}
+    >
       {formError ? (
-        <div className="rounded-box bg-error/10 px-4 py-3 text-sm text-error" role="alert">
+        <div
+          className="rounded-box bg-error/10 px-4 py-3 text-sm text-error"
+          role="alert"
+        >
           {formError}
         </div>
       ) : null}
@@ -89,12 +101,19 @@ export const SignInForm = ({ onSubmit }: SignInFormProps) => {
       />
 
       <div className="flex items-center justify-between gap-4 text-sm">
-        <Link className="font-title font-bold text-nox-noir hover:text-primary" href="/forgot-password">
+        <Link
+          className="font-title font-bold text-nox-noir hover:text-primary"
+          href="/forgot-password"
+        >
           Forgot password?
         </Link>
       </div>
 
-      <Button className="w-full" disabled={isSubmitting} type="submit">
+      <Button
+        className="w-full"
+        disabled={isSubmitting}
+        type="submit"
+      >
         {isSubmitting ? "Signing in..." : "Sign in"}
       </Button>
     </form>
