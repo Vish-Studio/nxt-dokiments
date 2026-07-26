@@ -10,21 +10,17 @@ import { TabMenu } from "@/components/commons/tab-menu/tab-menu";
 import { TemplateCard } from "@/components/commons/template-card/template-card";
 import { TemplatePreviewDialog } from "@/components/commons/template-preview-dialog/template-preview-dialog";
 import { UpgradeDialog } from "@/components/commons/upgrade-dialog/upgrade-dialog";
-import {
-  canUseTier,
-  getTemplateById,
-  listTemplatesByStyle,
-  templateStyles,
-  tierLabels,
-} from "@/lib/market-place";
+import { useSaveTemplateMutation, useSavedTemplatesQuery } from "@/hooks/queries/use-saved-templates";
+import { canUseTier, getSavedTemplateLimit, getTemplateById, listTemplatesByStyle, templateStyles, tierLabels } from "@/lib/market-place";
 import { useAuthStore } from "@/stores/auth-store";
-import { useTemplateLibrary } from "@/stores/templates-store";
 import type { MarketplaceTemplate } from "@/types/template";
 import type { TemplateStyleId } from "@/types/template";
 
 export const MarketplaceBrowser = () => {
   const user = useAuthStore((state) => state.user);
-  const { addTemplate, limit, saved } = useTemplateLibrary();
+  const { data: saved = [] } = useSavedTemplatesQuery();
+  const { mutate: saveTemplate } = useSaveTemplateMutation();
+  const limit = getSavedTemplateLimit(user?.role);
   const [activeStyleId, setActiveStyleId] = useState<TemplateStyleId>(templateStyles[0].id);
   const [preview, setPreview] = useState<MarketplaceTemplate | null>(null);
   const [isUpgradeOpen, setIsUpgradeOpen] = useState(false);
@@ -115,7 +111,7 @@ export const MarketplaceBrowser = () => {
       return;
     }
 
-    void addTemplate(template.id);
+    saveTemplate(template);
   };
 
   const confirmAdd = () => {
@@ -123,7 +119,7 @@ export const MarketplaceBrowser = () => {
     setPendingTemplate(null);
 
     if (template) {
-      void addTemplate(template.id);
+      saveTemplate(template);
     }
   };
 

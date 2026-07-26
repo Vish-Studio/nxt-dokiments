@@ -1,10 +1,31 @@
+import { QueryClientProvider } from "@tanstack/react-query";
 import type { Meta, StoryObj } from "@storybook/nextjs-vite";
 import { expect, waitFor, within } from "storybook/test";
 
+import { getTemplateById } from "@/lib/market-place";
+import { makeStoryQueryClient } from "@/lib/query/story-query-client";
 import { useAuthStore } from "@/stores/auth-store";
-import { useTemplatesStore } from "@/stores/templates-store";
 
 import { MarketplaceBrowser } from "../marketplace-browser";
+
+/** Mocks `GET /api/saved-templates` so `useSavedTemplatesQuery` resolves with fixture data.
+ * `POST` (save) resolves with a generic success body — none of these stories assert on it. */
+const mockSavedTemplates = (savedTemplates: Array<{ savedAt: number; templateId: string }>) => {
+  window.fetch = (async (_url: string, init?: RequestInit) => {
+    if (init?.method === "POST") {
+      return new Response(JSON.stringify({ savedAt: Date.now(), templateId: "" }), { status: 201 });
+    }
+    return new Response(
+      JSON.stringify({
+        savedTemplates: savedTemplates.map((item) => ({
+          ...item,
+          template: getTemplateById(item.templateId),
+        })),
+      }),
+      { status: 200 },
+    );
+  }) as typeof window.fetch;
+};
 
 const meta = {
   title: "Dashboard/Marketplace Browser",
@@ -23,9 +44,11 @@ const meta = {
         },
       });
       return (
-        <div className="min-h-screen bg-app-panel p-6">
-          <Story />
-        </div>
+        <QueryClientProvider client={makeStoryQueryClient()}>
+          <div className="min-h-screen bg-app-panel p-6">
+            <Story />
+          </div>
+        </QueryClientProvider>
       );
     },
   ],
@@ -37,7 +60,7 @@ type Story = StoryObj<typeof meta>;
 export const FreeUser: Story = {
   beforeEach: () => {
     window.history.replaceState(null, "", "/");
-    useTemplatesStore.setState({ savedByUser: {} });
+    mockSavedTemplates([]);
   },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
@@ -49,27 +72,17 @@ export const FreeUser: Story = {
 export const SavedTemplatesFirst: Story = {
   beforeEach: () => {
     window.history.replaceState(null, "", "/");
-    useTemplatesStore.setState({
-      savedByUser: {
-        "story-uid": [
-          {
-            savedAt: Date.now(),
-            savedId: "saved-classic-invoice",
-            templateId: "classic-invoice",
-          },
-        ],
-      },
-    });
+    mockSavedTemplates([{ savedAt: Date.now(), templateId: "classic-invoice" }]);
   },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    await expect(canvas.getByRole("button", { name: /saved/i })).toBeVisible();
+    await expect(await canvas.findByRole("button", { name: /saved/i })).toBeVisible();
   },
 };
 
 export const PendingTemplateConfirmation: Story = {
   beforeEach: () => {
-    useTemplatesStore.setState({ savedByUser: {} });
+    mockSavedTemplates([]);
     window.history.replaceState(null, "", "/marketplace?template=classic-invoice");
   },
   play: async ({ canvasElement }) => {

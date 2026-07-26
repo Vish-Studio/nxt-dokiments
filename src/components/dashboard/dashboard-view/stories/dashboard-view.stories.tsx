@@ -1,11 +1,30 @@
+import { QueryClientProvider } from "@tanstack/react-query";
 import type { Meta, StoryObj } from "@storybook/nextjs-vite";
 import { expect, within } from "storybook/test";
 
+import { getTemplateById } from "@/lib/market-place";
+import { makeStoryQueryClient } from "@/lib/query/story-query-client";
 import { useAuthStore } from "@/stores/auth-store";
 import { useDocumentsStore } from "@/stores/documents-store";
-import { useTemplatesStore } from "@/stores/templates-store";
 
 import { DashboardView } from "../dashboard-view";
+
+/** Mocks `GET /api/saved-templates` so `useSavedTemplatesQuery` resolves with fixture data. */
+const mockSavedTemplates = () => {
+  window.fetch = (async () =>
+    new Response(
+      JSON.stringify({
+        savedTemplates: [
+          {
+            savedAt: Date.now(),
+            template: getTemplateById("classic-contract"),
+            templateId: "classic-contract",
+          },
+        ],
+      }),
+      { status: 200 },
+    )) as typeof window.fetch;
+};
 
 const meta = {
   title: "Dashboard/Dashboard View",
@@ -23,13 +42,7 @@ const meta = {
           uid: "story-uid",
         },
       });
-      useTemplatesStore.setState({
-        savedByUser: {
-          "story-uid": [
-            { savedAt: Date.now(), savedId: "classic-contract", templateId: "classic-contract" },
-          ],
-        },
-      });
+      mockSavedTemplates();
       useDocumentsStore.setState({
         documentsByUser: {
           "story-uid": [
@@ -45,9 +58,11 @@ const meta = {
         },
       });
       return (
-        <div className="min-h-screen bg-app-panel p-6">
-          <Story />
-        </div>
+        <QueryClientProvider client={makeStoryQueryClient()}>
+          <div className="min-h-screen bg-app-panel p-6">
+            <Story />
+          </div>
+        </QueryClientProvider>
       );
     },
   ],
@@ -60,7 +75,7 @@ export const Default: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     await expect(canvas.getByRole("heading", { name: /welcome back,\s*anthony/i })).toBeVisible();
-    await expect(canvas.getByText("Saved templates")).toBeVisible();
+    await expect(await canvas.findByText("Saved templates")).toBeVisible();
     await expect(canvas.getByText("Acme Contract")).toBeVisible();
   },
 };

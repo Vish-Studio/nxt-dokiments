@@ -3,18 +3,28 @@
 import Link from "next/link";
 import { useState } from "react";
 
+import { ConfirmDialog } from "@/components/commons/confirm-dialog/confirm-dialog";
 import { TemplateCard } from "@/components/commons/template-card/template-card";
 import { TemplatePreviewDialog } from "@/components/commons/template-preview-dialog/template-preview-dialog";
-import { getTemplateById } from "@/lib/market-place";
-import { useTemplateLibrary } from "@/stores/templates-store";
+import { useRemoveSavedTemplateMutation, useSavedTemplatesQuery } from "@/hooks/queries/use-saved-templates";
 import type { MarketplaceTemplate } from "@/types/template";
 
 export const MyTemplatesView = () => {
-  const { saved } = useTemplateLibrary();
+  const { data: saved = [] } = useSavedTemplatesQuery();
+  const { mutate: removeSavedTemplate } = useRemoveSavedTemplateMutation();
   const [preview, setPreview] = useState<MarketplaceTemplate | null>(null);
+  const [pendingRemoval, setPendingRemoval] = useState<MarketplaceTemplate | null>(null);
 
   const handlePrint = () => {
     window.print();
+  };
+
+  const confirmRemove = () => {
+    if (pendingRemoval) {
+      removeSavedTemplate(pendingRemoval.id);
+    }
+    setPendingRemoval(null);
+    setPreview(null);
   };
 
   if (saved.length === 0) {
@@ -38,31 +48,34 @@ export const MyTemplatesView = () => {
   return (
     <div className="w-full">
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-        {saved.map((item) => {
-          const template = getTemplateById(item.templateId);
-
-          if (!template) {
-            return null;
-          }
-
-          return (
-            <TemplateCard
-              key={item.savedId}
-              onPreview={() => setPreview(template)}
-              saved
-              template={template}
-            />
-          );
-        })}
+        {saved.map((item) => (
+          <TemplateCard
+            key={item.templateId}
+            onPreview={() => setPreview(item.template)}
+            saved
+            template={item.template}
+          />
+        ))}
       </div>
 
       <TemplatePreviewDialog
         mode="library"
         onClose={() => setPreview(null)}
+        onDelete={() => setPendingRemoval(preview)}
         onPrint={handlePrint}
         saved
         template={preview}
         useHref={preview ? `/documents?template=${preview.id}` : "/documents"}
+      />
+
+      <ConfirmDialog
+        confirmLabel="Remove template"
+        confirmVariant="danger"
+        description={`Remove "${pendingRemoval?.name}" from your templates? Documents you already created from it are not affected.`}
+        onClose={() => setPendingRemoval(null)}
+        onConfirm={confirmRemove}
+        open={Boolean(pendingRemoval)}
+        title="Remove template?"
       />
     </div>
   );

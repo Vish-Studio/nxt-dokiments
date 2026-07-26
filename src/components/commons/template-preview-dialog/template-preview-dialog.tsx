@@ -1,6 +1,6 @@
 "use client";
 
-import { BookmarkSimpleIcon, PrinterIcon } from "@phosphor-icons/react";
+import { BookmarkSimpleIcon, PrinterIcon, TrashIcon } from "@phosphor-icons/react";
 import Link from "next/link";
 
 import { Badge } from "@/components/commons/badge/badge";
@@ -61,7 +61,16 @@ export const TemplatePreviewDialog = ({
               </Button>
             </div>
           ) : mode === "library" ? (
-            <div className="grid w-full grid-cols-2 gap-2">
+            <div className={onDelete ? "grid w-full grid-cols-[auto_1fr_1fr] gap-2" : "grid w-full grid-cols-2 gap-2"}>
+              {onDelete ? (
+                <Button
+                  aria-label="Remove template"
+                  icon={<TrashIcon aria-hidden size={17} weight="bold" />}
+                  onClick={onDelete}
+                  size="sm"
+                  variant="outline"
+                />
+              ) : null}
               <Button
                 className="w-full"
                 icon={<PrinterIcon aria-hidden size={17} weight="bold" />}

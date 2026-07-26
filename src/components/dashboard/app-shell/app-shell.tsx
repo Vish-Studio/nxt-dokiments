@@ -24,7 +24,6 @@ import type { PageBannerTone, PageBannerVariant } from "@/components/dashboard/p
 import type { PageHeaderVisualVariant } from "@/components/dashboard/page-header-visual/page-header-visual";
 import Sidebar from "@/components/dashboard/sidebar/sidebar";
 import { useAuthStore } from "@/stores/auth-store";
-import { useSyncSavedTemplates } from "@/stores/templates-store";
 import { useUiStore } from "@/stores/ui-store";
 
 export type AppShellProps = {
@@ -62,7 +61,6 @@ export const AppShell = ({
   showBanner = true,
   title = "Dashboard",
 }: AppShellProps) => {
-  useSyncSavedTemplates();
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
   const [isContentScrolled, setIsContentScrolled] = useState(false);
   const user = useAuthStore((state) => state.user);
