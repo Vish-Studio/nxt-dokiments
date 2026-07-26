@@ -1,7 +1,8 @@
 import type { Metadata, Viewport } from "next";
-import { Urbanist, Raleway } from "next/font/google";
+import { Raleway, Urbanist } from "next/font/google";
 
 import { AuthProvider } from "@/components/commons/auth-provider/auth-provider";
+import { QueryProvider } from "@/lib/query/query-provider";
 
 import "./globals.css";
 
@@ -37,7 +38,9 @@ const RootLayout = ({
       className={`${urbanist.variable} ${raleway.variable} h-full bg-background antialiased`}
     >
       <body className="min-h-full flex flex-col">
-        <AuthProvider>{children}</AuthProvider>
+        <QueryProvider>
+          <AuthProvider>{children}</AuthProvider>
+        </QueryProvider>
       </body>
     </html>
   );
