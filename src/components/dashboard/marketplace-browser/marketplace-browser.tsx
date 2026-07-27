@@ -10,39 +10,73 @@ import { TabMenu } from "@/components/commons/tab-menu/tab-menu";
 import { TemplateCard } from "@/components/commons/template-card/template-card";
 import { TemplatePreviewDialog } from "@/components/commons/template-preview-dialog/template-preview-dialog";
 import { UpgradeDialog } from "@/components/commons/upgrade-dialog/upgrade-dialog";
-import { useSaveTemplateMutation, useSavedTemplatesQuery } from "@/hooks/queries/use-saved-templates";
-import { canUseTier, getSavedTemplateLimit, getTemplateById, listTemplatesByStyle, templateStyles, tierLabels } from "@/lib/market-place";
+import {
+  useSaveTemplateMutation,
+  useSavedTemplatesQuery,
+} from "@/hooks/queries/use-saved-templates";
+import { useTemplatesQuery } from "@/hooks/queries/use-templates";
+import {
+  canUseTier,
+  getSavedTemplateLimit,
+  tierLabels,
+} from "@/lib/market-place";
 import { useAuthStore } from "@/stores/auth-store";
-import type { MarketplaceTemplate } from "@/types/template";
-import type { TemplateStyleId } from "@/types/template";
+import type {
+  MarketplaceTemplate,
+  TemplateStyle,
+  TemplateStyleId,
+} from "@/types/template";
+
+const NO_STYLES: TemplateStyle[] = [];
+const NO_TEMPLATES: MarketplaceTemplate[] = [];
 
 export const MarketplaceBrowser = () => {
   const user = useAuthStore((state) => state.user);
   const { data: saved = [] } = useSavedTemplatesQuery();
   const { mutate: saveTemplate } = useSaveTemplateMutation();
+  const { data: catalog } = useTemplatesQuery();
+  const templateStyles = catalog?.styles ?? NO_STYLES;
+  const allTemplates = catalog?.templates ?? NO_TEMPLATES;
   const limit = getSavedTemplateLimit(user?.role);
-  const [activeStyleId, setActiveStyleId] = useState<TemplateStyleId>(templateStyles[0].id);
+  const [activeStyleId, setActiveStyleId] = useState<TemplateStyleId | null>(
+    null,
+  );
   const [preview, setPreview] = useState<MarketplaceTemplate | null>(null);
   const [isUpgradeOpen, setIsUpgradeOpen] = useState(false);
-  const [pendingTemplate, setPendingTemplate] = useState<MarketplaceTemplate | null>(null);
+  const [pendingTemplate, setPendingTemplate] =
+    useState<MarketplaceTemplate | null>(null);
 
-  const savedIds = useMemo(() => new Set(saved.map((item) => item.templateId)), [saved]);
+  const savedIds = useMemo(
+    () => new Set(saved.map((item) => item.templateId)),
+    [saved],
+  );
   const isFreeTier = !user || user.role === "free";
-  const activeStyle = templateStyles.find((style) => style.id === activeStyleId) ?? templateStyles[0];
-  const activeStyleLocked = !canUseTier(user?.role, activeStyle.tier);
+  const activeStyle =
+    templateStyles.find((style) => style.id === activeStyleId) ??
+    templateStyles[0];
+  const activeStyleLocked = activeStyle
+    ? !canUseTier(user?.role, activeStyle.tier)
+    : false;
   const activeTemplates = useMemo(
     () =>
-      [...listTemplatesByStyle(activeStyle.id)].sort((a, b) => {
-        const aSaved = savedIds.has(a.id);
-        const bSaved = savedIds.has(b.id);
+      (activeStyle
+        ? allTemplates.filter(
+            (template) => template.style.id === activeStyle.id,
+          )
+        : []
+      )
+        .slice()
+        .sort((a, b) => {
+          const aSaved = savedIds.has(a.id);
+          const bSaved = savedIds.has(b.id);
 
-        if (aSaved === bSaved) {
-          return a.name.localeCompare(b.name);
-        }
+          if (aSaved === bSaved) {
+            return a.name.localeCompare(b.name);
+          }
 
-        return aSaved ? -1 : 1;
-      }),
-    [activeStyle.id, savedIds],
+          return aSaved ? -1 : 1;
+        }),
+    [activeStyle, allTemplates, savedIds],
   );
 
   const tabItems = templateStyles.map((style) => {
@@ -51,7 +85,15 @@ export const MarketplaceBrowser = () => {
     return {
       badge: (
         <Badge
-          icon={locked ? <LockIcon aria-hidden size={12} weight="bold" /> : null}
+          icon={
+            locked ? (
+              <LockIcon
+                aria-hidden
+                size={12}
+                weight="bold"
+              />
+            ) : null
+          }
           variant={style.tier}
         >
           {tierLabels[style.tier]}
@@ -66,15 +108,19 @@ export const MarketplaceBrowser = () => {
     const params = new URLSearchParams(window.location.search);
     const templateId = params.get("template");
 
-    if (!templateId) {
+    if (!templateId || allTemplates.length === 0) {
       return;
     }
 
     const nextUrl = new URL(window.location.href);
     nextUrl.searchParams.delete("template");
-    window.history.replaceState(null, "", `${nextUrl.pathname}${nextUrl.search}`);
+    window.history.replaceState(
+      null,
+      "",
+      `${nextUrl.pathname}${nextUrl.search}`,
+    );
 
-    const template = getTemplateById(templateId);
+    const template = allTemplates.find((item) => item.id === templateId);
 
     if (!template || savedIds.has(template.id)) {
       return;
@@ -91,7 +137,7 @@ export const MarketplaceBrowser = () => {
       setPreview(null);
       setPendingTemplate(template);
     }, 0);
-  }, [savedIds, user?.role]);
+  }, [allTemplates, savedIds, user?.role]);
 
   const handleSave = (template: MarketplaceTemplate) => {
     if (!canUseTier(user?.role, template.tier) || savedIds.has(template.id)) {
@@ -123,13 +169,17 @@ export const MarketplaceBrowser = () => {
     }
   };
 
+  if (!activeStyle) {
+    return null;
+  }
+
   return (
     <div className="flex w-full min-w-0 flex-col gap-14">
       <TabMenu
         ariaLabel="Template style categories"
         items={tabItems}
         onChange={(styleId) => setActiveStyleId(styleId as TemplateStyleId)}
-        value={activeStyleId}
+        value={activeStyle.id}
       />
 
       <Carousel
@@ -137,21 +187,36 @@ export const MarketplaceBrowser = () => {
         header={
           <div>
             <div className="flex items-center gap-2">
-              <h4 className="font-title text-2xl font-bold text-nox-noir">{activeStyle.name}</h4>
+              <h4 className="font-title text-2xl font-bold text-nox-noir">
+                {activeStyle.name}
+              </h4>
               <Badge
-                icon={activeStyleLocked ? <LockIcon aria-hidden size={12} weight="bold" /> : null}
+                icon={
+                  activeStyleLocked ? (
+                    <LockIcon
+                      aria-hidden
+                      size={12}
+                      weight="bold"
+                    />
+                  ) : null
+                }
                 variant={activeStyle.tier}
               >
                 {tierLabels[activeStyle.tier]}
               </Badge>
             </div>
-            <p className="mt-0.5 truncate text-sm text-nox-noir/60">{activeStyle.description}</p>
+            <p className="mt-0.5 truncate text-sm text-nox-noir/60">
+              {activeStyle.description}
+            </p>
           </div>
         }
         key={activeStyle.id}
       >
         {activeTemplates.map((template) => (
-          <div className="flex w-56 shrink-0 sm:w-64 lg:w-72" key={template.id}>
+          <div
+            className="flex w-56 shrink-0 sm:w-64 lg:w-72"
+            key={template.id}
+          >
             <TemplateCard
               className="w-56 sm:w-64 lg:w-72"
               locked={activeStyleLocked}
@@ -191,7 +256,10 @@ export const MarketplaceBrowser = () => {
         title="Add to My Templates?"
       />
 
-      <UpgradeDialog onClose={() => setIsUpgradeOpen(false)} open={isUpgradeOpen} />
+      <UpgradeDialog
+        onClose={() => setIsUpgradeOpen(false)}
+        open={isUpgradeOpen}
+      />
     </div>
   );
 };
