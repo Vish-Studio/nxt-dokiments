@@ -1,26 +1,49 @@
-import { QueryClientProvider } from "@tanstack/react-query";
 import type { Meta, StoryObj } from "@storybook/nextjs-vite";
+import { QueryClientProvider } from "@tanstack/react-query";
 import { expect, waitFor, within } from "storybook/test";
 
-import { getTemplateById } from "@/lib/market-place";
+import {
+  getTemplateById,
+  marketplaceTemplates,
+  templateStyles,
+} from "@/lib/market-place";
 import { makeStoryQueryClient } from "@/lib/query/story-query-client";
 import { useAuthStore } from "@/stores/auth-store";
 
 import { MarketplaceBrowser } from "../marketplace-browser";
 
-/** Mocks `GET /api/saved-templates` so `useSavedTemplatesQuery` resolves with fixture data.
- * `POST` (save) resolves with a generic success body — none of these stories assert on it. */
-const mockSavedTemplates = (savedTemplates: Array<{ savedAt: number; templateId: string }>) => {
-  window.fetch = (async (_url: string, init?: RequestInit) => {
-    if (init?.method === "POST") {
-      return new Response(JSON.stringify({ savedAt: Date.now(), templateId: "" }), { status: 201 });
+/**
+ * Mocks both `GET /api/templates` (the catalog `useTemplatesQuery` reads) and
+ * `GET /api/saved-templates` (`useSavedTemplatesQuery`), dispatching on the
+ * request URL/method since `MarketplaceBrowser` calls both. `POST` (save)
+ * resolves with a generic success body — none of these stories assert on it.
+ */
+const mockCatalog = (
+  savedTemplates: Array<{ savedAt: number; templateId: string }>,
+) => {
+  window.fetch = (async (url: string, init?: RequestInit) => {
+    if (url.includes("/api/saved-templates")) {
+      if (init?.method === "POST") {
+        return new Response(
+          JSON.stringify({ savedAt: Date.now(), templateId: "" }),
+          { status: 201 },
+        );
+      }
+      return new Response(
+        JSON.stringify({
+          savedTemplates: savedTemplates.map((item) => ({
+            ...item,
+            template: getTemplateById(item.templateId),
+          })),
+        }),
+        { status: 200 },
+      );
     }
+
     return new Response(
       JSON.stringify({
-        savedTemplates: savedTemplates.map((item) => ({
-          ...item,
-          template: getTemplateById(item.templateId),
-        })),
+        styles: templateStyles,
+        templates: marketplaceTemplates,
       }),
       { status: 200 },
     );
@@ -60,38 +83,54 @@ type Story = StoryObj<typeof meta>;
 export const FreeUser: Story = {
   beforeEach: () => {
     window.history.replaceState(null, "", "/");
-    mockSavedTemplates([]);
+    mockCatalog([]);
   },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    await expect(canvas.getByRole("heading", { name: /classic/i })).toBeVisible();
-    await expect(canvas.getAllByRole("button", { name: /preview/i }).length).toBeGreaterThan(0);
+    await expect(
+      await canvas.findByRole("heading", { name: /classic/i }),
+    ).toBeVisible();
+    await expect(
+      canvas.getAllByRole("button", { name: /preview/i }).length,
+    ).toBeGreaterThan(0);
   },
 };
 
 export const SavedTemplatesFirst: Story = {
   beforeEach: () => {
     window.history.replaceState(null, "", "/");
-    mockSavedTemplates([{ savedAt: Date.now(), templateId: "classic-invoice" }]);
+    mockCatalog([{ savedAt: Date.now(), templateId: "classic-invoice" }]);
   },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    await expect(await canvas.findByRole("button", { name: /saved/i })).toBeVisible();
+    await expect(
+      await canvas.findByRole("button", { name: /saved/i }),
+    ).toBeVisible();
   },
 };
 
 export const PendingTemplateConfirmation: Story = {
   beforeEach: () => {
-    mockSavedTemplates([]);
-    window.history.replaceState(null, "", "/marketplace?template=classic-invoice");
+    mockCatalog([]);
+    window.history.replaceState(
+      null,
+      "",
+      "/marketplace?template=classic-invoice",
+    );
   },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
 
     await waitFor(async () => {
-      await expect(canvas.getByRole("dialog", { name: /add to my templates/i })).toBeVisible();
+      await expect(
+        canvas.getByRole("dialog", { name: /add to my templates/i }),
+      ).toBeVisible();
     });
-    await expect(canvas.getByRole("button", { name: /browse later/i })).toBeVisible();
-    await expect(canvas.getByRole("button", { name: /add template/i })).toBeVisible();
+    await expect(
+      canvas.getByRole("button", { name: /browse later/i }),
+    ).toBeVisible();
+    await expect(
+      canvas.getByRole("button", { name: /add template/i }),
+    ).toBeVisible();
   },
 };

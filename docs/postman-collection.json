@@ -70,7 +70,7 @@
               "host": ["{{baseUrl}}"],
               "path": ["api", "templates"]
             },
-            "description": "GET /api/templates — full active catalog. Session required (401 without one). See docs/api-templates-documents.md for the response shape ({ templates: MarketplaceTemplate[] })."
+            "description": "GET /api/templates — full active catalog plus the active style list. Session required (401 without one). Response shape: { templates: MarketplaceTemplate[], styles: TemplateStyle[] }, both sorted by the seeded sortOrder field. See docs/api-templates-documents.md."
           }
         },
         {
@@ -86,7 +86,7 @@
                 { "key": "tier", "value": "free" }
               ]
             },
-            "description": "Same route with optional query filters. Try an invalid value (e.g. styleId=nonsense) to confirm the Zod query validation returns 400, not a silent empty result."
+            "description": "Same route with optional query filters — these only filter `templates`, not `styles` (styles is always the full active list). Try an invalid value (e.g. styleId=nonsense) to confirm the Zod query validation returns 400, not a silent empty result."
           }
         },
         {

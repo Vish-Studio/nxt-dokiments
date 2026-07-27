@@ -6,6 +6,7 @@ import {
   listFirestoreCollection,
   readArray,
   readBoolean,
+  readInteger,
   readMap,
   readString,
   type FirestoreDocument,
@@ -20,6 +21,14 @@ import type {
 
 const TEMPLATES_COLLECTION = "templates";
 const TEMPLATE_STYLES_COLLECTION = "templateStyles";
+
+/** Reads a document's `sortOrder` field, defaulting to the end of the list if absent. */
+const readSortOrder = (document: FirestoreDocument): number =>
+  readInteger(document.fields?.sortOrder) ?? Number.MAX_SAFE_INTEGER;
+
+/** Sorts documents by their `sortOrder` field, ascending. */
+const bySortOrder = (a: FirestoreDocument, b: FirestoreDocument) =>
+  readSortOrder(a) - readSortOrder(b);
 
 /** Narrows an arbitrary string to the `TemplateTier` union, falling back to `"free"`. */
 const toTemplateTier = (value: string | undefined): TemplateTier =>
@@ -108,8 +117,33 @@ export const listActiveTemplates = async (
 
   return templateDocs
     .filter((document) => readBoolean(document.fields?.isActive) ?? false)
+    .sort(bySortOrder)
     .map((document) => parseMarketplaceTemplate(document, stylesById))
     .filter((template): template is MarketplaceTemplate => template !== null);
+};
+
+/**
+ * Lists every active template style, e.g. for the Marketplace tab bar.
+ * Ordering matters here — styles are meant to appear in a stable, intentional
+ * sequence (Classic, Modern, Brutalist, Minimalist), not whatever order
+ * Firestore happens to return, so this sorts by the seeded `sortOrder` field.
+ *
+ * @param idToken - Firebase ID token used to authorise the Firestore read.
+ * @returns All active styles, sorted by `sortOrder`.
+ * @throws When the Firestore request fails.
+ */
+export const listActiveStyles = async (
+  idToken: string,
+): Promise<TemplateStyle[]> => {
+  const styleDocs = await listFirestoreCollection(
+    TEMPLATE_STYLES_COLLECTION,
+    idToken,
+  );
+
+  return styleDocs
+    .filter((document) => readBoolean(document.fields?.isActive) ?? false)
+    .sort(bySortOrder)
+    .map(parseTemplateStyle);
 };
 
 /**
