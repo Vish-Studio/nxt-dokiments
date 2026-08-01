@@ -69,6 +69,28 @@ export const Empty: Story = {
   },
 };
 
+/** Mocks a saved-templates request that never resolves so `isLoading` stays `true` and the skeleton renders. */
+const mockSavedTemplatesLoading = () => {
+  window.fetch = (async () =>
+    new Promise<Response>(() => {})) as typeof window.fetch;
+};
+
+export const Loading: Story = {
+  decorators: [
+    (Story) => {
+      seedUser();
+      mockSavedTemplatesLoading();
+      return <Story />;
+    },
+  ],
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await expect(
+      canvas.getByRole("status", { name: /loading your templates/i }),
+    ).toBeInTheDocument();
+  },
+};
+
 export const WithTemplates: Story = {
   decorators: [
     (Story) => {

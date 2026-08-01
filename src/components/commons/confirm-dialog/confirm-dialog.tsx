@@ -1,13 +1,15 @@
 "use client";
 
+import { SpinnerGapIcon } from "@phosphor-icons/react";
 import { useEffect } from "react";
 
-import { Button } from "@/components/commons/button/button";
 import type { ButtonProps } from "@/components/commons/button/button";
+import { Button } from "@/components/commons/button/button";
 
 export type ConfirmDialogProps = {
   cancelLabel?: string | null;
   confirmLabel?: string;
+  confirmLoading?: boolean;
   confirmVariant?: ButtonProps["variant"];
   description?: string;
   dismissible?: boolean;
@@ -20,6 +22,7 @@ export type ConfirmDialogProps = {
 export const ConfirmDialog = ({
   cancelLabel = "Cancel",
   confirmLabel = "Confirm",
+  confirmLoading = false,
   confirmVariant = "primary",
   description,
   dismissible = true,
@@ -71,22 +74,48 @@ export const ConfirmDialog = ({
           type="button"
         />
       ) : (
-        <div aria-hidden className="absolute inset-0 bg-nox-noir/55" />
+        <div
+          aria-hidden
+          className="absolute inset-0 bg-nox-noir/55"
+        />
       )}
 
       <div className="relative z-10 w-full max-w-sm rounded-box border border-steel-mist bg-base-100 p-6">
         <h3 className="font-title text-lg font-bold text-nox-noir">{title}</h3>
         {description ? (
-          <p className="mt-2 text-sm leading-6 text-nox-noir/65">{description}</p>
+          <p className="mt-2 text-sm leading-6 text-nox-noir/65">
+            {description}
+          </p>
         ) : null}
 
         <div className="mt-6 flex justify-end gap-2">
           {cancelLabel ? (
-            <Button onClick={onClose} size="sm" variant="ghost">
+            <Button
+              disabled={confirmLoading}
+              onClick={onClose}
+              size="sm"
+              variant="ghost"
+            >
               {cancelLabel}
             </Button>
           ) : null}
-          <Button onClick={onConfirm} size="sm" variant={confirmVariant}>
+          <Button
+            disabled={confirmLoading}
+            icon={
+              confirmLoading ? (
+                <SpinnerGapIcon
+                  aria-hidden
+                  className="animate-spin"
+                  size={16}
+                  weight="bold"
+                />
+              ) : null
+            }
+            iconPosition="left"
+            onClick={onConfirm}
+            size="sm"
+            variant={confirmVariant}
+          >
             {confirmLabel}
           </Button>
         </div>

@@ -13,6 +13,7 @@ import Link from "next/link";
 import { useState } from "react";
 
 import { Badge } from "@/components/commons/badge/badge";
+import { LoadingStatus } from "@/components/commons/loading-status/loading-status";
 import { TemplateCard } from "@/components/commons/template-card/template-card";
 import { TemplatePreviewDialog } from "@/components/commons/template-preview-dialog/template-preview-dialog";
 import { useDocumentsQuery } from "@/hooks/queries/use-documents";
@@ -43,9 +44,12 @@ const roleBadgeVariants: Record<
 
 export const DashboardView = () => {
   const user = useAuthStore((state) => state.user);
-  const { data: saved = [] } = useSavedTemplatesQuery();
+  const { data: saved = [], isLoading: isSavedLoading } =
+    useSavedTemplatesQuery();
   const limit = getSavedTemplateLimit(user?.role);
-  const { data: documents = [] } = useDocumentsQuery();
+  const { data: documents = [], isLoading: isDocumentsLoading } =
+    useDocumentsQuery();
+  const isLoading = isSavedLoading || isDocumentsLoading;
   const [previewTemplate, setPreviewTemplate] =
     useState<MarketplaceTemplate | null>(null);
 
@@ -212,8 +216,12 @@ export const DashboardView = () => {
           </div>
 
           <div className="mt-5 grid gap-3">
+            {isLoading ? (
+              <LoadingStatus message="Loading workspace snapshot…" />
+            ) : null}
             {snapshotItems.map((item) => {
               const SnapshotIcon = item.icon;
+              const isCountItem = item.label !== "Plan";
 
               return (
                 <div
@@ -234,15 +242,22 @@ export const DashboardView = () => {
                       {item.label}
                     </p>
                   </div>
-                  <p className="shrink-0 font-title text-base font-bold text-nox-noir">
-                    {item.value}
-                  </p>
+                  {isLoading && isCountItem ? (
+                    <div
+                      aria-hidden
+                      className="skeleton h-5 w-16 shrink-0 rounded-field"
+                    />
+                  ) : (
+                    <p className="shrink-0 font-title text-base font-bold text-nox-noir">
+                      {item.value}
+                    </p>
+                  )}
                 </div>
               );
             })}
           </div>
 
-          {remainingTemplateSlots !== null ? (
+          {!isLoading && remainingTemplateSlots !== null ? (
             <p className="mt-6 flex items-center gap-2 text-sm text-nox-noir/60">
               <CheckCircleIcon
                 aria-hidden
@@ -274,7 +289,16 @@ export const DashboardView = () => {
             </Link>
           </div>
 
-          {latestDocument ? (
+          {isLoading ? (
+            <div className="mt-5 rounded-box border border-dashed border-steel-mist bg-base-100 p-5">
+              <LoadingStatus message="Loading recent activity…" />
+              <div aria-hidden>
+                <div className="skeleton h-3 w-24 rounded-field" />
+                <div className="skeleton mt-3 h-6 w-2/3 rounded-field" />
+                <div className="skeleton mt-3 h-11 w-40 rounded-box" />
+              </div>
+            </div>
+          ) : latestDocument ? (
             <div className="mt-5 rounded-box bg-play-blue/35 p-4">
               <p className="font-title text-xs font-bold uppercase tracking-normal text-nox-noir/50">
                 Latest document

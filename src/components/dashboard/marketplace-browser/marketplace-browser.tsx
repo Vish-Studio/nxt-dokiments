@@ -6,7 +6,9 @@ import { useEffect, useMemo, useState } from "react";
 import { Badge } from "@/components/commons/badge/badge";
 import { Carousel } from "@/components/commons/carousel/carousel";
 import { ConfirmDialog } from "@/components/commons/confirm-dialog/confirm-dialog";
+import { LoadingStatus } from "@/components/commons/loading-status/loading-status";
 import { TabMenu } from "@/components/commons/tab-menu/tab-menu";
+import { TemplateCardSkeleton } from "@/components/commons/template-card-skeleton/template-card-skeleton";
 import { TemplateCard } from "@/components/commons/template-card/template-card";
 import { TemplatePreviewDialog } from "@/components/commons/template-preview-dialog/template-preview-dialog";
 import { UpgradeDialog } from "@/components/commons/upgrade-dialog/upgrade-dialog";
@@ -33,8 +35,9 @@ const NO_TEMPLATES: MarketplaceTemplate[] = [];
 export const MarketplaceBrowser = () => {
   const user = useAuthStore((state) => state.user);
   const { data: saved = [] } = useSavedTemplatesQuery();
-  const { mutate: saveTemplate } = useSaveTemplateMutation();
-  const { data: catalog } = useTemplatesQuery();
+  const { isPending: isSaveTemplatePending, mutate: saveTemplate } =
+    useSaveTemplateMutation();
+  const { data: catalog, isLoading: isCatalogLoading } = useTemplatesQuery();
   const templateStyles = catalog?.styles ?? NO_STYLES;
   const allTemplates = catalog?.templates ?? NO_TEMPLATES;
   const limit = getSavedTemplateLimit(user?.role);
@@ -169,6 +172,36 @@ export const MarketplaceBrowser = () => {
     }
   };
 
+  if (isCatalogLoading) {
+    return (
+      <div className="flex w-full min-w-0 flex-col gap-14">
+        <LoadingStatus message="Loading marketplace templates…" />
+        <div
+          aria-hidden
+          className="flex gap-1 rounded-box bg-base-200 p-1"
+        >
+          {Array.from({ length: 4 }, (_, index) => (
+            <div
+              className="skeleton h-9 w-28 rounded-box"
+              key={index}
+            />
+          ))}
+        </div>
+        <div
+          aria-hidden
+          className="flex gap-4 overflow-hidden"
+        >
+          {Array.from({ length: 4 }, (_, index) => (
+            <TemplateCardSkeleton
+              className="w-56 shrink-0 sm:w-64 lg:w-72"
+              key={index}
+            />
+          ))}
+        </div>
+      </div>
+    );
+  }
+
   if (!activeStyle) {
     return null;
   }
@@ -236,6 +269,7 @@ export const MarketplaceBrowser = () => {
             void handleSave(preview);
           }
         }}
+        saveLoading={isSaveTemplatePending}
         saved={preview ? savedIds.has(preview.id) : false}
         template={preview}
       />
@@ -243,6 +277,7 @@ export const MarketplaceBrowser = () => {
       <ConfirmDialog
         cancelLabel="Browse later"
         confirmLabel="Add template"
+        confirmLoading={isSaveTemplatePending}
         description={
           pendingTemplate
             ? isFreeTier

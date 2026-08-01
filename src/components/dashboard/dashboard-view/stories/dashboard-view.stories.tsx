@@ -95,3 +95,23 @@ export const Default: Story = {
     await expect(await canvas.findByText("Acme Contract")).toBeVisible();
   },
 };
+
+export const Loading: Story = {
+  decorators: [
+    (Story) => {
+      // Overrides the meta-level mock (which runs first) with a request that never resolves.
+      window.fetch = (async () =>
+        new Promise<Response>(() => {})) as typeof window.fetch;
+      return <Story />;
+    },
+  ],
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await expect(
+      canvas.getByRole("status", { name: /loading workspace snapshot/i }),
+    ).toBeInTheDocument();
+    await expect(
+      canvas.getByRole("status", { name: /loading recent activity/i }),
+    ).toBeInTheDocument();
+  },
+};

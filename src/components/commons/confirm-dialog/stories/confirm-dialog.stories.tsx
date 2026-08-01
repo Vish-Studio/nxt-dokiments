@@ -11,7 +11,7 @@ const meta = {
   args: {
     confirmLabel: "Add template",
     description:
-      'Free accounts can keep 2 templates and can\'t remove them later. Add "Contract"? You\'ll have used 1 of 2.',
+      "Free accounts can keep 2 templates and can't remove them later. Add \"Contract\"? You'll have used 1 of 2.",
     onClose: () => {},
     onConfirm: () => {},
     open: true,
@@ -25,8 +25,12 @@ type Story = StoryObj<typeof meta>;
 export const Default: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    await expect(canvas.getByRole("heading", { name: /add to my templates/i })).toBeVisible();
-    await expect(canvas.getByRole("button", { name: /add template/i })).toBeVisible();
+    await expect(
+      canvas.getByRole("heading", { name: /add to my templates/i }),
+    ).toBeVisible();
+    await expect(
+      canvas.getByRole("button", { name: /add template/i }),
+    ).toBeVisible();
   },
 };
 
@@ -44,7 +48,21 @@ export const Danger: Story = {
   args: {
     confirmLabel: "Delete document",
     confirmVariant: "danger",
-    description: 'Delete "Lumina Events Invoice"? This action cannot be undone.',
+    description:
+      'Delete "Lumina Events Invoice"? This action cannot be undone.',
     title: "Delete document?",
+  },
+};
+
+export const ConfirmLoading: Story = {
+  args: {
+    confirmLoading: true,
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const confirmButton = canvas.getByRole("button", { name: /add template/i });
+    await expect(confirmButton).toBeDisabled();
+    const cancelButton = canvas.getByRole("button", { name: /cancel/i });
+    await expect(cancelButton).toBeDisabled();
   },
 };
