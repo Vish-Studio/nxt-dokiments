@@ -1,29 +1,57 @@
-import { QueryClientProvider } from "@tanstack/react-query";
 import type { Meta, StoryObj } from "@storybook/nextjs-vite";
+import { QueryClientProvider } from "@tanstack/react-query";
 import { expect, within } from "storybook/test";
 
 import { getTemplateById } from "@/lib/market-place";
 import { makeStoryQueryClient } from "@/lib/query/story-query-client";
 import { useAuthStore } from "@/stores/auth-store";
-import { useDocumentsStore } from "@/stores/documents-store";
+import type { UserDocument } from "@/types/template";
 
 import { DashboardView } from "../dashboard-view";
 
-/** Mocks `GET /api/saved-templates` so `useSavedTemplatesQuery` resolves with fixture data. */
-const mockSavedTemplates = () => {
-  window.fetch = (async () =>
-    new Response(
-      JSON.stringify({
-        savedTemplates: [
-          {
-            savedAt: Date.now(),
-            template: getTemplateById("classic-contract"),
-            templateId: "classic-contract",
-          },
-        ],
-      }),
-      { status: 200 },
-    )) as typeof window.fetch;
+/** Mocks `GET /api/saved-templates` and `GET /api/documents` so `DashboardView`'s
+ * queries resolve with fixture data, dispatching on request URL. */
+const mockDashboardApi = () => {
+  const contractTemplate = getTemplateById("classic-contract");
+
+  const documents: UserDocument[] = [
+    {
+      createdAt: Date.now(),
+      id: "doc-1",
+      name: "Acme Contract",
+      templateId: "classic-contract",
+      templateSnapshot: contractTemplate
+        ? {
+            description: contractTemplate.description,
+            documentType: contractTemplate.documentType,
+            fields: contractTemplate.fields,
+            name: contractTemplate.name,
+            style: contractTemplate.style,
+          }
+        : undefined,
+      updatedAt: Date.now(),
+      values: {},
+    },
+  ];
+
+  window.fetch = (async (url: string) => {
+    if (url.includes("/api/saved-templates")) {
+      return new Response(
+        JSON.stringify({
+          savedTemplates: [
+            {
+              savedAt: Date.now(),
+              template: contractTemplate,
+              templateId: "classic-contract",
+            },
+          ],
+        }),
+        { status: 200 },
+      );
+    }
+
+    return new Response(JSON.stringify({ documents }), { status: 200 });
+  }) as typeof window.fetch;
 };
 
 const meta = {
@@ -42,21 +70,7 @@ const meta = {
           uid: "story-uid",
         },
       });
-      mockSavedTemplates();
-      useDocumentsStore.setState({
-        documentsByUser: {
-          "story-uid": [
-            {
-              createdAt: Date.now(),
-              id: "doc-1",
-              name: "Acme Contract",
-              templateId: "classic-contract",
-              updatedAt: Date.now(),
-              values: {},
-            },
-          ],
-        },
-      });
+      mockDashboardApi();
       return (
         <QueryClientProvider client={makeStoryQueryClient()}>
           <div className="min-h-screen bg-app-panel p-6">
@@ -74,8 +88,10 @@ type Story = StoryObj<typeof meta>;
 export const Default: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    await expect(canvas.getByRole("heading", { name: /welcome back,\s*anthony/i })).toBeVisible();
+    await expect(
+      canvas.getByRole("heading", { name: /welcome back,\s*anthony/i }),
+    ).toBeVisible();
     await expect(await canvas.findByText("Saved templates")).toBeVisible();
-    await expect(canvas.getByText("Acme Contract")).toBeVisible();
+    await expect(await canvas.findByText("Acme Contract")).toBeVisible();
   },
 };

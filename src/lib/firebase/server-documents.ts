@@ -20,6 +20,7 @@ import {
 } from "@/lib/firebase/server-firestore";
 import type { AuthSession } from "@/types/auth";
 import type {
+  DocumentType,
   TemplateField,
   TemplateSnapshot,
   TemplateStyle,
@@ -52,6 +53,8 @@ const toFieldsValue = (fields: TemplateField[]) =>
 /** Serialises a `TemplateSnapshot` into a Firestore `mapValue`. */
 const toTemplateSnapshotValue = (snapshot: TemplateSnapshot) =>
   toMapValue({
+    description: toStringValue(snapshot.description),
+    documentType: toStringValue(snapshot.documentType),
     fields: toFieldsValue(snapshot.fields),
     name: toStringValue(snapshot.name),
     style: toMapValue({
@@ -102,6 +105,9 @@ const parseTemplateSnapshot = (
 
   const snapshot = readMap(snapshotFields);
   return {
+    description: readString(snapshot.description) ?? "",
+    documentType: (readString(snapshot.documentType) ??
+      "contract") as DocumentType,
     fields: parseFields(snapshot),
     name: readString(snapshot.name) ?? "",
     style: parseStyle(snapshot),
@@ -217,6 +223,8 @@ export const createDocument = async (
   const documentId = makeDocumentId();
   const now = toTimestampValue();
   const snapshot: TemplateSnapshot = {
+    description: template.description,
+    documentType: template.documentType,
     fields: template.fields,
     name: template.name,
     style: template.style,

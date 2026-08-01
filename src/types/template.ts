@@ -76,10 +76,32 @@ export type SavedTemplate = {
  * cannot retroactively change or break a document a user has already finished.
  */
 export type TemplateSnapshot = {
+  description: string;
+  documentType: DocumentType;
   fields: TemplateField[];
   name: string;
   style: TemplateStyle;
 };
+
+/**
+ * Reconstructs a `MarketplaceTemplate`-shaped object from a `TemplateSnapshot`,
+ * for components that render a template but don't care whether it's still live
+ * in the catalog (`TemplatePreviewDialog`, `DocumentExportDialog`). `tier` is
+ * always the snapshot's style's tier — a template's tier is never independent
+ * of its style, both in the live catalog and in a frozen snapshot.
+ */
+export const snapshotToMarketplaceTemplate = (
+  snapshot: TemplateSnapshot,
+  templateId: string,
+): MarketplaceTemplate => ({
+  description: snapshot.description,
+  documentType: snapshot.documentType,
+  fields: snapshot.fields,
+  id: templateId,
+  name: snapshot.name,
+  style: snapshot.style,
+  tier: snapshot.style.tier,
+});
 
 /** A concrete document the user created from one of their saved templates. */
 export type UserDocument = {
