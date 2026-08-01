@@ -5,6 +5,7 @@ import { useForm } from "react-hook-form";
 
 import { Button } from "@/components/commons/button/button";
 import { Input } from "@/components/commons/input/input";
+import { useUpdatePasswordMutation } from "@/hooks/queries/use-auth";
 
 type PasswordValues = {
   confirmPassword: string;
@@ -18,33 +19,36 @@ type Feedback = {
 
 export const PasswordSettings = () => {
   const [feedback, setFeedback] = useState<Feedback | null>(null);
+  const { isPending, mutate: updatePassword } = useUpdatePasswordMutation();
 
   const form = useForm<PasswordValues>({
     defaultValues: { confirmPassword: "", password: "" },
+    mode: "onChange",
   });
 
-  const submit = form.handleSubmit(async ({ password }) => {
+  const passwordField = form.register("password", {
+    required: "Password is required.",
+    minLength: { message: "Use at least 6 characters.", value: 6 },
+  });
+
+  const submit = form.handleSubmit(({ password }) => {
     setFeedback(null);
 
-    try {
-      const res = await fetch("/api/auth/update-password", {
-        body: JSON.stringify({ password }),
-        headers: { "Content-Type": "application/json" },
-        method: "POST",
-      });
-      if (!res.ok) {
-        const data = await res.json();
-        throw new Error(data.error ?? "Unable to change password.");
-      }
-      form.reset({ confirmPassword: "", password: "" });
-      setFeedback({ message: "Password changed.", tone: "success" });
-    } catch (error) {
-      setFeedback({
-        message:
-          error instanceof Error ? error.message : "Unable to change password.",
-        tone: "error",
-      });
-    }
+    updatePassword(password, {
+      onError: (error) => {
+        setFeedback({
+          message:
+            error instanceof Error
+              ? error.message
+              : "Unable to change password.",
+          tone: "error",
+        });
+      },
+      onSuccess: () => {
+        form.reset({ confirmPassword: "", password: "" });
+        setFeedback({ message: "Password changed.", tone: "success" });
+      },
+    });
   });
 
   return (
@@ -78,10 +82,13 @@ export const PasswordSettings = () => {
           label="New password"
           placeholder="Enter a new password"
           type="password"
-          {...form.register("password", {
-            required: "Password is required.",
-            minLength: { message: "Use at least 6 characters.", value: 6 },
-          })}
+          {...passwordField}
+          onChange={(event) => {
+            void passwordField.onChange(event);
+            if (form.getFieldState("confirmPassword").isTouched) {
+              void form.trigger("confirmPassword");
+            }
+          }}
         />
         <Input
           autoComplete="new-password"
@@ -97,10 +104,10 @@ export const PasswordSettings = () => {
         />
         <div>
           <Button
-            disabled={form.formState.isSubmitting}
+            disabled={isPending}
             type="submit"
           >
-            {form.formState.isSubmitting ? "Updating..." : "Change password"}
+            {isPending ? "Updating..." : "Change password"}
           </Button>
         </div>
       </form>
