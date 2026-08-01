@@ -34,3 +34,25 @@ export const Success: Story = {
     await expect(await canvas.findByText("Password reset email sent. Check your inbox.")).toBeVisible();
   },
 };
+
+/** Exercises the real `useForgotPasswordMutation` path (no `onSubmit` override) against a mocked `POST /api/auth/forgot-password`. */
+export const RealMutation: Story = {
+  args: { onSubmit: undefined },
+  decorators: [
+    (Story) => {
+      window.fetch = (async (url: string) => {
+        if (url.includes("/api/auth/forgot-password")) {
+          return new Response(JSON.stringify({ ok: true }), { status: 200 });
+        }
+
+        return new Response(JSON.stringify({ error: "Unhandled in story mock" }), { status: 500 });
+      }) as typeof window.fetch;
+      return <Story />;
+    },
+  ],
+  play: async ({ canvas, userEvent }) => {
+    await userEvent.type(canvas.getByLabelText("Email"), "person@dokiments.test");
+    await userEvent.click(canvas.getByRole("button", { name: /send reset link/i }));
+    await expect(await canvas.findByText("Password reset email sent. Check your inbox.")).toBeVisible();
+  },
+};

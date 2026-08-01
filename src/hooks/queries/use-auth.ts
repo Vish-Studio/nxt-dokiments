@@ -82,3 +82,27 @@ export const useUpdatePasswordMutation = () => {
     },
   });
 };
+
+const postForgotPassword = async (email: string): Promise<void> => {
+  const response = await fetch("/api/auth/forgot-password", {
+    body: JSON.stringify({ email }),
+    headers: { "Content-Type": "application/json" },
+    method: "POST",
+  });
+
+  if (!response.ok) {
+    const data = (await response.json()) as Partial<AuthApiError>;
+    throw new Error(data.error ?? "Unable to send reset email.");
+  }
+};
+
+/**
+ * Requests a Firebase password-reset email for the given address.
+ *
+ * No cache to invalidate — this is a public, unauthenticated action with no
+ * effect on any cached query.
+ */
+export const useForgotPasswordMutation = () =>
+  useMutation({
+    mutationFn: postForgotPassword,
+  });
