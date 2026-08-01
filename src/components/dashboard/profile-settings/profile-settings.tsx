@@ -7,6 +7,7 @@ import { Button } from "@/components/commons/button/button";
 import { Input } from "@/components/commons/input/input";
 import { ProfileFeedbackBanner } from "@/components/dashboard/profile-feedback-banner/profile-feedback-banner";
 import { ProfileSummary } from "@/components/dashboard/profile-summary/profile-summary";
+import { useUpdateProfileMutation } from "@/hooks/queries/use-auth";
 import { useAuthStore } from "@/stores/auth-store";
 
 type ProfileValues = {
@@ -25,7 +26,7 @@ type Feedback = {
 
 export const ProfileSettings = () => {
   const user = useAuthStore((state) => state.user);
-  const setUser = useAuthStore((state) => state.setUser);
+  const { isPending, mutate: updateProfile } = useUpdateProfileMutation();
 
   const [profileFeedback, setProfileFeedback] = useState<Feedback | null>(null);
 
@@ -40,35 +41,30 @@ export const ProfileSettings = () => {
     },
   });
 
-  const submitProfile = profileForm.handleSubmit(async (values) => {
+  const submitProfile = profileForm.handleSubmit((values) => {
     setProfileFeedback(null);
 
-    try {
-      const res = await fetch("/api/auth/update-profile", {
-        body: JSON.stringify({
-          address: values.address.trim(),
-          companyName: values.companyName.trim(),
-          displayName: values.displayName.trim(),
-          fullName: values.fullName.trim(),
-          phone: values.phone.trim(),
-          tel: values.tel.trim(),
-        }),
-        headers: { "Content-Type": "application/json" },
-        method: "POST",
-      });
-      if (!res.ok) {
-        const data = await res.json();
-        throw new Error(data.error ?? "Unable to update profile.");
-      }
-      const { user: updatedUser } = await res.json();
-      setUser(updatedUser);
-      setProfileFeedback({ message: "Profile updated.", tone: "success" });
-    } catch (error) {
-      setProfileFeedback({
-        message: error instanceof Error ? error.message : "Unable to update profile.",
-        tone: "error",
-      });
-    }
+    updateProfile(
+      {
+        address: values.address.trim(),
+        companyName: values.companyName.trim(),
+        displayName: values.displayName.trim(),
+        fullName: values.fullName.trim(),
+        phone: values.phone.trim(),
+        tel: values.tel.trim(),
+      },
+      {
+        onError: (error) => {
+          setProfileFeedback({
+            message: error instanceof Error ? error.message : "Unable to update profile.",
+            tone: "error",
+          });
+        },
+        onSuccess: () => {
+          setProfileFeedback({ message: "Profile updated.", tone: "success" });
+        },
+      },
+    );
   });
 
   return (
@@ -129,8 +125,8 @@ export const ProfileSettings = () => {
             {...profileForm.register("address")}
           />
           <div>
-            <Button disabled={profileForm.formState.isSubmitting} type="submit">
-              {profileForm.formState.isSubmitting ? "Saving..." : "Save changes"}
+            <Button disabled={isPending} type="submit">
+              {isPending ? "Saving..." : "Save changes"}
             </Button>
           </div>
         </form>

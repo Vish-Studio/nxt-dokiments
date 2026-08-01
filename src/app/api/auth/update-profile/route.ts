@@ -18,19 +18,22 @@ import { sessionOptions, type SessionData } from "@/lib/session";
  */
 export const POST = async (request: Request): Promise<Response> => {
   try {
-    const response = Response.json({ ok: true });
-    const session = await getIronSession<SessionData>(request, response, sessionOptions);
+    const probeResponse = Response.json({ ok: true });
+    const probeSession = await getIronSession<SessionData>(request, probeResponse, sessionOptions);
 
-    if (!session.user) {
+    if (!probeSession.user) {
       return Response.json({ error: "Unauthorised." }, { status: 401 });
     }
 
     const profile = (await request.json()) as ProfileUpdate;
-    const updated = await updateAccountProfile(session, profile);
+    const updated = await updateAccountProfile(probeSession, profile);
+
+    const response = Response.json({ user: updated.user });
+    const session = await getIronSession<SessionData>(request, response, sessionOptions);
     Object.assign(session, updated);
     await session.save();
 
-    return Response.json({ user: updated.user });
+    return response;
   } catch (error) {
     const message = error instanceof Error ? error.message : "Something went wrong. Please try again.";
     return Response.json({ error: message }, { status: 400 });
