@@ -1,6 +1,11 @@
 "use client";
 
-import { ArrowLeftIcon, EyeIcon, PlusIcon, TrashIcon } from "@phosphor-icons/react";
+import {
+  ArrowLeftIcon,
+  EyeIcon,
+  PlusIcon,
+  TrashIcon,
+} from "@phosphor-icons/react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
@@ -14,47 +19,75 @@ import { TemplateCard } from "@/components/commons/template-card/template-card";
 import { TemplateDocument } from "@/components/commons/template-document/template-document";
 import { TemplateForm } from "@/components/commons/template-form/template-form";
 import { TemplatePreviewDialog } from "@/components/commons/template-preview-dialog/template-preview-dialog";
-import { DocumentList } from "@/components/dashboard/document-list/document-list";
 import { DocumentExportDialog } from "@/components/dashboard/document-export-dialog/document-export-dialog";
+import { DocumentList } from "@/components/dashboard/document-list/document-list";
+import {
+  useCreateDocumentMutation,
+  useDeleteDocumentMutation,
+  useDocumentsQuery,
+  useUpdateDocumentMutation,
+} from "@/hooks/queries/use-documents";
 import { useSavedTemplatesQuery } from "@/hooks/queries/use-saved-templates";
-import { getTemplateById } from "@/lib/market-place";
-import { useAuthStore } from "@/stores/auth-store";
-import { useDocumentsStore, useUserDocuments } from "@/stores/documents-store";
 import type { MarketplaceTemplate, UserDocument } from "@/types/template";
+import { snapshotToMarketplaceTemplate } from "@/types/template";
 
 type Mode = "list" | "picker" | "editor";
 
+const EMPTY_DOCUMENTS: UserDocument[] = [];
+
+/** Resolves a document's own template, using its `templateSnapshot` — never a live
+ * catalog lookup — so a later template edit/deactivation can't affect an existing document. */
+const templateOf = (document: UserDocument): MarketplaceTemplate | null =>
+  document.templateSnapshot
+    ? snapshotToMarketplaceTemplate(
+        document.templateSnapshot,
+        document.templateId,
+      )
+    : null;
+
 export const DocumentsView = () => {
   const router = useRouter();
-  const user = useAuthStore((state) => state.user);
   const { data: saved = [] } = useSavedTemplatesQuery();
-  const documents = useUserDocuments(user?.uid);
-  const createDocument = useDocumentsStore((state) => state.createDocument);
-  const updateDocument = useDocumentsStore((state) => state.updateDocument);
-  const removeDocument = useDocumentsStore((state) => state.removeDocument);
+  const { data: documents = EMPTY_DOCUMENTS } = useDocumentsQuery();
+  const { mutate: createDocument } = useCreateDocumentMutation();
+  const { mutate: updateDocument } = useUpdateDocumentMutation();
+  const { mutate: deleteDocument } = useDeleteDocumentMutation();
 
   const [mode, setMode] = useState<Mode>("list");
-  const [activeTemplateId, setActiveTemplateId] = useState<string | null>(null);
+  const [activeTemplate, setActiveTemplate] =
+    useState<MarketplaceTemplate | null>(null);
   const [activeDocumentId, setActiveDocumentId] = useState<string | null>(null);
   const [draftName, setDraftName] = useState("");
   const [draftValues, setDraftValues] = useState<Record<string, string>>({});
-  const [exportDocument, setExportDocument] = useState<UserDocument | null>(null);
-  const [isDeleteConfirmationOpen, setIsDeleteConfirmationOpen] = useState(false);
+  const [exportDocument, setExportDocument] = useState<UserDocument | null>(
+    null,
+  );
+  const [isDeleteConfirmationOpen, setIsDeleteConfirmationOpen] =
+    useState(false);
   const [isSaveConfirmationOpen, setIsSaveConfirmationOpen] = useState(false);
-  const [previewTemplate, setPreviewTemplate] = useState<MarketplaceTemplate | null>(null);
-  const [previewDocument, setPreviewDocument] = useState<UserDocument | null>(null);
+  const [previewTemplate, setPreviewTemplate] =
+    useState<MarketplaceTemplate | null>(null);
+  const [previewDocument, setPreviewDocument] = useState<UserDocument | null>(
+    null,
+  );
   const [isEditorPreviewOpen, setIsEditorPreviewOpen] = useState(false);
 
-  const ownedTemplates = useMemo(() => saved.map((item) => item.template), [saved]);
+  const ownedTemplates = useMemo(
+    () => saved.map((item) => item.template),
+    [saved],
+  );
 
   const sortedDocuments = useMemo(
-    () => [...documents].sort((first, second) => second.createdAt - first.createdAt),
+    () =>
+      [...documents].sort(
+        (first, second) => second.createdAt - first.createdAt,
+      ),
     [documents],
   );
 
   const goToList = () => {
     setMode("list");
-    setActiveTemplateId(null);
+    setActiveTemplate(null);
     setActiveDocumentId(null);
     setIsDeleteConfirmationOpen(false);
     setIsSaveConfirmationOpen(false);
@@ -62,7 +95,7 @@ export const DocumentsView = () => {
   };
 
   const startNewDocument = (template: MarketplaceTemplate) => {
-    setActiveTemplateId(template.id);
+    setActiveTemplate(template);
     setActiveDocumentId(null);
     setDraftName(template.name);
     setDraftValues({});
@@ -88,12 +121,16 @@ export const DocumentsView = () => {
 
     const nextUrl = new URL(window.location.href);
     nextUrl.searchParams.delete("template");
-    window.history.replaceState(null, "", `${nextUrl.pathname}${nextUrl.search}`);
+    window.history.replaceState(
+      null,
+      "",
+      `${nextUrl.pathname}${nextUrl.search}`,
+    );
     window.setTimeout(() => startNewDocument(template), 0);
   }, [ownedTemplates]);
 
   const openDocument = (document: UserDocument) => {
-    setActiveTemplateId(document.templateId);
+    setActiveTemplate(templateOf(document));
     setActiveDocumentId(document.id);
     setDraftName(document.name);
     setDraftValues(document.values);
@@ -104,28 +141,36 @@ export const DocumentsView = () => {
   };
 
   const handleRemove = (documentId: string) => {
-    if (user) {
-      removeDocument(user.uid, documentId);
-    }
+    deleteDocument(documentId);
   };
 
   const handleSave = () => {
-    if (!user || !activeTemplateId) {
+    if (!activeTemplate) {
       return;
     }
 
     if (activeDocumentId) {
-      updateDocument(user.uid, activeDocumentId, { name: draftName, values: draftValues });
-    } else {
-      const id = createDocument(user.uid, {
-        name: draftName || "Untitled document",
-        templateId: activeTemplateId,
-        values: draftValues,
+      updateDocument({
+        documentId: activeDocumentId,
+        patch: { name: draftName, values: draftValues },
       });
-      setActiveDocumentId(id);
+      setIsSaveConfirmationOpen(true);
+      return;
     }
 
-    setIsSaveConfirmationOpen(true);
+    createDocument(
+      {
+        name: draftName || "Untitled document",
+        templateId: activeTemplate.id,
+        values: draftValues,
+      },
+      {
+        onSuccess: (document) => {
+          setActiveDocumentId(document.id);
+          setIsSaveConfirmationOpen(true);
+        },
+      },
+    );
   };
 
   const handleSavedContinue = () => {
@@ -161,13 +206,19 @@ export const DocumentsView = () => {
   };
 
   // --- Editor ---------------------------------------------------------------
-  const editorTemplate = activeTemplateId ? getTemplateById(activeTemplateId) : null;
+  const editorTemplate = activeTemplate;
 
   if (mode === "editor" && editorTemplate) {
     return (
       <div className="w-full">
         <Button
-          icon={<ArrowLeftIcon aria-hidden size={16} weight="bold" />}
+          icon={
+            <ArrowLeftIcon
+              aria-hidden
+              size={16}
+              weight="bold"
+            />
+          }
           iconPosition="left"
           onClick={goToList}
           size="sm"
@@ -208,12 +259,21 @@ export const DocumentsView = () => {
             </div>
 
             <div className="mt-6 flex items-center gap-3">
-              <Button onClick={handleSave} type="button">
+              <Button
+                onClick={handleSave}
+                type="button"
+              >
                 {activeDocumentId ? "Save changes" : "Create document"}
               </Button>
               {activeDocumentId ? (
                 <Button
-                  icon={<TrashIcon aria-hidden size={16} weight="bold" />}
+                  icon={
+                    <TrashIcon
+                      aria-hidden
+                      size={16}
+                      weight="bold"
+                    />
+                  }
                   iconPosition="left"
                   onClick={() => setIsDeleteConfirmationOpen(true)}
                   variant="danger"
@@ -225,7 +285,10 @@ export const DocumentsView = () => {
           </div>
 
           <div className="hidden lg:sticky lg:top-2 lg:block">
-            <TemplateDocument template={editorTemplate} values={draftValues} />
+            <TemplateDocument
+              template={editorTemplate}
+              values={draftValues}
+            />
           </div>
         </div>
 
@@ -237,14 +300,23 @@ export const DocumentsView = () => {
           title="Document preview"
         >
           <div className="min-h-full bg-app-panel p-3 sm:p-5">
-            <TemplateDocument template={editorTemplate} values={draftValues} />
+            <TemplateDocument
+              template={editorTemplate}
+              values={draftValues}
+            />
           </div>
         </SidePanel>
 
         {isEditorPreviewOpen ? null : (
           <FloatingActionButton
             className="lg:hidden"
-            icon={<EyeIcon aria-hidden size={20} weight="bold" />}
+            icon={
+              <EyeIcon
+                aria-hidden
+                size={20}
+                weight="bold"
+              />
+            }
             label="Preview document"
             onClick={() => setIsEditorPreviewOpen(true)}
           />
@@ -283,12 +355,18 @@ export const DocumentsView = () => {
           onClick={goToList}
           type="button"
         >
-          <ArrowLeftIcon aria-hidden size={16} weight="bold" />
+          <ArrowLeftIcon
+            aria-hidden
+            size={16}
+            weight="bold"
+          />
           Back to documents
         </button>
 
         <div className="mt-5 border-b border-steel-mist pb-4">
-          <h3 className="font-title text-lg font-bold text-nox-noir">Choose a template</h3>
+          <h3 className="font-title text-lg font-bold text-nox-noir">
+            Choose a template
+          </h3>
           <p className="mt-1 text-sm leading-6 text-nox-noir/60">
             Start a new document from one of your saved templates.
           </p>
@@ -296,9 +374,12 @@ export const DocumentsView = () => {
 
         {ownedTemplates.length === 0 ? (
           <div className="mt-6 grid place-items-center rounded-box border border-dashed border-steel-mist bg-base-100 p-10 text-center">
-            <p className="font-title text-base font-bold text-nox-noir">No templates yet</p>
+            <p className="font-title text-base font-bold text-nox-noir">
+              No templates yet
+            </p>
             <p className="mt-1 max-w-sm text-sm text-nox-noir/60">
-              Save a template from the marketplace, then come back to create a document from it.
+              Save a template from the marketplace, then come back to create a
+              document from it.
             </p>
             <Link
               className="btn btn-sm btn-primary mt-5 font-title font-semibold tracking-normal"
@@ -337,7 +418,9 @@ export const DocumentsView = () => {
     <div className="w-full">
       {documents.length === 0 ? (
         <div className="grid place-items-center rounded-box border border-dashed border-steel-mist bg-base-100 p-12 text-center">
-          <p className="font-title text-base font-bold text-nox-noir">No documents yet</p>
+          <p className="font-title text-base font-bold text-nox-noir">
+            No documents yet
+          </p>
           <p className="mt-1 max-w-sm text-sm text-nox-noir/60">
             Create a document from one of your saved templates to get started.
           </p>
@@ -352,7 +435,9 @@ export const DocumentsView = () => {
       )}
 
       <TemplatePreviewDialog
-        documentName={previewDocument?.values.title?.trim() || previewDocument?.name}
+        documentName={
+          previewDocument?.values.title?.trim() || previewDocument?.name
+        }
         mode="document"
         onClose={() => setPreviewDocument(null)}
         onDelete={() => {
@@ -367,21 +452,31 @@ export const DocumentsView = () => {
             setPreviewDocument(null);
           }
         }}
-        template={previewDocument ? (getTemplateById(previewDocument.templateId) ?? null) : null}
+        template={previewDocument ? templateOf(previewDocument) : null}
         values={previewDocument?.values}
       />
 
       <DocumentExportDialog
-        documentName={exportDocument?.values.title?.trim() || exportDocument?.name || "Document"}
+        documentName={
+          exportDocument?.values.title?.trim() ||
+          exportDocument?.name ||
+          "Document"
+        }
         onClose={() => setExportDocument(null)}
         open={Boolean(exportDocument)}
-        template={exportDocument ? (getTemplateById(exportDocument.templateId) ?? null) : null}
+        template={exportDocument ? templateOf(exportDocument) : null}
         values={exportDocument?.values}
       />
 
       {previewDocument || exportDocument ? null : (
         <FloatingActionButton
-          icon={<PlusIcon aria-hidden size={18} weight="bold" />}
+          icon={
+            <PlusIcon
+              aria-hidden
+              size={18}
+              weight="bold"
+            />
+          }
           label="New document"
           onClick={() => setMode("picker")}
         />
