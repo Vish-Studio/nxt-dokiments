@@ -109,6 +109,25 @@ export const SavedTemplatesFirst: Story = {
   },
 };
 
+/** Mocks a catalog request that never resolves so `isCatalogLoading` stays `true` and the skeleton renders. */
+const mockCatalogLoading = () => {
+  window.fetch = (async () =>
+    new Promise<Response>(() => {})) as typeof window.fetch;
+};
+
+export const Loading: Story = {
+  beforeEach: () => {
+    window.history.replaceState(null, "", "/");
+    mockCatalogLoading();
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await expect(
+      canvas.getByRole("status", { name: /loading marketplace templates/i }),
+    ).toBeInTheDocument();
+  },
+};
+
 export const PendingTemplateConfirmation: Story = {
   beforeEach: () => {
     mockCatalog([]);

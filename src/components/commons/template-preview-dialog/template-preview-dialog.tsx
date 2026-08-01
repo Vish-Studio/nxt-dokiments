@@ -1,6 +1,11 @@
 "use client";
 
-import { BookmarkSimpleIcon, PrinterIcon, TrashIcon } from "@phosphor-icons/react";
+import {
+  BookmarkSimpleIcon,
+  PrinterIcon,
+  SpinnerGapIcon,
+  TrashIcon,
+} from "@phosphor-icons/react";
 import Link from "next/link";
 
 import { Badge } from "@/components/commons/badge/badge";
@@ -20,6 +25,7 @@ export type TemplatePreviewDialogProps = {
   onPrint?: () => void;
   onSave?: () => void;
   onUse?: () => void;
+  saveLoading?: boolean;
   saved?: boolean;
   template: MarketplaceTemplate | null;
   useHref?: string;
@@ -36,36 +42,61 @@ export const TemplatePreviewDialog = ({
   onPrint,
   onSave,
   onUse,
+  saveLoading = false,
   saved = false,
   template,
   useHref = "/documents",
   values,
 }: TemplatePreviewDialogProps) => {
-  const resolvedValues = values ?? (template ? getSampleValues(template.documentType) : undefined);
+  const resolvedValues =
+    values ?? (template ? getSampleValues(template.documentType) : undefined);
 
   return (
     <SidePanel
       ariaLabel={template ? `${template.name} preview` : "Template preview"}
       description={
-        template ? `${template.style.name} style · ${tierLabels[template.tier]}` : undefined
+        template
+          ? `${template.style.name} style · ${tierLabels[template.tier]}`
+          : undefined
       }
       footer={
         template ? (
           mode === "document" ? (
             <div className="grid w-full grid-cols-[0.8fr_1.2fr] gap-2">
-              <Button className="w-full" onClick={onDelete} size="sm" variant="outline">
+              <Button
+                className="w-full"
+                onClick={onDelete}
+                size="sm"
+                variant="outline"
+              >
                 Delete
               </Button>
-              <Button className="w-full" onClick={onEdit} size="sm">
+              <Button
+                className="w-full"
+                onClick={onEdit}
+                size="sm"
+              >
                 Edit document
               </Button>
             </div>
           ) : mode === "library" ? (
-            <div className={onDelete ? "grid w-full grid-cols-[auto_1fr_1fr] gap-2" : "grid w-full grid-cols-2 gap-2"}>
+            <div
+              className={
+                onDelete
+                  ? "grid w-full grid-cols-[auto_1fr_1fr] gap-2"
+                  : "grid w-full grid-cols-2 gap-2"
+              }
+            >
               {onDelete ? (
                 <Button
                   aria-label="Remove template"
-                  icon={<TrashIcon aria-hidden size={17} weight="bold" />}
+                  icon={
+                    <TrashIcon
+                      aria-hidden
+                      size={17}
+                      weight="bold"
+                    />
+                  }
                   onClick={onDelete}
                   size="sm"
                   variant="outline"
@@ -73,7 +104,13 @@ export const TemplatePreviewDialog = ({
               ) : null}
               <Button
                 className="w-full"
-                icon={<PrinterIcon aria-hidden size={17} weight="bold" />}
+                icon={
+                  <PrinterIcon
+                    aria-hidden
+                    size={17}
+                    weight="bold"
+                  />
+                }
                 iconPosition="left"
                 onClick={onPrint}
                 size="sm"
@@ -82,7 +119,11 @@ export const TemplatePreviewDialog = ({
                 Print template
               </Button>
               {onUse ? (
-                <Button className="w-full" onClick={onUse} size="sm">
+                <Button
+                  className="w-full"
+                  onClick={onUse}
+                  size="sm"
+                >
                   Use document
                 </Button>
               ) : (
@@ -96,7 +137,12 @@ export const TemplatePreviewDialog = ({
             </div>
           ) : (
             <div className="grid w-full grid-cols-[0.78fr_1.22fr] gap-2">
-              <Button className="w-full" onClick={onClose} size="sm" variant="outline">
+              <Button
+                className="w-full"
+                onClick={onClose}
+                size="sm"
+                variant="outline"
+              >
                 Close
               </Button>
               {locked ? (
@@ -116,7 +162,23 @@ export const TemplatePreviewDialog = ({
               ) : (
                 <Button
                   className="w-full"
-                  icon={<BookmarkSimpleIcon aria-hidden size={17} weight="bold" />}
+                  disabled={saveLoading}
+                  icon={
+                    saveLoading ? (
+                      <SpinnerGapIcon
+                        aria-hidden
+                        className="animate-spin"
+                        size={17}
+                        weight="bold"
+                      />
+                    ) : (
+                      <BookmarkSimpleIcon
+                        aria-hidden
+                        size={17}
+                        weight="bold"
+                      />
+                    )
+                  }
                   iconPosition="left"
                   onClick={onSave}
                   size="sm"
@@ -141,10 +203,15 @@ export const TemplatePreviewDialog = ({
               <Badge variant="neutral">{template.style.name} style</Badge>
               <Badge variant="neutral">{template.documentType}</Badge>
             </div>
-            <p className="mt-3 text-sm leading-6 text-nox-noir/65">{template.description}</p>
+            <p className="mt-3 text-sm leading-6 text-nox-noir/65">
+              {template.description}
+            </p>
           </section>
 
-          <TemplateDocument template={template} values={resolvedValues} />
+          <TemplateDocument
+            template={template}
+            values={resolvedValues}
+          />
         </div>
       ) : null}
     </SidePanel>

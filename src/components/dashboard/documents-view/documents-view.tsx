@@ -14,7 +14,9 @@ import { Button } from "@/components/commons/button/button";
 import { ConfirmDialog } from "@/components/commons/confirm-dialog/confirm-dialog";
 import { FloatingActionButton } from "@/components/commons/floating-action-button/floating-action-button";
 import { Input } from "@/components/commons/input/input";
+import { LoadingStatus } from "@/components/commons/loading-status/loading-status";
 import { SidePanel } from "@/components/commons/side-panel/side-panel";
+import { TemplateCardSkeletonGrid } from "@/components/commons/template-card-skeleton/template-card-skeleton";
 import { TemplateCard } from "@/components/commons/template-card/template-card";
 import { TemplateDocument } from "@/components/commons/template-document/template-document";
 import { TemplateForm } from "@/components/commons/template-form/template-form";
@@ -47,9 +49,12 @@ const templateOf = (document: UserDocument): MarketplaceTemplate | null =>
 
 export const DocumentsView = () => {
   const router = useRouter();
-  const { data: saved = [] } = useSavedTemplatesQuery();
-  const { data: documents = EMPTY_DOCUMENTS } = useDocumentsQuery();
-  const { mutate: createDocument } = useCreateDocumentMutation();
+  const { data: saved = [], isLoading: isSavedLoading } =
+    useSavedTemplatesQuery();
+  const { data: documents = EMPTY_DOCUMENTS, isLoading: isDocumentsLoading } =
+    useDocumentsQuery();
+  const { isPending: isCreatePending, mutate: createDocument } =
+    useCreateDocumentMutation();
   const { mutate: updateDocument } = useUpdateDocumentMutation();
   const { mutate: deleteDocument } = useDeleteDocumentMutation();
 
@@ -260,10 +265,15 @@ export const DocumentsView = () => {
 
             <div className="mt-6 flex items-center gap-3">
               <Button
+                disabled={!activeDocumentId && isCreatePending}
                 onClick={handleSave}
                 type="button"
               >
-                {activeDocumentId ? "Save changes" : "Create document"}
+                {activeDocumentId
+                  ? "Save changes"
+                  : isCreatePending
+                    ? "Creating…"
+                    : "Create document"}
               </Button>
               {activeDocumentId ? (
                 <Button
@@ -372,7 +382,12 @@ export const DocumentsView = () => {
           </p>
         </div>
 
-        {ownedTemplates.length === 0 ? (
+        {isSavedLoading ? (
+          <div className="mt-6 w-full">
+            <LoadingStatus message="Loading your templates…" />
+            <TemplateCardSkeletonGrid />
+          </div>
+        ) : ownedTemplates.length === 0 ? (
           <div className="mt-6 grid place-items-center rounded-box border border-dashed border-steel-mist bg-base-100 p-10 text-center">
             <p className="font-title text-base font-bold text-nox-noir">
               No templates yet
@@ -416,7 +431,28 @@ export const DocumentsView = () => {
   // --- Document list --------------------------------------------------------
   return (
     <div className="w-full">
-      {documents.length === 0 ? (
+      {isDocumentsLoading ? (
+        <div className="overflow-hidden rounded-box border border-steel-mist bg-base-100">
+          <LoadingStatus message="Loading your documents…" />
+          <div
+            aria-hidden
+            className="divide-y divide-steel-mist/70 p-4"
+          >
+            {Array.from({ length: 4 }, (_, index) => (
+              <div
+                className="flex items-center gap-3 py-3 first:pt-0 last:pb-0"
+                key={index}
+              >
+                <div className="skeleton size-10 shrink-0 rounded-field" />
+                <div className="flex-1 space-y-2">
+                  <div className="skeleton h-4 w-1/3 rounded-field" />
+                  <div className="skeleton h-3 w-1/4 rounded-field" />
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      ) : documents.length === 0 ? (
         <div className="grid place-items-center rounded-box border border-dashed border-steel-mist bg-base-100 p-12 text-center">
           <p className="font-title text-base font-bold text-nox-noir">
             No documents yet

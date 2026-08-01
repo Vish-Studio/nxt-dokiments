@@ -148,6 +148,28 @@ export const Empty: Story = {
   },
 };
 
+/** Mocks a request that never resolves so both queries stay `isLoading` and the document-list skeleton renders. */
+const mockDocumentsApiLoading = () => {
+  window.fetch = (async () =>
+    new Promise<Response>(() => {})) as typeof window.fetch;
+};
+
+export const Loading: Story = {
+  decorators: [
+    (Story) => {
+      seedUser();
+      mockDocumentsApiLoading();
+      return <Story />;
+    },
+  ],
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await expect(
+      canvas.getByRole("status", { name: /loading your documents/i }),
+    ).toBeInTheDocument();
+  },
+};
+
 const withDocumentsFixture: UserDocument[] = [
   {
     createdAt: new Date("2026-06-18T09:30:00Z").getTime(),
