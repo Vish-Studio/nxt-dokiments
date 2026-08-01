@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from "@storybook/nextjs-vite";
-import { expect } from "storybook/test";
+import { expect, userEvent } from "storybook/test";
 
 import { Input } from "../input";
 
@@ -29,5 +29,31 @@ export const WithError: Story = {
   },
   play: async ({ canvas }) => {
     await expect(canvas.getByText("Email is required.")).toBeVisible();
+  },
+};
+
+export const Password: Story = {
+  args: {
+    label: "Password",
+    placeholder: "Enter your password",
+    type: "password",
+  },
+  play: async ({ canvas }) => {
+    const field = canvas.getByPlaceholderText("Enter your password");
+    await userEvent.type(field, "super-secret");
+    await expect(field).toHaveAttribute("type", "password");
+
+    const toggle = canvas.getByRole("button", { name: /show password/i });
+    await userEvent.click(toggle);
+    await expect(field).toHaveAttribute("type", "text");
+    await expect(field).toHaveValue("super-secret");
+    await expect(
+      canvas.getByRole("button", { name: /hide password/i }),
+    ).toBeVisible();
+
+    await userEvent.click(
+      canvas.getByRole("button", { name: /hide password/i }),
+    );
+    await expect(field).toHaveAttribute("type", "password");
   },
 };
