@@ -6,6 +6,7 @@ import { useForm } from "react-hook-form";
 
 import { Button } from "@/components/commons/button/button";
 import { Input } from "@/components/commons/input/input";
+import { useForgotPasswordMutation } from "@/hooks/queries/use-auth";
 
 type ForgotPasswordValues = {
   email: string;
@@ -18,6 +19,7 @@ export type ForgotPasswordFormProps = {
 export const ForgotPasswordForm = ({ onSubmit }: ForgotPasswordFormProps) => {
   const [formError, setFormError] = useState("");
   const [successMessage, setSuccessMessage] = useState("");
+  const { mutateAsync: sendResetEmail } = useForgotPasswordMutation();
   const {
     formState: { errors, isSubmitting },
     handleSubmit,
@@ -36,15 +38,7 @@ export const ForgotPasswordForm = ({ onSubmit }: ForgotPasswordFormProps) => {
       if (onSubmit) {
         await onSubmit(values);
       } else {
-        const res = await fetch("/api/auth/forgot-password", {
-          body: JSON.stringify({ email: values.email }),
-          headers: { "Content-Type": "application/json" },
-          method: "POST",
-        });
-        if (!res.ok) {
-          const data = await res.json();
-          throw new Error(data.error ?? "Unable to send reset email.");
-        }
+        await sendResetEmail(values.email);
       }
 
       setSuccessMessage("Password reset email sent. Check your inbox.");
