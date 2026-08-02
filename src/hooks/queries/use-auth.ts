@@ -49,6 +49,19 @@ export const useUpdateProfileMutation = () => {
   });
 };
 
+/**
+ * Thrown when the server rejects a request with `code: "REAUTH_REQUIRED"` —
+ * the session is valid but too old for this operation. Callers should catch
+ * this specifically (via `instanceof`) to prompt for the current password
+ * and retry, rather than showing it as a generic error.
+ */
+export class ReauthRequiredError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "ReauthRequiredError";
+  }
+}
+
 const postUpdatePassword = async (password: string): Promise<void> => {
   const response = await fetch("/api/auth/update-password", {
     body: JSON.stringify({ password }),
@@ -57,7 +70,16 @@ const postUpdatePassword = async (password: string): Promise<void> => {
   });
 
   if (!response.ok) {
-    const data = (await response.json()) as Partial<AuthApiError>;
+    const data = (await response.json()) as Partial<AuthApiError> & {
+      code?: string;
+    };
+
+    if (data.code === "REAUTH_REQUIRED") {
+      throw new ReauthRequiredError(
+        data.error ?? "Please re-enter your password to continue.",
+      );
+    }
+
     throw new Error(data.error ?? "Unable to change password.");
   }
 };
@@ -105,4 +127,29 @@ const postForgotPassword = async (email: string): Promise<void> => {
 export const useForgotPasswordMutation = () =>
   useMutation({
     mutationFn: postForgotPassword,
+  });
+
+const postReauthenticate = async (password: string): Promise<void> => {
+  const response = await fetch("/api/auth/reauthenticate", {
+    body: JSON.stringify({ password }),
+    headers: { "Content-Type": "application/json" },
+    method: "POST",
+  });
+
+  if (!response.ok) {
+    const data = (await response.json()) as Partial<AuthApiError>;
+    throw new Error(data.error ?? "Unable to verify your password.");
+  }
+};
+
+/**
+ * Re-authenticates the signed-in user with their current password, to
+ * recover from `ReauthRequiredError` on a sensitive action (e.g. changing
+ * the password). Rotates the session's tokens server-side but doesn't change
+ * anything the client reads from `queryKeys.session()` — same as
+ * `useUpdatePasswordMutation`, there's no cache to invalidate.
+ */
+export const useReauthenticateMutation = () =>
+  useMutation({
+    mutationFn: postReauthenticate,
   });

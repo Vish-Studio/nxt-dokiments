@@ -5,7 +5,11 @@ import { useForm } from "react-hook-form";
 
 import { Button } from "@/components/commons/button/button";
 import { Input } from "@/components/commons/input/input";
-import { useUpdatePasswordMutation } from "@/hooks/queries/use-auth";
+import { ReauthDialog } from "@/components/commons/reauth-dialog/reauth-dialog";
+import {
+  ReauthRequiredError,
+  useUpdatePasswordMutation,
+} from "@/hooks/queries/use-auth";
 
 type PasswordValues = {
   confirmPassword: string;
@@ -19,6 +23,7 @@ type Feedback = {
 
 export const PasswordSettings = () => {
   const [feedback, setFeedback] = useState<Feedback | null>(null);
+  const [isReauthOpen, setIsReauthOpen] = useState(false);
   const { isPending, mutate: updatePassword } = useUpdatePasswordMutation();
 
   const form = useForm<PasswordValues>({
@@ -31,11 +36,14 @@ export const PasswordSettings = () => {
     minLength: { message: "Use at least 6 characters.", value: 6 },
   });
 
-  const submit = form.handleSubmit(({ password }) => {
-    setFeedback(null);
-
+  const attemptUpdate = (password: string) => {
     updatePassword(password, {
       onError: (error) => {
+        if (error instanceof ReauthRequiredError) {
+          setIsReauthOpen(true);
+          return;
+        }
+
         setFeedback({
           message:
             error instanceof Error
@@ -49,7 +57,17 @@ export const PasswordSettings = () => {
         setFeedback({ message: "Password changed.", tone: "success" });
       },
     });
+  };
+
+  const submit = form.handleSubmit(({ password }) => {
+    setFeedback(null);
+    attemptUpdate(password);
   });
+
+  const handleReauthenticated = () => {
+    setIsReauthOpen(false);
+    attemptUpdate(form.getValues("password"));
+  };
 
   return (
     <section className="max-w-md">
@@ -111,6 +129,12 @@ export const PasswordSettings = () => {
           </Button>
         </div>
       </form>
+
+      <ReauthDialog
+        onClose={() => setIsReauthOpen(false)}
+        onReauthenticated={handleReauthenticated}
+        open={isReauthOpen}
+      />
     </section>
   );
 };

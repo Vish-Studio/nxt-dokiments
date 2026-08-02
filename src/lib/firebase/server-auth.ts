@@ -66,6 +66,27 @@ export const signInWithFirebase = async (request: AuthRequest) =>
   buildSession(await signInWithFirebaseIdentity(request));
 
 /**
+ * Re-authenticates the current user by signing in again with their email and
+ * a freshly-entered password, returning a fully-populated `AuthSession` with
+ * new tokens.
+ *
+ * Used to recover from `CREDENTIAL_TOO_OLD_LOGIN_AGAIN` — Firebase's signal
+ * that the existing session is valid but too old for a sensitive operation.
+ * Functionally identical to `signInWithFirebase`; kept as a distinctly-named
+ * export so the `/api/auth/reauthenticate` call site reads clearly.
+ *
+ * @param email - The signed-in user's email (always taken from the server-side
+ *   session, never from client input, so a user can't re-authenticate as someone else).
+ * @param password - Freshly-entered password to verify.
+ * @returns A fully-populated `AuthSession` with rotated tokens.
+ * @throws When the password is incorrect or the account is disabled.
+ */
+export const reauthenticateWithFirebase = async (
+  email: string,
+  password: string,
+) => buildSession(await signInWithFirebaseIdentity({ email, password }));
+
+/**
  * Updates the authenticated user's display name and optional profile fields,
  * then returns an updated `AuthSession` with fresh tokens if Firebase issued them.
  *

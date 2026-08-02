@@ -127,13 +127,30 @@ export const mapFirebaseError = (message?: string) => {
 };
 
 /**
+ * Thrown instead of a generic `Error` when Firebase rejects a request with
+ * `CREDENTIAL_TOO_OLD_LOGIN_AGAIN` — the session is valid but too old for a
+ * sensitive operation (e.g. changing a password) and needs a fresh sign-in.
+ *
+ * Callers should catch this specifically (via `instanceof`) to trigger an
+ * in-app re-authentication flow, rather than pattern-matching the mapped,
+ * user-facing message from `mapFirebaseError`.
+ */
+export class FirebaseReauthRequiredError extends Error {
+  constructor() {
+    super(mapFirebaseError("CREDENTIAL_TOO_OLD_LOGIN_AGAIN"));
+    this.name = "FirebaseReauthRequiredError";
+  }
+}
+
+/**
  * Performs a JSON fetch against Firebase Identity Toolkit / Secure Token Service and throws a
  * mapped Firebase error on non-OK responses.
  *
  * @template TResponse - Expected shape of the successful response body.
  * @param url - Fully-qualified request URL.
  * @param init - Standard `fetch` init options (body, method, headers, etc.).
- * @throws When the response status is not in the 2xx range.
+ * @throws {FirebaseReauthRequiredError} When Firebase's raw error code is `CREDENTIAL_TOO_OLD_LOGIN_AGAIN`.
+ * @throws When the response status is not in the 2xx range for any other reason.
  */
 const requestIdentityJson = async <TResponse>(
   url: string,
@@ -152,6 +169,10 @@ const requestIdentityJson = async <TResponse>(
     | null;
 
   if (!response.ok) {
+    if (data?.error?.message?.startsWith("CREDENTIAL_TOO_OLD_LOGIN_AGAIN")) {
+      throw new FirebaseReauthRequiredError();
+    }
+
     throw new Error(mapFirebaseError(data?.error?.message));
   }
 

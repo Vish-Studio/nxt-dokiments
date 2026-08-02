@@ -8,6 +8,7 @@
     { "key": "baseUrl", "value": "http://localhost:3000" },
     { "key": "email", "value": "you@example.com" },
     { "key": "password", "value": "yourpassword" },
+    { "key": "newPassword", "value": "yournewpassword" },
     { "key": "templateId", "value": "classic-contract" },
     { "key": "documentId", "value": "" }
   ],
@@ -54,6 +55,74 @@
               "path": ["api", "auth", "sign-out"]
             },
             "description": "Destroys the session cookie. Run this between test scenarios to reset to a signed-out state, then use \"Unauthorised (401) check\" under each resource folder to confirm routes reject the request correctly."
+          }
+        },
+        {
+          "name": "Update profile",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"displayName\": \"Your Name\",\n  \"address\": \"\",\n  \"companyName\": \"\",\n  \"fullName\": \"\",\n  \"phone\": \"\",\n  \"tel\": \"\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/update-profile",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "auth", "update-profile"]
+            },
+            "description": "Updates the display name (Firebase Auth) and extended profile fields (Firestore). Returns { user: AuthUser } with the full updated profile — the client writes this straight into the session query cache instead of refetching GET /api/auth/me."
+          }
+        },
+        {
+          "name": "Update password",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"password\": \"{{newPassword}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/update-password",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "auth", "update-password"]
+            },
+            "description": "Changes the account password via Firebase and rotates the session's idToken/refreshToken. If the session is too old for this sensitive operation, Firebase rejects it and this route returns 403 { code: \"REAUTH_REQUIRED\", error } — the client responds by prompting for the current password (see \"Reauthenticate\") and retrying this same request."
+          }
+        },
+        {
+          "name": "Reauthenticate",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"password\": \"{{password}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/reauthenticate",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "auth", "reauthenticate"]
+            },
+            "description": "Verifies the current password against the signed-in user's own email (taken from the session, never from the request body) and rewrites the session cookie with fresh tokens. Recovers from a 403 REAUTH_REQUIRED response on a sensitive action like \"Update password\" — call this first, then retry the original request."
+          }
+        },
+        {
+          "name": "Forgot password",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{email}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/forgot-password",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "auth", "forgot-password"]
+            },
+            "description": "Public, unauthenticated route — sends a Firebase password-reset email. Always returns { ok: true } regardless of whether the address is registered, to avoid leaking which emails have accounts."
           }
         }
       ]
