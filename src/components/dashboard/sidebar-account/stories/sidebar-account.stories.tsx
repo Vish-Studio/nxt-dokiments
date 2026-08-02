@@ -37,10 +37,27 @@ export const Expanded: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     await expect(canvas.getByText("Anthony Alverizko")).toBeVisible();
-    await expect(canvas.getByRole("button", { name: /log out/i })).toBeVisible();
+    await expect(canvas.getByText("AA")).toBeVisible();
+    await expect(
+      canvas.getByRole("button", { name: /log out/i }),
+    ).toBeVisible();
   },
 };
 
 export const Collapsed: Story = {
   args: { isCollapsed: true },
+};
+
+export const SignedOut: Story = {
+  decorators: [
+    (Story) => {
+      useAuthStore.setState({ status: "unauthenticated", user: null });
+      return <Story />;
+    },
+  ],
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await expect(canvas.getByText("Dokiments User")).toBeVisible();
+    await expect(canvas.queryByText("AA")).not.toBeInTheDocument();
+  },
 };

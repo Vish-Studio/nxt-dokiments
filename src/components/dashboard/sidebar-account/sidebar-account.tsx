@@ -1,9 +1,10 @@
 "use client";
 
-import { SignOutIcon, UserIcon } from "@phosphor-icons/react";
+import { SignOutIcon } from "@phosphor-icons/react";
 import { useQueryClient } from "@tanstack/react-query";
 import type { FunctionComponent } from "react";
 
+import { Avatar } from "@/components/commons/avatar/avatar";
 import { ButtonIcon } from "@/components/commons/button-icon/button-icon";
 import { queryKeys } from "@/lib/query/keys";
 import { cn } from "@/lib/utils";
@@ -36,13 +37,10 @@ const SidebarAccount: FunctionComponent<Props> = ({ isCollapsed = false }) => {
         )}
       >
         <div className="flex items-center gap-3">
-          <span className="flex size-8 items-center justify-center rounded-full bg-white/70 text-app-brand-content">
-            <UserIcon
-              aria-hidden
-              size={16}
-              weight="bold"
-            />
-          </span>
+          <Avatar
+            className="bg-white/70 text-app-brand-content"
+            name={user?.displayName}
+          />
 
           <div className="min-w-0">
             <p className="truncate font-title text-sm font-bold text-app-chrome-content">
@@ -69,10 +67,6 @@ const SidebarAccount: FunctionComponent<Props> = ({ isCollapsed = false }) => {
 
       {isCollapsed ? (
         <div className="hidden flex-col items-center gap-2 lg:flex">
-          {/* <span className="flex size-8 items-center justify-center rounded-full bg-white/70 text-app-brand-content">
-            <UserIcon aria-hidden size={16} weight="bold" />
-          </span> */}
-
           <ButtonIcon
             aria-label="Log out"
             className="border-none text-red-400 hover:bg-red-500/15 hover:text-red-300"
