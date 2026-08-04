@@ -1,5 +1,7 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
+import Image from "next/image";
+
 
 export type AuthLayoutProps = {
   children: ReactNode;
@@ -12,11 +14,17 @@ export const AuthLayout = ({ children, description, footer, title }: AuthLayoutP
   return (
     <main className="grid min-h-dvh bg-nox-noir px-5 py-8 text-white sm:px-8 lg:grid-cols-[0.9fr_1.1fr] lg:px-10">
       <section className="flex min-h-full flex-col">
-        <Link aria-label="Dokiments home" className="flex items-center gap-3" href="/">
-          <span className="flex size-10 items-center justify-center rounded-full bg-golden-harvest font-logo text-sm font-black text-nox-noir">
-            D
-          </span>
-          <span className="font-logo text-lg font-black">Dokiments</span>
+        <Link
+          className="flex items-center gap-3"
+          href="/"
+          aria-label="Dokiments home"
+        >
+          <Image
+            src={"/images/svg/logo-white.svg"}
+            width={150}
+            height={150}
+            alt="Dokiments logo"
+          />
         </Link>
 
         <div className="my-auto max-w-xl py-14">
