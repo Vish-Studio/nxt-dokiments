@@ -9,92 +9,73 @@
   --color-base-200: #f6f6f6;
   --color-base-300: #cfcfcf;
   --color-base-content: #141414;
-  --color-primary: #200d2d;
-  --color-primary-content: #ffd066;
+  --color-primary: #141414;
+  --color-primary-content: #ffffff;
   --color-secondary: #ffd066;
-  --color-secondary-content: #200d2d;
+  --color-secondary-content: #141414;
   --color-accent: #141414;
   --color-accent-content: #ffffff;
   --color-neutral: #141414;
   --color-neutral-content: #ffffff;
-  --color-info: #200d2d;
+  --color-info: #141414;
   --color-info-content: #ffffff;
-  --color-success: #2f6f4e;
+  --color-success: #16a34a;
   --color-success-content: #ffffff;
   --color-warning: #ffd066;
-  --color-warning-content: #200d2d;
+  --color-warning-content: #141414;
   --color-error: #b42318;
   --color-error-content: #ffffff;
   --radius-selector: 0.5rem;
   --radius-field: 0.5rem;
-  --radius-box: 0.5rem;
+  --radius-box: 1rem;
   --size-selector: 0.25rem;
   --size-field: 0.25rem;
   --border: 1px;
-  --depth: 1;
+  --depth: 0;
   --noise: 0;
 }
 
 :root {
   --background: #ffffff;
   --foreground: #141414;
-  --font-title: var(--font-host-grotesk), "Host Grotesk", Arial, sans-serif;
-  --font-body: "Elms Sans", Arial, Helvetica, sans-serif;
-  --color-bloodwood-deep: #200d2d;
+  --font-title: var(--font-urbanist), "Urbanist", Arial, Helvetica, sans-serif;
+  --font-body: var(--font-urbanist), "Urbanist", Arial, Helvetica, sans-serif;
+  --font-logo: var(--font-raleway), "Raleway", Arial, Helvetica, sans-serif;
   --color-golden-harvest: #ffd066;
   --color-nox-noir: #141414;
   --color-steel-mist: #cfcfcf;
+  --color-play-pink: #f7cad8;
+  --color-play-teal: #6ccaba;
+  --color-play-purple: #c9b6f4;
+  --color-play-blue: #93cdf6;
+  --color-play-amber: #f4d06a;
   --color-app-chrome: var(--color-nox-noir);
   --color-app-chrome-content: #ffffff;
   --color-app-panel: #ffffff;
-  --color-app-muted: var(--color-steel-mist);
   --color-app-control: rgb(255 255 255 / 0.1);
-  --color-app-nav: rgb(255 255 255 / 0.75);
+  --color-app-nav: rgb(255 255 255 / 0.5);
   --color-app-nav-hover: rgb(255 255 255 / 0.1);
   --color-app-active: var(--color-golden-harvest);
-  --color-app-active-content: var(--color-bloodwood-deep);
+  --color-app-active-content: var(--color-nox-noir);
   --color-app-brand: var(--color-golden-harvest);
-  --color-app-brand-content: var(--color-bloodwood-deep);
+  --color-app-brand-content: var(--color-nox-noir);
   --shadow-soft: 0 16px 40px rgb(20 20 20 / 0.08);
-}
-
-[data-palette="golden"] {
-  --color-app-chrome: var(--color-golden-harvest);
-  --color-app-chrome-content: var(--color-bloodwood-deep);
-  --color-app-panel: #ffffff;
-  --color-app-control: rgb(32 13 45 / 0.1);
-  --color-app-nav: rgb(32 13 45 / 0.7);
-  --color-app-nav-hover: rgb(32 13 45 / 0.1);
-  --color-app-active: var(--color-bloodwood-deep);
-  --color-app-active-content: var(--color-golden-harvest);
-  --color-app-brand: var(--color-bloodwood-deep);
-  --color-app-brand-content: var(--color-golden-harvest);
-}
-
-[data-palette="bloodwood"] {
-  --color-app-chrome: var(--color-bloodwood-deep);
-  --color-app-chrome-content: #ffffff;
-  --color-app-panel: color-mix(in srgb, var(--color-steel-mist) 14%, #ffffff);
-  --color-app-control: rgb(255 208 102 / 0.16);
-  --color-app-nav: rgb(255 255 255 / 0.75);
-  --color-app-nav-hover: rgb(255 208 102 / 0.15);
-  --color-app-active: var(--color-golden-harvest);
-  --color-app-active-content: var(--color-bloodwood-deep);
-  --color-app-brand: var(--color-golden-harvest);
-  --color-app-brand-content: var(--color-bloodwood-deep);
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --color-bloodwood-deep: var(--color-bloodwood-deep);
   --color-golden-harvest: var(--color-golden-harvest);
   --color-nox-noir: var(--color-nox-noir);
   --color-steel-mist: var(--color-steel-mist);
+  --color-play-pink: var(--color-play-pink);
+  --color-play-teal: var(--color-play-teal);
+  --color-play-purple: var(--color-play-purple);
+  --color-play-blue: var(--color-play-blue);
+  --color-play-amber: var(--color-play-amber);
   --color-app-chrome: var(--color-app-chrome);
   --color-app-chrome-content: var(--color-app-chrome-content);
   --color-app-panel: var(--color-app-panel);
-  --color-app-muted: var(--color-app-muted);
   --color-app-control: var(--color-app-control);
   --color-app-nav: var(--color-app-nav);
   --color-app-nav-hover: var(--color-app-nav-hover);
@@ -105,6 +86,7 @@
   --font-sans: var(--font-body);
   --font-title: var(--font-title);
   --font-body: var(--font-body);
+  --font-logo: var(--font-logo);
   --shadow-soft: var(--shadow-soft);
 }
 
@@ -116,6 +98,50 @@ body {
 
 html {
   scroll-behavior: smooth;
+}
+
+/* Tailwind v4 sets buttons to the default cursor; restore the pointer. */
+button:not(:disabled),
+label[role="button"],
+[role="button"]:not([aria-disabled="true"]) {
+  cursor: pointer;
+}
+
+button:disabled {
+  cursor: not-allowed;
+}
+
+.btn.btn-sm {
+  min-height: 2.5rem;
+  height: 2.5rem;
+  padding-inline: 1rem;
+  font-size: 0.875rem;
+}
+
+.btn.btn-square.btn-sm,
+.btn.btn-circle.btn-sm {
+  width: 2.5rem;
+  padding-inline: 0;
+}
+
+@keyframes side-panel-in {
+  from {
+    transform: translateX(100%);
+  }
+
+  to {
+    transform: translateX(0);
+  }
+}
+
+.side-panel-enter {
+  animation: side-panel-in 0.25s cubic-bezier(0.2, 0.85, 0.2, 1);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .side-panel-enter {
+    animation: none;
+  }
 }
 
 @keyframes website-reveal {
@@ -170,6 +196,20 @@ html {
   }
 }
 
+@keyframes website-card-in {
+  from {
+    opacity: 0;
+    filter: blur(8px);
+    transform: translateY(34px) scale(0.98);
+  }
+
+  to {
+    opacity: 1;
+    filter: blur(0);
+    transform: translateY(0) scale(1);
+  }
+}
+
 @keyframes website-float {
   0%,
   100% {
@@ -197,6 +237,13 @@ html {
   animation-range: entry 0% cover 34%;
 }
 
+.website-card-reveal {
+  animation: website-card-in 0.9s cubic-bezier(0.2, 0.85, 0.2, 1) both;
+  animation-delay: var(--reveal-delay, 0ms);
+  animation-timeline: view();
+  animation-range: entry 4% cover 30%;
+}
+
 .website-hero-copy {
   animation: website-hero-copy 0.95s cubic-bezier(0.2, 0.85, 0.2, 1) both;
 }
@@ -211,11 +258,21 @@ html {
 
 .website-hero-sheen::after {
   animation: website-hero-sheen 3.8s ease-in-out 1.15s infinite;
-  background: linear-gradient(90deg, transparent, rgb(255 255 255 / 0.38), transparent);
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgb(255 255 255 / 0.38),
+    transparent
+  );
   content: "";
   inset: 0 auto 0 0;
   position: absolute;
   width: 34%;
+}
+
+.website-hero-card {
+  animation: website-card-in 0.9s cubic-bezier(0.2, 0.85, 0.2, 1) both;
+  animation-delay: var(--hero-card-delay, 0ms);
 }
 
 .website-float {
@@ -236,6 +293,8 @@ html {
   }
 
   .website-reveal,
+  .website-card-reveal,
+  .website-hero-card,
   .website-hero-copy,
   .website-hero-visual,
   .website-hero-proof,

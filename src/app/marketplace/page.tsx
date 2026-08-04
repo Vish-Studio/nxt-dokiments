@@ -1,14 +1,16 @@
-import { AppShell } from "@/components/app-shell/app-shell";
+import { AppShell } from "@/components/dashboard/app-shell/app-shell";
+import { MarketplaceBrowser } from "@/components/dashboard/marketplace-browser/marketplace-browser";
 
-const TemplateMarketplacePage = () => {
+const MarketplacePage = () => {
   return (
     <AppShell
-      activeItem="Template Marketplace"
-      description="Browse reusable templates for document workflows."
-      pageTitle="Template Marketplace"
-      title="Template Marketplace"
-    />
+      activeItem="Marketplace"
+      description="Ready-to-use business documents in different styles that will fit your brand. Preview any template, then save the ones you need."
+      title="Marketplace"
+    >
+      <MarketplaceBrowser />
+    </AppShell>
   );
 };
 
-export default TemplateMarketplacePage;
+export default MarketplacePage;

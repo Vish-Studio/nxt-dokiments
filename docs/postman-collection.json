@@ -1,0 +1,346 @@
+{
+  "info": {
+    "name": "Dokiments",
+    "description": "Local API testing collection for the Firestore-backed routes built in Phase 0/1 (see docs/api-templates-documents.md). Auth is a session cookie, not a bearer token — Postman's built-in cookie jar handles it automatically once you run \"Sign in\", so no manual header wiring is needed between requests in this collection.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:3000" },
+    { "key": "email", "value": "you@example.com" },
+    { "key": "password", "value": "yourpassword" },
+    { "key": "newPassword", "value": "yournewpassword" },
+    { "key": "templateId", "value": "classic-contract" },
+    { "key": "documentId", "value": "" }
+  ],
+  "item": [
+    {
+      "name": "Auth",
+      "item": [
+        {
+          "name": "Sign in",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{email}}\",\n  \"password\": \"{{password}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/sign-in",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "auth", "sign-in"]
+            },
+            "description": "Establishes the session cookie (dokiments-session) that every other request in this collection relies on. Response body is { user: AuthUser } only — tokens never leave the server. Check the collection's Cookies panel for localhost after sending this to confirm the cookie was set. If DEV_AUTH_BYPASS=true is set in .env.local, any email/password works and you'll get a fake session with role: \"special\" — useful for testing everything except the seed script, which needs a real superadmin account."
+          }
+        },
+        {
+          "name": "Get current session",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/me",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "auth", "me"]
+            },
+            "description": "Returns { user: AuthUser } if the session cookie is valid, or 401 null otherwise. Useful to confirm you're actually signed in before testing a protected route, and to check which role/tier the current session has."
+          }
+        },
+        {
+          "name": "Sign out",
+          "request": {
+            "method": "POST",
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/sign-out",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "auth", "sign-out"]
+            },
+            "description": "Destroys the session cookie. Run this between test scenarios to reset to a signed-out state, then use \"Unauthorised (401) check\" under each resource folder to confirm routes reject the request correctly."
+          }
+        },
+        {
+          "name": "Update profile",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"displayName\": \"Your Name\",\n  \"address\": \"\",\n  \"companyName\": \"\",\n  \"fullName\": \"\",\n  \"phone\": \"\",\n  \"tel\": \"\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/update-profile",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "auth", "update-profile"]
+            },
+            "description": "Updates the display name (Firebase Auth) and extended profile fields (Firestore). Returns { user: AuthUser } with the full updated profile — the client writes this straight into the session query cache instead of refetching GET /api/auth/me."
+          }
+        },
+        {
+          "name": "Update password",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"password\": \"{{newPassword}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/update-password",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "auth", "update-password"]
+            },
+            "description": "Changes the account password via Firebase and rotates the session's idToken/refreshToken. If the session is too old for this sensitive operation, Firebase rejects it and this route returns 403 { code: \"REAUTH_REQUIRED\", error } — the client responds by prompting for the current password (see \"Reauthenticate\") and retrying this same request."
+          }
+        },
+        {
+          "name": "Reauthenticate",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"password\": \"{{password}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/reauthenticate",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "auth", "reauthenticate"]
+            },
+            "description": "Verifies the current password against the signed-in user's own email (taken from the session, never from the request body) and rewrites the session cookie with fresh tokens. Recovers from a 403 REAUTH_REQUIRED response on a sensitive action like \"Update password\" — call this first, then retry the original request."
+          }
+        },
+        {
+          "name": "Forgot password",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{email}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/forgot-password",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "auth", "forgot-password"]
+            },
+            "description": "Public, unauthenticated route — sends a Firebase password-reset email. Always returns { ok: true } regardless of whether the address is registered, to avoid leaking which emails have accounts."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Templates (catalog)",
+      "item": [
+        {
+          "name": "List catalog",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/templates",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "templates"]
+            },
+            "description": "GET /api/templates — full active catalog plus the active style list. Session required (401 without one). Response shape: { templates: MarketplaceTemplate[], styles: TemplateStyle[] }, both sorted by the seeded sortOrder field. See docs/api-templates-documents.md."
+          }
+        },
+        {
+          "name": "List catalog filtered by style + tier",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/templates?styleId=classic&tier=free",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "templates"],
+              "query": [
+                { "key": "styleId", "value": "classic" },
+                { "key": "tier", "value": "free" }
+              ]
+            },
+            "description": "Same route with optional query filters — these only filter `templates`, not `styles` (styles is always the full active list). Try an invalid value (e.g. styleId=nonsense) to confirm the Zod query validation returns 400, not a silent empty result."
+          }
+        },
+        {
+          "name": "Get one template",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/templates/{{templateId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "templates", "{{templateId}}"]
+            },
+            "description": "GET /api/templates/:id. Try a nonexistent ID (e.g. does-not-exist) to confirm you get 404 { error: \"Template not found.\" }, not a 500."
+          }
+        },
+        {
+          "name": "Unauthorised (401) check",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/templates",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "templates"]
+            },
+            "description": "Run this AFTER \"Sign out\" (or in a fresh incognito-style environment with no prior sign-in) to confirm the route actually rejects an unauthenticated Postman request with 401 { error: \"Unauthorised.\" } — this is the concrete scenario withSession was built to close."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Saved Templates",
+      "item": [
+        {
+          "name": "List saved templates",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/saved-templates",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "saved-templates"]
+            },
+            "description": "GET /api/saved-templates — the signed-in user's saved-template list (empty array for a brand-new user). Session required."
+          }
+        },
+        {
+          "name": "Save a template",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"templateId\": \"{{templateId}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/saved-templates",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "saved-templates"]
+            },
+            "description": "POST /api/saved-templates — saves one template, as a single-document upsert on users/{uid}/savedTemplates/{templateId}. Returns 201 on a new save, 200 if already saved (both idempotent, not errors). Run \"List saved templates\" afterwards to confirm the write landed. Try a template above your account's tier (e.g. a gold-tier template while signed in as a free user) to confirm you get 403 { error: \"Your plan does not include this template.\" } — this is the server-side tier re-validation check, which a client-side-only check would not catch from a direct Postman request."
+          }
+        },
+        {
+          "name": "Remove a saved template",
+          "request": {
+            "method": "DELETE",
+            "url": {
+              "raw": "{{baseUrl}}/api/saved-templates/{{templateId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "saved-templates", "{{templateId}}"]
+            },
+            "description": "DELETE /api/saved-templates/:templateId. Returns 204 with an empty body whether or not the template was actually saved (idempotent delete). Run \"List saved templates\" afterwards to confirm it's gone."
+          }
+        },
+        {
+          "name": "Unauthorised (401) check",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/saved-templates",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "saved-templates"]
+            },
+            "description": "Run AFTER \"Sign out\" to confirm this route also 401s without a session, same as the templates catalog check."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Documents",
+      "item": [
+        {
+          "name": "List documents",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/documents",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "documents"]
+            },
+            "description": "GET /api/documents — the signed-in user's documents (empty array for a brand-new user). Session required."
+          }
+        },
+        {
+          "name": "List documents filtered by template",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/documents?templateId={{templateId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "documents"],
+              "query": [{ "key": "templateId", "value": "{{templateId}}" }]
+            },
+            "description": "Same route with the optional templateId filter."
+          }
+        },
+        {
+          "name": "Create a document",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Acme service contract\",\n  \"templateId\": \"{{templateId}}\",\n  \"values\": {\n    \"title\": \"Client Service Agreement\",\n    \"fromName\": \"Acme Inc\"\n  }\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/documents",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "documents"]
+            },
+            "description": "POST /api/documents — creates a document, snapshotting the template's current name/style/fields onto it (templateSnapshot). Copy the returned document.id into the documentId collection variable to use the requests below. Try a nonexistent templateId to confirm you get 404 { error: \"Template not found.\" }. Try more than 50 keys in `values`, or a value longer than 20,000 characters, to confirm the size-bound validation returns 400 rather than writing an oversized document."
+          }
+        },
+        {
+          "name": "Get one document",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/documents/{{documentId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "documents", "{{documentId}}"]
+            },
+            "description": "GET /api/documents/:id. Requires documentId to be set (from \"Create a document\"'s response). Try a nonexistent ID to confirm 404 { error: \"Document not found.\" }."
+          }
+        },
+        {
+          "name": "Update a document",
+          "request": {
+            "method": "PATCH",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Acme service contract (revised)\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/documents/{{documentId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "documents", "{{documentId}}"]
+            },
+            "description": "PATCH /api/documents/:id — partial update, name and/or values. Try sending {} (neither field) to confirm 400 { error: \"Invalid request body.\" }. Run \"Get one document\" afterwards to confirm templateId/templateSnapshot are unchanged — this route must never touch them."
+          }
+        },
+        {
+          "name": "Delete a document",
+          "request": {
+            "method": "DELETE",
+            "url": {
+              "raw": "{{baseUrl}}/api/documents/{{documentId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "documents", "{{documentId}}"]
+            },
+            "description": "DELETE /api/documents/:id. Returns 204 with an empty body whether or not the document existed (idempotent delete)."
+          }
+        },
+        {
+          "name": "Unauthorised (401) check",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/documents",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "documents"]
+            },
+            "description": "Run AFTER \"Sign out\" to confirm this route also 401s without a session."
+          }
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,84 @@
+rules_version = '2';
+
+// Deployed with: firebase deploy --only firestore:rules
+//
+// This is the independent second gate behind every Firestore-backed API route in
+// src/app/api/**. Every route already checks the iron-session cookie and re-validates
+// business rules (tier limits, ownership) server-side — these rules exist so that even
+// a bug in that Next.js layer, or a request that somehow reached Firestore directly with
+// a valid Firebase ID token, still cannot cross a `uid` boundary or write to admin-only
+// collections. See docs/api-templates-documents.md for the API design these rules back.
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // --- Shared helpers --------------------------------------------------------
+
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(uid) {
+      return signedIn() && request.auth.uid == uid;
+    }
+
+    function currentUserRole() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role;
+    }
+
+    function isSuperadmin() {
+      return signedIn() && currentUserRole() == 'superadmin';
+    }
+
+    // --- users/{uid} — profile document -----------------------------------------
+
+    match /users/{uid} {
+      allow read: if isOwner(uid) || isSuperadmin();
+
+      allow create: if isOwner(uid)
+        && request.resource.data.role == 'free'
+        && request.resource.data.email is string
+        && request.resource.data.displayName is string;
+
+      // Regular users may update their own profile, but never their own `role` or `email`
+      // — those fields must stay exactly as they were before the write.
+      allow update: if isOwner(uid)
+        && request.resource.data.role == resource.data.role
+        && request.resource.data.email == resource.data.email;
+
+      // Only a superadmin may change a `role` (or anything else) on someone's profile.
+      allow update: if isSuperadmin();
+
+      // --- users/{uid}/savedTemplates/{templateId} — personal template library ---
+      //
+      // Doc ID is the templateId itself: save = create/no-op upsert, remove = delete.
+      // No `update` rule — a saved-template record has no mutable fields (see
+      // docs/api-templates-documents.md), only create or delete.
+      match /savedTemplates/{templateId} {
+        allow read, create, delete: if isOwner(uid);
+      }
+
+      // --- users/{uid}/documents/{docId} — user-created documents -----------------
+
+      match /documents/{docId} {
+        allow read, create, update, delete: if isOwner(uid);
+      }
+    }
+
+    // --- templates/{templateId} — marketplace catalog ---------------------------
+    //
+    // Read-only for regular users. Writes are restricted to superadmin accounts —
+    // this is what scripts/seed-templates.ts authenticates as (a real Firebase user
+    // with role: superadmin, via the Identity Toolkit REST API, same trust model as
+    // the rest of this app), and what future admin CRUD routes will use too.
+    match /templates/{templateId} {
+      allow read: if signedIn();
+      allow write: if isSuperadmin();
+    }
+
+    // --- templateStyles/{styleId} — marketplace style catalog --------------------
+
+    match /templateStyles/{styleId} {
+      allow read: if signedIn();
+      allow write: if isSuperadmin();
+    }
+  }
+}

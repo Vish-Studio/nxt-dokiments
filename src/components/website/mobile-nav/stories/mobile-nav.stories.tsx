@@ -4,6 +4,7 @@ import { expect } from "storybook/test";
 import { MobileNav } from "../mobile-nav";
 
 const meta = {
+  title: "Website/Mobile Nav",
   component: MobileNav,
   tags: ["ai-generated"],
   args: {
