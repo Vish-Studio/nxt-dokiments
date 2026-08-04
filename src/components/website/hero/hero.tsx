@@ -1,5 +1,6 @@
 import { ArrowRight } from "@phosphor-icons/react/dist/ssr";
 
+import { LinkButton } from "@/components/commons/link-button/link-button";
 import { HeroProductMockup } from "@/components/website/hero-product-mockup/hero-product-mockup";
 
 export const Hero = () => {
@@ -22,19 +23,16 @@ export const Hero = () => {
                 your team can customize, save, and reuse in minutes.
               </p>
               <div className="mt-7 flex flex-col gap-3 sm:flex-row lg:mt-9">
-                <a
-                  className="inline-flex items-center justify-center gap-2 rounded-box bg-nox-noir px-6 py-4 font-title text-sm font-bold text-golden-harvest shadow-soft transition hover:brightness-110"
+                <LinkButton
                   href="/sign-up"
+                  icon={<ArrowRight aria-hidden size={18} weight="bold" />}
+                  size="lg"
                 >
                   Sign up
-                  <ArrowRight aria-hidden size={18} weight="bold" />
-                </a>
-                <a
-                  className="inline-flex items-center justify-center rounded-box border border-steel-mist px-6 py-4 font-title text-sm font-bold text-nox-noir transition-colors hover:bg-base-200"
-                  href="#marketplace"
-                >
+                </LinkButton>
+                <LinkButton href="#marketplace" icon={null} size="lg" variant="outline">
                   Browse marketplace
-                </a>
+                </LinkButton>
               </div>
 
               <div className="mt-6 flex flex-wrap gap-x-5 gap-y-2 text-sm text-nox-noir/58">

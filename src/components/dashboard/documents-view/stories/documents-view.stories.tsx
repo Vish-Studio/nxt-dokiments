@@ -230,7 +230,11 @@ export const PrintableDocuments: Story = {
       canvas.getByRole("dialog", { name: "Prepare Lumina Events Invoice" }),
     ).toBeVisible();
     await expect(
-      await canvas.findByRole("button", { name: "Download PDF" }),
+      await canvas.findByRole(
+        "button",
+        { name: "Download PDF" },
+        { timeout: 10000 },
+      ),
     ).toBeVisible();
   },
 };

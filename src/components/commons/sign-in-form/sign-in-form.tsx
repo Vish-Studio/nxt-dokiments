@@ -113,6 +113,7 @@ export const SignInForm = ({ onSubmit }: SignInFormProps) => {
         className="w-full"
         disabled={isSubmitting}
         type="submit"
+        variant="accent"
       >
         {isSubmitting ? "Signing in..." : "Sign in"}
       </Button>

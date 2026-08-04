@@ -54,7 +54,7 @@ const Sidebar: FunctionComponent<Props> = ({
   return (
     <aside
       className={cn(
-        "sidebar fixed inset-y-0 left-0 z-40 flex w-70 shrink-0 flex-col bg-app-chrome px-5 pt-6 lg:pt-9 pb-5 text-app-chrome-content transition-all duration-300 lg:static lg:translate-x-0",
+        "sidebar fixed inset-y-0 left-0 z-[70] flex w-70 shrink-0 flex-col bg-app-chrome px-5 pt-6 lg:pt-9 pb-5 text-app-chrome-content transition-all duration-300 lg:static lg:z-auto lg:translate-x-0",
         isMobileOpen ? "translate-x-0" : "-translate-x-full",
         isCollapsed ? "lg:w-24" : "lg:w-60",
       )}

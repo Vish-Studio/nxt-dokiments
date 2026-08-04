@@ -7,6 +7,7 @@ import {
 import Image from "next/image";
 import Link from "next/link";
 
+import { LinkButton } from "@/components/commons/link-button/link-button";
 import { CookieSettingsButton } from "@/components/website/cookie-settings-button/cookie-settings-button";
 
 const productLinks = [
@@ -69,13 +70,14 @@ export const Footer = () => {
                 Discover business-ready templates, save the ones that fit, and turn them into polished
                 documents from one focused workspace.
               </p>
-              <Link
-                className="mt-7 inline-flex items-center gap-2 rounded-box bg-golden-harvest px-5 py-3 font-title text-sm font-bold text-nox-noir transition hover:brightness-95"
+              <LinkButton
+                className="mt-7"
                 href="/sign-up"
+                icon={<ArrowUpRightIcon aria-hidden size={17} weight="bold" />}
+                variant="accent"
               >
                 Start creating
-                <ArrowUpRightIcon aria-hidden size={17} weight="bold" />
-              </Link>
+              </LinkButton>
             </div>
 
             <div className="website-reveal grid grid-cols-2 gap-x-8 gap-y-10 sm:grid-cols-3">
