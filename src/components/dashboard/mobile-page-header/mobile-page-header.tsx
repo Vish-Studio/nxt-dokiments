@@ -125,11 +125,11 @@ export const MobilePageHeader = ({
       className={cn(
         "sticky top-0 z-50 rounded-box transition-all duration-300 ease-out lg:hidden",
         style.container[variant],
-        isCompact ? "p-2 shadow-[0_12px_30px_rgb(20_20_20_/_0.10)]" : "p-5",
+        isCompact ? "min-h-16 p-2 shadow-[0_12px_30px_rgb(20_20_20_/_0.10)]" : "p-5",
       )}
       data-variant={variant}
     >
-      <div className={cn("flex gap-3", isCompact ? 'test items-center' : 'items-start')}>
+      <div className={cn("flex gap-3", isCompact ? "min-h-12 items-center" : "items-start")}>
         <ButtonIcon
           aria-label="Open navigation"
           className={cn("shrink-0 border bg-transparent", style.toggle)}
@@ -163,13 +163,12 @@ export const MobilePageHeader = ({
             </h1>
           </div>
 
-          {description ? (
+          {description && !isCompact ? (
             <p
               className={cn(
-                "max-w-md overflow-hidden text-sm leading-6 text-nox-noir/60 transition-all duration-300 ease-out",
+                "mt-2 max-w-md text-sm leading-6 text-nox-noir/60 transition-all duration-300 ease-out",
                 style.description,
                 variant !== "solid" && "text-nox-noir/65",
-                isCompact ? "mt-0 max-h-0 opacity-0" : "mt-2 max-h-20 opacity-100",
               )}
             >
               {description}

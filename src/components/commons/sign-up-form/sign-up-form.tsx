@@ -1,12 +1,12 @@
 "use client";
 
 import { useQueryClient } from "@tanstack/react-query";
-import Link from "next/link";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 
 import { Button } from "@/components/commons/button/button";
 import { Input } from "@/components/commons/input/input";
+import { LinkButton } from "@/components/commons/link-button/link-button";
 import { queryKeys } from "@/lib/query/keys";
 import { useAuthStore } from "@/stores/auth-store";
 
@@ -123,15 +123,12 @@ export const SignUpForm = ({ onSubmit }: SignUpFormProps) => {
         {isSubmitting ? "Creating account..." : "Create account"}
       </Button>
 
-      <p className="text-center text-sm text-nox-noir/60">
-        Already have an account?{" "}
-        <Link
-          className="font-title font-bold text-nox-noir hover:text-primary"
-          href="/sign-in"
-        >
+      <div className="grid gap-3 border-t border-steel-mist pt-5 text-center">
+        <p className="text-sm text-nox-noir/60">Already have an account?</p>
+        <LinkButton className="w-full" href="/sign-in" variant="outline">
           Sign in
-        </Link>
-      </p>
+        </LinkButton>
+      </div>
     </form>
   );
 };

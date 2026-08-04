@@ -49,5 +49,6 @@ export const Compact: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     await expect(canvas.getByRole("heading", { name: "Documents" })).toBeVisible();
+    await expect(canvas.queryByText("Create and manage documents from your saved templates.")).toBeNull();
   },
 };

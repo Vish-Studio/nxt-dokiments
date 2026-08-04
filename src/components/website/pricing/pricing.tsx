@@ -60,7 +60,7 @@ export const Pricing = () => {
               key={plan.name}
             >
               <PlanCard
-                action={{ href: "/sign-up", label: "Sign up" }}
+                action={{ href: "/sign-in", label: "Sign in to choose" }}
                 className="website-reveal h-full w-full"
                 description={plan.description}
                 features={plan.features}

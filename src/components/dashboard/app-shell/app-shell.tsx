@@ -23,7 +23,6 @@ import { PageBanner } from "@/components/dashboard/page-banner/page-banner";
 import type { PageBannerTone, PageBannerVariant } from "@/components/dashboard/page-banner/page-banner";
 import type { PageHeaderVisualVariant } from "@/components/dashboard/page-header-visual/page-header-visual";
 import Sidebar from "@/components/dashboard/sidebar/sidebar";
-import { useAuthStore } from "@/stores/auth-store";
 import { useUiStore } from "@/stores/ui-store";
 
 export type AppShellProps = {
@@ -63,17 +62,13 @@ export const AppShell = ({
 }: AppShellProps) => {
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
   const [isContentScrolled, setIsContentScrolled] = useState(false);
-  const user = useAuthStore((state) => state.user);
   const isSidebarCollapsed = useUiStore((state) => state.isSidebarCollapsed);
   const toggleSidebar = useUiStore((state) => state.toggleSidebar);
 
   const theme = pageThemes[activeItem] ?? { Icon: HouseIcon, tone: "golden" as PageBannerTone };
   const resolvedTone = bannerTone ?? theme.tone;
   const resolvedVariant = bannerVariant ?? theme.variant ?? "solid";
-  const firstName = (user?.displayName ?? "there").split(" ")[0];
-  const mobileTitle =
-    activeItem === "Dashboard" && isContentScrolled ? `Welcome back, ${firstName}` : title;
-  const mobileDescription = showBanner ? description : undefined;
+  const mobileDescription = showBanner && !isContentScrolled ? description : undefined;
 
   const handleContentScroll = (event: UIEvent<HTMLDivElement>) => {
     const nextScrolled = event.currentTarget.scrollTop > 24;
@@ -95,7 +90,7 @@ export const AppShell = ({
           {isMobileSidebarOpen ? (
             <button
               aria-label="Close navigation"
-              className="fixed inset-0 z-30 bg-app-chrome/55 lg:hidden"
+              className="fixed inset-0 z-[60] bg-app-chrome/55 lg:hidden"
               onClick={() => setIsMobileSidebarOpen(false)}
               type="button"
             />
@@ -109,7 +104,7 @@ export const AppShell = ({
                   icon={showBanner ? theme.Icon : undefined}
                   isCompact={isContentScrolled}
                   onOpenNavigation={() => setIsMobileSidebarOpen(true)}
-                  title={mobileTitle}
+                  title={title}
                   tone={resolvedTone}
                   variant={resolvedVariant}
                   visualVariant={showBanner ? theme.visual : undefined}

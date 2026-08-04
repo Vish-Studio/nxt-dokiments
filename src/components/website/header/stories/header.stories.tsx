@@ -21,3 +21,12 @@ export const Default: Story = {
     await expect(canvas.getByRole("link", { name: /sign up/i })).toBeVisible();
   },
 };
+
+export const AuthChrome: Story = {
+  args: {
+    showAuthActions: false,
+  },
+  play: async ({ canvas }) => {
+    await expect(canvas.getByRole("link", { name: /dokiments home/i })).toBeVisible();
+  },
+};
