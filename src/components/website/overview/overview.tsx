@@ -1,20 +1,37 @@
-import { FileText, MagnifyingGlass, ShareNetwork } from "@phosphor-icons/react/dist/ssr";
+import {
+  ChartLineUp,
+  FilePlus,
+  FolderSimpleStar,
+  Storefront,
+} from "@phosphor-icons/react/dist/ssr";
+import type { CSSProperties } from "react";
+
+import { cn } from "@/lib/utils";
 
 const features = [
   {
-    description: "Search templates by document type, business function, or use case.",
-    icon: MagnifyingGlass,
-    title: "Find the right document",
+    accent: "bg-golden-harvest",
+    description: "See saved templates, created documents, and current plan status from one home screen.",
+    icon: ChartLineUp,
+    title: "Dashboard overview",
   },
   {
-    description: "Use polished invoices, contracts, quotations, forms, and briefs.",
-    icon: FileText,
-    title: "Start from trusted templates",
+    accent: "bg-play-teal",
+    description: "Filter business-ready invoices, contracts, quotations, proposals, and more by style and tier.",
+    icon: Storefront,
+    title: "Marketplace discovery",
   },
   {
-    description: "Share finished files with your team and keep document work organized.",
-    icon: ShareNetwork,
-    title: "Send work forward",
+    accent: "bg-play-pink",
+    description: "Keep chosen templates in a personal library so repeat work starts from the right source.",
+    icon: FolderSimpleStar,
+    title: "My Templates library",
+  },
+  {
+    accent: "bg-play-purple",
+    description: "Open a saved template, fill the structured fields, and preview the final document side by side.",
+    icon: FilePlus,
+    title: "Document generation",
   },
 ];
 
@@ -24,27 +41,31 @@ export const Overview = () => {
       <div className="mx-auto max-w-7xl">
         <div className="grid gap-10 lg:grid-cols-[0.86fr_1.14fr]">
           <h2 className="font-title text-4xl font-bold leading-tight text-golden-harvest sm:text-5xl">
-            A document marketplace built for the daily paperwork of real businesses.
+            A complete document workspace after sign-up.
           </h2>
           <p className="max-w-2xl text-lg leading-8 text-white/68">
-            Dokiments gives founders, operators, freelancers, and teams a clean
-            place to discover ready-to-use business documents without starting
-            from a blank page.
+            Dokiments connects the public marketplace to the private dashboard:
+            browse once, save what matters, then create and manage business
+            documents from the same account.
           </p>
         </div>
 
-        <div className="mt-16 grid gap-4 md:grid-cols-3">
-          {features.map((feature) => {
+        <div className="mt-16 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+          {features.map((feature, index) => {
             const Icon = feature.icon;
 
             return (
               <article
-                className="rounded-box border border-white/12 bg-white/[0.04] p-6 transition-all duration-300 hover:-translate-y-2 hover:border-golden-harvest/50 hover:bg-white/[0.07] website-reveal"
+                className={cn(
+                  "website-card-reveal rounded-box p-6 text-nox-noir transition hover:-translate-y-1 hover:brightness-95",
+                  feature.accent,
+                )}
                 key={feature.title}
+                style={{ "--reveal-delay": `${index * 90}ms` } as CSSProperties}
               >
-                <Icon aria-hidden className="text-golden-harvest" size={28} weight="bold" />
-                <h3 className="mt-8 font-title text-xl font-bold">{feature.title}</h3>
-                <p className="mt-3 text-sm leading-6 text-white/62">{feature.description}</p>
+                <Icon aria-hidden className="text-nox-noir" size={28} weight="bold" />
+                <h3 className="mt-8 font-title text-xl font-bold text-nox-noir">{feature.title}</h3>
+                <p className="mt-3 text-sm leading-6 text-nox-noir/70">{feature.description}</p>
               </article>
             );
           })}

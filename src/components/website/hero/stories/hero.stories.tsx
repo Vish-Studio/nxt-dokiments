@@ -4,6 +4,7 @@ import { expect, waitFor } from "storybook/test";
 import { Hero } from "../hero";
 
 const meta = {
+  title: "Website/Hero",
   component: Hero,
   tags: ["ai-generated"],
   parameters: {
@@ -18,9 +19,9 @@ export const Default: Story = {
   play: async ({ canvas }) => {
     await waitFor(async () => {
       await expect(
-        canvas.getByRole("heading", { name: /business documents/i }),
+        canvas.getByRole("heading", { name: /business documents without the blank page/i }),
       ).toBeVisible();
     });
-    await expect(canvas.getByRole("link", { name: /browse marketplace/i })).toBeVisible();
+    await expect(canvas.getAllByRole("link", { name: /browse marketplace/i })[0]).toBeVisible();
   },
 };

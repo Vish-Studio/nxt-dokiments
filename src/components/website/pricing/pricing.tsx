@@ -1,67 +1,78 @@
-import { Check } from "@phosphor-icons/react/dist/ssr";
+import type { CSSProperties } from "react";
 
-const plans = [
+import { Carousel } from "@/components/commons/carousel/carousel";
+import { PlanCard } from "@/components/commons/plan-card/plan-card";
+import type { PlanCardVariant } from "@/components/commons/plan-card/plan-card";
+
+type PricingPlan = {
+  description: string;
+  features: string[];
+  name: string;
+  period?: string;
+  price: string;
+  variant: PlanCardVariant;
+};
+
+const plans: PricingPlan[] = [
   {
-    description: "For individuals who need polished templates quickly.",
-    name: "Starter",
-    price: "Free",
-    features: ["Browse free templates", "Mobile responsive previews", "Basic exports"],
+    description: "For individuals getting started with reusable business documents.",
+    features: ["Browse free templates", "Save up to 2 templates", "Create up to 5 documents"],
+    name: "Free",
+    price: "$0",
+    variant: "default",
   },
   {
-    description: "For growing teams that reuse documents every week.",
-    name: "Studio",
+    description: "For freelancers and small teams creating documents every week.",
+    features: ["Full template marketplace", "Unlimited documents", "Saved template library"],
+    name: "Silver",
+    period: "/mo",
     price: "$12",
-    features: ["Full template marketplace", "Saved favorites", "Team sharing"],
+    variant: "accent",
   },
   {
-    description: "For businesses that need control, consistency, and scale.",
-    name: "Business",
+    description: "For businesses that need more control, consistency, and support.",
+    features: ["Everything in Silver", "Workspace libraries", "Priority support"],
+    name: "Gold",
+    period: "/mo",
     price: "$29",
-    features: ["Workspace libraries", "Advanced document sets", "Priority support"],
+    variant: "featured",
   },
 ];
 
 export const Pricing = () => {
   return (
-    <section className="bg-golden-harvest px-5 py-24 sm:px-8 lg:px-10" id="pricing">
+    <section className="bg-white px-5 py-24 sm:px-8 lg:px-10" id="pricing">
       <div className="mx-auto max-w-7xl">
         <div className="max-w-3xl website-reveal">
           <h2 className="font-title text-4xl font-bold leading-tight text-nox-noir sm:text-5xl">
-            Start free. Upgrade when documents become part of your operating system.
+            Start free, then upgrade when your document library grows.
           </h2>
+          <p className="mt-5 text-base leading-7 text-nox-noir/70">
+            Roles map directly to plan access in the app: free, silver, gold,
+            plus special access for selected users and superadmin control.
+          </p>
         </div>
 
-        <div className="mt-14 grid gap-4 lg:grid-cols-3">
-          {plans.map((plan) => (
-            <article
-              className="flex min-h-[360px] flex-col rounded-box border border-nox-noir/20 bg-white p-6 shadow-soft transition-all duration-300 hover:-translate-y-3 hover:border-nox-noir website-reveal"
+        <Carousel ariaLabel="Pricing plans" className="mt-14">
+          {plans.map((plan, index) => (
+            <div
+              className="flex min-w-0 shrink-0 basis-[88%] sm:basis-[48%] lg:basis-0 lg:flex-1"
               key={plan.name}
             >
-              <h3 className="font-title text-2xl font-bold text-nox-noir">{plan.name}</h3>
-              <p className="mt-3 text-sm leading-6 text-nox-noir/65">{plan.description}</p>
-              <div className="mt-8 font-title text-5xl font-bold text-nox-noir">
-                {plan.price}
-                {plan.price.startsWith("$") ? (
-                  <span className="text-base text-nox-noir/55">/mo</span>
-                ) : null}
-              </div>
-              <ul className="mt-8 grid gap-3">
-                {plan.features.map((feature) => (
-                  <li className="flex items-center gap-3 text-sm text-nox-noir/70" key={feature}>
-                    <Check aria-hidden className="text-nox-noir" size={18} weight="bold" />
-                    {feature}
-                  </li>
-                ))}
-              </ul>
-              <a
-                className="mt-auto inline-flex justify-center rounded-box bg-nox-noir px-5 py-3 font-title text-sm font-bold text-golden-harvest transition-transform hover:-translate-y-1"
-                href="/sign-up"
-              >
-                Sign up
-              </a>
-            </article>
+              <PlanCard
+                action={{ href: "/sign-in", label: "Sign in to choose" }}
+                className="website-reveal h-full w-full"
+                description={plan.description}
+                features={plan.features}
+                name={plan.name}
+                period={plan.period}
+                price={plan.price}
+                style={{ "--reveal-delay": `${index * 100}ms` } as CSSProperties}
+                variant={plan.variant}
+              />
+            </div>
           ))}
-        </div>
+        </Carousel>
       </div>
     </section>
   );
