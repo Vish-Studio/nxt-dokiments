@@ -46,6 +46,9 @@ export const MarketplaceBrowser = () => {
   );
   const [preview, setPreview] = useState<MarketplaceTemplate | null>(null);
   const [isUpgradeOpen, setIsUpgradeOpen] = useState(false);
+  const [upgradeReason, setUpgradeReason] = useState<
+    "saved_template_limit" | "tier_locked"
+  >("saved_template_limit");
   const [pendingTemplate, setPendingTemplate] =
     useState<MarketplaceTemplate | null>(null);
 
@@ -132,7 +135,10 @@ export const MarketplaceBrowser = () => {
     window.setTimeout(() => setActiveStyleId(template.style.id), 0);
 
     if (!canUseTier(user?.role, template.tier)) {
-      window.setTimeout(() => setIsUpgradeOpen(true), 0);
+      window.setTimeout(() => {
+        setUpgradeReason("tier_locked");
+        setIsUpgradeOpen(true);
+      }, 0);
       return;
     }
 
@@ -149,6 +155,7 @@ export const MarketplaceBrowser = () => {
 
     if (saved.length >= limit) {
       setPreview(null);
+      setUpgradeReason("saved_template_limit");
       setIsUpgradeOpen(true);
       return;
     }
@@ -294,6 +301,7 @@ export const MarketplaceBrowser = () => {
       <UpgradeDialog
         onClose={() => setIsUpgradeOpen(false)}
         open={isUpgradeOpen}
+        reason={upgradeReason}
       />
     </div>
   );

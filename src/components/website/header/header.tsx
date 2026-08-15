@@ -75,23 +75,59 @@ export const Header = ({ showAuthActions = true }: HeaderProps) => {
 
           {showAuthActions ? (
             <div className="flex items-center gap-2">
-            {isAuthenticated ? (
-              <LinkButton className="!hidden sm:!inline-flex" href="/dashboard" icon={null} size="sm" variant="accent">
-                Dashboard
-              </LinkButton>
-            ) : (
-              <>
-                <LinkButton className="lg:!hidden" href="/sign-in" icon={null} size="sm" variant="accent">
-                  Sign in
+              {isAuthenticated ? (
+                <LinkButton
+                  className="hidden! sm:inline-flex!"
+                  href="/dashboard"
+                  icon={null}
+                  size="sm"
+                  variant="accent"
+                >
+                  Dashboard
                 </LinkButton>
-                <LinkButton className="!hidden lg:!inline-flex" href="/sign-in" icon={null} size="sm" variant="accent">
-                  Sign in
-                </LinkButton>
-                <LinkButton className="!hidden lg:!inline-flex" href="/sign-up" icon={null} size="sm" variant="outlineDark">
-                  Sign up
-                </LinkButton>
-              </>
-            )}
+              ) : (
+                <>
+                  <LinkButton
+                    analytics={{
+                      event: "cta_click",
+                      params: { placement: "header_mobile" },
+                    }}
+                    className="lg:hidden!"
+                    href="/sign-in"
+                    icon={null}
+                    size="sm"
+                    variant="accent"
+                  >
+                    Sign in
+                  </LinkButton>
+                  <LinkButton
+                    analytics={{
+                      event: "cta_click",
+                      params: { placement: "header_desktop" },
+                    }}
+                    className="hidden! lg:inline-flex!"
+                    href="/sign-in"
+                    icon={null}
+                    size="sm"
+                    variant="accent"
+                  >
+                    Sign in
+                  </LinkButton>
+                  <LinkButton
+                    analytics={{
+                      event: "cta_click",
+                      params: { placement: "header_desktop_sign_up" },
+                    }}
+                    className="!hidden lg:inline-flex!"
+                    href="/sign-up"
+                    icon={null}
+                    size="sm"
+                    variant="outlineDark"
+                  >
+                    Sign up
+                  </LinkButton>
+                </>
+              )}
             </div>
           ) : null}
         </div>

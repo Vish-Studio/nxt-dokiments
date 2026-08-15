@@ -1,12 +1,22 @@
-import { forwardRef } from "react";
 import type { ButtonHTMLAttributes, ReactNode } from "react";
+import { forwardRef } from "react";
 
+import type { AnalyticsTrigger } from "@/lib/analytics/events";
+import { toAnalyticsAttributes } from "@/lib/analytics/events";
 import { cn } from "@/lib/utils";
 
-type ButtonVariant = "primary" | "accent" | "secondary" | "neutral" | "ghost" | "outline" | "danger";
+type ButtonVariant =
+  | "primary"
+  | "accent"
+  | "secondary"
+  | "neutral"
+  | "ghost"
+  | "outline"
+  | "danger";
 type ButtonSize = "sm" | "md" | "lg";
 
 export type ButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {
+  analytics?: AnalyticsTrigger;
   variant?: ButtonVariant;
   size?: ButtonSize;
   icon?: ReactNode;
@@ -14,13 +24,16 @@ export type ButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {
 };
 
 const variantClasses: Record<ButtonVariant, string> = {
-  primary: "btn-primary hover:bg-steel-mist border-steel-mist hover:text-nox-noir",
-  accent: "border border-transparent bg-golden-harvest text-nox-noir hover:brightness-95",
+  primary:
+    "btn-primary hover:bg-steel-mist border-steel-mist hover:text-nox-noir",
+  accent:
+    "border border-transparent bg-golden-harvest text-nox-noir hover:brightness-95",
   secondary:
     "border border-transparent bg-base-200 text-nox-noir hover:bg-base-300",
   neutral: "btn-neutral",
   ghost: "btn-ghost",
-  outline: "border border-steel-mist bg-transparent text-nox-noir hover:bg-base-200",
+  outline:
+    "border border-steel-mist bg-transparent text-nox-noir hover:bg-base-200",
   danger: "btn-error",
 };
 
@@ -33,6 +46,7 @@ const sizeClasses: Record<ButtonSize, string> = {
 export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
   (
     {
+      analytics,
       children,
       className,
       variant = "primary",
@@ -56,6 +70,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
           sizeClasses[size],
           className,
         )}
+        {...toAnalyticsAttributes(analytics)}
         {...props}
       >
         {iconPosition === "left" ? renderedIcon : null}

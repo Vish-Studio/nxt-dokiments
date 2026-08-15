@@ -1,8 +1,8 @@
 import type { CSSProperties } from "react";
 
 import { Carousel } from "@/components/commons/carousel/carousel";
-import { PlanCard } from "@/components/commons/plan-card/plan-card";
 import type { PlanCardVariant } from "@/components/commons/plan-card/plan-card";
+import { PlanCard } from "@/components/commons/plan-card/plan-card";
 
 type PricingPlan = {
   description: string;
@@ -15,23 +15,38 @@ type PricingPlan = {
 
 const plans: PricingPlan[] = [
   {
-    description: "For individuals getting started with reusable business documents.",
-    features: ["Browse free templates", "Save up to 2 templates", "Create up to 5 documents"],
+    description:
+      "For individuals getting started with reusable business documents.",
+    features: [
+      "Browse free templates",
+      "Save up to 2 templates",
+      "Create up to 5 documents",
+    ],
     name: "Free",
     price: "$0",
     variant: "default",
   },
   {
-    description: "For freelancers and small teams creating documents every week.",
-    features: ["Full template marketplace", "Unlimited documents", "Saved template library"],
+    description:
+      "For freelancers and small teams creating documents every week.",
+    features: [
+      "Full template marketplace",
+      "Unlimited documents",
+      "Saved template library",
+    ],
     name: "Silver",
     period: "/mo",
     price: "$12",
     variant: "accent",
   },
   {
-    description: "For businesses that need more control, consistency, and support.",
-    features: ["Everything in Silver", "Workspace libraries", "Priority support"],
+    description:
+      "For businesses that need more control, consistency, and support.",
+    features: [
+      "Everything in Silver",
+      "Workspace libraries",
+      "Priority support",
+    ],
     name: "Gold",
     period: "/mo",
     price: "$29",
@@ -41,7 +56,10 @@ const plans: PricingPlan[] = [
 
 export const Pricing = () => {
   return (
-    <section className="bg-white px-5 py-24 sm:px-8 lg:px-10" id="pricing">
+    <section
+      className="bg-white px-5 py-24 sm:px-8 lg:px-10"
+      id="pricing"
+    >
       <div className="mx-auto max-w-7xl">
         <div className="max-w-3xl website-reveal">
           <h2 className="font-title text-4xl font-bold leading-tight text-nox-noir sm:text-5xl">
@@ -53,21 +71,33 @@ export const Pricing = () => {
           </p>
         </div>
 
-        <Carousel ariaLabel="Pricing plans" className="mt-14">
+        <Carousel
+          ariaLabel="Pricing plans"
+          className="mt-14"
+        >
           {plans.map((plan, index) => (
             <div
               className="flex min-w-0 shrink-0 basis-[88%] sm:basis-[48%] lg:basis-0 lg:flex-1"
               key={plan.name}
             >
               <PlanCard
-                action={{ href: "/sign-in", label: "Sign in to choose" }}
+                action={{
+                  analytics: {
+                    event: "cta_click",
+                    params: { placement: `pricing_${plan.name.toLowerCase()}` },
+                  },
+                  href: "/sign-in",
+                  label: "Sign in to choose",
+                }}
                 className="website-reveal h-full w-full"
                 description={plan.description}
                 features={plan.features}
                 name={plan.name}
                 period={plan.period}
                 price={plan.price}
-                style={{ "--reveal-delay": `${index * 100}ms` } as CSSProperties}
+                style={
+                  { "--reveal-delay": `${index * 100}ms` } as CSSProperties
+                }
                 variant={plan.variant}
               />
             </div>

@@ -4,7 +4,8 @@ import { LegalPage } from "@/components/website/legal-page/legal-page";
 
 export const metadata: Metadata = {
   title: "Cookie Policy | Dokiments",
-  description: "How Dokiments uses cookies and browser storage, and how to manage your choices.",
+  description:
+    "How Dokiments uses cookies and browser storage, and how to manage your choices.",
 };
 
 const sections = [
@@ -29,7 +30,7 @@ const sections = [
   {
     title: "Optional cookies",
     paragraphs: [
-      "Dokiments does not currently load advertising or optional analytics cookies on the public website. If optional services are introduced, they should remain disabled until you accept them, and this policy will be updated with their purpose and duration.",
+      "Dokiments uses Google Analytics to understand how the service is used. Analytics storage is disabled by default and only loads after you Accept all in the consent banner; choosing Reject non-essential keeps it off. Dokiments does not load advertising cookies.",
     ],
   },
   {
@@ -52,7 +53,7 @@ const CookiesPage = () => (
     description="This policy explains the storage Dokiments uses to operate the service and remember your privacy choices."
     sections={sections}
     title="Cookie Policy"
-    updatedAt="22 June 2026"
+    updatedAt="15 August 2026"
   />
 );
 

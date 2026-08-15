@@ -2,13 +2,16 @@ import { CheckIcon } from "@phosphor-icons/react/dist/ssr";
 import Link from "next/link";
 import type { CSSProperties } from "react";
 
-import { Badge } from "@/components/commons/badge/badge";
 import type { BadgeVariant } from "@/components/commons/badge/badge";
+import { Badge } from "@/components/commons/badge/badge";
+import type { AnalyticsTrigger } from "@/lib/analytics/events";
+import { toAnalyticsAttributes } from "@/lib/analytics/events";
 import { cn } from "@/lib/utils";
 
 export type PlanCardVariant = "default" | "featured" | "accent";
 
 export type PlanCardAction = {
+  analytics?: AnalyticsTrigger;
   disabled?: boolean;
   href?: string;
   label: string;
@@ -80,32 +83,55 @@ export const PlanCard = ({
   );
 
   return (
-    <article className={cn("flex flex-col rounded-box border p-6", styles.card, className)} style={style}>
+    <article
+      className={cn(
+        "flex flex-col rounded-box border p-6",
+        styles.card,
+        className,
+      )}
+      style={style}
+    >
       <div className="flex items-center justify-between gap-3">
         <h3 className="font-title text-lg font-bold">{name}</h3>
-        {badge ? (
-          <Badge variant={styles.badge}>{badge}</Badge>
-        ) : null}
+        {badge ? <Badge variant={styles.badge}>{badge}</Badge> : null}
       </div>
 
       <div className="mt-4 font-title text-3xl font-bold">
         {price}
-        {period ? <span className={cn("text-sm font-semibold", styles.muted)}>{period}</span> : null}
+        {period ? (
+          <span className={cn("text-sm font-semibold", styles.muted)}>
+            {period}
+          </span>
+        ) : null}
       </div>
 
-      <p className={cn("mt-3 text-sm leading-6", styles.muted)}>{description}</p>
+      <p className={cn("mt-3 text-sm leading-6", styles.muted)}>
+        {description}
+      </p>
 
       <ul className="mt-6 mb-8 grid gap-3">
         {features.map((feature) => (
-          <li className="flex items-center gap-2.5 text-sm" key={feature}>
-            <CheckIcon aria-hidden className={cn("shrink-0", styles.check)} size={16} weight="bold" />
+          <li
+            className="flex items-center gap-2.5 text-sm"
+            key={feature}
+          >
+            <CheckIcon
+              aria-hidden
+              className={cn("shrink-0", styles.check)}
+              size={16}
+              weight="bold"
+            />
             {feature}
           </li>
         ))}
       </ul>
 
       {action.href ? (
-        <Link className={ctaClassName} href={action.href}>
+        <Link
+          className={ctaClassName}
+          href={action.href}
+          {...toAnalyticsAttributes(action.analytics)}
+        >
           {action.label}
         </Link>
       ) : (
@@ -114,6 +140,7 @@ export const PlanCard = ({
           disabled={action.disabled}
           onClick={action.onClick}
           type="button"
+          {...toAnalyticsAttributes(action.analytics)}
         >
           {action.label}
         </button>
