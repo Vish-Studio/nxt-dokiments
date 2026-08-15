@@ -4,12 +4,13 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 
 import { Button } from "@/components/commons/button/button";
+import { updateConsent } from "@/lib/analytics/gtag";
+import type { CookieConsentChoice } from "@/lib/cookie-consent";
 import {
   OPEN_COOKIE_SETTINGS_EVENT,
   readCookieConsent,
   writeCookieConsent,
 } from "@/lib/cookie-consent";
-import type { CookieConsentChoice } from "@/lib/cookie-consent";
 
 export const CookieConsent = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -30,6 +31,7 @@ export const CookieConsent = () => {
 
   const saveChoice = (choice: CookieConsentChoice) => {
     writeCookieConsent(choice);
+    updateConsent(choice === "all" ? "granted" : "denied");
     setIsOpen(false);
   };
 
@@ -49,9 +51,13 @@ export const CookieConsent = () => {
             Your privacy, your choice.
           </h2>
           <p className="mt-2 max-w-2xl text-sm leading-6 text-white/70">
-            Dokiments uses necessary browser storage to keep the site working and remember your
-            choice. Optional cookies are used only with your permission. Read our{" "}
-            <Link className="font-semibold text-white underline underline-offset-4" href="/cookies">
+            Dokiments uses necessary browser storage to keep the site working
+            and remember your choice. Optional cookies are used only with your
+            permission. Read our{" "}
+            <Link
+              className="font-semibold text-white underline underline-offset-4"
+              href="/cookies"
+            >
               Cookie Policy
             </Link>
             .

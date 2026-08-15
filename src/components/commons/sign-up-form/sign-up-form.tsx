@@ -7,6 +7,7 @@ import { useForm } from "react-hook-form";
 import { Button } from "@/components/commons/button/button";
 import { Input } from "@/components/commons/input/input";
 import { LinkButton } from "@/components/commons/link-button/link-button";
+import { trackEvent } from "@/lib/analytics/track";
 import { queryKeys } from "@/lib/query/keys";
 import { useAuthStore } from "@/stores/auth-store";
 
@@ -54,6 +55,7 @@ export const SignUpForm = ({ onSubmit }: SignUpFormProps) => {
       if (!res.ok) throw new Error(data.error ?? "Unable to create account.");
       queryClient.setQueryData(queryKeys.session(), data.user);
       setUser(data.user);
+      trackEvent("sign_up", { method: "email" });
       const params = new URLSearchParams(window.location.search);
       window.location.assign(params.get("next") || "/dashboard");
     } catch (error) {
@@ -125,7 +127,11 @@ export const SignUpForm = ({ onSubmit }: SignUpFormProps) => {
 
       <div className="grid gap-3 border-t border-steel-mist pt-5 text-center">
         <p className="text-sm text-nox-noir/60">Already have an account?</p>
-        <LinkButton className="w-full" href="/sign-in" variant="outline">
+        <LinkButton
+          className="w-full"
+          href="/sign-in"
+          variant="outline"
+        >
           Sign in
         </LinkButton>
       </div>

@@ -2,13 +2,23 @@ import { ArrowRight } from "@phosphor-icons/react/dist/ssr";
 import Link from "next/link";
 import type { AnchorHTMLAttributes, ReactNode } from "react";
 
+import type { AnalyticsTrigger } from "@/lib/analytics/events";
+import { toAnalyticsAttributes } from "@/lib/analytics/events";
 import { cn } from "@/lib/utils";
 
-type LinkButtonVariant = "primary" | "accent" | "outline" | "outlineDark" | "ghostDark";
+type LinkButtonVariant =
+  | "primary"
+  | "accent"
+  | "outline"
+  | "outlineDark"
+  | "ghostDark";
 type LinkButtonSize = "sm" | "md" | "lg";
 
-export interface LinkButtonProps
-  extends Omit<AnchorHTMLAttributes<HTMLAnchorElement>, "href"> {
+export interface LinkButtonProps extends Omit<
+  AnchorHTMLAttributes<HTMLAnchorElement>,
+  "href"
+> {
+  analytics?: AnalyticsTrigger;
   children: ReactNode;
   href: string;
   icon?: ReactNode;
@@ -18,7 +28,8 @@ export interface LinkButtonProps
 }
 
 const variantClasses: Record<LinkButtonVariant, string> = {
-  accent: "border-transparent bg-golden-harvest text-nox-noir hover:brightness-95",
+  accent:
+    "border-transparent bg-golden-harvest text-nox-noir hover:brightness-95",
   ghostDark: "border-transparent bg-transparent text-white hover:bg-white/10",
   outline: "border-steel-mist bg-transparent text-nox-noir hover:bg-base-200",
   outlineDark: "border-white/18 bg-transparent text-white hover:bg-white/10",
@@ -32,6 +43,7 @@ const sizeClasses: Record<LinkButtonSize, string> = {
 };
 
 export const LinkButton = ({
+  analytics,
   children,
   className,
   href,
@@ -41,7 +53,13 @@ export const LinkButton = ({
   variant = "primary",
   ...props
 }: LinkButtonProps) => {
-  const renderedIcon = icon ?? <ArrowRight aria-hidden size={18} weight="bold" />;
+  const renderedIcon = icon ?? (
+    <ArrowRight
+      aria-hidden
+      size={18}
+      weight="bold"
+    />
+  );
 
   return (
     <Link
@@ -52,6 +70,7 @@ export const LinkButton = ({
         className,
       )}
       href={href}
+      {...toAnalyticsAttributes(analytics)}
       {...props}
     >
       {iconPosition === "left" ? renderedIcon : null}

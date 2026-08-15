@@ -8,6 +8,7 @@ interface StoredCookieConsent {
 
 export const COOKIE_CONSENT_STORAGE_KEY = "dokiments-cookie-consent-v1";
 export const OPEN_COOKIE_SETTINGS_EVENT = "dokiments:open-cookie-settings";
+export const COOKIE_CONSENT_CHANGED_EVENT = "dokiments:cookie-consent-changed";
 
 export const readCookieConsent = (): CookieConsentChoice | null => {
   try {
@@ -31,6 +32,11 @@ export const writeCookieConsent = (choice: CookieConsentChoice) => {
     version: 1,
   };
 
-  window.localStorage.setItem(COOKIE_CONSENT_STORAGE_KEY, JSON.stringify(consent));
-  window.dispatchEvent(new CustomEvent("dokiments:cookie-consent-changed", { detail: consent }));
+  window.localStorage.setItem(
+    COOKIE_CONSENT_STORAGE_KEY,
+    JSON.stringify(consent),
+  );
+  window.dispatchEvent(
+    new CustomEvent(COOKIE_CONSENT_CHANGED_EVENT, { detail: consent }),
+  );
 };
