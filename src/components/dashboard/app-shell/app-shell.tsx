@@ -24,6 +24,7 @@ import type {
 } from "@/components/dashboard/page-banner/page-banner";
 import { PageBanner } from "@/components/dashboard/page-banner/page-banner";
 import type { PageHeaderVisualVariant } from "@/components/dashboard/page-header-visual/page-header-visual";
+import { PublicLaunchBanner } from "@/components/dashboard/public-launch-banner/public-launch-banner";
 import Sidebar from "@/components/dashboard/sidebar/sidebar";
 import { useUiStore } from "@/stores/ui-store";
 
@@ -176,6 +177,7 @@ export const AppShell = ({
                     variant="ghost"
                   />
                 )}
+                <PublicLaunchBanner />
                 {children}
               </ContentContainer>
             </div>
