@@ -7,7 +7,9 @@ const meta = {
   title: "Website/Conversion CTA",
   component: ConversionCta,
   args: {
-    description: "Return to your workspace, save a template, and create the next document without rebuilding from scratch.",
+    description:
+      "Return to your workspace, save a template, and create the next document without rebuilding from scratch.",
+    placement: "story",
     title: "Pick up the document workflow inside Dokiments.",
   },
   parameters: {

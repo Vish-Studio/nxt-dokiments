@@ -1,5 +1,6 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 
+import { trackEvent } from "@/lib/analytics/track";
 import { queryKeys } from "@/lib/query/keys";
 import type { AuthProfileDetails, AuthUser } from "@/types/auth";
 
@@ -43,8 +44,14 @@ export const useUpdateProfileMutation = () => {
 
   return useMutation({
     mutationFn: postUpdateProfile,
-    onSuccess: (user) => {
+    onSuccess: (user, variables) => {
       queryClient.setQueryData(queryKeys.session(), user);
+      trackEvent("profile_updated", {
+        fields_updated: Object.entries(variables)
+          .filter(([, value]) => Boolean(value))
+          .map(([field]) => field)
+          .join(","),
+      });
     },
   });
 };
@@ -101,6 +108,7 @@ export const useUpdatePasswordMutation = () => {
     mutationFn: postUpdatePassword,
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: queryKeys.session() });
+      trackEvent("password_updated", {});
     },
   });
 };
@@ -127,6 +135,9 @@ const postForgotPassword = async (email: string): Promise<void> => {
 export const useForgotPasswordMutation = () =>
   useMutation({
     mutationFn: postForgotPassword,
+    onSuccess: () => {
+      trackEvent("password_reset_requested", {});
+    },
   });
 
 const postReauthenticate = async (password: string): Promise<void> => {

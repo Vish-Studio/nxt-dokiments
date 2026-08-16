@@ -8,6 +8,7 @@ import { Button } from "@/components/commons/button/button";
 import { GoogleSignInButton } from "@/components/commons/google-sign-in-button/google-sign-in-button";
 import { Input } from "@/components/commons/input/input";
 import { LinkButton } from "@/components/commons/link-button/link-button";
+import { trackEvent } from "@/lib/analytics/track";
 import { queryKeys } from "@/lib/query/keys";
 import { useAuthStore } from "@/stores/auth-store";
 
@@ -66,6 +67,7 @@ export const SignUpForm = ({ onSubmit }: SignUpFormProps) => {
       if (!res.ok) throw new Error(data.error ?? "Unable to create account.");
       queryClient.setQueryData(queryKeys.session(), data.user);
       setUser(data.user);
+      trackEvent("sign_up", { method: "email" });
       const params = new URLSearchParams(window.location.search);
       window.location.assign(params.get("next") || "/dashboard");
     } catch (error) {

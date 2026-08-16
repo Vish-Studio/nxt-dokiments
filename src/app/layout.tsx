@@ -1,7 +1,12 @@
 import type { Metadata, Viewport } from "next";
 import { Raleway, Urbanist } from "next/font/google";
+import Script from "next/script";
 
+import { AnalyticsProvider } from "@/components/commons/analytics-provider/analytics-provider";
 import { AuthProvider } from "@/components/commons/auth-provider/auth-provider";
+import { CookieConsent } from "@/components/website/cookie-consent/cookie-consent";
+import { analyticsConfig, hasAnalyticsConfig } from "@/lib/analytics/config";
+import { COOKIE_CONSENT_STORAGE_KEY } from "@/lib/cookie-consent";
 import { QueryProvider } from "@/lib/query/query-provider";
 
 import "./globals.css";
@@ -18,7 +23,9 @@ const raleway = Raleway({
 });
 
 export const metadata: Metadata = {
-  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL ?? "https://dokiments.com"),
+  metadataBase: new URL(
+    process.env.NEXT_PUBLIC_SITE_URL ?? "https://nxt-dokiments.vercel.app",
+  ),
   title: {
     default: "Dokiments | Business Document Templates and Workspace",
     template: "%s | Dokiments",
@@ -42,9 +49,7 @@ export const metadata: Metadata = {
     canonical: "/",
   },
   icons: {
-    icon: [
-      { url: "/icon.svg", type: "image/svg+xml" },
-    ],
+    icon: [{ url: "/icon.svg", type: "image/svg+xml" }],
     shortcut: "/icon.svg",
   },
   openGraph: {
@@ -91,9 +96,62 @@ const RootLayout = ({
       className={`${urbanist.variable} ${raleway.variable} h-full bg-background antialiased`}
     >
       <body className="min-h-full flex flex-col">
+        {hasAnalyticsConfig() ? (
+          <>
+            {/*
+              Consent Mode v2 defaults, pushed via `beforeInteractive` so they land
+              in `dataLayer` before gtag's own `config` command below. Next.js only
+              honors `beforeInteractive` when rendered directly in the root layout —
+              see the analytics module's `gtag.ts` for why the shim below pushes
+              `arguments` verbatim instead of the repo's usual arrow-function style.
+              Also synchronously reads the stored cookie choice so a returning,
+              already-accepted user's first hit is already granted.
+            */}
+            <Script
+              id="ga-consent-default"
+              strategy="beforeInteractive"
+            >
+              {`
+                window.dataLayer = window.dataLayer || [];
+                function gtag(){ window.dataLayer.push(arguments); }
+                gtag('consent', 'default', {
+                  'ad_storage': 'denied',
+                  'ad_user_data': 'denied',
+                  'ad_personalization': 'denied',
+                  'analytics_storage': 'denied'
+                });
+                try {
+                  var stored = window.localStorage.getItem('${COOKIE_CONSENT_STORAGE_KEY}');
+                  var consent = stored ? JSON.parse(stored) : null;
+                  if (consent && consent.version === 1 && consent.choice === 'all') {
+                    gtag('consent', 'update', { 'analytics_storage': 'granted' });
+                  }
+                } catch (error) {}
+              `}
+            </Script>
+            <Script
+              strategy="afterInteractive"
+              src={`https://www.googletagmanager.com/gtag/js?id=${analyticsConfig.measurementId}`}
+            />
+            <Script
+              id="ga-config"
+              strategy="afterInteractive"
+            >
+              {`
+                window.dataLayer = window.dataLayer || [];
+                function gtag(){ window.dataLayer.push(arguments); }
+                gtag('js', new Date());
+                gtag('config', '${analyticsConfig.measurementId}');
+              `}
+            </Script>
+          </>
+        ) : null}
         <QueryProvider>
-          <AuthProvider>{children}</AuthProvider>
+          <AnalyticsProvider>
+            <AuthProvider>{children}</AuthProvider>
+          </AnalyticsProvider>
         </QueryProvider>
+        <CookieConsent />
       </body>
     </html>
   );

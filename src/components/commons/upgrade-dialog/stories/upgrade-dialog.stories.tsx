@@ -11,6 +11,7 @@ const meta = {
   args: {
     onClose: () => {},
     open: true,
+    reason: "saved_template_limit",
   },
 } satisfies Meta<typeof UpgradeDialog>;
 
@@ -20,7 +21,11 @@ type Story = StoryObj<typeof meta>;
 export const Default: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    await expect(canvas.getByRole("heading", { name: /upgrade to add more templates/i })).toBeVisible();
-    await expect(canvas.getByRole("link", { name: /view plans/i })).toBeVisible();
+    await expect(
+      canvas.getByRole("heading", { name: /upgrade to add more templates/i }),
+    ).toBeVisible();
+    await expect(
+      canvas.getByRole("link", { name: /view plans/i }),
+    ).toBeVisible();
   },
 };

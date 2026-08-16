@@ -30,6 +30,7 @@ import {
   useUpdateDocumentMutation,
 } from "@/hooks/queries/use-documents";
 import { useSavedTemplatesQuery } from "@/hooks/queries/use-saved-templates";
+import { trackEvent } from "@/lib/analytics/track";
 import type { MarketplaceTemplate, UserDocument } from "@/types/template";
 import { snapshotToMarketplaceTemplate } from "@/types/template";
 
@@ -208,6 +209,10 @@ export const DocumentsView = () => {
 
   const handlePrintDocument = (document: UserDocument) => {
     setExportDocument(document);
+    trackEvent("pdf_export_open", {
+      document_id: document.id,
+      template_id: document.templateId,
+    });
   };
 
   // --- Editor ---------------------------------------------------------------

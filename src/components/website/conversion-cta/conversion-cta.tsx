@@ -7,6 +7,8 @@ export interface ConversionCtaProps {
   className?: string;
   description: string;
   eyebrow?: string;
+  /** Identifies which landing-page instance this is, for the `cta_click` event. */
+  placement: string;
   title: string;
 }
 
@@ -14,10 +16,16 @@ export const ConversionCta = ({
   className,
   description,
   eyebrow = "Ready when you are",
+  placement,
   title,
 }: ConversionCtaProps) => {
   return (
-    <section className={cn("conversion-cta bg-nox-noir px-5 py-14 text-white sm:px-8 lg:px-10", className)}>
+    <section
+      className={cn(
+        "conversion-cta bg-nox-noir px-5 py-14 text-white sm:px-8 lg:px-10",
+        className,
+      )}
+    >
       <div className="mx-auto grid max-w-7xl gap-8 py-10 lg:grid-cols-[1fr_auto] lg:items-center">
         <div>
           <p className="font-title text-sm font-bold uppercase tracking-wide text-golden-harvest">
@@ -33,9 +41,16 @@ export const ConversionCta = ({
 
         <div className="grid gap-3 lg:min-w-64">
           <LinkButton
+            analytics={{ event: "cta_click", params: { placement } }}
             className="w-full"
             href="/sign-in"
-            icon={<SignIn aria-hidden size={18} weight="bold" />}
+            icon={
+              <SignIn
+                aria-hidden
+                size={18}
+                weight="bold"
+              />
+            }
             size="lg"
             variant="accent"
           >

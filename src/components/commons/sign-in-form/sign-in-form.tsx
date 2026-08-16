@@ -8,6 +8,7 @@ import { useForm } from "react-hook-form";
 import { Button } from "@/components/commons/button/button";
 import { GoogleSignInButton } from "@/components/commons/google-sign-in-button/google-sign-in-button";
 import { Input } from "@/components/commons/input/input";
+import { trackEvent } from "@/lib/analytics/track";
 import { queryKeys } from "@/lib/query/keys";
 import { useAuthStore } from "@/stores/auth-store";
 
@@ -64,6 +65,7 @@ export const SignInForm = ({ onSubmit }: SignInFormProps) => {
       if (!res.ok) throw new Error(data.error ?? "Unable to sign in.");
       queryClient.setQueryData(queryKeys.session(), data.user);
       setUser(data.user);
+      trackEvent("login", { method: "email" });
       const params = new URLSearchParams(window.location.search);
       window.location.assign(params.get("next") || "/dashboard");
     } catch (error) {
