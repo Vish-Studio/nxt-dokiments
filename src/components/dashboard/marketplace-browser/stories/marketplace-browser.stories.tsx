@@ -62,6 +62,7 @@ const meta = {
         user: {
           displayName: "Anthony Alverizko",
           email: "anthony@dokiments.com",
+          provider: "password",
           role: "free",
           uid: "story-uid",
         },

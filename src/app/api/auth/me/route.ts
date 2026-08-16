@@ -1,7 +1,12 @@
 import { getIronSession } from "iron-session";
 
 import { refreshFirebaseSession } from "@/lib/firebase/server-auth";
-import { isDevAuthBypass, REFRESH_SKEW_MS, sessionOptions, type SessionData } from "@/lib/session";
+import {
+  isDevAuthBypass,
+  REFRESH_SKEW_MS,
+  sessionOptions,
+  type SessionData,
+} from "@/lib/session";
 
 /**
  * `GET /api/auth/me`
@@ -24,10 +29,22 @@ import { isDevAuthBypass, REFRESH_SKEW_MS, sessionOptions, type SessionData } fr
  */
 export const GET = async (request: Request): Promise<Response> => {
   const response = Response.json(null, { status: 401 });
-  const session = await getIronSession<SessionData>(request, response, sessionOptions);
+  const session = await getIronSession<SessionData>(
+    request,
+    response,
+    sessionOptions,
+  );
 
   if (isDevAuthBypass()) {
-    return Response.json({ user: session.user ?? { displayName: "Dev User", email: "dev@dokiments.local", role: "special", uid: "dev-auth-bypass-user" } });
+    return Response.json({
+      user: session.user ?? {
+        displayName: "Dev User",
+        email: "dev@dokiments.local",
+        provider: "password",
+        role: "special",
+        uid: "dev-auth-bypass-user",
+      },
+    });
   }
 
   if (!session.user) {
@@ -43,7 +60,11 @@ export const GET = async (request: Request): Promise<Response> => {
   try {
     const refreshed = await refreshFirebaseSession(session);
     const freshResponse = Response.json({ user: refreshed.user });
-    const freshSession = await getIronSession<SessionData>(request, freshResponse, sessionOptions);
+    const freshSession = await getIronSession<SessionData>(
+      request,
+      freshResponse,
+      sessionOptions,
+    );
     Object.assign(freshSession, refreshed);
     await freshSession.save();
     return freshResponse;

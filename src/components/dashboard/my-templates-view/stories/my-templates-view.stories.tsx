@@ -14,6 +14,7 @@ const seedUser = () => {
     user: {
       displayName: "Anthony Alverizko",
       email: "anthony@dokiments.com",
+      provider: "password",
       role: "silver",
       uid: "story-uid",
     },

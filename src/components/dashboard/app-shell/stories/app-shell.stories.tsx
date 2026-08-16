@@ -27,6 +27,7 @@ export const Default: Story = {
       user: {
         displayName: "Anthony Alverizko",
         email: "anthony@dokiments.test",
+        provider: "password",
         role: "free",
         uid: "story-user",
       },

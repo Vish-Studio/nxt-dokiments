@@ -10,6 +10,7 @@ import {
   ReauthRequiredError,
   useUpdatePasswordMutation,
 } from "@/hooks/queries/use-auth";
+import { useAuthStore } from "@/stores/auth-store";
 
 type PasswordValues = {
   confirmPassword: string;
@@ -22,6 +23,7 @@ type Feedback = {
 };
 
 export const PasswordSettings = () => {
+  const user = useAuthStore((state) => state.user);
   const [feedback, setFeedback] = useState<Feedback | null>(null);
   const [isReauthOpen, setIsReauthOpen] = useState(false);
   const { isPending, mutate: updatePassword } = useUpdatePasswordMutation();
@@ -69,6 +71,22 @@ export const PasswordSettings = () => {
     attemptUpdate(form.getValues("password"));
   };
 
+  if (user?.provider === "google") {
+    return (
+      <section className="max-w-md">
+        <div className="border-b border-steel-mist pb-4">
+          <h3 className="font-title text-lg font-bold text-nox-noir">
+            Password
+          </h3>
+        </div>
+        <p className="mt-6 text-sm leading-6 text-nox-noir/60">
+          You sign in with Google, so there&apos;s no password to manage for
+          this account.
+        </p>
+      </section>
+    );
+  }
+
   return (
     <section className="max-w-md">
       <div className="border-b border-steel-mist pb-4">
@@ -76,6 +94,11 @@ export const PasswordSettings = () => {
         <p className="mt-1 text-sm leading-6 text-nox-noir/60">
           Choose a new password with at least 6 characters.
         </p>
+        {user?.linkedGoogle ? (
+          <p className="mt-2 text-sm leading-6 text-nox-noir/60">
+            Google is also connected to this account.
+          </p>
+        ) : null}
       </div>
 
       <form
