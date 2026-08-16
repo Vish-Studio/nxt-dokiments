@@ -82,7 +82,11 @@ export const MarketplaceShowcase = () => {
           </div>
         </div>
 
-        <Carousel ariaLabel="Featured marketplace templates" className="mt-14">
+        <Carousel
+          ariaLabel="Featured marketplace templates"
+          className="mt-14"
+          viewportClassName="xl:py-20"
+        >
           {showcaseItems.map((item, index) => (
             <div
               className={cn(

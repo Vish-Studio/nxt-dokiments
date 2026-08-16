@@ -80,5 +80,20 @@ service cloud.firestore {
       allow read: if signedIn();
       allow write: if isSuperadmin();
     }
+
+    // --- newsletter/{subscriberId} — public subscription intake -----------------
+    // The website can collect an email before a visitor has an account. The document
+    // ID is a server-generated hash of that address; records are write-only from the
+    // public site, and the schema is deliberately narrow to prevent this collection
+    // from becoming a general public write surface.
+    match /newsletter/{subscriberId} {
+      allow create, update: if request.resource.data.keys().hasOnly([
+          'createdAt', 'email', 'status'
+        ])
+        && request.resource.data.email is string
+        && request.resource.data.email.size() <= 254
+        && request.resource.data.createdAt is timestamp
+        && request.resource.data.status == 'subscribed';
+    }
   }
 }

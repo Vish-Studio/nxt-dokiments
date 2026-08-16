@@ -151,7 +151,9 @@ export const getFirestoreDocument = async (
  *
  * @param path - Document path relative to the database root, e.g. `users/{uid}`.
  * @param fields - Complete set of fields to write.
- * @param idToken - Firebase ID token used to authorise the request.
+ * @param idToken - Optional Firebase ID token used to authorise the request.
+ * When omitted, Firestore evaluates the request as unauthenticated against its
+ * security rules (used only by narrowly scoped public intake routes).
  * @param fieldMask - When provided, restricts the write to only these field paths, leaving all
  *   other existing fields on the document untouched. Omit to overwrite the whole document
  *   (only safe when the document is known not to exist yet, e.g. first-time creation).
@@ -160,7 +162,7 @@ export const getFirestoreDocument = async (
 export const patchFirestoreDocument = async (
   path: string,
   fields: FirestoreFields,
-  idToken: string,
+  idToken?: string,
   fieldMask?: string[],
 ): Promise<FirestoreDocument> => {
   const mask = fieldMask?.length
@@ -170,8 +172,11 @@ export const patchFirestoreDocument = async (
   const response = await fetch(`${documentUrl(path)}${mask}`, {
     body: JSON.stringify({ fields }),
     headers: {
-      Authorization: `Bearer ${idToken}`,
       "Content-Type": "application/json",
+      ...(serverFirebaseConfig.apiKey
+        ? { "X-Goog-Api-Key": serverFirebaseConfig.apiKey }
+        : {}),
+      ...(idToken ? { Authorization: `Bearer ${idToken}` } : {}),
     },
     method: "PATCH",
   });

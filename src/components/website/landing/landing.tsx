@@ -5,10 +5,12 @@ import { Footer } from "@/components/website/footer/footer";
 import { Header } from "@/components/website/header/header";
 import { Hero } from "@/components/website/hero/hero";
 import { MarketplaceShowcase } from "@/components/website/marketplace-showcase/marketplace-showcase";
+import { NewsletterModal } from "@/components/website/newsletter-modal/newsletter-modal";
 import { Overview } from "@/components/website/overview/overview";
 import { Pricing } from "@/components/website/pricing/pricing";
 import { UseCases } from "@/components/website/use-cases/use-cases";
 import { Workflow } from "@/components/website/workflow/workflow";
+import { Testimonials } from "@/components/website/testimonials/testimonials";
 
 export const Landing = () => {
   return (
@@ -23,6 +25,7 @@ export const Landing = () => {
         title="Already know which template you need? Sign in and keep moving."
       />
       <UseCases />
+      <Testimonials />
       <Pricing />
       <ConversionCta
         description="Choose a plan from your account, keep your saved library intact, and generate business documents from the templates you already trust."
@@ -40,6 +43,7 @@ export const Landing = () => {
       />
       <Faq />
       <Footer />
+      <NewsletterModal />
     </main>
   );
 };
