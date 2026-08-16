@@ -9,7 +9,8 @@ const meta = {
   title: "Website/Newsletter Modal",
   component: NewsletterModal,
   parameters: { layout: "fullscreen" },
-  beforeEach: () => window.localStorage.removeItem(NEWSLETTER_STATUS_STORAGE_KEY),
+  beforeEach: () =>
+    window.localStorage.removeItem(NEWSLETTER_STATUS_STORAGE_KEY),
 } satisfies Meta<typeof NewsletterModal>;
 
 export default meta;
@@ -17,6 +18,10 @@ type Story = StoryObj<typeof meta>;
 
 export const FirstVisit: Story = {
   play: async ({ canvas }) => {
-    await expect(await canvas.findByRole("dialog", { name: "Join the Dokiments newsletter" })).toBeVisible();
+    await expect(
+      await canvas.findByRole("dialog", {
+        name: "Make the next document easier.",
+      }),
+    ).toBeVisible();
   },
 };
