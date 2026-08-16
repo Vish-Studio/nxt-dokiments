@@ -136,7 +136,7 @@ export const MobilePageHeader = ({
         "sticky top-0 z-50 rounded-box transition-all duration-300 ease-out lg:hidden",
         style.container[variant],
         isCompact
-          ? "min-h-16 p-2 shadow-[0_12px_30px_rgb(20_20_20/0.10)]"
+          ? "min-h-16 p-2 px-4 shadow-[0_12px_30px_rgb(20_20_20/0.10)]"
           : "p-5",
       )}
       data-variant={variant}
