@@ -60,7 +60,12 @@ All UI components must reside exactly within one of these four subdirectories un
 - **Persistence & flow:** Owned templates live in `templates-store` (ownership only — no values), created documents in `documents-store`; both are per-`uid` and persisted with zustand `persist`. Flow: Marketplace saves a template → **My Templates** is a read-only gallery of owned templates (thumbnails, no editing) → **Documents** creates/edits a concrete document from an owned template (name + `TemplateForm` on the left, live `TemplateDocument` render on the right).
 - **Reusable building blocks:** Prefer `PlanCard` (used by subscription + website pricing), `TemplateDocument` (style-aware renderer), `TemplateThumbnail`, `Carousel`, and `SidePanel` over re-implementing these patterns.
 
-## 7. Verification Checklist
+## 7. Shared Dashboard Patterns
+
+- **Dashboard lists:** Use `DashboardList` for the responsive 12-column header, surface, and borders. Keep entity-specific row data and actions in components such as `DocumentListItem` and `ClientList`.
+- **Right-side panels:** Use `SidePanel`, matching its `tone` to the active `PageBanner`: Documents `purple`, My Templates `pink`, Marketplace `teal`, and My Clients/Dashboard `golden`. Place panel actions in its `footer`.
+
+## 8. Verification Checklist
 
 Before declaring a task complete, verify stability with:
 

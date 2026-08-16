@@ -50,5 +50,20 @@ export const Compact: Story = {
     const canvas = within(canvasElement);
     await expect(canvas.getByRole("heading", { name: "Documents" })).toBeVisible();
     await expect(canvas.queryByText("Create and manage documents from your saved templates.")).toBeNull();
+    await expect(canvas.queryByRole("link", { name: "Open settings" })).toBeNull();
+  },
+};
+
+export const DashboardCompact: Story = {
+  args: {
+    isCompact: true,
+    showSettingsLink: true,
+    title: "Dashboard",
+    tone: "noir",
+  },
+  decorators: Expanded.decorators,
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await expect(canvas.getByRole("link", { name: "Open settings" })).toHaveAttribute("href", "/settings");
   },
 };

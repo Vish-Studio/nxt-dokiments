@@ -82,6 +82,7 @@ export const MyTemplatesView = () => {
         onPrint={handlePrint}
         saved
         template={preview}
+        tone="pink"
         useHref={preview ? `/documents?template=${preview.id}` : "/documents"}
       />
 

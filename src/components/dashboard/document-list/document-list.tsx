@@ -1,3 +1,7 @@
+import {
+  DashboardList,
+  type DashboardListColumn,
+} from "@/components/dashboard/dashboard-list/dashboard-list";
 import { DocumentListItem } from "@/components/dashboard/document-list-item/document-list-item";
 import type { UserDocument } from "@/types/template";
 
@@ -8,35 +12,25 @@ export interface DocumentListProps {
   onPrint: (document: UserDocument) => void;
 }
 
+const columns: DashboardListColumn[] = [
+  { className: "col-span-5", label: "Title" },
+  { className: "col-span-2", label: "Type" },
+  { className: "col-span-3", label: "Date created" },
+  { className: "col-span-2 text-right", label: "Actions" },
+];
+
 export const DocumentList = ({ documents, onEdit, onPreview, onPrint }: DocumentListProps) => {
   return (
-    <div className="document-list overflow-hidden rounded-box border border-steel-mist bg-base-100">
-      <div className="hidden grid-cols-12 items-center px-5 py-3 sm:grid">
-        <span className="col-span-5 font-title text-xs font-bold uppercase tracking-wide text-nox-noir/45">
-          Title
-        </span>
-        <span className="col-span-2 font-title text-xs font-bold uppercase tracking-wide text-nox-noir/45">
-          Type
-        </span>
-        <span className="col-span-3 font-title text-xs font-bold uppercase tracking-wide text-nox-noir/45">
-          Date created
-        </span>
-        <span className="col-span-2 text-right font-title text-xs font-bold uppercase tracking-wide text-nox-noir/45">
-          Actions
-        </span>
-      </div>
-
-      <ol>
-        {documents.map((document) => (
-          <DocumentListItem
-            document={document}
-            key={document.id}
-            onEdit={onEdit}
-            onPreview={onPreview}
-            onPrint={onPrint}
-          />
-        ))}
-      </ol>
-    </div>
+    <DashboardList columns={columns} ordered>
+      {documents.map((document) => (
+        <DocumentListItem
+          document={document}
+          key={document.id}
+          onEdit={onEdit}
+          onPreview={onPreview}
+          onPrint={onPrint}
+        />
+      ))}
+    </DashboardList>
   );
 };

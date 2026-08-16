@@ -279,6 +279,7 @@ export const MarketplaceBrowser = () => {
         saveLoading={isSaveTemplatePending}
         saved={preview ? savedIds.has(preview.id) : false}
         template={preview}
+        tone="teal"
       />
 
       <ConfirmDialog

@@ -111,6 +111,38 @@ button:disabled {
   cursor: not-allowed;
 }
 
+.button-arrow-icon,
+.link-button-arrow-icon,
+.arrow-cta-icon {
+  display: inline-flex;
+  transition: transform 0.2s ease;
+}
+
+.group:hover .button-arrow-icon[data-direction="right"],
+.group:hover .link-button-arrow-icon[data-direction="right"],
+.group:hover .arrow-cta-icon {
+  transform: translateX(0.25rem);
+}
+
+.group:hover .button-arrow-icon[data-direction="left"],
+.group:hover .link-button-arrow-icon[data-direction="left"],
+.group:hover .arrow-cta-icon[data-direction="left"] {
+  transform: translateX(-0.25rem);
+}
+
+.group:hover .button-arrow-icon[data-direction="up-right"],
+.group:hover .link-button-arrow-icon[data-direction="up-right"] {
+  transform: translate(0.25rem, -0.25rem);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .button-arrow-icon,
+  .link-button-arrow-icon,
+  .arrow-cta-icon {
+    transition: none;
+  }
+}
+
 .btn.btn-sm {
   min-height: 2.5rem;
   height: 2.5rem;

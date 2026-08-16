@@ -10,6 +10,7 @@ import {
   HouseIcon,
   ListIcon,
   StorefrontIcon,
+  UsersThreeIcon,
 } from "@phosphor-icons/react";
 import type { ReactNode, UIEvent } from "react";
 import { useRef, useState } from "react";
@@ -58,6 +59,7 @@ const pageThemes: Record<string, PageTheme> = {
     tone: "pink",
     visual: "templates",
   },
+  "My Clients": { Icon: UsersThreeIcon, tone: "golden" },
   Marketplace: { Icon: StorefrontIcon, tone: "teal", visual: "marketplace" },
   Subscription: {
     Icon: CreditCardIcon,
@@ -89,8 +91,9 @@ export const AppShell = ({
   };
   const resolvedTone = bannerTone ?? theme.tone;
   const resolvedVariant = bannerVariant ?? theme.variant ?? "solid";
+  const isDashboardHome = activeItem === "Dashboard";
   const mobileDescription =
-    showBanner && !isContentScrolled ? description : undefined;
+    showBanner && !isContentScrolled && !isDashboardHome ? description : undefined;
 
   const handleContentScroll = (event: UIEvent<HTMLDivElement>) => {
     // Always capture the latest scroll position so the RAF callback uses a
@@ -143,12 +146,14 @@ export const AppShell = ({
             <div className="flex min-h-0 flex-1 flex-col overflow-hidden bg-app-panel lg:mr-4 lg:mb-4 lg:mt-4 lg:rounded-4xl">
               <ContentContainer onScroll={handleContentScroll}>
                 <MobilePageHeader
+                  alignTitleWithNavigation={isDashboardHome}
                   description={mobileDescription}
                   icon={showBanner ? theme.Icon : undefined}
                   isCompact={isContentScrolled}
                   onOpenNavigation={() => setIsMobileSidebarOpen(true)}
+                  showSettingsLink={isDashboardHome}
                   title={title}
-                  tone={resolvedTone}
+                  tone={isDashboardHome ? "noir" : resolvedTone}
                   variant={resolvedVariant}
                   visualVariant={showBanner ? theme.visual : undefined}
                 />

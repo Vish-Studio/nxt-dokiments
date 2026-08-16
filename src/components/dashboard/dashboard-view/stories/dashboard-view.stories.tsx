@@ -5,6 +5,7 @@ import { expect, within } from "storybook/test";
 import { getTemplateById } from "@/lib/market-place";
 import { makeStoryQueryClient } from "@/lib/query/story-query-client";
 import { useAuthStore } from "@/stores/auth-store";
+import { useClientsStore } from "@/stores/clients-store";
 import type { UserDocument } from "@/types/template";
 
 import { DashboardView } from "../dashboard-view";
@@ -70,6 +71,22 @@ const meta = {
           uid: "story-uid",
         },
       });
+      useClientsStore.setState({
+        clientsByUser: {
+          "story-uid": [
+            {
+              brn: "",
+              companyName: "Northline Studio",
+              createdAt: Date.now(),
+              email: "maya@northline.com",
+              id: "client-1",
+              name: "Maya Chen",
+              nationalId: "",
+              phone: "+230 5 123 4567",
+            },
+          ],
+        },
+      });
       mockDashboardApi();
       return (
         <QueryClientProvider client={makeStoryQueryClient()}>
@@ -92,6 +109,7 @@ export const Default: Story = {
       canvas.getByRole("heading", { name: /welcome back,\s*anthony/i }),
     ).toBeVisible();
     await expect(await canvas.findByText("Saved templates")).toBeVisible();
+    await expect(await canvas.findByText("1 client")).toBeVisible();
     await expect(await canvas.findByText("Acme Contract")).toBeVisible();
   },
 };

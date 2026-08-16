@@ -8,6 +8,7 @@ import {
   LayoutIcon,
   SparkleIcon,
   StorefrontIcon,
+  UsersThreeIcon,
 } from "@phosphor-icons/react";
 import Link from "next/link";
 import { useState } from "react";
@@ -20,8 +21,12 @@ import { useDocumentsQuery } from "@/hooks/queries/use-documents";
 import { useSavedTemplatesQuery } from "@/hooks/queries/use-saved-templates";
 import { getSavedTemplateLimit } from "@/lib/market-place";
 import { useAuthStore } from "@/stores/auth-store";
+import { useClientsStore } from "@/stores/clients-store";
 import type { UserRole } from "@/types/auth";
+import type { Client } from "@/types/client";
 import type { MarketplaceTemplate } from "@/types/template";
+
+const emptyClients: Client[] = [];
 
 const roleLabels: Record<UserRole, string> = {
   free: "Free",
@@ -44,6 +49,9 @@ const roleBadgeVariants: Record<
 
 export const DashboardView = () => {
   const user = useAuthStore((state) => state.user);
+  const clients = useClientsStore((state) =>
+    user ? (state.clientsByUser[user.uid] ?? emptyClients) : emptyClients,
+  );
   const { data: saved = [], isLoading: isSavedLoading } =
     useSavedTemplatesQuery();
   const limit = getSavedTemplateLimit(user?.role);
@@ -61,6 +69,7 @@ export const DashboardView = () => {
     : null;
   const documentLabel = documents.length === 1 ? "document" : "documents";
   const templateLabel = saved.length === 1 ? "template" : "templates";
+  const clientLabel = clients.length === 1 ? "client" : "clients";
 
   const snapshotItems = [
     {
@@ -74,6 +83,12 @@ export const DashboardView = () => {
       label: "Saved templates",
       tone: "bg-play-pink",
       value: `${saved.length} ${templateLabel}`,
+    },
+    {
+      icon: UsersThreeIcon,
+      label: "Clients",
+      tone: "bg-play-teal",
+      value: `${clients.length} ${clientLabel}`,
     },
     {
       icon: CreditCardIcon,
@@ -132,7 +147,7 @@ export const DashboardView = () => {
           </p>
         </div>
 
-        <aside className="rounded-box bg-nox-noir p-6 text-white">
+        <aside className="hidden rounded-box bg-nox-noir p-6 text-white lg:block">
           <p className="font-title text-sm font-bold uppercase tracking-normal text-white/50">
             Marketplace focus
           </p>
@@ -144,57 +159,19 @@ export const DashboardView = () => {
             for repeatable SME workflows.
           </p>
           <Link
-            className="btn mt-5 min-h-11 h-11 w-full border-0 bg-golden-harvest font-title font-semibold tracking-normal text-nox-noir hover:brightness-95"
+            className="group btn mt-5 min-h-11 h-11 w-full border-0 bg-golden-harvest font-title font-semibold tracking-normal text-nox-noir hover:brightness-95"
             href="/marketplace"
           >
             Explore templates
             <ArrowRightIcon
               aria-hidden
+              className="arrow-cta-icon"
               size={18}
               weight="bold"
             />
           </Link>
         </aside>
       </div>
-
-      <section className="rounded-box border border-steel-mist bg-base-100 p-5 sm:p-6">
-        <div className="flex flex-wrap items-center justify-between gap-4">
-          <div>
-            <h2 className="font-title text-xl font-bold text-nox-noir">
-              Quick paths
-            </h2>
-            <p className="mt-1 text-sm text-nox-noir/60">
-              Three places most users need from the dashboard.
-            </p>
-          </div>
-        </div>
-        <div className="mt-5 grid gap-3 sm:grid-cols-3">
-          {quickActions.map((action) => {
-            const ActionIcon = action.icon;
-            return (
-              <Link
-                className={`flex items-center justify-between gap-3 rounded-box p-4 text-nox-noir transition ${action.color}`}
-                href={action.href}
-                key={action.label}
-              >
-                <span className="flex items-center gap-3 font-title text-sm font-bold">
-                  <ActionIcon
-                    aria-hidden
-                    size={19}
-                    weight="bold"
-                  />
-                  {action.label}
-                </span>
-                <ArrowRightIcon
-                  aria-hidden
-                  size={17}
-                  weight="bold"
-                />
-              </Link>
-            );
-          })}
-        </div>
-      </section>
 
       <section className="grid gap-4 lg:grid-cols-[0.86fr_1.14fr]">
         <div className="rounded-box border border-steel-mist bg-base-100 p-5 sm:p-6">
@@ -310,12 +287,13 @@ export const DashboardView = () => {
                 {latestDocument.templateSnapshot?.name ?? "Document template"}
               </p>
               <Link
-                className="btn btn-primary mt-5 min-h-11 h-11 font-title font-semibold tracking-normal"
+                className="group btn btn-primary mt-5 min-h-11 h-11 font-title font-semibold tracking-normal"
                 href="/documents"
               >
                 Open document
                 <ArrowRightIcon
                   aria-hidden
+                  className="arrow-cta-icon"
                   size={18}
                   weight="bold"
                 />
@@ -340,12 +318,13 @@ export const DashboardView = () => {
                   Use your latest saved template to create a filled document.
                 </p>
                 <Link
-                  className="btn btn-primary mt-4 min-h-11 h-11 font-title font-semibold tracking-normal"
+                  className="group btn btn-primary mt-4 min-h-11 h-11 font-title font-semibold tracking-normal"
                   href={`/documents?template=${latestTemplate.id}`}
                 >
                   Use template
                   <ArrowRightIcon
                     aria-hidden
+                    className="arrow-cta-icon"
                     size={18}
                     weight="bold"
                   />
@@ -361,18 +340,61 @@ export const DashboardView = () => {
                 Save a business template first, then create your first document.
               </p>
               <Link
-                className="btn btn-primary mt-5 min-h-11 h-11 font-title font-semibold tracking-normal"
+                className="group btn btn-primary mt-5 min-h-11 h-11 font-title font-semibold tracking-normal"
                 href="/marketplace"
               >
                 Browse marketplace
                 <ArrowRightIcon
                   aria-hidden
+                  className="arrow-cta-icon"
                   size={18}
                   weight="bold"
                 />
               </Link>
             </div>
           )}
+        </div>
+      </section>
+
+
+      <section className="rounded-box border border-steel-mist bg-base-100 p-5 sm:p-6">
+        <div className="flex flex-wrap items-center justify-between gap-4">
+          <div>
+            <h2 className="font-title text-xl font-bold text-nox-noir">
+              Quick paths
+            </h2>
+            <p className="mt-1 text-sm text-nox-noir/60">
+              Three places most users need from the dashboard.
+            </p>
+          </div>
+        </div>
+
+        <div className="mt-5 grid gap-3 sm:grid-cols-3">
+          {quickActions.map((action) => {
+            const ActionIcon = action.icon;
+            return (
+              <Link
+                className={`group flex items-center justify-between gap-3 rounded-box p-4 text-nox-noir transition ${action.color}`}
+                href={action.href}
+                key={action.label}
+              >
+                <span className="flex items-center gap-3 font-title text-sm font-bold">
+                  <ActionIcon
+                    aria-hidden
+                    size={19}
+                    weight="bold"
+                  />
+                  {action.label}
+                </span>
+                <ArrowRightIcon
+                  aria-hidden
+                  className="arrow-cta-icon"
+                  size={17}
+                  weight="bold"
+                />
+              </Link>
+            );
+          })}
         </div>
       </section>
 
@@ -384,7 +406,7 @@ export const DashboardView = () => {
           <div className="mt-4 divide-y divide-steel-mist">
             {recentDocuments.slice(0, 3).map((document) => (
               <Link
-                className="flex items-center justify-between gap-4 py-3 transition hover:text-nox-noir/70"
+                className="group flex items-center justify-between gap-4 py-3 transition hover:text-nox-noir/70"
                 href="/documents"
                 key={document.id}
               >
@@ -398,7 +420,7 @@ export const DashboardView = () => {
                 </div>
                 <ArrowRightIcon
                   aria-hidden
-                  className="shrink-0 text-nox-noir/40"
+                  className="arrow-cta-icon shrink-0 text-nox-noir/40"
                   size={17}
                   weight="bold"
                 />
@@ -414,6 +436,7 @@ export const DashboardView = () => {
         onPrint={() => window.print()}
         saved
         template={previewTemplate}
+        tone="golden"
         useHref={
           previewTemplate
             ? `/documents?template=${previewTemplate.id}`
