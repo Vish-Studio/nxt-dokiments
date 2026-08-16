@@ -8,6 +8,7 @@ import Image from "next/image";
 import Link from "next/link";
 
 import { LinkButton } from "@/components/commons/link-button/link-button";
+import { NewsletterForm } from "@/components/commons/newsletter-form/newsletter-form";
 import { CookieSettingsButton } from "@/components/website/cookie-settings-button/cookie-settings-button";
 
 const productLinks = [
@@ -54,16 +55,18 @@ export const Footer = () => {
         />
 
         <div className="mx-auto w-full max-w-8xl px-5 py-14 sm:px-8 sm:py-16 lg:px-10 lg:py-20">
-          <div className="grid gap-12 lg:grid-cols-[1.35fr_2fr] lg:gap-20">
+          <div className="grid gap-12 lg:grid-cols-[1.15fr_0.85fr] lg:gap-16">
             <div className="website-reveal">
               <Link aria-label="Dokiments home" href="/">
                 <Image
-                  src={'/images/svg/logo-white.svg'}
+                  alt="Dokiments logo"
+                  className="h-auto w-44"
+                  height={34}
                   width={225}
-                  height={225}
-                  alt="Dokiments logo" />
+                  src="/images/svg/logo-white.svg"
+                />
               </Link>
-              <h2 className="mt-8 max-w-xl font-title text-3xl font-bold leading-tight text-golden-harvest sm:text-2xl">
+              <h2 className="mt-8 max-w-xl font-title text-3xl font-bold leading-tight text-golden-harvest sm:text-4xl">
                 Better documents start with a better workspace.
               </h2>
               <p className="max-w-lg text-base leading-7 text-white/62">
@@ -80,82 +83,96 @@ export const Footer = () => {
               </LinkButton>
             </div>
 
-            <div className="website-reveal grid grid-cols-2 gap-x-8 gap-y-10 sm:grid-cols-3">
-              <nav aria-label="Product links">
-                <h3 className="font-title text-sm font-bold text-golden-harvest">Product</h3>
-                <div className="mt-5 grid gap-3">
-                  {productLinks.map((item) => (
-                    <Link
-                      className="text-sm text-white/62 transition-colors hover:text-white"
-                      href={item.href}
-                      key={item.href}
-                    >
-                      {item.label}
-                    </Link>
-                  ))}
-                </div>
-              </nav>
+            <div className="website-reveal border border-white/15 bg-black/20 p-6 sm:p-8 lg:self-start">
+              <p className="font-title text-sm font-bold uppercase tracking-wide text-golden-harvest">
+                Dokiments dispatch
+              </p>
+              <h3 className="font-title text-lg font-bold text-white">Stay in the loop</h3>
+              <p className="mt-2 max-w-md text-sm leading-6 text-white/62">
+                A considered monthly note on templates, workflows, and business document craft.
+              </p>
+              <NewsletterForm appearance="dark" className="mt-6" />
+            </div>
+          </div>
 
-              <nav aria-label="Account links">
-                <h3 className="font-title text-sm font-bold text-golden-harvest">Account</h3>
-                <div className="mt-5 grid gap-3">
-                  {accountLinks.map((item) => (
-                    <Link
-                      className="text-sm text-white/62 transition-colors hover:text-white"
-                      href={item.href}
-                      key={item.href}
-                    >
-                      {item.label}
-                    </Link>
-                  ))}
-                </div>
-              </nav>
+          <div className="website-reveal mt-14 grid gap-10 border-t border-white/15 pt-8 sm:grid-cols-2 lg:grid-cols-4 lg:gap-12">
+            <nav aria-label="Product links">
+              <h3 className="font-title text-sm font-bold text-golden-harvest">Product</h3>
+              <div className="mt-5 grid gap-3">
+                {productLinks.map((item) => (
+                  <Link
+                    className="text-sm text-white/62 transition-colors hover:text-white"
+                    href={item.href}
+                    key={item.href}
+                  >
+                    {item.label}
+                  </Link>
+                ))}
+              </div>
+            </nav>
 
-              <nav aria-label="Legal links" className="col-span-2 sm:col-span-1">
-                <h3 className="font-title text-sm font-bold text-golden-harvest">Legal</h3>
-                <div className="mt-5 grid justify-items-start gap-3">
-                  {legalLinks.map((item) => (
-                    <Link
-                      className="text-sm text-white/62 transition-colors hover:text-white"
-                      href={item.href}
-                      key={item.href}
+            <nav aria-label="Account links">
+              <h3 className="font-title text-sm font-bold text-golden-harvest">Account</h3>
+              <div className="mt-5 grid gap-3">
+                {accountLinks.map((item) => (
+                  <Link
+                    className="text-sm text-white/62 transition-colors hover:text-white"
+                    href={item.href}
+                    key={item.href}
+                  >
+                    {item.label}
+                  </Link>
+                ))}
+              </div>
+            </nav>
+
+            <nav aria-label="Legal links">
+              <h3 className="font-title text-sm font-bold text-golden-harvest">Legal</h3>
+              <div className="mt-5 grid justify-items-start gap-3">
+                {legalLinks.map((item) => (
+                  <Link
+                    className="text-sm text-white/62 transition-colors hover:text-white"
+                    href={item.href}
+                    key={item.href}
+                  >
+                    {item.label}
+                  </Link>
+                ))}
+                <CookieSettingsButton className="h-auto! min-h-0! justify-start px-0! py-0! text-sm font-normal! text-white/62 hover:bg-transparent hover:text-white" />
+              </div>
+            </nav>
+
+            <div>
+              <h3 className="font-title text-sm font-bold text-golden-harvest">Follow along</h3>
+              <div className="mt-5 flex items-center gap-2">
+                {socials.map((social) => {
+                  const Icon = social.icon;
+
+                  return (
+                    <a
+                      aria-label={social.label}
+                      className="flex size-10 items-center justify-center rounded-full border border-white/14 text-white/70 transition-colors hover:border-golden-harvest hover:bg-golden-harvest hover:text-nox-noir"
+                      href={social.href}
+                      key={social.label}
+                      rel="noreferrer"
+                      target="_blank"
                     >
-                      {item.label}
-                    </Link>
-                  ))}
-                  <CookieSettingsButton className="h-auto! min-h-0! justify-start px-0! py-0! text-sm font-normal! text-white/62 hover:bg-transparent hover:text-white" />
-                </div>
-              </nav>
+                      <Icon aria-hidden size={18} weight="bold" />
+                    </a>
+                  );
+                })}
+              </div>
             </div>
           </div>
         </div>
       </div>
 
       <div className="w-full border-t border-white/12 bg-black/35">
-        <div className="mx-auto grid w-full max-w-8xl gap-5 px-5 py-5 sm:grid-cols-[auto_1fr_auto] sm:items-center sm:px-8 lg:px-10">
-          <div className="flex items-center gap-2">
-            {socials.map((social) => {
-              const Icon = social.icon;
-
-              return (
-                <a
-                  aria-label={social.label}
-                  className="flex size-10 items-center justify-center rounded-full border border-white/14 text-white/70 transition-colors hover:border-golden-harvest hover:bg-golden-harvest hover:text-nox-noir"
-                  href={social.href}
-                  key={social.label}
-                  rel="noreferrer"
-                  target="_blank"
-                >
-                  <Icon aria-hidden size={18} weight="bold" />
-                </a>
-              );
-            })}
-          </div>
-
-          <p className="text-sm text-white/45 sm:justify-self-center">
+        <div className="mx-auto flex w-full max-w-8xl flex-col gap-3 px-5 py-5 text-sm text-white/45 sm:flex-row sm:items-center sm:justify-between sm:px-8 lg:px-10">
+          <p>
             © {new Date().getFullYear()} Dokiments. All rights reserved.
           </p>
-          <p className="text-sm text-white/45 sm:justify-self-end">
+          <p>
             Designed and built by{" "}
             <a
               className="font-semibold text-golden-harvest hover:underline"

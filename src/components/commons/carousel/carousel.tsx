@@ -10,17 +10,34 @@ import { cn } from "@/lib/utils";
 
 export type CarouselProps = {
   ariaLabel?: string;
+  /** Advances through slides at the supplied interval while motion is allowed. */
+  autoPlay?: boolean;
+  autoPlayInterval?: number;
   children: ReactNode;
   className?: string;
   /** Content shown to the left of the navigation arrows (e.g. a category title). */
   header?: ReactNode;
+  /** Overrides the default spacing between carousel slides. */
+  trackClassName?: string;
+  /** Adds layout space within the clipped carousel viewport. */
+  viewportClassName?: string;
 };
 
-export const Carousel = ({ ariaLabel, children, className, header }: CarouselProps) => {
+export const Carousel = ({
+  ariaLabel,
+  autoPlay = false,
+  autoPlayInterval = 6000,
+  children,
+  className,
+  header,
+  trackClassName,
+  viewportClassName,
+}: CarouselProps) => {
   const [emblaRef, emblaApi] = useEmblaCarousel({
     align: "start",
     containScroll: "trimSnaps",
     dragFree: false,
+    loop: autoPlay,
     slidesToScroll: 1,
   });
   const [canScrollPrev, setCanScrollPrev] = useState(false);
@@ -54,6 +71,23 @@ export const Carousel = ({ ariaLabel, children, className, header }: CarouselPro
     };
   }, [emblaApi, onSelect]);
 
+  useEffect(() => {
+    if (
+      !autoPlay ||
+      !emblaApi ||
+      window.matchMedia("(prefers-reduced-motion: reduce)").matches
+    ) {
+      return;
+    }
+
+    const interval = window.setInterval(
+      () => emblaApi.scrollNext(),
+      autoPlayInterval,
+    );
+
+    return () => window.clearInterval(interval);
+  }, [autoPlay, autoPlayInterval, emblaApi]);
+
   const progress = snapCount > 0 ? ((selectedIndex + 1) / snapCount) * 100 : 0;
   const currentSlide = String(selectedIndex + 1).padStart(2, "0");
   const totalSlides = String(snapCount).padStart(2, "0");
@@ -68,11 +102,14 @@ export const Carousel = ({ ariaLabel, children, className, header }: CarouselPro
         className={cn(
           "app-carousel-viewport overflow-hidden py-2",
           header ? "mt-4" : "mt-0",
+          viewportClassName,
         )}
         ref={emblaRef}
         role="region"
       >
-        <div className="app-carousel-track flex touch-pan-y gap-4">{children}</div>
+        <div className={cn("app-carousel-track flex touch-pan-y gap-4", trackClassName)}>
+          {children}
+        </div>
       </div>
 
       {snapCount > 1 ? (

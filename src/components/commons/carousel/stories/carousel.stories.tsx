@@ -38,3 +38,10 @@ export const Default: Story = {
     await expect(canvas.getByRole("button", { name: /next slide/i })).toBeVisible();
   },
 };
+
+export const AutoPlay: Story = {
+  args: {
+    autoPlay: true,
+    autoPlayInterval: 3000,
+  },
+};
