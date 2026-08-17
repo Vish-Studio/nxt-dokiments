@@ -4,6 +4,7 @@ import {
   getExpiry,
   refreshFirebaseToken,
   signInWithFirebase as signInWithFirebaseIdentity,
+  signInWithGoogleIdToken,
   signUpWithFirebase as signUpWithFirebaseIdentity,
   updateFirebaseDisplayName,
   updateFirebasePassword,
@@ -15,7 +16,7 @@ import {
   patchProfileFields,
   type ProfileUpdate,
 } from "@/lib/firebase/server-user-profile";
-import type { AuthSession } from "@/types/auth";
+import type { AuthProviderId, AuthSession } from "@/types/auth";
 
 export { sendPasswordResetEmail } from "@/lib/firebase/server-identity";
 export type { ProfileUpdate } from "@/lib/firebase/server-user-profile";
@@ -29,11 +30,13 @@ export type { ProfileUpdate } from "@/lib/firebase/server-user-profile";
  */
 const buildSession = async (
   response: FirebaseAuthResponse,
+  provider: AuthProviderId = "password",
 ): Promise<AuthSession> => {
   const user = await getUserProfile({
     displayName: response.displayName,
     email: response.email,
     idToken: response.idToken,
+    provider,
     uid: response.localId,
   });
 
@@ -64,6 +67,18 @@ export const signUpWithFirebase = async (request: AuthRequest) =>
  */
 export const signInWithFirebase = async (request: AuthRequest) =>
   buildSession(await signInWithFirebaseIdentity(request));
+
+/**
+ * Signs in (or creates, on first use) a Firebase account from a Google
+ * identity token and returns a fully-populated `AuthSession`.
+ *
+ * @param googleIdToken - `id_token` obtained by exchanging a Google OAuth
+ *   authorization code (see `@/lib/google/server-oauth`).
+ * @returns A fully-populated `AuthSession` for the Google-linked account.
+ * @throws When Google's token is invalid/expired, or federated sign-in is disabled in Firebase.
+ */
+export const signInWithGoogle = async (googleIdToken: string) =>
+  buildSession(await signInWithGoogleIdToken(googleIdToken), "google");
 
 /**
  * Re-authenticates the current user by signing in again with their email and

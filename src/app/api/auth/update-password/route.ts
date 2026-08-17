@@ -19,6 +19,8 @@ import { sessionOptions, type SessionData } from "@/lib/session";
  *
  * @returns `{ ok: true }` on success.
  * @returns `{ error: string }` with status `401` when no session is present.
+ * @returns `{ error: string }` with status `400` when the account signs in via
+ *   Google — there's no password to change, so this rejects before calling Firebase.
  * @returns `{ code: "REAUTH_REQUIRED", error: string }` with status `403` when
  *   the session is too old for this operation.
  * @returns `{ error: string }` with status `400` on any other Firebase error
@@ -35,6 +37,16 @@ export const POST = async (request: Request): Promise<Response> => {
 
     if (!session.user) {
       return Response.json({ error: "Unauthorised." }, { status: 401 });
+    }
+
+    if (session.user.provider === "google") {
+      return Response.json(
+        {
+          error:
+            "This account signs in with Google — there is no password to change.",
+        },
+        { status: 400 },
+      );
     }
 
     const { password } = (await request.json()) as { password: string };

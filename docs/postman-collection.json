@@ -34,6 +34,35 @@
           }
         },
         {
+          "name": "Continue with Google (browser only)",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/google/start?next=%2Fdashboard",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "auth", "google", "start"],
+              "query": [{ "key": "next", "value": "%2Fdashboard" }]
+            },
+            "description": "First leg of Google sign-in — generates a CSRF state, seals it with the sanitised `next` path into a short-lived dokiments-oauth-state cookie, then 302s to Google's OAuth consent screen. Open this URL in an actual browser tab, not \"Send\" in Postman — completing it requires a real interactive Google login, and Postman can't drive that consent screen. Returns a redirect to /sign-in?error=google_failed instead if GOOGLE_CLIENT_ID/GOOGLE_CLIENT_SECRET aren't set in .env.local."
+          }
+        },
+        {
+          "name": "Google callback (browser only, not directly callable)",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/google/callback?code=&state=",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "auth", "google", "callback"],
+              "query": [
+                { "key": "code", "value": "" },
+                { "key": "state", "value": "" }
+              ]
+            },
+            "description": "Second leg of Google sign-in — Google redirects here itself with real `code`/`state` query params after consent; this entry exists for reference only and can't be usefully sent from Postman (it needs the dokiments-oauth-state cookie set by \"Continue with Google\" in the same browser, plus a `code` that's only valid once and only from that same flow). On success it exchanges `code` for a Google id_token, signs into Firebase via accounts:signInWithIdp, writes the dokiments-session cookie exactly like \"Sign in\" does, and 302s to the `next` path. Same 400/401-style failures all collapse to a redirect to /sign-in?error=google_failed — check the server terminal for the real cause (state mismatch, Google token exchange failure, or Firebase rejecting the id_token, most commonly because GOOGLE_CLIENT_ID/SECRET don't match the Web client Firebase has on file for the Google provider)."
+          }
+        },
+        {
           "name": "Get current session",
           "request": {
             "method": "GET",

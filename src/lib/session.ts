@@ -35,7 +35,11 @@ export const REFRESH_SKEW_MS = 60_000;
  * Cookie flags:
  * - `httpOnly` — JavaScript cannot read the cookie, neutralising XSS token theft.
  * - `secure` — HTTPS-only in production; relaxed for `http://localhost` in dev.
- * - `sameSite: "strict"` — CSRF protection for same-origin requests.
+ * - `sameSite: "lax"` — the Google sign-in callback lands on this cookie's domain via a
+ *   cross-site top-level redirect from `accounts.google.com`; `Strict` cookies are sent
+ *   unreliably on that hop across browsers. State-changing routes stay POST-only JSON
+ *   (unreachable via a cross-site `<form>` or navigation), and the OAuth callback itself
+ *   is CSRF-protected by its own `state` param, so this doesn't reopen a CSRF hole.
  * - `maxAge` — 7-day sliding expiry; the Firebase token is refreshed independently.
  *
  * @see {@link https://github.com/vvo/iron-session}
@@ -46,7 +50,7 @@ export const sessionOptions: SessionOptions = {
     httpOnly: true,
     maxAge: 60 * 60 * 24 * 7,
     path: "/",
-    sameSite: "strict",
+    sameSite: "lax",
     secure: process.env.NODE_ENV === "production",
   },
   password: process.env.SESSION_SECRET ?? "",
@@ -67,6 +71,7 @@ export const DEV_SESSION: SessionData = {
   user: {
     displayName: "Dev User",
     email: "dev@dokiments.local",
+    provider: "password",
     role: "special",
     uid: "dev-auth-bypass-user",
   },
@@ -81,4 +86,5 @@ export const DEV_SESSION: SessionData = {
  * - `process.env.NODE_ENV === "development"`
  */
 export const isDevAuthBypass = () =>
-  process.env.DEV_AUTH_BYPASS === "true" && process.env.NODE_ENV === "development";
+  process.env.DEV_AUTH_BYPASS === "true" &&
+  process.env.NODE_ENV === "development";

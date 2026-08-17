@@ -18,6 +18,8 @@ import { sessionOptions, type SessionData } from "@/lib/session";
  *
  * @returns `{ ok: true }` on success.
  * @returns `{ error: string }` with status `401` when no session is present.
+ * @returns `{ error: string }` with status `400` when the account signs in via
+ *   Google — there's no password to verify, so this rejects before calling Firebase.
  * @returns `{ error: string }` with status `400` when the password is incorrect
  *   or Firebase rejects the request for any other reason.
  */
@@ -32,6 +34,16 @@ export const POST = async (request: Request): Promise<Response> => {
 
     if (!probeSession.user) {
       return Response.json({ error: "Unauthorised." }, { status: 401 });
+    }
+
+    if (probeSession.user.provider === "google") {
+      return Response.json(
+        {
+          error:
+            "This account signs in with Google — there is no password to verify.",
+        },
+        { status: 400 },
+      );
     }
 
     const { password } = (await request.json()) as { password: string };

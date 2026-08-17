@@ -1,10 +1,11 @@
 "use client";
 
 import { useQueryClient } from "@tanstack/react-query";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 
 import { Button } from "@/components/commons/button/button";
+import { GoogleSignInButton } from "@/components/commons/google-sign-in-button/google-sign-in-button";
 import { Input } from "@/components/commons/input/input";
 import { LinkButton } from "@/components/commons/link-button/link-button";
 import { trackEvent } from "@/lib/analytics/track";
@@ -25,6 +26,17 @@ export const SignUpForm = ({ onSubmit }: SignUpFormProps) => {
   const setUser = useAuthStore((state) => state.setUser);
   const queryClient = useQueryClient();
   const [formError, setFormError] = useState("");
+  const [next, setNext] = useState("/dashboard");
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      const params = new URLSearchParams(window.location.search);
+      setNext(params.get("next") || "/dashboard");
+    }, 0);
+
+    return () => window.clearTimeout(timer);
+  }, []);
+
   const {
     formState: { errors, isSubmitting },
     handleSubmit,
@@ -124,6 +136,18 @@ export const SignUpForm = ({ onSubmit }: SignUpFormProps) => {
       >
         {isSubmitting ? "Creating account..." : "Create account"}
       </Button>
+
+      <div className="flex items-center gap-3 text-xs font-title uppercase text-nox-noir/40">
+        <span className="h-px flex-1 bg-steel-mist" />
+        or
+        <span className="h-px flex-1 bg-steel-mist" />
+      </div>
+
+      <GoogleSignInButton
+        className="w-full"
+        label="Sign up with Google"
+        next={next}
+      />
 
       <div className="grid gap-3 border-t border-steel-mist pt-5 text-center">
         <p className="text-sm text-nox-noir/60">Already have an account?</p>

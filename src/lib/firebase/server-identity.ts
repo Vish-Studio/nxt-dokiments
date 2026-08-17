@@ -4,6 +4,7 @@ import {
   hasServerFirebaseConfig,
   serverFirebaseConfig,
 } from "@/lib/firebase/server-config";
+import { googleRedirectUri } from "@/lib/google/server-oauth";
 
 /** Shape returned by Firebase Identity Toolkit sign-in and sign-up endpoints. */
 export type FirebaseAuthResponse = {
@@ -108,6 +109,7 @@ export const mapFirebaseError = (message?: string) => {
     EMAIL_EXISTS: "An account already exists for this email.",
     EMAIL_NOT_FOUND: "No account was found for this email.",
     INVALID_ID_TOKEN: "Your session is no longer valid. Please sign in again.",
+    INVALID_IDP_RESPONSE: "Google sign-in failed. Please try again.",
     INVALID_LOGIN_CREDENTIALS: "The email or password is incorrect.",
     INVALID_PASSWORD: "The email or password is incorrect.",
     OPERATION_NOT_ALLOWED:
@@ -224,6 +226,28 @@ export const signInWithFirebase = ({ email, password }: AuthRequest) =>
       method: "POST",
     },
   );
+
+/**
+ * Signs in (or, on first use, silently creates) a Firebase account from a
+ * Google identity token, via Identity Toolkit's federated sign-in endpoint.
+ *
+ * When the resolved email already has a password-based account, Firebase
+ * auto-links the Google identity to it rather than creating a second account
+ * — both sign-in methods end up resolving to the same `localId`/uid.
+ *
+ * @param googleIdToken - `id_token` obtained by exchanging a Google OAuth
+ *   authorization code (see `@/lib/google/server-oauth`).
+ * @throws When Google's token is invalid/expired, or federated sign-in is disabled.
+ */
+export const signInWithGoogleIdToken = (googleIdToken: string) =>
+  requestIdentityJson<FirebaseAuthResponse>(authUrl("accounts:signInWithIdp"), {
+    body: JSON.stringify({
+      postBody: `id_token=${googleIdToken}&providerId=google.com`,
+      requestUri: googleRedirectUri(),
+      returnSecureToken: true,
+    }),
+    method: "POST",
+  });
 
 /**
  * Sends a Firebase password-reset email to the given address.

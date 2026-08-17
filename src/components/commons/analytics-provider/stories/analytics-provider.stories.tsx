@@ -121,6 +121,7 @@ export const MalformedParamsDoNotThrow: Story = {
 const storyUser: AuthUser = {
   displayName: "Anthony Alverizko",
   email: "anthony@dokiments.com",
+  provider: "password",
   role: "free",
   uid: "story-user-uid",
 };

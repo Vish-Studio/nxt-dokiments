@@ -29,7 +29,7 @@ const SidebarAccount: FunctionComponent<Props> = ({ isCollapsed = false }) => {
   };
 
   return (
-    <div className="sidebar-account">
+    <div className="sidebar-account min-w-0">
       <div
         className={cn(
           "rounded-box border border-white/10 bg-app-control p-3",
