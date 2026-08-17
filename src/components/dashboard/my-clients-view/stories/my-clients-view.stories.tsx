@@ -18,11 +18,16 @@ const meta = {
           displayName: "Anthony Alverizko",
           email: "anthony@dokiments.com",
           role: "free",
+          provider: "password",
           uid: "story-user",
         },
       });
       useClientsStore.setState({ clientsByUser: {} });
-      return <div className="bg-app-panel p-6"><Story /></div>;
+      return (
+        <div className="bg-app-panel p-6">
+          <Story />
+        </div>
+      );
     },
   ],
 } satisfies Meta<typeof MyClientsView>;
@@ -33,6 +38,8 @@ type Story = StoryObj<typeof meta>;
 export const Empty: Story = {
   play: async ({ canvas }) => {
     await expect(canvas.getByText("No clients yet")).toBeVisible();
-    await expect(canvas.getByRole("button", { name: "Add client" })).toBeVisible();
+    await expect(
+      canvas.getByRole("button", { name: "Add client" }),
+    ).toBeVisible();
   },
 };
