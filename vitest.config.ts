@@ -22,6 +22,7 @@ export default defineConfig({
             '@storybook/addon-docs',
             '@storybook/react-dom-shim',
             'zustand',
+            'zustand/middleware',
           ],
         },
         plugins: [
