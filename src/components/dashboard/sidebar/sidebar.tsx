@@ -6,6 +6,7 @@ import {
   Layout,
   SidebarIcon,
   Storefront,
+  UsersThreeIcon,
   X,
 } from "@phosphor-icons/react";
 import type { Icon } from "@phosphor-icons/react";
@@ -36,6 +37,7 @@ const sidebarItems: SidebarNavigationItem[] = [
   { label: "Dashboard", href: "/dashboard", icon: House },
   { label: "Documents", href: "/documents", icon: FileText },
   { label: "My Templates", href: "/my-templates", icon: Layout },
+  { label: "My Clients", href: "/my-clients", icon: UsersThreeIcon },
   {
     label: "Marketplace",
     href: "/marketplace",

@@ -77,6 +77,7 @@ export const Footer = () => {
                 className="mt-7"
                 href="/sign-up"
                 icon={<ArrowUpRightIcon aria-hidden size={17} weight="bold" />}
+                iconMotion="up-right"
                 variant="accent"
               >
                 Start creating

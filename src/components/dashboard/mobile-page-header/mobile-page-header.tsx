@@ -2,7 +2,9 @@
 
 import type { Icon } from "@phosphor-icons/react";
 import { ListIcon } from "@phosphor-icons/react";
+import Link from "next/link";
 
+import { Avatar } from "@/components/commons/avatar/avatar";
 import { ButtonIcon } from "@/components/commons/button-icon/button-icon";
 import type {
   PageBannerTone,
@@ -13,10 +15,12 @@ import { PageHeaderVisual } from "@/components/dashboard/page-header-visual/page
 import { cn } from "@/lib/utils";
 
 export interface MobilePageHeaderProps {
+  alignTitleWithNavigation?: boolean;
   description?: string;
   icon?: Icon;
   isCompact?: boolean;
   onOpenNavigation: () => void;
+  showSettingsLink?: boolean;
   title: string;
   tone?: PageBannerTone;
   variant?: PageBannerVariant;
@@ -113,10 +117,12 @@ const toneStyles: Record<PageBannerTone, ToneStyle> = {
 };
 
 export const MobilePageHeader = ({
+  alignTitleWithNavigation = false,
   description,
   icon: HeaderIcon,
   isCompact = false,
   onOpenNavigation,
+  showSettingsLink = false,
   title,
   tone = "golden",
   variant = "solid",
@@ -130,7 +136,7 @@ export const MobilePageHeader = ({
         "sticky top-0 z-50 rounded-box transition-all duration-300 ease-out lg:hidden",
         style.container[variant],
         isCompact
-          ? "min-h-16 p-2 shadow-[0_12px_30px_rgb(20_20_20/0.10)]"
+          ? "min-h-16 p-2 px-4 shadow-[0_12px_30px_rgb(20_20_20/0.10)]"
           : "p-5",
       )}
       data-variant={variant}
@@ -138,16 +144,22 @@ export const MobilePageHeader = ({
       <div
         className={cn(
           "flex gap-3",
-          isCompact ? "min-h-12 items-center" : "items-start",
+          isCompact || alignTitleWithNavigation
+            ? "min-h-12 items-center"
+            : "items-start",
         )}
       >
         <ButtonIcon
           aria-label="Open navigation"
-          className={cn("shrink-0 border bg-transparent", style.toggle)}
+          className={cn(
+            "shrink-0 border bg-transparent",
+            isCompact && "!size-8 !min-h-8",
+            style.toggle,
+          )}
           icon={
             <ListIcon
               aria-hidden
-              size={18}
+              size={isCompact ? 16 : 18}
               weight="bold"
             />
           }
@@ -197,13 +209,24 @@ export const MobilePageHeader = ({
           ) : null}
         </div>
 
-        {visualVariant ? (
+        {isCompact ? (
+          showSettingsLink ? (
+            <Link
+              aria-label="Open settings"
+              className="shrink-0 rounded-full focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-current"
+              href="/settings"
+            >
+              <Avatar
+                className="border border-white/20 bg-white/10 text-white transition-colors hover:bg-white/20"
+                name={null}
+              />
+            </Link>
+          ) : null
+        ) : visualVariant ? (
           <PageHeaderVisual
             className={cn(
               "transition-all duration-300 ease-out",
-              isCompact
-                ? "size-0 border-0 opacity-0 sm:size-0"
-                : "size-14 opacity-100 sm:size-16",
+              "size-14 opacity-100 sm:size-16",
             )}
             variant={visualVariant}
           />

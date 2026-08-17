@@ -26,6 +26,7 @@ export const Hero = () => {
                 <LinkButton
                   href="/sign-up"
                   icon={<ArrowRight aria-hidden size={18} weight="bold" />}
+                  iconMotion="right"
                   size="lg"
                 >
                   Sign up

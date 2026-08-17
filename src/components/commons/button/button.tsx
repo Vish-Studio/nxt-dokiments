@@ -14,12 +14,14 @@ type ButtonVariant =
   | "outline"
   | "danger";
 type ButtonSize = "sm" | "md" | "lg";
+type ButtonIconMotion = "left" | "right" | "up-right";
 
 export type ButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {
   analytics?: AnalyticsTrigger;
   variant?: ButtonVariant;
   size?: ButtonSize;
   icon?: ReactNode;
+  iconMotion?: ButtonIconMotion;
   iconPosition?: "left" | "right";
 };
 
@@ -52,20 +54,28 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
       variant = "primary",
       size = "md",
       icon,
+      iconMotion,
       iconPosition = "right",
       type = "button",
       ...props
     },
     ref,
   ) => {
-    const renderedIcon = icon ?? null;
+    const renderedIcon = icon ? (
+      <span
+        className={cn(iconMotion ? "button-arrow-icon" : null)}
+        data-direction={iconMotion}
+      >
+        {icon}
+      </span>
+    ) : null;
 
     return (
       <button
         ref={ref}
         type={type}
         className={cn(
-          "btn font-title font-semibold transition-all duration-200",
+          "btn group font-title font-semibold transition-all duration-200",
           variantClasses[variant],
           sizeClasses[size],
           className,

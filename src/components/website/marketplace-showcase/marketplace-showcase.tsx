@@ -73,11 +73,11 @@ export const MarketplaceShowcase = () => {
 
           <div className="website-reveal flex justify-start lg:justify-end">
             <a
-              className="inline-flex items-center justify-center gap-2 rounded-box bg-nox-noir px-5 py-3 font-title text-sm font-bold text-golden-harvest transition hover:brightness-110"
+              className="group inline-flex items-center justify-center gap-2 rounded-box bg-nox-noir px-5 py-3 font-title text-sm font-bold text-golden-harvest transition hover:brightness-110"
               href="/marketplace"
             >
               Browse all templates
-              <ArrowRight aria-hidden size={17} weight="bold" />
+              <ArrowRight aria-hidden className="arrow-cta-icon" size={17} weight="bold" />
             </a>
           </div>
         </div>

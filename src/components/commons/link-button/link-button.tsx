@@ -13,6 +13,7 @@ type LinkButtonVariant =
   | "outlineDark"
   | "ghostDark";
 type LinkButtonSize = "sm" | "md" | "lg";
+type LinkButtonIconMotion = "left" | "right" | "up-right";
 
 export interface LinkButtonProps extends Omit<
   AnchorHTMLAttributes<HTMLAnchorElement>,
@@ -22,6 +23,7 @@ export interface LinkButtonProps extends Omit<
   children: ReactNode;
   href: string;
   icon?: ReactNode;
+  iconMotion?: LinkButtonIconMotion;
   iconPosition?: "left" | "right";
   size?: LinkButtonSize;
   variant?: LinkButtonVariant;
@@ -48,23 +50,27 @@ export const LinkButton = ({
   className,
   href,
   icon,
+  iconMotion,
   iconPosition = "right",
   size = "md",
   variant = "primary",
   ...props
 }: LinkButtonProps) => {
-  const renderedIcon = icon ?? (
-    <ArrowRight
-      aria-hidden
-      size={18}
-      weight="bold"
-    />
-  );
+  const renderedIcon =
+    icon === undefined ? (
+      <ArrowRight
+        aria-hidden
+        size={18}
+        weight="bold"
+      />
+    ) : icon;
+  const resolvedIconMotion =
+    iconMotion ?? (icon === undefined ? "right" : undefined);
 
   return (
     <Link
       className={cn(
-        "link-button inline-flex items-center justify-center gap-2 rounded-box border font-title font-bold transition",
+        "link-button group inline-flex items-center justify-center gap-2 rounded-box border font-title font-bold transition",
         variantClasses[variant],
         sizeClasses[size],
         className,
@@ -73,9 +79,27 @@ export const LinkButton = ({
       {...toAnalyticsAttributes(analytics)}
       {...props}
     >
-      {iconPosition === "left" ? renderedIcon : null}
+      {iconPosition === "left" && renderedIcon ? (
+        <span
+          className={cn(
+            resolvedIconMotion ? "link-button-arrow-icon" : null,
+          )}
+          data-direction={resolvedIconMotion}
+        >
+          {renderedIcon}
+        </span>
+      ) : null}
       {children}
-      {iconPosition === "right" ? renderedIcon : null}
+      {iconPosition === "right" && renderedIcon ? (
+        <span
+          className={cn(
+            resolvedIconMotion ? "link-button-arrow-icon" : null,
+          )}
+          data-direction={resolvedIconMotion}
+        >
+          {renderedIcon}
+        </span>
+      ) : null}
     </Link>
   );
 };

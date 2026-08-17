@@ -230,6 +230,7 @@ export const DocumentsView = () => {
             />
           }
           iconPosition="left"
+          iconMotion="left"
           onClick={goToList}
           size="sm"
           variant="outline"
@@ -313,6 +314,7 @@ export const DocumentsView = () => {
           onClose={() => setIsEditorPreviewOpen(false)}
           open={isEditorPreviewOpen}
           title="Document preview"
+          tone="purple"
         >
           <div className="min-h-full bg-app-panel p-3 sm:p-5">
             <TemplateDocument
@@ -366,12 +368,14 @@ export const DocumentsView = () => {
     return (
       <div className="w-full">
         <button
-          className="inline-flex items-center gap-2 font-title text-sm font-semibold text-nox-noir/60 transition-colors hover:text-nox-noir"
+          className="group inline-flex items-center gap-2 font-title text-sm font-semibold text-nox-noir/60 transition-colors hover:text-nox-noir"
           onClick={goToList}
           type="button"
         >
           <ArrowLeftIcon
             aria-hidden
+            className="arrow-cta-icon"
+            data-direction="left"
             size={16}
             weight="bold"
           />
@@ -427,7 +431,8 @@ export const DocumentsView = () => {
           onPrint={() => window.print()}
           onUse={handleUsePreviewTemplate}
           saved
-          template={previewTemplate}
+        template={previewTemplate}
+        tone="purple"
         />
       </div>
     );
@@ -494,6 +499,7 @@ export const DocumentsView = () => {
           }
         }}
         template={previewDocument ? templateOf(previewDocument) : null}
+        tone="purple"
         values={previewDocument?.values}
       />
 

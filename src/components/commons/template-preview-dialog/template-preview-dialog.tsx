@@ -11,6 +11,7 @@ import Link from "next/link";
 import { Badge } from "@/components/commons/badge/badge";
 import { Button } from "@/components/commons/button/button";
 import { SidePanel } from "@/components/commons/side-panel/side-panel";
+import type { SidePanelTone } from "@/components/commons/side-panel/side-panel";
 import { TemplateDocument } from "@/components/commons/template-document/template-document";
 import { getSampleValues, tierLabels } from "@/lib/market-place";
 import type { MarketplaceTemplate } from "@/types/template";
@@ -28,6 +29,7 @@ export type TemplatePreviewDialogProps = {
   saveLoading?: boolean;
   saved?: boolean;
   template: MarketplaceTemplate | null;
+  tone?: SidePanelTone;
   useHref?: string;
   values?: Record<string, string>;
 };
@@ -45,6 +47,7 @@ export const TemplatePreviewDialog = ({
   saveLoading = false,
   saved = false,
   template,
+  tone,
   useHref = "/documents",
   values,
 }: TemplatePreviewDialogProps) => {
@@ -191,6 +194,7 @@ export const TemplatePreviewDialog = ({
           )
         ) : undefined
       }
+      tone={tone}
       onClose={onClose}
       open={Boolean(template)}
       title={documentName ?? template?.name}
