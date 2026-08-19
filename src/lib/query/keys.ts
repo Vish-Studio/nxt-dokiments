@@ -25,6 +25,11 @@ export const queryKeys = {
     all: () => ["saved-templates"] as const,
   },
 
+  clients: {
+    /** The signed-in user's client book. There is only ever one list — no filters. */
+    all: () => ["clients"] as const,
+  },
+
   documents: {
     /** Prefix covering every documents query, list or detail. */
     all: () => ["documents"] as const,

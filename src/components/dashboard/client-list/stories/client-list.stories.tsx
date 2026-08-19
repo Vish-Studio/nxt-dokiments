@@ -20,19 +20,23 @@ export const WithClients: Story = {
   args: {
     clients: [
       {
+        address: "12 Rue La Bourdonnais, Port Louis",
         brn: "C12345678",
         companyName: "Northline Studio",
         createdAt: Date.now(),
         email: "maya@northline.com",
-        id: "client-1",
+        id: "client_abc_123456",
         name: "Maya Chen",
         nationalId: "A1234567890123",
         phone: "+230 5 123 4567",
+        updatedAt: Date.now(),
       },
     ],
   },
   play: async ({ canvas }) => {
     await expect(canvas.getByText("Maya Chen")).toBeVisible();
-    await expect(canvas.getByRole("button", { name: "Delete Maya Chen" })).toHaveClass("btn-error");
+    await expect(
+      canvas.getByRole("button", { name: "Delete Maya Chen" }),
+    ).toHaveClass("btn-error");
   },
 };

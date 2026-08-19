@@ -6,45 +6,73 @@ import { useState } from "react";
 import { Button } from "@/components/commons/button/button";
 import { ConfirmDialog } from "@/components/commons/confirm-dialog/confirm-dialog";
 import { FloatingActionButton } from "@/components/commons/floating-action-button/floating-action-button";
+import { LoadingStatus } from "@/components/commons/loading-status/loading-status";
 import { SidePanel } from "@/components/commons/side-panel/side-panel";
 import { ClientForm } from "@/components/dashboard/client-form/client-form";
 import { ClientList } from "@/components/dashboard/client-list/client-list";
-import { useAuthStore } from "@/stores/auth-store";
-import { useClientsStore } from "@/stores/clients-store";
+import {
+  useClientsQuery,
+  useCreateClientMutation,
+  useDeleteClientMutation,
+} from "@/hooks/queries/use-clients";
 import type { Client, ClientInput } from "@/types/client";
 
-const emptyClients: Client[] = [];
-
 export const MyClientsView = () => {
-  const userId = useAuthStore((state) => state.user?.uid);
-  const clients = useClientsStore((state) =>
-    userId ? (state.clientsByUser[userId] ?? emptyClients) : emptyClients,
-  );
-  const addClient = useClientsStore((state) => state.addClient);
-  const removeClient = useClientsStore((state) => state.removeClient);
+  const { data: clients = [], isError, isLoading } = useClientsQuery();
+  const { mutate: createClient } = useCreateClientMutation();
+  const { mutate: deleteClient } = useDeleteClientMutation();
   const [isAddPanelOpen, setIsAddPanelOpen] = useState(false);
   const [pendingDeletion, setPendingDeletion] = useState<Client | null>(null);
 
   const handleAdd = (input: ClientInput) => {
-    if (userId) {
-      addClient(userId, input);
-      setIsAddPanelOpen(false);
-    }
+    createClient(input);
+    setIsAddPanelOpen(false);
   };
 
   const confirmDelete = () => {
-    if (userId && pendingDeletion) {
-      removeClient(userId, pendingDeletion.id);
+    if (pendingDeletion) {
+      deleteClient(pendingDeletion.id);
     }
     setPendingDeletion(null);
   };
 
   return (
     <div className="my-clients-view flex w-full flex-col gap-6">
-      <ClientList clients={clients} onDelete={setPendingDeletion} />
+      {isLoading ? (
+        <>
+          <LoadingStatus message="Loading your clients…" />
+          <div
+            aria-hidden
+            className="h-40 animate-pulse rounded-box border border-steel-mist bg-base-100"
+          />
+        </>
+      ) : isError ? (
+        // Distinct from the empty state on purpose: showing "No clients yet"
+        // after a failed request would tell the user their clients are gone.
+        <section className="grid place-items-center rounded-box border border-dashed border-error/40 bg-base-100 p-10 text-center">
+          <h2 className="font-title text-lg font-bold text-nox-noir">
+            Couldn&apos;t load your clients
+          </h2>
+          <p className="mt-2 max-w-sm text-sm leading-6 text-nox-noir/60">
+            Your clients are saved to your account — nothing has been lost.
+            Check your connection and try again.
+          </p>
+        </section>
+      ) : (
+        <ClientList
+          clients={clients}
+          onDelete={setPendingDeletion}
+        />
+      )}
 
       <FloatingActionButton
-        icon={<PlusIcon aria-hidden size={18} weight="bold" />}
+        icon={
+          <PlusIcon
+            aria-hidden
+            size={18}
+            weight="bold"
+          />
+        }
         label="Add client"
         onClick={() => setIsAddPanelOpen(true)}
       />
@@ -64,7 +92,13 @@ export const MyClientsView = () => {
             <Button
               className="w-full"
               form="add-client-form"
-              icon={<PlusIcon aria-hidden size={17} weight="bold" />}
+              icon={
+                <PlusIcon
+                  aria-hidden
+                  size={17}
+                  weight="bold"
+                />
+              }
               iconPosition="left"
               type="submit"
               variant="accent"
@@ -78,13 +112,16 @@ export const MyClientsView = () => {
         title="Add client"
         tone="golden"
       >
-        <ClientForm formId="add-client-form" onAdd={handleAdd} />
+        <ClientForm
+          formId="add-client-form"
+          onAdd={handleAdd}
+        />
       </SidePanel>
 
       <ConfirmDialog
         confirmLabel="Delete client"
         confirmVariant="danger"
-        description={`Delete ${pendingDeletion?.name ?? "this client"} from your local client list? This cannot be undone.`}
+        description={`Delete ${pendingDeletion?.name ?? "this client"} from your clients? This cannot be undone. Documents you already prepared for them are not affected.`}
         onClose={() => setPendingDeletion(null)}
         onConfirm={confirmDelete}
         open={Boolean(pendingDeletion)}

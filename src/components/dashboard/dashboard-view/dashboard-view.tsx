@@ -17,16 +17,13 @@ import { Badge } from "@/components/commons/badge/badge";
 import { LoadingStatus } from "@/components/commons/loading-status/loading-status";
 import { TemplateCard } from "@/components/commons/template-card/template-card";
 import { TemplatePreviewDialog } from "@/components/commons/template-preview-dialog/template-preview-dialog";
+import { useClientsQuery } from "@/hooks/queries/use-clients";
 import { useDocumentsQuery } from "@/hooks/queries/use-documents";
 import { useSavedTemplatesQuery } from "@/hooks/queries/use-saved-templates";
 import { getSavedTemplateLimit } from "@/lib/market-place";
 import { useAuthStore } from "@/stores/auth-store";
-import { useClientsStore } from "@/stores/clients-store";
 import type { UserRole } from "@/types/auth";
-import type { Client } from "@/types/client";
 import type { MarketplaceTemplate } from "@/types/template";
-
-const emptyClients: Client[] = [];
 
 const roleLabels: Record<UserRole, string> = {
   free: "Free",
@@ -49,15 +46,13 @@ const roleBadgeVariants: Record<
 
 export const DashboardView = () => {
   const user = useAuthStore((state) => state.user);
-  const clients = useClientsStore((state) =>
-    user ? (state.clientsByUser[user.uid] ?? emptyClients) : emptyClients,
-  );
+  const { data: clients = [], isLoading: isClientsLoading } = useClientsQuery();
   const { data: saved = [], isLoading: isSavedLoading } =
     useSavedTemplatesQuery();
   const limit = getSavedTemplateLimit(user?.role);
   const { data: documents = [], isLoading: isDocumentsLoading } =
     useDocumentsQuery();
-  const isLoading = isSavedLoading || isDocumentsLoading;
+  const isLoading = isSavedLoading || isDocumentsLoading || isClientsLoading;
   const [previewTemplate, setPreviewTemplate] =
     useState<MarketplaceTemplate | null>(null);
 
@@ -355,7 +350,6 @@ export const DashboardView = () => {
           )}
         </div>
       </section>
-
 
       <section className="rounded-box border border-steel-mist bg-base-100 p-5 sm:p-6">
         <div className="flex flex-wrap items-center justify-between gap-4">

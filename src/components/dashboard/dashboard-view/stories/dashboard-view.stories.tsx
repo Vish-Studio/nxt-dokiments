@@ -5,15 +5,30 @@ import { expect, within } from "storybook/test";
 import { getTemplateById } from "@/lib/market-place";
 import { makeStoryQueryClient } from "@/lib/query/story-query-client";
 import { useAuthStore } from "@/stores/auth-store";
-import { useClientsStore } from "@/stores/clients-store";
+import type { Client } from "@/types/client";
 import type { UserDocument } from "@/types/template";
 
 import { DashboardView } from "../dashboard-view";
 
-/** Mocks `GET /api/saved-templates` and `GET /api/documents` so `DashboardView`'s
- * queries resolve with fixture data, dispatching on request URL. */
+/** Mocks `GET /api/saved-templates`, `GET /api/documents` and `GET /api/clients` so
+ * `DashboardView`'s queries resolve with fixture data, dispatching on request URL. */
 const mockDashboardApi = () => {
   const contractTemplate = getTemplateById("classic-contract");
+
+  const clients: Client[] = [
+    {
+      address: "12 Rue La Bourdonnais, Port Louis",
+      brn: "",
+      companyName: "Northline Studio",
+      createdAt: 1_755_000_000_000,
+      email: "maya@northline.com",
+      id: "client_abc_123456",
+      name: "Maya Chen",
+      nationalId: "",
+      phone: "+230 5 123 4567",
+      updatedAt: 1_755_000_000_000,
+    },
+  ];
 
   const documents: UserDocument[] = [
     {
@@ -51,6 +66,10 @@ const mockDashboardApi = () => {
       );
     }
 
+    if (url.includes("/api/clients")) {
+      return new Response(JSON.stringify({ clients }), { status: 200 });
+    }
+
     return new Response(JSON.stringify({ documents }), { status: 200 });
   }) as typeof window.fetch;
 };
@@ -70,22 +89,6 @@ const meta = {
           provider: "password",
           role: "free",
           uid: "story-uid",
-        },
-      });
-      useClientsStore.setState({
-        clientsByUser: {
-          "story-uid": [
-            {
-              brn: "",
-              companyName: "Northline Studio",
-              createdAt: Date.now(),
-              email: "maya@northline.com",
-              id: "client-1",
-              name: "Maya Chen",
-              nationalId: "",
-              phone: "+230 5 123 4567",
-            },
-          ],
         },
       });
       mockDashboardApi();

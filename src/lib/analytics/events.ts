@@ -17,6 +17,13 @@
 export type EmptyAnalyticsParams = Record<string, never>;
 
 export type AnalyticsEventMap = {
+  client_created: {
+    has_address: boolean;
+  };
+  client_deleted: EmptyAnalyticsParams;
+  client_updated: {
+    fields_updated: string;
+  };
   cta_click: {
     placement: string;
   };
