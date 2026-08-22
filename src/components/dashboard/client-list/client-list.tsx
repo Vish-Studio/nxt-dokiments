@@ -13,7 +13,11 @@ interface Props {
   onDelete: (client: Client) => void;
 }
 
-const columns: DashboardListColumn[] = [
+/**
+ * Exported so `ClientListSkeleton` renders the same header and column widths —
+ * the loading state and the loaded list can't drift apart.
+ */
+export const clientListColumns: DashboardListColumn[] = [
   { className: "col-span-5", label: "Client" },
   { className: "col-span-2", label: "Company" },
   { className: "col-span-3", label: "Contact" },
@@ -36,7 +40,7 @@ export const ClientList = ({ clients, onDelete }: Props) => {
   }
 
   return (
-    <DashboardList columns={columns}>
+    <DashboardList columns={clientListColumns}>
       {clients.map((client) => (
           <li className="client-list-item grid gap-4 border-t border-steel-mist/70 p-4 first:border-t-0 sm:grid-cols-12 sm:items-center sm:px-5 sm:first:border-t" key={client.id}>
             <div className="flex min-w-0 items-center gap-3 sm:col-span-5">

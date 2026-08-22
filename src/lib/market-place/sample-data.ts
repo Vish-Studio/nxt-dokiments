@@ -7,6 +7,18 @@ const defaultPartyValues = {
   toName: "Acme Co.",
 };
 
+/**
+ * Recipient contact details, spread only into the billing document types that
+ * declare `recipientContactFields` (see `documents.ts`). Kept in step with that
+ * array so marketplace previews render those rows filled — without values here,
+ * `TemplateDocument` would fall back to each field's placeholder.
+ */
+const recipientContactValues = {
+  toBrn: "C09876543",
+  toEmail: "accounts@acme.co",
+  toPhone: "+230 5 987 6543",
+};
+
 /** Realistic dummy content so previews show how a filled document looks. */
 export const sampleValues: Record<DocumentType, Record<string, string>> = {
   "change-order": {
@@ -88,6 +100,7 @@ export const sampleValues: Record<DocumentType, Record<string, string>> = {
   },
   "purchase-order": {
     ...defaultPartyValues,
+    ...recipientContactValues,
     approval: "Approved by Operations",
     date: "2026-06-20",
     deliveryDate: "2026-07-05",
@@ -132,6 +145,7 @@ export const sampleValues: Record<DocumentType, Record<string, string>> = {
   },
   invoice: {
     ...defaultPartyValues,
+    ...recipientContactValues,
     date: "2026-06-20",
     dueDate: "2026-07-04",
     invoiceNumber: "INV-0042",
@@ -177,6 +191,7 @@ export const sampleValues: Record<DocumentType, Record<string, string>> = {
   },
   quotation: {
     ...defaultPartyValues,
+    ...recipientContactValues,
     assumptions:
       "Pricing excludes paid media spend, third-party subscriptions, and rush delivery.",
     date: "2026-06-20",
@@ -191,6 +206,7 @@ export const sampleValues: Record<DocumentType, Record<string, string>> = {
   },
   receipt: {
     ...defaultPartyValues,
+    ...recipientContactValues,
     amountPaid: "$2,805",
     items: "Monthly retainer invoice INV-0042 — $2,805",
     notes:
