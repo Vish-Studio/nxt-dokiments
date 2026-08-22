@@ -431,10 +431,12 @@ export const PrefillFromClient: Story = {
       "client_northline_01",
     );
 
-    // companyName wins over the contact name for `toName`.
-    await expect(
-      await canvas.findByDisplayValue("Northline Studio"),
-    ).toBeVisible();
+    // companyName wins over the contact name for `toName`. Asserted via the "To"
+    // label rather than `findByDisplayValue`, since that query also matches the
+    // picker's own `<select>` — its selected option's label is this same client name.
+    await expect(await canvas.findByLabelText("To")).toHaveValue(
+      "Northline Studio",
+    );
     await expect(canvas.getByDisplayValue("24 Market Street, Ebene")).toBeVisible();
     await expect(canvas.getByDisplayValue("accounts@northline.com")).toBeVisible();
     await expect(canvas.getByDisplayValue("+230 5 987 6543")).toBeVisible();
