@@ -58,15 +58,9 @@ export const Footer = () => {
           <div className="grid gap-12 lg:grid-cols-[1.15fr_0.85fr] lg:gap-16">
             <div className="website-reveal">
               <Link aria-label="Dokiments home" href="/">
-                <Image
-                  alt="Dokiments logo"
-                  className="h-auto w-44"
-                  height={34}
-                  width={225}
-                  src="/images/svg/logo-white.svg"
-                />
+                <span aria-hidden className="footer-logo block h-7 w-44" />
               </Link>
-              <h2 className="mt-8 max-w-xl font-title text-3xl font-bold leading-tight text-golden-harvest sm:text-4xl">
+              <h2 className="mt-8 max-w-xl font-title text-3xl font-bold leading-tight text-white sm:text-4xl">
                 Better documents start with a better workspace.
               </h2>
               <p className="max-w-lg text-base leading-7 text-white/62">

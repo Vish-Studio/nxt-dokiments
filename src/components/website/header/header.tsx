@@ -77,7 +77,7 @@ export const Header = ({ showAuthActions = true }: HeaderProps) => {
             <div className="flex items-center gap-2">
               {isAuthenticated ? (
                 <LinkButton
-                  className="hidden! sm:inline-flex!"
+                  className="inline-flex! whitespace-nowrap"
                   href="/dashboard"
                   icon={null}
                   size="sm"

@@ -25,8 +25,8 @@ type Story = StoryObj<typeof meta>;
 export const Default: Story = {
   play: async ({ canvas }) => {
     await waitFor(async () => {
-      await expect(canvas.getByText("Pick the document your business needs next.")).toBeVisible();
+      await expect(canvas.getByAltText("Dokiments workspace displayed on a laptop")).toBeVisible();
     });
-    await expect(canvas.getByText("Generated from Classic Invoice")).toBeVisible();
+    await expect(canvas.getByAltText("Dokiments dashboard displayed on a mobile phone")).toBeVisible();
   },
 };

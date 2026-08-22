@@ -218,6 +218,16 @@ button:disabled {
   }
 }
 
+@keyframes website-hero-parallax {
+  from {
+    transform: translateY(0);
+  }
+
+  to {
+    transform: translateY(3rem);
+  }
+}
+
 @keyframes website-hero-sheen {
   from {
     transform: translateX(-120%) skewX(-18deg);
@@ -269,6 +279,12 @@ button:disabled {
   animation-range: entry 0% cover 34%;
 }
 
+.footer-logo {
+  background-color: var(--color-play-teal);
+  mask: url("/images/svg/logo-white.svg") center / contain no-repeat;
+  -webkit-mask: url("/images/svg/logo-white.svg") center / contain no-repeat;
+}
+
 .website-card-reveal {
   animation: website-card-in 0.9s cubic-bezier(0.2, 0.85, 0.2, 1) both;
   animation-delay: var(--reveal-delay, 0ms);
@@ -282,6 +298,13 @@ button:disabled {
 
 .website-hero-visual {
   animation: website-hero-visual 1s cubic-bezier(0.2, 0.85, 0.2, 1) 0.18s both;
+}
+
+.website-hero-parallax {
+  animation: website-hero-parallax 1s linear both;
+  animation-range: 0 100vh;
+  animation-timeline: scroll(root block);
+  will-change: transform;
 }
 
 .website-hero-proof {
@@ -328,6 +351,7 @@ button:disabled {
   .website-card-reveal,
   .website-hero-card,
   .website-hero-copy,
+  .website-hero-parallax,
   .website-hero-visual,
   .website-hero-proof,
   .website-hero-sheen::after,
