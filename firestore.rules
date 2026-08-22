@@ -61,6 +61,17 @@ service cloud.firestore {
       match /documents/{docId} {
         allow read, create, update, delete: if isOwner(uid);
       }
+
+      // --- users/{uid}/clients/{clientId} — the user's own client book -------------
+      //
+      // Contact details a user reuses when preparing documents. Doc IDs are
+      // server-generated (a client has no natural key), and every field is mutable,
+      // so unlike savedTemplates this needs `update` as well. Purely private
+      // reference data — no tier gating and no count limit apply, so the only
+      // question these rules answer is whether the caller owns the parent path.
+      match /clients/{clientId} {
+        allow read, create, update, delete: if isOwner(uid);
+      }
     }
 
     // --- templates/{templateId} — marketplace catalog ---------------------------

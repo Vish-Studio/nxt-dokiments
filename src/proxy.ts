@@ -1,6 +1,6 @@
 import { unsealData } from "iron-session";
-import { NextResponse } from "next/server";
 import type { NextProxy } from "next/server";
+import { NextResponse } from "next/server";
 
 import { sessionOptions, type SessionData } from "@/lib/session";
 
@@ -8,6 +8,7 @@ import { sessionOptions, type SessionData } from "@/lib/session";
 const PROTECTED_PREFIXES = [
   "/dashboard",
   "/documents",
+  "/my-clients",
   "/my-templates",
   "/marketplace",
   "/settings",
@@ -34,7 +35,10 @@ const AUTH_ONLY_PREFIXES = ["/sign-in", "/sign-up", "/forgot-password"];
  * Components must perform their own session validation for data access.
  */
 export const proxy: NextProxy = async (request) => {
-  if (process.env.DEV_AUTH_BYPASS === "true" && process.env.NODE_ENV === "development") {
+  if (
+    process.env.DEV_AUTH_BYPASS === "true" &&
+    process.env.NODE_ENV === "development"
+  ) {
     return NextResponse.next();
   }
 

@@ -10,7 +10,8 @@
     { "key": "password", "value": "yourpassword" },
     { "key": "newPassword", "value": "yournewpassword" },
     { "key": "templateId", "value": "classic-contract" },
-    { "key": "documentId", "value": "" }
+    { "key": "documentId", "value": "" },
+    { "key": "clientId", "value": "" }
   ],
   "item": [
     {
@@ -365,6 +366,81 @@
               "raw": "{{baseUrl}}/api/documents",
               "host": ["{{baseUrl}}"],
               "path": ["api", "documents"]
+            },
+            "description": "Run AFTER \"Sign out\" to confirm this route also 401s without a session."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Clients",
+      "item": [
+        {
+          "name": "List clients",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/clients",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "clients"]
+            },
+            "description": "GET /api/clients — the signed-in user's client book, newest first (empty array for a brand-new user). Session required. Unlike saved templates there is no tier gate and no count limit on this collection: clients are private reference data, not an entitlement."
+          }
+        },
+        {
+          "name": "Add a client",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Maya Chen\",\n  \"companyName\": \"Northline Studio\",\n  \"email\": \"maya@northline.com\",\n  \"phone\": \"+230 5 123 4567\",\n  \"address\": \"12 Rue La Bourdonnais, Port Louis\",\n  \"brn\": \"C12345678\",\n  \"nationalId\": \"\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/clients",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "clients"]
+            },
+            "description": "POST /api/clients — creates one client with a server-generated ID (client_…). Returns 201 { client }. Copy the returned id into the clientId collection variable to run the PATCH/DELETE requests below. name, companyName, email and phone are required; address, brn and nationalId are optional and default to \"\". Try omitting \"name\", or sending \"email\": \"nope\", to confirm you get 400 { error: \"Invalid request body.\" } — the validation details are logged server-side only and never returned to the caller."
+          }
+        },
+        {
+          "name": "Update a client",
+          "request": {
+            "method": "PATCH",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"phone\": \"+230 5 000 0000\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/clients/{{clientId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "clients", "{{clientId}}"]
+            },
+            "description": "PATCH /api/clients/:clientId — partial update; only the fields you send change, and updatedAt is bumped. Send {} to confirm you get 400 (at least one field is required). Point clientId at a value that was never created to confirm you get 404 rather than a newly-created partial record — Firestore's REST PATCH is an upsert, so the route reads the document before writing specifically to prevent that."
+          }
+        },
+        {
+          "name": "Delete a client",
+          "request": {
+            "method": "DELETE",
+            "url": {
+              "raw": "{{baseUrl}}/api/clients/{{clientId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "clients", "{{clientId}}"]
+            },
+            "description": "DELETE /api/clients/:clientId. Returns 204 with an empty body whether or not the client existed (idempotent delete). Documents already prepared for this client are unaffected — their recipient details were copied into the document's own values at fill time, not referenced."
+          }
+        },
+        {
+          "name": "Unauthorised (401) check",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/clients",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "clients"]
             },
             "description": "Run AFTER \"Sign out\" to confirm this route also 401s without a session."
           }

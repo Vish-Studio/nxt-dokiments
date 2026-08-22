@@ -18,7 +18,12 @@ export const Default: Story = {
   render: (args) => (
     <>
       <ClientForm {...args} />
-      <Button form={args.formId} type="submit">Add client</Button>
+      <Button
+        form={args.formId}
+        type="submit"
+      >
+        Add client
+      </Button>
     </>
   ),
   play: async ({ args, canvasElement }) => {
@@ -26,9 +31,13 @@ export const Default: Story = {
     await userEvent.type(canvas.getByLabelText("Client name"), "Maya Chen");
     await userEvent.type(canvas.getByLabelText("Company"), "Northline Studio");
     await userEvent.type(canvas.getByLabelText("Email"), "maya@northline.com");
-    await userEvent.type(canvas.getByLabelText("Phone number"), "+230 5 123 4567");
+    await userEvent.type(
+      canvas.getByLabelText("Phone number"),
+      "+230 5 123 4567",
+    );
     await userEvent.click(canvas.getByRole("button", { name: "Add client" }));
     await expect(args.onAdd).toHaveBeenCalledWith({
+      address: "",
       brn: "",
       companyName: "Northline Studio",
       email: "maya@northline.com",

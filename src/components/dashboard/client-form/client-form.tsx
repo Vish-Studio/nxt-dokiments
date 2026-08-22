@@ -11,6 +11,7 @@ interface Props {
 }
 
 const emptyClient: ClientInput = {
+  address: "",
   brn: "",
   companyName: "",
   email: "",
@@ -29,6 +30,7 @@ export const ClientForm = ({ formId, onAdd }: Props) => {
 
   const submitForm = (client: ClientInput) => {
     onAdd({
+      address: client.address.trim(),
       brn: client.brn.trim(),
       companyName: client.companyName.trim(),
       email: client.email.trim(),
@@ -40,7 +42,12 @@ export const ClientForm = ({ formId, onAdd }: Props) => {
   };
 
   return (
-    <form className="client-form grid gap-5 p-4 sm:grid-cols-2 sm:p-6" id={formId} noValidate onSubmit={handleSubmit(submitForm)}>
+    <form
+      className="client-form grid gap-5 p-4 sm:grid-cols-2 sm:p-6"
+      id={formId}
+      noValidate
+      onSubmit={handleSubmit(submitForm)}
+    >
       <Input
         label="National ID (optional)"
         placeholder="e.g. A1234567890123"
@@ -85,6 +92,14 @@ export const ClientForm = ({ formId, onAdd }: Props) => {
         placeholder="e.g. C12345678"
         {...register("brn")}
       />
+      <div className="sm:col-span-2">
+        <Input
+          autoComplete="street-address"
+          label="Address (optional)"
+          placeholder="e.g. 12 Rue La Bourdonnais, Port Louis"
+          {...register("address")}
+        />
+      </div>
     </form>
   );
 };
