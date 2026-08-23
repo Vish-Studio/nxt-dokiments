@@ -100,7 +100,7 @@ export const MobileNav = ({
           ))}
         </nav>
 
-        <div className="mt-5 grid gap-3">
+        <div className="mt-auto grid gap-3 pt-5">
           {isAuthenticated ? (
             <LinkButton
               className="w-full"
@@ -110,7 +110,7 @@ export const MobileNav = ({
               size="lg"
               variant="accent"
             >
-              Go to dashboard
+              Go to my dashboard
             </LinkButton>
           ) : (
             <>
@@ -132,7 +132,7 @@ export const MobileNav = ({
                 size="lg"
                 variant="outlineDark"
               >
-                Sign up
+                Create a free account
               </LinkButton>
             </>
           )}

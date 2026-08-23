@@ -1,7 +1,10 @@
-import { SignIn } from "@phosphor-icons/react/dist/ssr";
+"use client";
+
+import { ArrowRight, SignIn } from "@phosphor-icons/react";
 
 import { LinkButton } from "@/components/commons/link-button/link-button";
 import { cn } from "@/lib/utils";
+import { useAuthStore } from "@/stores/auth-store";
 
 export interface ConversionCtaProps {
   className?: string;
@@ -19,6 +22,10 @@ export const ConversionCta = ({
   placement,
   title,
 }: ConversionCtaProps) => {
+  const isAuthenticated = useAuthStore(
+    (state) => state.status === "authenticated",
+  );
+
   return (
     <section
       className={cn(
@@ -40,22 +47,30 @@ export const ConversionCta = ({
         </div>
 
         <div className="grid gap-3 lg:min-w-64">
-          <LinkButton
-            analytics={{ event: "cta_click", params: { placement } }}
-            className="w-full"
-            href="/sign-in"
-            icon={
-              <SignIn
-                aria-hidden
-                size={18}
-                weight="bold"
-              />
-            }
-            size="lg"
-            variant="accent"
-          >
-            Sign in
-          </LinkButton>
+          {isAuthenticated ? (
+            <LinkButton
+              analytics={{ event: "cta_click", params: { placement } }}
+              className="w-full"
+              href="/dashboard"
+              icon={<ArrowRight aria-hidden size={18} weight="bold" />}
+              iconMotion="right"
+              size="lg"
+              variant="accent"
+            >
+              Go to my dashboard
+            </LinkButton>
+          ) : (
+            <LinkButton
+              analytics={{ event: "cta_click", params: { placement } }}
+              className="w-full"
+              href="/sign-in"
+              icon={<SignIn aria-hidden size={18} weight="bold" />}
+              size="lg"
+              variant="accent"
+            >
+              Sign in
+            </LinkButton>
+          )}
         </div>
       </div>
     </section>

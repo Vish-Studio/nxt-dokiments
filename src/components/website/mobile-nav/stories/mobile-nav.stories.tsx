@@ -31,3 +31,14 @@ export const Open: Story = {
     await expect(canvas.getByRole("link", { name: /pricing/i })).toBeVisible();
   },
 };
+
+export const Authenticated: Story = {
+  args: {
+    isAuthenticated: true,
+  },
+  play: async ({ canvas }) => {
+    await expect(
+      canvas.getByRole("link", { name: "Go to my dashboard" }),
+    ).toHaveAttribute("href", "/dashboard");
+  },
+};
