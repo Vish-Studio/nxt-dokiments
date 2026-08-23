@@ -1,5 +1,7 @@
 import "server-only";
 
+import { fetchUpstream } from "@/lib/http/fetch-upstream";
+
 /** Google OAuth 2.0 credentials for the "Sign in with Google" server-side redirect flow. */
 export type GoogleOAuthConfig = {
   /** Google Cloud OAuth 2.0 Web client ID. */
@@ -53,7 +55,7 @@ export const buildGoogleAuthorizationUrl = (state: string) => {
  * @throws When Google rejects the code (expired, already used, or a redirect URI mismatch).
  */
 export const exchangeGoogleCode = async (code: string): Promise<{ idToken: string }> => {
-  const response = await fetch("https://oauth2.googleapis.com/token", {
+  const response = await fetchUpstream("https://oauth2.googleapis.com/token", {
     body: new URLSearchParams({
       client_id: serverGoogleConfig.clientId,
       client_secret: serverGoogleConfig.clientSecret,

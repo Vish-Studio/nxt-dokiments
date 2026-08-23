@@ -24,9 +24,28 @@ type Story = StoryObj<typeof meta>;
 
 export const Default: Story = {
   play: async ({ canvas }) => {
-    await waitFor(async () => {
-      await expect(canvas.getByAltText("Dokiments workspace displayed on a laptop")).toBeVisible();
+    const laptop = await canvas.findByAltText(
+      "Dokiments workspace displayed on a laptop",
+    );
+    const mobile = canvas.getByAltText(
+      "Dokiments dashboard displayed on a mobile phone",
+    );
+
+    await waitFor(() => {
+      if (window.matchMedia("(min-width: 1024px)").matches) {
+        expect(laptop).toBeVisible();
+        expect(mobile).not.toBeVisible();
+      } else {
+        expect(mobile).toBeVisible();
+        expect(laptop).not.toBeVisible();
+      }
     });
-    await expect(canvas.getByAltText("Dokiments dashboard displayed on a mobile phone")).toBeVisible();
   },
+};
+
+export const Mobile: Story = {
+  globals: {
+    viewport: { value: "mobile1", isRotated: false },
+  },
+  play: Default.play,
 };

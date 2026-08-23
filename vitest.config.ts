@@ -40,6 +40,30 @@ export default defineConfig({
           },
         },
       },
+      // Plain Node tests for server-side modules that have no DOM and no story —
+      // the retry/timeout policy in `src/lib/http/`, for example. Runs headless, so
+      // it needs neither a browser nor a free port, unlike the storybook project.
+      {
+        test: {
+          name: 'node',
+          environment: 'node',
+          include: ['src/**/*.test.ts'],
+        },
+        resolve: {
+          alias: {
+            // Both aliases come free inside the storybook project (via
+            // @storybook/nextjs-vite) but must be declared here.
+            '@': path.join(dirname, 'src'),
+            // `server-only` isn't a real dependency — Next aliases it at build time to
+            // its own copy, whose `react-server` export is an empty module. Point at
+            // that stub so importing a server-only module doesn't throw under vitest.
+            'server-only': path.join(
+              dirname,
+              'node_modules/next/dist/compiled/server-only/empty.js',
+            ),
+          },
+        },
+      },
     ],
   },
 });

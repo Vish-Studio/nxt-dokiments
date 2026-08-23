@@ -1,4 +1,6 @@
+import { handleApiError } from "@/lib/api/errors";
 import { sendPasswordResetEmail } from "@/lib/firebase/server-auth";
+import { UpstreamUnavailableError } from "@/lib/http/fetch-upstream";
 
 /**
  * `POST /api/auth/forgot-password`
@@ -12,6 +14,7 @@ import { sendPasswordResetEmail } from "@/lib/firebase/server-auth";
  * @returns `{ ok: true }` on success.
  * @returns `{ error: string }` with status `400` when the request is malformed
  *   or Firebase rejects it (e.g. sign-in is disabled for the project).
+ * @returns `{ error: string }` with status `503` when Firebase could not be reached.
  */
 export const POST = async (request: Request): Promise<Response> => {
   try {
@@ -19,6 +22,12 @@ export const POST = async (request: Request): Promise<Response> => {
     await sendPasswordResetEmail(email);
     return Response.json({ ok: true });
   } catch (error) {
+    // Firebase was never reached, so no reset email was sent — a 400 would wrongly
+    // imply the address itself was the problem.
+    if (error instanceof UpstreamUnavailableError) {
+      return handleApiError(error);
+    }
+
     const message = error instanceof Error ? error.message : "Something went wrong. Please try again.";
     return Response.json({ error: message }, { status: 400 });
   }

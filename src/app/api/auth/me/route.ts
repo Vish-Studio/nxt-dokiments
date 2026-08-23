@@ -1,7 +1,9 @@
 import { getIronSession } from "iron-session";
 
+import { handleApiError } from "@/lib/api/errors";
 import { destroySession, saveSession } from "@/lib/api/session-cookie";
 import { refreshFirebaseSession } from "@/lib/firebase/server-auth";
+import { UpstreamUnavailableError } from "@/lib/http/fetch-upstream";
 import {
   isDevAuthBypass,
   isSessionExpired,
@@ -27,12 +29,16 @@ import {
  * - If the token is expiring soon, it is refreshed via the Firebase Secure Token
  *   Service and the cookie is rewritten with the new tokens — keeping the
  *   original `absoluteExpiresAt`, so refreshing never buys extra days.
- * - If the refresh fails (revoked token, network error), the session is destroyed
- *   and `401` is returned, prompting the client to redirect to sign-in.
+ * - If Firebase *rejects* the refresh (revoked or expired token), the session is
+ *   destroyed and `401` is returned, prompting the client to redirect to sign-in.
+ * - If Firebase could not be *reached*, the session is left intact and `503` is
+ *   returned. The refresh token is still valid, so signing the user out over a
+ *   transient network failure would be a one-way trip; the client retries instead.
  *
  * @returns `{ user: AuthUser }` when a valid session exists.
  * @returns `null` with status `401` when no session cookie is present, the
  *   session has hit its 1-day deadline, or the refresh token has been revoked.
+ * @returns `{ error: string }` with status `503` when Firebase is unreachable.
  */
 export const GET = async (request: Request): Promise<Response> => {
   const response = Response.json(null, { status: 401 });
@@ -79,7 +85,14 @@ export const GET = async (request: Request): Promise<Response> => {
       absoluteExpiresAt: session.absoluteExpiresAt,
     });
     return freshResponse;
-  } catch {
+  } catch (error) {
+    // Couldn't reach Firebase at all — the refresh token is still perfectly valid, so
+    // destroying the session here would log the user out over a network blip, with no
+    // way back. Keep the cookie and let the client retry the 503 instead.
+    if (error instanceof UpstreamUnavailableError) {
+      return handleApiError(error);
+    }
+
     const failedResponse = Response.json(null, { status: 401 });
     await destroySession(request, failedResponse);
     return failedResponse;

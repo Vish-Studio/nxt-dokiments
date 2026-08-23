@@ -1,5 +1,7 @@
+import { handleApiError } from "@/lib/api/errors";
 import { startSession } from "@/lib/api/session-cookie";
 import { signInWithFirebase } from "@/lib/firebase/server-auth";
+import { UpstreamUnavailableError } from "@/lib/http/fetch-upstream";
 import { DEV_SESSION, isDevAuthBypass } from "@/lib/session";
 import type { AuthSession } from "@/types/auth";
 
@@ -14,6 +16,8 @@ import type { AuthSession } from "@/types/auth";
  *
  * @returns `{ user: AuthUser }` on success.
  * @returns `{ error: string }` with status `401` on invalid credentials or any Firebase error.
+ * @returns `{ error: string }` with status `503` when Firebase could not be reached —
+ *   deliberately not a `401`, since unreachable says nothing about the credentials.
  */
 export const POST = async (request: Request): Promise<Response> => {
   try {
@@ -35,6 +39,12 @@ export const POST = async (request: Request): Promise<Response> => {
 
     return response;
   } catch (error) {
+    // Firebase was never reached, so this says nothing about the credentials. Reporting
+    // it as 401 would tell the user their password is wrong during a network outage.
+    if (error instanceof UpstreamUnavailableError) {
+      return handleApiError(error);
+    }
+
     const message =
       error instanceof Error
         ? error.message

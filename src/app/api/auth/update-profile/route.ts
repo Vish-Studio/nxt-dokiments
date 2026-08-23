@@ -1,10 +1,12 @@
 import { getIronSession } from "iron-session";
 
+import { handleApiError } from "@/lib/api/errors";
 import { saveSession } from "@/lib/api/session-cookie";
 import {
   updateAccountProfile,
   type ProfileUpdate,
 } from "@/lib/firebase/server-auth";
+import { UpstreamUnavailableError } from "@/lib/http/fetch-upstream";
 import {
   isSessionExpired,
   sessionOptions,
@@ -23,6 +25,7 @@ import {
  * @returns `{ user: AuthUser }` on success.
  * @returns `{ error: string }` with status `401` when no session is present.
  * @returns `{ error: string }` with status `400` on Firebase or Firestore errors.
+ * @returns `{ error: string }` with status `503` when Firebase could not be reached.
  */
 export const POST = async (request: Request): Promise<Response> => {
   try {
@@ -48,6 +51,11 @@ export const POST = async (request: Request): Promise<Response> => {
 
     return response;
   } catch (error) {
+    // Firebase was never reached — nothing was saved, and nothing was rejected.
+    if (error instanceof UpstreamUnavailableError) {
+      return handleApiError(error);
+    }
+
     const message =
       error instanceof Error
         ? error.message

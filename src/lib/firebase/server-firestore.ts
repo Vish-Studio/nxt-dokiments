@@ -1,6 +1,7 @@
 import "server-only";
 
 import { serverFirebaseConfig } from "@/lib/firebase/server-config";
+import { fetchUpstream } from "@/lib/http/fetch-upstream";
 
 /** Recursive Firestore REST value union used when reading and writing document fields. */
 export type FirestoreValue =
@@ -93,7 +94,7 @@ export const listFirestoreCollection = async (
     const url = new URL(documentUrl(collectionPath));
     if (pageToken) url.searchParams.set("pageToken", pageToken);
 
-    const response = await fetch(url, {
+    const response = await fetchUpstream(url, {
       headers: { Authorization: `Bearer ${idToken}` },
     });
 
@@ -127,7 +128,7 @@ export const getFirestoreDocument = async (
   path: string,
   idToken: string,
 ): Promise<FirestoreDocument | null> => {
-  const response = await fetch(documentUrl(path), {
+  const response = await fetchUpstream(documentUrl(path), {
     headers: { Authorization: `Bearer ${idToken}` },
   });
 
@@ -169,7 +170,7 @@ export const patchFirestoreDocument = async (
     ? `?${fieldMask.map((field) => `updateMask.fieldPaths=${field}`).join("&")}`
     : "";
 
-  const response = await fetch(`${documentUrl(path)}${mask}`, {
+  const response = await fetchUpstream(`${documentUrl(path)}${mask}`, {
     body: JSON.stringify({ fields }),
     headers: {
       "Content-Type": "application/json",
@@ -206,7 +207,7 @@ export const deleteFirestoreDocument = async (
   path: string,
   idToken: string,
 ): Promise<void> => {
-  const response = await fetch(documentUrl(path), {
+  const response = await fetchUpstream(documentUrl(path), {
     headers: { Authorization: `Bearer ${idToken}` },
     method: "DELETE",
   });

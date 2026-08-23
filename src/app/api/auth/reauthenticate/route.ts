@@ -1,7 +1,9 @@
 import { getIronSession } from "iron-session";
 
+import { handleApiError } from "@/lib/api/errors";
 import { saveSession } from "@/lib/api/session-cookie";
 import { reauthenticateWithFirebase } from "@/lib/firebase/server-auth";
+import { UpstreamUnavailableError } from "@/lib/http/fetch-upstream";
 import {
   isSessionExpired,
   sessionOptions,
@@ -27,6 +29,7 @@ import {
  *   Google — there's no password to verify, so this rejects before calling Firebase.
  * @returns `{ error: string }` with status `400` when the password is incorrect
  *   or Firebase rejects the request for any other reason.
+ * @returns `{ error: string }` with status `503` when Firebase could not be reached.
  */
 export const POST = async (request: Request): Promise<Response> => {
   try {
@@ -65,6 +68,11 @@ export const POST = async (request: Request): Promise<Response> => {
 
     return response;
   } catch (error) {
+    // Firebase was never reached, so the password wasn't judged either way.
+    if (error instanceof UpstreamUnavailableError) {
+      return handleApiError(error);
+    }
+
     const message =
       error instanceof Error
         ? error.message

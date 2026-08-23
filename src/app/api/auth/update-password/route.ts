@@ -1,8 +1,10 @@
 import { getIronSession } from "iron-session";
 
+import { handleApiError } from "@/lib/api/errors";
 import { saveSession } from "@/lib/api/session-cookie";
 import { updateAccountPassword } from "@/lib/firebase/server-auth";
 import { FirebaseReauthRequiredError } from "@/lib/firebase/server-identity";
+import { UpstreamUnavailableError } from "@/lib/http/fetch-upstream";
 import {
   isSessionExpired,
   sessionOptions,
@@ -30,6 +32,8 @@ import {
  *   the session is too old for this operation.
  * @returns `{ error: string }` with status `400` on any other Firebase error
  *   (e.g. weak password).
+ * @returns `{ error: string }` with status `503` when Firebase could not be reached —
+ *   not a `403`, since an unreachable service is not a stale-credential problem.
  */
 export const POST = async (request: Request): Promise<Response> => {
   try {
@@ -63,6 +67,12 @@ export const POST = async (request: Request): Promise<Response> => {
 
     return response;
   } catch (error) {
+    // Firebase was never reached — the password wasn't changed, and it wasn't refused.
+    // In particular this is not a stale-credential problem, so don't prompt for reauth.
+    if (error instanceof UpstreamUnavailableError) {
+      return handleApiError(error);
+    }
+
     if (error instanceof FirebaseReauthRequiredError) {
       return Response.json(
         { code: "REAUTH_REQUIRED", error: error.message },
