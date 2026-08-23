@@ -97,11 +97,41 @@ The user's own client book — the contact details they reuse when preparing doc
 
 **`updateClient` reads before writing.** Firestore's REST `PATCH` is an upsert, so a masked write aimed at a `clientId` that never existed would silently *create* a partial client record. `updateClient` fetches the document first and returns `null` (surfaced as `404`) when it's absent. Having the pre-write state in hand also lets the response be composed locally, so the guard costs one read rather than a read plus a re-read.
 
-**`Client` fields.** `address`, `brn`, `companyName`, `email`, `name`, `nationalId`, `phone` — plus server-assigned `id`, `createdAt`, `updatedAt`. `address`, `brn`, and `nationalId` are optional and stored as `""` rather than omitted, so every stored client has one consistent shape. `address` exists on `Client` even though the document editor doesn't yet have a recipient field to prefill it into — see [`documents.ts`](../src/lib/market-place/documents.ts)'s `fromToFields`, which currently only lays out `toName`/`toAddress` and has no slot for a client's `email`, `phone`, `brn`, or `nationalId`. Extending that shared field list to add prefill support for the remaining fields would touch every template's field layout and needs a re-seed via [`seed-templates.ts`](../scripts/seed-templates.ts); existing documents are unaffected either way, since they render from their own `templateSnapshot`.
+**`Client` fields.** `address`, `brn`, `companyName`, `email`, `name`, `nationalId`, `phone` — plus server-assigned `id`, `createdAt`, `updatedAt`. `address`, `brn`, and `nationalId` are optional and stored as `""` rather than omitted, so every stored client has one consistent shape.
 
 **Why not `PUT`:** the client form submits every field, so a whole-resource replace would work, but the API is also the surface an inline edit (fix one phone number) uses, and `PATCH` serves both without a second route.
 
 See [`server-clients.ts`](../src/lib/firebase/server-clients.ts), [`route.ts`](../src/app/api/clients/route.ts), [`[clientId]/route.ts`](../src/app/api/clients/[clientId]/route.ts), the shared Zod schemas in [`client-schema.ts`](../src/lib/api/client-schema.ts), and [`use-clients.ts`](../src/hooks/queries/use-clients.ts) (the hooks `MyClientsView` and `DashboardView` consume).
+
+### Prefilling documents from a client
+
+Storing clients only pays off if picking one fills a document in. [`prefill.ts`](../src/lib/market-place/prefill.ts) maps a client (and the user's own profile) onto a template's field values; [`ClientPicker`](../src/components/dashboard/client-picker/client-picker.tsx) is the control in the editor, rendered above `TemplateForm` in [`documents-view.tsx`](../src/components/dashboard/documents-view/documents-view.tsx).
+
+**Field keys are not uniform across document types**, so prefill resolves against the keys each template actually declares rather than assuming `toName` exists. Each rule lists candidates in priority order and the first match wins:
+
+| Source | Candidate template keys | Notes |
+|---|---|---|
+| `companyName \|\| name` | `toName`, `partyTwo` | Company wins — documents address the business entity; the contact name is the fallback for clients stored without one. |
+| `address` | `toAddress`, `partyTwoAddress` | |
+| `email` | `toEmail` | Billing types only. |
+| `phone` | `toPhone` | Billing types only. |
+| `brn` | `toBrn` | Billing types only. |
+| user's `companyName \|\| fullName \|\| displayName` | `fromName`, `partyOne` | Sender side, applied automatically on a new document. |
+| user's `address` | `fromAddress`, `partyOneAddress` | |
+
+The `partyOne`/`partyTwo` aliases make an NDA work without a special case — the user lands in "Disclosing party", the client in "Receiving party". `meeting-minutes-action-brief` declares no counterparty key at all, so `supportsClientPrefill` returns `false` and the picker doesn't render.
+
+**Recipient contact fields are billing-only.** `toEmail`/`toPhone`/`toBrn` come from `recipientContactFields` in [`documents.ts`](../src/lib/market-place/documents.ts), spread into `invoice`, `quotation`, `receipt` and `purchase-order` only — deliberately *not* into the shared `fromToFields`, which would have made a letter of intent ask for a business registration number. On the other eight recipient-bearing types those rules simply find no matching key and are skipped. 16 of the 56 template documents changed shape, so this **required a re-seed** (`npm run seed:templates`; see [`docs/seed-templates.md`](./seed-templates.md)).
+
+**Empty values are never written.** Prefilling from a client with no BRN leaves a BRN the user already typed intact, rather than blanking it. Selecting a client merges over the current draft and overwrites only the mapped keys; there is deliberately no "unfill".
+
+**Sender prefill applies only to new documents.** `startNewDocument` seeds the draft from the profile; `openDocument` must never do so or it would overwrite saved values. The deep-linked path (`/documents?template=…` from the marketplace) waits for `useAuthStore`'s `status` to leave `"loading"` before starting, because that session fetch otherwise races the saved-templates fetch and would hand `startNewDocument` a null user.
+
+**Documents created before the re-seed are unaffected** — they render from their own `templateSnapshot`, so an invoice saved earlier still shows the original two-field recipient block. That is the snapshot design working as intended.
+
+**Not stored:** which client a document was filled from. Values are copied, not referenced, so `UserDocument`, its Firestore rules and its parse/serialise layer are untouched.
+
+**Known asymmetry:** billing documents carry the recipient's email/phone/BRN but not the sender's — there are no `fromEmail`/`fromPhone`/`fromBrn` fields. Arguably wrong for a real invoice; left as a follow-up rather than expanded unilaterally.
 
 ---
 

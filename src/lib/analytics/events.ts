@@ -27,6 +27,9 @@ export type AnalyticsEventMap = {
   cta_click: {
     placement: string;
   };
+  document_client_prefilled: {
+    document_type: string;
+  };
   document_created: {
     document_id: string;
     document_type: string;

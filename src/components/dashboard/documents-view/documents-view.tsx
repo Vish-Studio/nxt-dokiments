@@ -21,6 +21,7 @@ import { TemplateCard } from "@/components/commons/template-card/template-card";
 import { TemplateDocument } from "@/components/commons/template-document/template-document";
 import { TemplateForm } from "@/components/commons/template-form/template-form";
 import { TemplatePreviewDialog } from "@/components/commons/template-preview-dialog/template-preview-dialog";
+import { ClientPicker } from "@/components/dashboard/client-picker/client-picker";
 import { DocumentExportDialog } from "@/components/dashboard/document-export-dialog/document-export-dialog";
 import { DocumentList } from "@/components/dashboard/document-list/document-list";
 import {
@@ -31,6 +32,11 @@ import {
 } from "@/hooks/queries/use-documents";
 import { useSavedTemplatesQuery } from "@/hooks/queries/use-saved-templates";
 import { trackEvent } from "@/lib/analytics/track";
+import {
+  clientPrefillValues,
+  senderPrefillValues,
+} from "@/lib/market-place/prefill";
+import { useAuthStore } from "@/stores/auth-store";
 import type { MarketplaceTemplate, UserDocument } from "@/types/template";
 import { snapshotToMarketplaceTemplate } from "@/types/template";
 
@@ -50,6 +56,8 @@ const templateOf = (document: UserDocument): MarketplaceTemplate | null =>
 
 export const DocumentsView = () => {
   const router = useRouter();
+  const user = useAuthStore((state) => state.user);
+  const authStatus = useAuthStore((state) => state.status);
   const { data: saved = [], isLoading: isSavedLoading } =
     useSavedTemplatesQuery();
   const { data: documents = EMPTY_DOCUMENTS, isLoading: isDocumentsLoading } =
@@ -104,7 +112,10 @@ export const DocumentsView = () => {
     setActiveTemplate(template);
     setActiveDocumentId(null);
     setDraftName(template.name);
-    setDraftValues({});
+    // Seeds the sender block from the user's own profile — identical on every
+    // document they create, so there's nothing to pick. Only on a new document:
+    // `openDocument` must keep the saved values untouched.
+    setDraftValues(senderPrefillValues(user, template.fields));
     setIsDeleteConfirmationOpen(false);
     setIsSaveConfirmationOpen(false);
     setIsEditorPreviewOpen(false);
@@ -115,7 +126,14 @@ export const DocumentsView = () => {
     const params = new URLSearchParams(window.location.search);
     const templateId = params.get("template");
 
-    if (!templateId || ownedTemplates.length === 0) {
+    // Wait for the session before starting the document. `useAuthStore` begins as
+    // `{ status: "loading", user: null }` and is populated by `AuthProvider` in its
+    // own effect, so on this deep-linked path (`/documents?template=…` from the
+    // marketplace) that fetch races the saved-templates fetch below. Starting early
+    // would hand `startNewDocument` a null user and silently skip sender prefill.
+    // Safe to re-run: this effect strips `?template` from the URL before starting,
+    // so the pass that happens once `status` resolves finds nothing to do.
+    if (authStatus === "loading" || !templateId || ownedTemplates.length === 0) {
       return;
     }
 
@@ -133,7 +151,7 @@ export const DocumentsView = () => {
       `${nextUrl.pathname}${nextUrl.search}`,
     );
     window.setTimeout(() => startNewDocument(template), 0);
-  }, [ownedTemplates]);
+  }, [authStatus, ownedTemplates]);
 
   const openDocument = (document: UserDocument) => {
     setActiveTemplate(templateOf(document));
@@ -259,6 +277,18 @@ export const DocumentsView = () => {
                 }}
                 placeholder="e.g. Acme service contract"
                 value={draftName}
+              />
+              <ClientPicker
+                fields={editorTemplate.fields}
+                onSelect={(client) => {
+                  setDraftValues((previous) => ({
+                    ...previous,
+                    ...clientPrefillValues(client, editorTemplate.fields),
+                  }));
+                  trackEvent("document_client_prefilled", {
+                    document_type: editorTemplate.documentType,
+                  });
+                }}
               />
               <TemplateForm
                 fields={editorTemplate.fields}

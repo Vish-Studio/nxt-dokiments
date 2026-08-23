@@ -6,9 +6,9 @@ import { useState } from "react";
 import { Button } from "@/components/commons/button/button";
 import { ConfirmDialog } from "@/components/commons/confirm-dialog/confirm-dialog";
 import { FloatingActionButton } from "@/components/commons/floating-action-button/floating-action-button";
-import { LoadingStatus } from "@/components/commons/loading-status/loading-status";
 import { SidePanel } from "@/components/commons/side-panel/side-panel";
 import { ClientForm } from "@/components/dashboard/client-form/client-form";
+import { ClientListSkeleton } from "@/components/dashboard/client-list-skeleton/client-list-skeleton";
 import { ClientList } from "@/components/dashboard/client-list/client-list";
 import {
   useClientsQuery,
@@ -39,13 +39,7 @@ export const MyClientsView = () => {
   return (
     <div className="my-clients-view flex w-full flex-col gap-6">
       {isLoading ? (
-        <>
-          <LoadingStatus message="Loading your clients…" />
-          <div
-            aria-hidden
-            className="h-40 animate-pulse rounded-box border border-steel-mist bg-base-100"
-          />
-        </>
+        <ClientListSkeleton />
       ) : isError ? (
         // Distinct from the empty state on purpose: showing "No clients yet"
         // after a failed request would tell the user their clients are gone.
