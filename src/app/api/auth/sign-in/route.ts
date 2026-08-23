@@ -1,7 +1,7 @@
-import { getIronSession } from "iron-session";
-
+import { startSession } from "@/lib/api/session-cookie";
 import { signInWithFirebase } from "@/lib/firebase/server-auth";
-import { DEV_SESSION, isDevAuthBypass, sessionOptions, type SessionData } from "@/lib/session";
+import { DEV_SESSION, isDevAuthBypass } from "@/lib/session";
+import type { AuthSession } from "@/types/auth";
 
 /**
  * `POST /api/auth/sign-in`
@@ -17,9 +17,12 @@ import { DEV_SESSION, isDevAuthBypass, sessionOptions, type SessionData } from "
  */
 export const POST = async (request: Request): Promise<Response> => {
   try {
-    const { email, password } = (await request.json()) as { email: string; password: string };
+    const { email, password } = (await request.json()) as {
+      email: string;
+      password: string;
+    };
 
-    let sessionData: SessionData;
+    let sessionData: AuthSession;
 
     if (isDevAuthBypass()) {
       sessionData = DEV_SESSION;
@@ -28,13 +31,14 @@ export const POST = async (request: Request): Promise<Response> => {
     }
 
     const response = Response.json({ user: sessionData.user });
-    const session = await getIronSession<SessionData>(request, response, sessionOptions);
-    Object.assign(session, sessionData);
-    await session.save();
+    await startSession(request, response, sessionData);
 
     return response;
   } catch (error) {
-    const message = error instanceof Error ? error.message : "Something went wrong. Please try again.";
+    const message =
+      error instanceof Error
+        ? error.message
+        : "Something went wrong. Please try again.";
     return Response.json({ error: message }, { status: 401 });
   }
 };

@@ -1,7 +1,12 @@
 import { getIronSession } from "iron-session";
 
+import { saveSession } from "@/lib/api/session-cookie";
 import { reauthenticateWithFirebase } from "@/lib/firebase/server-auth";
-import { sessionOptions, type SessionData } from "@/lib/session";
+import {
+  isSessionExpired,
+  sessionOptions,
+  type SessionData,
+} from "@/lib/session";
 
 /**
  * `POST /api/auth/reauthenticate`
@@ -12,9 +17,9 @@ import { sessionOptions, type SessionData } from "@/lib/session";
  * current session, never from the request body, so a signed-in user can only
  * ever re-authenticate as themselves.
  *
- * The session cookie is rewritten with the fresh tokens Firebase issues, the
- * same as sign-in — this route is a password re-check, not a distinct auth
- * mechanism.
+ * The session cookie is rewritten with the fresh tokens Firebase issues, but
+ * the session's 1-day deadline is carried over untouched — this route is a
+ * password re-check, not a new sign-in, so it must not extend the session.
  *
  * @returns `{ ok: true }` on success.
  * @returns `{ error: string }` with status `401` when no session is present.
@@ -32,7 +37,7 @@ export const POST = async (request: Request): Promise<Response> => {
       sessionOptions,
     );
 
-    if (!probeSession.user) {
+    if (!probeSession.user || isSessionExpired(probeSession)) {
       return Response.json({ error: "Unauthorised." }, { status: 401 });
     }
 
@@ -53,13 +58,10 @@ export const POST = async (request: Request): Promise<Response> => {
     );
 
     const response = Response.json({ ok: true });
-    const session = await getIronSession<SessionData>(
-      request,
-      response,
-      sessionOptions,
-    );
-    Object.assign(session, reauthenticated);
-    await session.save();
+    await saveSession(request, response, {
+      ...reauthenticated,
+      absoluteExpiresAt: probeSession.absoluteExpiresAt,
+    });
 
     return response;
   } catch (error) {

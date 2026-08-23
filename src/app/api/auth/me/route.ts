@@ -1,8 +1,10 @@
 import { getIronSession } from "iron-session";
 
+import { destroySession, saveSession } from "@/lib/api/session-cookie";
 import { refreshFirebaseSession } from "@/lib/firebase/server-auth";
 import {
   isDevAuthBypass,
+  isSessionExpired,
   REFRESH_SKEW_MS,
   sessionOptions,
   type SessionData,
@@ -15,17 +17,22 @@ import {
  * `AuthProvider` to populate the Zustand auth store without exposing tokens
  * to the browser.
  *
+ * The 1-day cap is checked here first, and it wins over any amount of token
+ * freshness: once `absoluteExpiresAt` has passed there is nothing to refresh
+ * towards, so the session is destroyed rather than renewed.
+ *
  * Token refresh logic:
  * - If `expiresAt` is more than `REFRESH_SKEW_MS` away, the existing token is
  *   still valid and the user is returned immediately.
  * - If the token is expiring soon, it is refreshed via the Firebase Secure Token
- *   Service and the cookie is rewritten with the new tokens.
+ *   Service and the cookie is rewritten with the new tokens — keeping the
+ *   original `absoluteExpiresAt`, so refreshing never buys extra days.
  * - If the refresh fails (revoked token, network error), the session is destroyed
  *   and `401` is returned, prompting the client to redirect to sign-in.
  *
  * @returns `{ user: AuthUser }` when a valid session exists.
- * @returns `null` with status `401` when no session cookie is present or the
- *   refresh token has been revoked.
+ * @returns `null` with status `401` when no session cookie is present, the
+ *   session has hit its 1-day deadline, or the refresh token has been revoked.
  */
 export const GET = async (request: Request): Promise<Response> => {
   const response = Response.json(null, { status: 401 });
@@ -51,6 +58,13 @@ export const GET = async (request: Request): Promise<Response> => {
     return response;
   }
 
+  // Session has hit its 1-day cap — sign the user out, no refresh attempt
+  if (isSessionExpired(session)) {
+    const expiredResponse = Response.json(null, { status: 401 });
+    await destroySession(request, expiredResponse);
+    return expiredResponse;
+  }
+
   // Token is fresh — return user as-is
   if (session.expiresAt > Date.now() + REFRESH_SKEW_MS) {
     return Response.json({ user: session.user });
@@ -60,16 +74,14 @@ export const GET = async (request: Request): Promise<Response> => {
   try {
     const refreshed = await refreshFirebaseSession(session);
     const freshResponse = Response.json({ user: refreshed.user });
-    const freshSession = await getIronSession<SessionData>(
-      request,
-      freshResponse,
-      sessionOptions,
-    );
-    Object.assign(freshSession, refreshed);
-    await freshSession.save();
+    await saveSession(request, freshResponse, {
+      ...refreshed,
+      absoluteExpiresAt: session.absoluteExpiresAt,
+    });
     return freshResponse;
   } catch {
-    session.destroy();
-    return Response.json(null, { status: 401 });
+    const failedResponse = Response.json(null, { status: 401 });
+    await destroySession(request, failedResponse);
+    return failedResponse;
   }
 };

@@ -18,23 +18,38 @@ type SignInValues = {
 };
 
 export type SignInFormProps = {
+  /**
+   * Informational message shown above the form, for arriving at sign-in for a
+   * reason other than clicking "Sign in" — currently a session that hit its
+   * 1-day cap. Defaults to whatever `?expired=1` in the URL implies; pass it
+   * explicitly to render a fixed message (stories, tests).
+   */
+  notice?: string;
   onSubmit?: (values: SignInValues) => Promise<void>;
 };
 
-export const SignInForm = ({ onSubmit }: SignInFormProps) => {
+/** Shown when `proxy.ts` or `useSessionTimeout` bounced the user here with `?expired=1`. */
+const EXPIRED_NOTICE =
+  "Your session expired after 24 hours. Please sign in again.";
+
+export const SignInForm = ({ notice, onSubmit }: SignInFormProps) => {
   const setUser = useAuthStore((state) => state.setUser);
   const queryClient = useQueryClient();
   const [formError, setFormError] = useState("");
   const [next, setNext] = useState("/dashboard");
+  const [urlNotice, setUrlNotice] = useState("");
 
   useEffect(() => {
     const timer = window.setTimeout(() => {
       const params = new URLSearchParams(window.location.search);
       setNext(params.get("next") || "/dashboard");
+      setUrlNotice(params.get("expired") ? EXPIRED_NOTICE : "");
     }, 0);
 
     return () => window.clearTimeout(timer);
   }, []);
+
+  const activeNotice = notice ?? urlNotice;
 
   const {
     formState: { errors, isSubmitting },
@@ -80,6 +95,15 @@ export const SignInForm = ({ onSubmit }: SignInFormProps) => {
       className="grid gap-5"
       onSubmit={submitForm}
     >
+      {activeNotice ? (
+        <div
+          className="rounded-box bg-nox-noir/5 px-4 py-3 text-sm text-nox-noir/80"
+          role="status"
+        >
+          {activeNotice}
+        </div>
+      ) : null}
+
       {formError ? (
         <div
           className="rounded-box bg-error/10 px-4 py-3 text-sm text-error"
