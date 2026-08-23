@@ -6,7 +6,7 @@ import type { FunctionComponent } from "react";
 
 import { Avatar } from "@/components/commons/avatar/avatar";
 import { ButtonIcon } from "@/components/commons/button-icon/button-icon";
-import { queryKeys } from "@/lib/query/keys";
+import { signOutAndRedirect } from "@/lib/auth/sign-out";
 import { cn } from "@/lib/utils";
 import { useAuthStore } from "@/stores/auth-store";
 
@@ -21,12 +21,7 @@ const SidebarAccount: FunctionComponent<Props> = ({ isCollapsed = false }) => {
 
   const name = user?.displayName ?? "Dokiments User";
 
-  const handleSignOut = async () => {
-    await fetch("/api/auth/sign-out", { method: "POST" });
-    queryClient.setQueryData(queryKeys.session(), null);
-    clearSession();
-    window.location.assign("/sign-in");
-  };
+  const handleSignOut = () => signOutAndRedirect(queryClient, clearSession);
 
   return (
     <div className="sidebar-account min-w-0">

@@ -1,8 +1,13 @@
 import { getIronSession } from "iron-session";
 
+import { saveSession } from "@/lib/api/session-cookie";
 import { updateAccountPassword } from "@/lib/firebase/server-auth";
 import { FirebaseReauthRequiredError } from "@/lib/firebase/server-identity";
-import { sessionOptions, type SessionData } from "@/lib/session";
+import {
+  isSessionExpired,
+  sessionOptions,
+  type SessionData,
+} from "@/lib/session";
 
 /**
  * `POST /api/auth/update-password`
@@ -35,7 +40,7 @@ export const POST = async (request: Request): Promise<Response> => {
       sessionOptions,
     );
 
-    if (!session.user) {
+    if (!session.user || isSessionExpired(session)) {
       return Response.json({ error: "Unauthorised." }, { status: 401 });
     }
 
@@ -51,8 +56,10 @@ export const POST = async (request: Request): Promise<Response> => {
 
     const { password } = (await request.json()) as { password: string };
     const updated = await updateAccountPassword(session, password);
-    Object.assign(session, updated);
-    await session.save();
+    await saveSession(request, response, {
+      ...updated,
+      absoluteExpiresAt: session.absoluteExpiresAt,
+    });
 
     return response;
   } catch (error) {

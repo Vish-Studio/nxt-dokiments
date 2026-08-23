@@ -1,7 +1,15 @@
 import { getIronSession } from "iron-session";
 
-import { updateAccountProfile, type ProfileUpdate } from "@/lib/firebase/server-auth";
-import { sessionOptions, type SessionData } from "@/lib/session";
+import { saveSession } from "@/lib/api/session-cookie";
+import {
+  updateAccountProfile,
+  type ProfileUpdate,
+} from "@/lib/firebase/server-auth";
+import {
+  isSessionExpired,
+  sessionOptions,
+  type SessionData,
+} from "@/lib/session";
 
 /**
  * `POST /api/auth/update-profile`
@@ -19,9 +27,13 @@ import { sessionOptions, type SessionData } from "@/lib/session";
 export const POST = async (request: Request): Promise<Response> => {
   try {
     const probeResponse = Response.json({ ok: true });
-    const probeSession = await getIronSession<SessionData>(request, probeResponse, sessionOptions);
+    const probeSession = await getIronSession<SessionData>(
+      request,
+      probeResponse,
+      sessionOptions,
+    );
 
-    if (!probeSession.user) {
+    if (!probeSession.user || isSessionExpired(probeSession)) {
       return Response.json({ error: "Unauthorised." }, { status: 401 });
     }
 
@@ -29,13 +41,17 @@ export const POST = async (request: Request): Promise<Response> => {
     const updated = await updateAccountProfile(probeSession, profile);
 
     const response = Response.json({ user: updated.user });
-    const session = await getIronSession<SessionData>(request, response, sessionOptions);
-    Object.assign(session, updated);
-    await session.save();
+    await saveSession(request, response, {
+      ...updated,
+      absoluteExpiresAt: probeSession.absoluteExpiresAt,
+    });
 
     return response;
   } catch (error) {
-    const message = error instanceof Error ? error.message : "Something went wrong. Please try again.";
+    const message =
+      error instanceof Error
+        ? error.message
+        : "Something went wrong. Please try again.";
     return Response.json({ error: message }, { status: 400 });
   }
 };

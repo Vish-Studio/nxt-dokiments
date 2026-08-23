@@ -2,7 +2,13 @@ import { unsealData } from "iron-session";
 import type { NextProxy } from "next/server";
 import { NextResponse } from "next/server";
 
-import { sessionOptions, type SessionData } from "@/lib/session";
+import { SESSION_EXPIRY_COOKIE } from "@/lib/auth/session-expiry";
+import {
+  isSessionExpired,
+  SESSION_MAX_AGE_SECONDS,
+  sessionOptions,
+  type SessionData,
+} from "@/lib/session";
 
 /** Route prefixes that require an authenticated session. */
 const PROTECTED_PREFIXES = [
@@ -27,6 +33,9 @@ const AUTH_ONLY_PREFIXES = ["/sign-in", "/sign-up", "/forgot-password"];
  *
  * Behaviour:
  * - Protected route + no valid session → redirect to `/sign-in?next=<path>`.
+ * - Protected route + session past its 1-day deadline → same redirect, plus
+ *   `expired=1` so the sign-in page can explain what happened, and both session
+ *   cookies are cleared on the way out.
  * - Auth-only route + valid session → redirect to `/dashboard`.
  * - All other routes → pass through unchanged.
  * - Dev auth bypass enabled → always pass through.
@@ -57,18 +66,34 @@ export const proxy: NextProxy = async (request) => {
     try {
       session = await unsealData<SessionData>(cookieValue, {
         password: sessionOptions.password as string,
+        ttl: SESSION_MAX_AGE_SECONDS,
       });
     } catch {
       // Tampered or expired seal — treat as unauthenticated
     }
   }
 
-  if (isProtected && !session?.user) {
+  // A session past its 1-day deadline is not "signed in" as far as routing goes,
+  // even though the cookie still decrypts and still carries a user.
+  const hasExpired = Boolean(session?.user) && isSessionExpired(session);
+  const isAuthenticated = Boolean(session?.user) && !hasExpired;
+
+  if (isProtected && !isAuthenticated) {
     const next = encodeURIComponent(pathname + search);
-    return NextResponse.redirect(new URL(`/sign-in?next=${next}`, request.url));
+    const query = hasExpired ? `expired=1&next=${next}` : `next=${next}`;
+    const response = NextResponse.redirect(
+      new URL(`/sign-in?${query}`, request.url),
+    );
+
+    if (hasExpired) {
+      response.cookies.delete({ name: sessionOptions.cookieName, path: "/" });
+      response.cookies.delete({ name: SESSION_EXPIRY_COOKIE, path: "/" });
+    }
+
+    return response;
   }
 
-  if (isAuthOnly && session?.user) {
+  if (isAuthOnly && isAuthenticated) {
     return NextResponse.redirect(new URL("/dashboard", request.url));
   }
 

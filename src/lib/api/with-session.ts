@@ -3,7 +3,12 @@ import "server-only";
 import { getIronSession } from "iron-session";
 
 import { handleApiError } from "@/lib/api/errors";
-import { sessionOptions, type SessionData } from "@/lib/session";
+import { destroySession } from "@/lib/api/session-cookie";
+import {
+  isSessionExpired,
+  sessionOptions,
+  type SessionData,
+} from "@/lib/session";
 
 /** Session guaranteed to have an authenticated `user`, as narrowed by `withSession`. */
 export type AuthenticatedSession = SessionData & {
@@ -24,10 +29,16 @@ type RouteHandler<TContext> = (
  * Wraps a Route Handler so it only runs for signed-in users, and gives it a
  * pre-authenticated Firestore session.
  *
- * Resolves the iron-session cookie, returns `401` if `session.user` is missing,
- * and otherwise calls `handler` with the authenticated session as an extra last
- * argument. Also catches anything the handler throws and converts it via
- * `handleApiError`, so individual routes don't need their own `try`/`catch`.
+ * Resolves the iron-session cookie, returns `401` if `session.user` is missing
+ * or the session has passed its 1-day deadline, and otherwise calls `handler`
+ * with the authenticated session as an extra last argument. Also catches
+ * anything the handler throws and converts it via `handleApiError`, so
+ * individual routes don't need their own `try`/`catch`.
+ *
+ * The expiry check matters beyond tidiness: without it an expired session would
+ * still reach Firestore with a dead `idToken`, and the resulting provider error
+ * would surface as an opaque `500` instead of the `401` that tells the client to
+ * sign in again.
  * For expected failure cases inside `handler`, throw `ApiError` and rely on the
  * examples in `src/lib/api/errors.ts` for status/message patterns.
  *
@@ -66,15 +77,21 @@ export const withSession = <TContext = unknown>(
 ): RouteHandler<TContext> => {
   return async (request, context) => {
     try {
-      const placeholder = Response.json(null);
+      // Bound to the 401 we may return rather than a throwaway response, so
+      // that clearing an expired session's cookies actually reaches the browser.
+      const unauthorised = Response.json(
+        { error: "Unauthorised." },
+        { status: 401 },
+      );
       const session = await getIronSession<SessionData>(
         request,
-        placeholder,
+        unauthorised,
         sessionOptions,
       );
 
-      if (!session.user) {
-        return Response.json({ error: "Unauthorised." }, { status: 401 });
+      if (!session.user || isSessionExpired(session)) {
+        await destroySession(request, unauthorised);
+        return unauthorised;
       }
 
       return await handler(request, context, session as AuthenticatedSession);

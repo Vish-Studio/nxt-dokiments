@@ -1,11 +1,12 @@
-import { getIronSession, unsealData } from "iron-session";
+import { unsealData } from "iron-session";
 import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
 
 import { OAUTH_STATE_COOKIE } from "@/app/api/auth/google/start/route";
+import { startSession } from "@/lib/api/session-cookie";
 import { signInWithGoogle } from "@/lib/firebase/server-auth";
 import { exchangeGoogleCode } from "@/lib/google/server-oauth";
-import { sessionOptions, type SessionData } from "@/lib/session";
+import { sessionOptions } from "@/lib/session";
 
 /** Sealed payload stored in the `dokiments-oauth-state` cookie by the `start` route. */
 type OAuthState = {
@@ -87,14 +88,9 @@ export const GET = async (request: NextRequest): Promise<Response> => {
     });
 
     // Same session shape/cookie as the password sign-in route, so downstream
-    // code can't tell which flow authenticated the user.
-    const session = await getIronSession<SessionData>(
-      request,
-      response,
-      sessionOptions,
-    );
-    Object.assign(session, sessionData);
-    await session.save();
+    // code can't tell which flow authenticated the user — including the 1-day
+    // deadline `startSession` stamps on.
+    await startSession(request, response, sessionData);
 
     return response;
   } catch (error) {
