@@ -17,6 +17,6 @@ type Story = StoryObj<typeof meta>;
 export const Default: Story = {
   play: async ({ canvas }) => {
     await expect(canvas.getByText("Smart templates")).toBeVisible();
-    await expect(canvas.getByText("It's free")).toBeVisible();
+    await expect(canvas.getByText("Team friendly")).toBeVisible();
   },
 };

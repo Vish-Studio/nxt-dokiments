@@ -1,9 +1,9 @@
-import { forwardRef } from "react";
 import type { ButtonHTMLAttributes, ReactNode } from "react";
+import { forwardRef } from "react";
 
 import { cn } from "@/lib/utils";
 
-type ButtonIconVariant =
+export type ButtonIconVariant =
   | "accent"
   | "primary"
   | "secondary"
@@ -11,8 +11,8 @@ type ButtonIconVariant =
   | "ghost"
   | "outline"
   | "danger";
-type ButtonIconSize = "sm" | "md" | "lg";
-type ButtonIconShape = "circle" | "square";
+export type ButtonIconSize = "sm" | "md" | "lg";
+export type ButtonIconShape = "circle" | "square";
 
 export type ButtonIconProps = ButtonHTMLAttributes<HTMLButtonElement> & {
   /** Required: icon-only buttons must expose an accessible name. */
@@ -24,13 +24,15 @@ export type ButtonIconProps = ButtonHTMLAttributes<HTMLButtonElement> & {
 };
 
 const variantClasses: Record<ButtonIconVariant, string> = {
-  accent: "border border-transparent bg-golden-harvest text-nox-noir hover:brightness-95",
+  accent:
+    "border border-transparent bg-golden-harvest text-nox-noir hover:brightness-95",
   primary: "btn-primary",
   secondary:
     "border border-transparent bg-base-200 text-nox-noir hover:bg-base-300",
   neutral: "btn-neutral",
   ghost: "btn-ghost",
-  outline: "border border-steel-mist bg-transparent text-nox-noir hover:bg-base-200",
+  outline:
+    "border border-steel-mist bg-transparent text-nox-noir hover:bg-base-200",
   danger: "btn-error",
 };
 
@@ -44,6 +46,32 @@ const shapeClasses: Record<ButtonIconShape, string> = {
   circle: "btn-circle",
   square: "btn-square",
 };
+
+/**
+ * The class recipe behind `ButtonIcon`, exposed so non-`<button>` elements can
+ * wear the same look — `FloatingActionButton` renders a `next/link` anchor when
+ * given an `href`, and must stay pixel-identical to the button variant.
+ *
+ * Prefer `ButtonIcon` itself for anything that is actually a button.
+ */
+export const buttonIconClasses = ({
+  className,
+  shape = "circle",
+  size = "md",
+  variant = "ghost",
+}: {
+  className?: string;
+  shape?: ButtonIconShape;
+  size?: ButtonIconSize;
+  variant?: ButtonIconVariant;
+} = {}) =>
+  cn(
+    "btn",
+    variantClasses[variant],
+    sizeClasses[size],
+    shapeClasses[shape],
+    className,
+  );
 
 export const ButtonIcon = forwardRef<HTMLButtonElement, ButtonIconProps>(
   (
@@ -62,13 +90,7 @@ export const ButtonIcon = forwardRef<HTMLButtonElement, ButtonIconProps>(
       <button
         ref={ref}
         type={type}
-        className={cn(
-          "btn",
-          variantClasses[variant],
-          sizeClasses[size],
-          shapeClasses[shape],
-          className,
-        )}
+        className={buttonIconClasses({ className, shape, size, variant })}
         {...props}
       >
         {icon}
