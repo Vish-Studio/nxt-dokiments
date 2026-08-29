@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from "@storybook/nextjs-vite";
 import { QueryClientProvider } from "@tanstack/react-query";
-import { expect, userEvent, within } from "storybook/test";
+import { expect, userEvent, waitFor, within } from "storybook/test";
 
 import { makeStoryQueryClient } from "@/lib/query/story-query-client";
 import { useAuthStore } from "@/stores/auth-store";
@@ -195,7 +195,9 @@ export const AddClient: Story = {
     );
     await userEvent.click(panel.getByRole("button", { name: "Add client" }));
 
-    await expect(await canvas.findByText("Ravi Patel")).toBeVisible();
+    await waitFor(() => {
+      expect(canvas.getByText("Ravi Patel")).toBeVisible();
+    });
     await expect(canvas.getAllByText("Blue Harbour Ltd")).toHaveLength(2);
   },
 };

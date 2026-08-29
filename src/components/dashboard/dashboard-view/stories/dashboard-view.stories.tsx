@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from "@storybook/nextjs-vite";
 import { QueryClientProvider } from "@tanstack/react-query";
-import { expect, within } from "storybook/test";
+import { expect, userEvent, within } from "storybook/test";
 
 import { getTemplateById } from "@/lib/market-place";
 import { makeStoryQueryClient } from "@/lib/query/story-query-client";
@@ -11,8 +11,11 @@ import type { UserDocument } from "@/types/template";
 import { DashboardView } from "../dashboard-view";
 
 /** Mocks `GET /api/saved-templates`, `GET /api/documents` and `GET /api/clients` so
- * `DashboardView`'s queries resolve with fixture data, dispatching on request URL. */
-const mockDashboardApi = () => {
+ * `DashboardView`'s queries resolve with fixture data, dispatching on request URL.
+ *
+ * @param documentsOverride - Replaces the single-document default. Pass `[]` to
+ *   reach the "no documents yet, but a template is ready" branch. */
+const mockDashboardApi = (documentsOverride?: UserDocument[]) => {
   const contractTemplate = getTemplateById("classic-contract");
 
   const clients: Client[] = [
@@ -30,7 +33,7 @@ const mockDashboardApi = () => {
     },
   ];
 
-  const documents: UserDocument[] = [
+  const documents: UserDocument[] = documentsOverride ?? [
     {
       createdAt: Date.now(),
       id: "doc-1",
@@ -115,6 +118,46 @@ export const Default: Story = {
     await expect(await canvas.findByText("Saved templates")).toBeVisible();
     await expect(await canvas.findByText("1 client")).toBeVisible();
     await expect(await canvas.findByText("Acme Contract")).toBeVisible();
+
+    const newDocumentFab = canvas.getByRole("link", { name: "New document" });
+    await expect(newDocumentFab).toBeVisible();
+    await expect(newDocumentFab).toHaveAttribute("href", "/documents?new=1");
+  },
+};
+
+/**
+ * With no documents but a saved template, the dashboard offers the template
+ * directly — and opening its preview must hide the floating action button.
+ *
+ * The FAB wrapper and the preview's `SidePanel` are both `z-50`, so the later
+ * one in DOM order wins: without the guard the FAB would paint over the modal.
+ */
+export const PreviewHidesActionButton: Story = {
+  decorators: [
+    (Story) => {
+      mockDashboardApi([]);
+      return <Story />;
+    },
+  ],
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+
+    await expect(
+      await canvas.findByRole("link", { name: "New document" }),
+    ).toBeVisible();
+
+    await userEvent.click(
+      await canvas.findByRole("button", {
+        name: "Preview Client Service Agreement, saved",
+      }),
+    );
+
+    await expect(
+      canvas.getByRole("dialog", { name: "Client Service Agreement preview" }),
+    ).toBeVisible();
+    await expect(
+      canvas.queryByRole("link", { name: "New document" }),
+    ).not.toBeInTheDocument();
   },
 };
 
