@@ -5,6 +5,7 @@ import {
   serverFirebaseConfig,
 } from "@/lib/firebase/server-config";
 import { googleRedirectUri } from "@/lib/google/server-oauth";
+import { fetchUpstream } from "@/lib/http/fetch-upstream";
 
 /** Shape returned by Firebase Identity Toolkit sign-in and sign-up endpoints. */
 export type FirebaseAuthResponse = {
@@ -158,7 +159,7 @@ const requestIdentityJson = async <TResponse>(
   url: string,
   init: RequestInit,
 ): Promise<TResponse> => {
-  const response = await fetch(url, {
+  const response = await fetchUpstream(url, {
     ...init,
     headers: {
       "Content-Type": "application/json",

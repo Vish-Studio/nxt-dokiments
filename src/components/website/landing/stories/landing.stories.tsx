@@ -22,5 +22,8 @@ export const Default: Story = {
         canvas.getByRole("heading", { name: /business documents/i }),
       ).toBeVisible();
     });
+    await expect(
+      canvas.getByRole("heading", { name: /questions people ask/i }),
+    ).toBeInTheDocument();
   },
 };

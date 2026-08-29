@@ -1,5 +1,7 @@
 import "server-only";
 
+import { UpstreamUnavailableError } from "@/lib/http/fetch-upstream";
+
 /**
  * An error with a status code and a message safe to return to the client.
  *
@@ -34,9 +36,11 @@ export class ApiError extends Error {
 /**
  * Converts a caught error into a `Response`.
  *
- * `ApiError`s are trusted and returned as-is (status + message). Anything else —
- * a raw Firestore/Firebase error, a bug, a network failure — is logged server-side
- * and collapsed into a generic `500`, so internal error details never reach the client.
+ * `ApiError`s are trusted and returned as-is (status + message). An
+ * `UpstreamUnavailableError` becomes a `503` — we never reached the provider, so the
+ * failure is transient and worth retrying, unlike a `500`. Anything else — a raw
+ * Firestore/Firebase error, a bug — is logged server-side and collapsed into a
+ * generic `500`, so internal error details never reach the client.
  *
  * @example
  * try {
@@ -51,6 +55,13 @@ export class ApiError extends Error {
 export const handleApiError = (error: unknown): Response => {
   if (error instanceof ApiError) {
     return Response.json({ error: error.message }, { status: error.status });
+  }
+
+  // Logged like a 500 — an outage still needs investigating — but reported as 503 so
+  // the client can tell "try again" apart from "this request is broken".
+  if (error instanceof UpstreamUnavailableError) {
+    console.error(error);
+    return Response.json({ error: error.message }, { status: 503 });
   }
 
   console.error(error);
