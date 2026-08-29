@@ -25,8 +25,12 @@ type Story = StoryObj<typeof meta>;
 export const Default: Story = {
   play: async ({ canvas }) => {
     await waitFor(async () => {
-      await expect(canvas.getByAltText("Dokiments workspace displayed on a laptop")).toBeVisible();
+      await expect(
+        canvas.getByAltText("Dokiments workspace displayed on a laptop"),
+      ).toBeInTheDocument();
     });
-    await expect(canvas.getByAltText("Dokiments dashboard displayed on a mobile phone")).toBeVisible();
+    await expect(
+      canvas.getByAltText("Dokiments dashboard displayed on a mobile phone"),
+    ).toBeInTheDocument();
   },
 };

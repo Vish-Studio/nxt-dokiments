@@ -424,7 +424,9 @@ export const PrefillFromClient: Story = {
     await expect(
       await canvas.findByDisplayValue("Dokiments Studio"),
     ).toBeVisible();
-    await expect(canvas.getByDisplayValue("12 Studio Lane, Port Louis")).toBeVisible();
+    await expect(
+      canvas.getByDisplayValue("12 Studio Lane, Port Louis"),
+    ).toBeVisible();
 
     await userEvent.selectOptions(
       canvas.getByLabelText("Prefill from client (optional)"),
@@ -437,10 +439,48 @@ export const PrefillFromClient: Story = {
     await expect(await canvas.findByLabelText("To")).toHaveValue(
       "Northline Studio",
     );
-    await expect(canvas.getByDisplayValue("24 Market Street, Ebene")).toBeVisible();
-    await expect(canvas.getByDisplayValue("accounts@northline.com")).toBeVisible();
+    await expect(
+      canvas.getByDisplayValue("24 Market Street, Ebene"),
+    ).toBeVisible();
+    await expect(
+      canvas.getByDisplayValue("accounts@northline.com"),
+    ).toBeVisible();
     await expect(canvas.getByDisplayValue("+230 5 987 6543")).toBeVisible();
     await expect(canvas.getByDisplayValue("C09876543")).toBeVisible();
+  },
+};
+
+/**
+ * Landing on `/documents?new=1` — the dashboard FAB's target — opens the
+ * template picker directly, skipping the document list.
+ *
+ * `new=1` is added to the existing URL rather than replacing it: this runs inside
+ * Storybook's `/iframe.html?id=…`, and dropping that `id` would unmount the story.
+ */
+export const NewDocumentDeepLink: Story = {
+  decorators: [
+    (Story) => {
+      seedUser();
+      mockDocumentsApi([]);
+      // Runs during render, so it lands before the component's mount effect reads it.
+      const url = new URL(window.location.href);
+      url.searchParams.set("new", "1");
+      window.history.replaceState(null, "", `${url.pathname}${url.search}`);
+      return <Story />;
+    },
+  ],
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+
+    await expect(
+      await canvas.findByRole("heading", { name: "Choose a template" }),
+    ).toBeVisible();
+    // The picker replaced the list rather than stacking on top of it.
+    await expect(
+      canvas.queryByText(/no documents yet/i),
+    ).not.toBeInTheDocument();
+    // The param is consumed, so a refresh returns to the plain list.
+    await expect(window.location.search).not.toContain("new=1");
   },
 };
 

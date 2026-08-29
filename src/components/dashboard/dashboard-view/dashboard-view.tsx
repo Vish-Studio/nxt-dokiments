@@ -6,6 +6,7 @@ import {
   CreditCardIcon,
   FileTextIcon,
   LayoutIcon,
+  PlusIcon,
   SparkleIcon,
   StorefrontIcon,
   UsersThreeIcon,
@@ -14,6 +15,7 @@ import Link from "next/link";
 import { useState } from "react";
 
 import { Badge } from "@/components/commons/badge/badge";
+import { FloatingActionButton } from "@/components/commons/floating-action-button/floating-action-button";
 import { LoadingStatus } from "@/components/commons/loading-status/loading-status";
 import { TemplateCard } from "@/components/commons/template-card/template-card";
 import { TemplatePreviewDialog } from "@/components/commons/template-preview-dialog/template-preview-dialog";
@@ -437,6 +439,22 @@ export const DashboardView = () => {
             : "/documents"
         }
       />
+
+      {/* Hidden behind the preview dialog so it can't float over the modal. */}
+      {previewTemplate ? null : (
+        <FloatingActionButton
+          href="/documents?new=1"
+          icon={
+            <PlusIcon
+              aria-hidden
+              size={20}
+              weight="bold"
+            />
+          }
+          label="New document"
+          shape="circle"
+        />
+      )}
     </div>
   );
 };

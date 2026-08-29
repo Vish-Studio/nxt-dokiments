@@ -8,7 +8,7 @@ import {
 } from "@phosphor-icons/react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 
 import { Button } from "@/components/commons/button/button";
 import { ConfirmDialog } from "@/components/commons/confirm-dialog/confirm-dialog";
@@ -108,19 +108,54 @@ export const DocumentsView = () => {
     setIsEditorPreviewOpen(false);
   };
 
-  const startNewDocument = (template: MarketplaceTemplate) => {
-    setActiveTemplate(template);
-    setActiveDocumentId(null);
-    setDraftName(template.name);
-    // Seeds the sender block from the user's own profile — identical on every
-    // document they create, so there's nothing to pick. Only on a new document:
-    // `openDocument` must keep the saved values untouched.
-    setDraftValues(senderPrefillValues(user, template.fields));
-    setIsDeleteConfirmationOpen(false);
-    setIsSaveConfirmationOpen(false);
-    setIsEditorPreviewOpen(false);
-    setMode("editor");
-  };
+  const startNewDocument = useCallback(
+    (template: MarketplaceTemplate) => {
+      setActiveTemplate(template);
+      setActiveDocumentId(null);
+      setDraftName(template.name);
+      // Seeds the sender block from the user's own profile — identical on every
+      // document they create, so there's nothing to pick. Only on a new document:
+      // `openDocument` must keep the saved values untouched.
+      setDraftValues(senderPrefillValues(user, template.fields));
+      setIsDeleteConfirmationOpen(false);
+      setIsSaveConfirmationOpen(false);
+      setIsEditorPreviewOpen(false);
+      setMode("editor");
+    },
+    [user],
+  );
+
+  // Deep link from the dashboard's floating action button: open the template
+  // picker straight away. Kept separate from the `?template=` effect below,
+  // which bails out when the user owns no templates — here the picker's own
+  // "No templates yet" state is exactly what we want them to land on.
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+
+    if (!params.get("new")) {
+      return;
+    }
+
+    // Strip the param — unconditionally, before the `?template=` check below — so
+    // a refresh or a back-navigation returns to the plain list instead of
+    // reopening the picker from a stale URL.
+    const nextUrl = new URL(window.location.href);
+    nextUrl.searchParams.delete("new");
+    window.history.replaceState(
+      null,
+      "",
+      `${nextUrl.pathname}${nextUrl.search}`,
+    );
+
+    // `?template=` wins: it lands on the editor, a step past the picker.
+    if (params.get("template")) {
+      return;
+    }
+
+    // Deferred rather than set synchronously, matching the `?template=` effect
+    // below: a setState in an effect body triggers a cascading render.
+    window.setTimeout(() => setMode("picker"), 0);
+  }, []);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -133,7 +168,11 @@ export const DocumentsView = () => {
     // would hand `startNewDocument` a null user and silently skip sender prefill.
     // Safe to re-run: this effect strips `?template` from the URL before starting,
     // so the pass that happens once `status` resolves finds nothing to do.
-    if (authStatus === "loading" || !templateId || ownedTemplates.length === 0) {
+    if (
+      authStatus === "loading" ||
+      !templateId ||
+      ownedTemplates.length === 0
+    ) {
       return;
     }
 
@@ -151,7 +190,7 @@ export const DocumentsView = () => {
       `${nextUrl.pathname}${nextUrl.search}`,
     );
     window.setTimeout(() => startNewDocument(template), 0);
-  }, [authStatus, ownedTemplates]);
+  }, [authStatus, ownedTemplates, startNewDocument]);
 
   const openDocument = (document: UserDocument) => {
     setActiveTemplate(templateOf(document));
@@ -461,8 +500,8 @@ export const DocumentsView = () => {
           onPrint={() => window.print()}
           onUse={handleUsePreviewTemplate}
           saved
-        template={previewTemplate}
-        tone="purple"
+          template={previewTemplate}
+          tone="purple"
         />
       </div>
     );
