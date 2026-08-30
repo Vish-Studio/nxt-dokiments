@@ -62,6 +62,23 @@ service cloud.firestore {
         allow read, create, update, delete: if isOwner(uid);
       }
 
+      // --- users/{uid}/promoRedemptions/{promoId} — redeemed promo codes ----------
+      //
+      // Doc ID is the campaign's own id (e.g. `launch-2026`, see
+      // src/lib/promo/promo-codes.ts), so the (uid, campaign) pair *is* the primary
+      // key and two redemptions of one campaign by one account are not representable.
+      //
+      // `create` only — deliberately no `update` and no `delete`. This is what makes
+      // "once per account" a database guarantee rather than an application one: a
+      // second redemption is an `update` in rules terms and is denied here even if the
+      // route layer has a bug, and a user cannot delete a record to redeem again.
+      // `POST /api/promo-redemptions` maps that denial to a 409 rather than letting it
+      // surface as a 500. The restriction is per-account, not global — every user may
+      // redeem the same code once.
+      match /promoRedemptions/{promoId} {
+        allow read, create: if isOwner(uid);
+      }
+
       // --- users/{uid}/clients/{clientId} — the user's own client book -------------
       //
       // Contact details a user reuses when preparing documents. Doc IDs are
