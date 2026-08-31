@@ -11,7 +11,8 @@
     { "key": "newPassword", "value": "yournewpassword" },
     { "key": "templateId", "value": "classic-contract" },
     { "key": "documentId", "value": "" },
-    { "key": "clientId", "value": "" }
+    { "key": "clientId", "value": "" },
+    { "key": "promoCode", "value": "ViSHDOK2026!" }
   ],
   "item": [
     {
@@ -24,14 +25,14 @@
             "header": [{ "key": "Content-Type", "value": "application/json" }],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"email\": \"{{email}}\",\n  \"password\": \"{{password}}\"\n}"
+              "raw": "{\n  \"email\": \"{{email}}\",\n  \"password\": \"{{password}}\",\n  \"promoCode\": \"{{promoCode}}\"\n}"
             },
             "url": {
               "raw": "{{baseUrl}}/api/auth/sign-in",
               "host": ["{{baseUrl}}"],
               "path": ["api", "auth", "sign-in"]
             },
-            "description": "Establishes the session cookie (dokiments-session) that every other request in this collection relies on. Response body is { user: AuthUser } only — tokens never leave the server. Check the collection's Cookies panel for localhost after sending this to confirm the cookie was set. If DEV_AUTH_BYPASS=true is set in .env.local, any email/password works and you'll get a fake session with role: \"special\" — useful for testing everything except the seed script, which needs a real superadmin account."
+            "description": "Establishes the session cookie (dokiments-session) that every other request in this collection relies on. Response body is { user: AuthUser } only — tokens never leave the server. Check the collection's Cookies panel for localhost after sending this to confirm the cookie was set. If DEV_AUTH_BYPASS=true is set in .env.local, any email/password works and you'll get a fake session with role: \"special\" — useful for testing everything except the seed script, which needs a real superadmin account. promoCode is optional: when present it is redeemed after the credentials are accepted, and the outcome comes back as promo: \"applied\" | \"already_redeemed\" | \"invalid\" | \"failed\" next to the user. It never affects whether the sign-in itself succeeds — send a wrong code with a correct password to confirm you still get 200, with promo: \"invalid\". Omit the field and no promo key is returned at all."
           }
         },
         {
@@ -39,12 +40,15 @@
           "request": {
             "method": "GET",
             "url": {
-              "raw": "{{baseUrl}}/api/auth/google/start?next=%2Fdashboard",
+              "raw": "{{baseUrl}}/api/auth/google/start?next=%2Fdashboard&promoCode={{promoCode}}",
               "host": ["{{baseUrl}}"],
               "path": ["api", "auth", "google", "start"],
-              "query": [{ "key": "next", "value": "%2Fdashboard" }]
+              "query": [
+                { "key": "next", "value": "%2Fdashboard" },
+                { "key": "promoCode", "value": "{{promoCode}}" }
+              ]
             },
-            "description": "First leg of Google sign-in — generates a CSRF state, seals it with the sanitised `next` path into a short-lived dokiments-oauth-state cookie, then 302s to Google's OAuth consent screen. Open this URL in an actual browser tab, not \"Send\" in Postman — completing it requires a real interactive Google login, and Postman can't drive that consent screen. Returns a redirect to /sign-in?error=google_failed instead if GOOGLE_CLIENT_ID/GOOGLE_CLIENT_SECRET aren't set in .env.local."
+            "description": "First leg of Google sign-in — generates a CSRF state, seals it with the sanitised `next` path into a short-lived dokiments-oauth-state cookie, then 302s to Google's OAuth consent screen. Open this URL in an actual browser tab, not \"Send\" in Postman — completing it requires a real interactive Google login, and Postman can't drive that consent screen. Returns a redirect to /sign-in?error=google_failed instead if GOOGLE_CLIENT_ID/GOOGLE_CLIENT_SECRET aren't set in .env.local. promoCode is optional and sealed into that same state cookie, so a code typed on the form isn't lost by choosing Google — Google never sees it. The callback redeems it once the account exists and appends ?promo=<outcome> to the redirect, which PromoStatusBanner renders on arrival. It is capped at 64 characters before sealing so an oversized value can't produce a cookie the browser refuses."
           }
         },
         {
@@ -441,6 +445,86 @@
               "raw": "{{baseUrl}}/api/clients",
               "host": ["{{baseUrl}}"],
               "path": ["api", "clients"]
+            },
+            "description": "Run AFTER \"Sign out\" to confirm this route also 401s without a session."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Promo Codes",
+      "item": [
+        {
+          "name": "List redemptions",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/promo-redemptions",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "promo-redemptions"]
+            },
+            "description": "GET /api/promo-redemptions — the promo codes this account has redeemed; this is what the Launch Promo card in Settings reads. Returns { redemptions: [] } for an account that has redeemed nothing, which includes every account created before this feature shipped — absence of a record IS \"not redeemed\", so no back-fill was needed. Each entry is { code, promoId, redeemedAt }, where promoId is the campaign slug (launch-2026) and is also the Firestore document ID."
+          }
+        },
+        {
+          "name": "Redeem the promo code",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"promoCode\": \"{{promoCode}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/promo-redemptions",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "promo-redemptions"]
+            },
+            "description": "POST /api/promo-redemptions — redeems the launch code for this account. Expect 201 { redemption } the first time. Matching is case-insensitive and ignores whitespace, so setting promoCode to \"  vishdok2026! \" is accepted and the canonical \"ViSHDOK2026!\" is what gets stored — worth trying, then confirming with \"List redemptions\". The write is a create-only Firestore PATCH (currentDocument.exists=false) against users/{uid}/promoRedemptions/launch-2026, and firestore.rules grants create but neither update nor delete there, so once-per-account is a database guarantee rather than something this route enforces on its own."
+          }
+        },
+        {
+          "name": "Redeem again (409) check",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"promoCode\": \"{{promoCode}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/promo-redemptions",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "promo-redemptions"]
+            },
+            "description": "Send immediately after \"Redeem the promo code\" succeeded. Expect 409 { error: \"This promo code has already been used for your account.\" } — the once-per-account rule. Note it is per account, not global: sign in as a different user and the same code redeems fine."
+          }
+        },
+        {
+          "name": "Invalid code (400) check",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"promoCode\": \"NOTAPROMO\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/promo-redemptions",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "promo-redemptions"]
+            },
+            "description": "Expect 400 { error: \"Invalid promo code.\" }. The code is matched server-side against the registry in src/lib/promo/promo-codes.ts — the browser knows the code (it's printed on the sign-in page by design, so it isn't a secret) but never decides the outcome. A whitespace-only value gives this same 400 rather than a generic \"Invalid request body.\", which is why the Zod schema deliberately doesn't trim."
+          }
+        },
+        {
+          "name": "Unauthorised (401) check",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/promo-redemptions",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "promo-redemptions"]
             },
             "description": "Run AFTER \"Sign out\" to confirm this route also 401s without a session."
           }
