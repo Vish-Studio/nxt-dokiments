@@ -31,6 +31,19 @@ export const promoCodes: PromoCode[] = [
 export const activePromoCode: PromoCode = promoCodes[0];
 
 /**
+ * The user-facing wording for every outcome of a redemption attempt.
+ *
+ * Centralised because the same three sentences surface from more than one place —
+ * the redeem route returns them as API errors, and the post-authentication banner
+ * renders them from a status in the URL — and the two must not drift apart.
+ */
+export const promoMessages = {
+  alreadyRedeemed: "This promo code has already been used for your account.",
+  applied: "Launch promo applied.",
+  invalid: "Invalid promo code.",
+} as const;
+
+/**
  * Reduces user input to its comparable form: all whitespace removed, then
  * upper-cased.
  *
