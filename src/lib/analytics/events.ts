@@ -72,6 +72,28 @@ export type AnalyticsEventMap = {
   profile_updated: {
     fields_updated: string;
   };
+  /**
+   * A promo code was successfully applied to an account.
+   *
+   * `surface` is only `"auth"` or `"settings"` because those are the two places
+   * that can *observe* the outcome client-side. A redemption that rode along with
+   * authentication is reported by the post-sign-in banner, which cannot know
+   * whether the user arrived via the password form or the Google redirect — and
+   * doesn't need to, since GA4 already receives `login`/`sign_up` separately and
+   * those carry the method.
+   */
+  promo_code_applied: {
+    promo_id: string;
+    surface: "auth" | "settings";
+  };
+  /**
+   * A promo code was refused. Deliberately carries no `promo_id`: an unrecognised
+   * code belongs to no campaign, so there would be nothing truthful to report.
+   */
+  promo_code_failed: {
+    reason: "already_redeemed" | "invalid";
+    surface: "auth" | "settings";
+  };
   sign_up: {
     method: "email";
   };
