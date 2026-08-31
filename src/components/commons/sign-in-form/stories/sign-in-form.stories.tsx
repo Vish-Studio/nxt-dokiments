@@ -54,5 +54,21 @@ export const Validation: Story = {
     await expect(
       await canvas.findByText("Password is required."),
     ).toBeVisible();
+    // The promo field is optional, so an empty one must never block sign-in.
+    await expect(canvas.queryByText(/promo code is required/i)).toBeNull();
+  },
+};
+
+/** The launch offer is advertised alongside the credentials, with an optional field for it. */
+export const WithPromoCallout: Story = {
+  args: {
+    onSubmit: async () => undefined,
+  },
+  play: async ({ canvas }) => {
+    await expect(canvas.getByText("Launch Promo")).toBeVisible();
+    await expect(canvas.getByText("ViSHDOK2026!")).toBeVisible();
+    await expect(
+      canvas.getByLabelText(/promo code \(optional\)/i),
+    ).toBeVisible();
   },
 };

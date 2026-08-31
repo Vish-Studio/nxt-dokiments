@@ -40,6 +40,12 @@ export const activePromoCode: PromoCode = promoCodes[0];
 export const promoMessages = {
   alreadyRedeemed: "This promo code has already been used for your account.",
   applied: "Launch promo applied.",
+  /**
+   * Shown when the redemption itself couldn't be processed — never for a code
+   * that was simply wrong. Points at Settings because the account exists and is
+   * signed in by then, so retrying there costs nothing.
+   */
+  failed: "We couldn't apply your promo code. Please try again from Settings.",
   invalid: "Invalid promo code.",
 } as const;
 

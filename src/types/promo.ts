@@ -18,6 +18,29 @@ export type PromoCode = {
 };
 
 /**
+ * The outcome of a promo code submitted during sign-in or sign-up, as reported
+ * back to the browser and carried to the next page in the `promo` query param.
+ *
+ * Distinct from `RedeemPromoResult` in `server-promo-redemptions.ts`, which
+ * describes only what happened in Firestore. This is the user-facing set, so it
+ * also covers the two cases that never reach Firestore: a code that matches no
+ * campaign (`invalid`), and one that couldn't be processed at all (`failed`).
+ *
+ * `failed` exists so a code the user actually typed is never silently dropped.
+ * Authentication deliberately succeeds regardless of what happens to the promo
+ * code, which means an outage mid-redemption would otherwise sign the user in and
+ * say nothing at all about the code they entered.
+ */
+export const promoStatuses = [
+  "already_redeemed",
+  "applied",
+  "failed",
+  "invalid",
+] as const;
+
+export type PromoStatus = (typeof promoStatuses)[number];
+
+/**
  * A record that one account has redeemed one promo code — the shape
  * `GET /api/promo-redemptions` returns.
  *

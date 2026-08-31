@@ -8,7 +8,9 @@ import { Button } from "@/components/commons/button/button";
 import { GoogleSignInButton } from "@/components/commons/google-sign-in-button/google-sign-in-button";
 import { Input } from "@/components/commons/input/input";
 import { LinkButton } from "@/components/commons/link-button/link-button";
+import { PromoCodeCallout } from "@/components/commons/promo-code-callout/promo-code-callout";
 import { trackEvent } from "@/lib/analytics/track";
+import { withPromoStatus } from "@/lib/promo/promo-status";
 import { queryKeys } from "@/lib/query/keys";
 import { useAuthStore } from "@/stores/auth-store";
 
@@ -16,6 +18,8 @@ type SignUpValues = {
   displayName: string;
   email: string;
   password: string;
+  /** Optional launch promo code; blank means the user simply doesn't have one. */
+  promoCode: string;
 };
 
 export type SignUpFormProps = {
@@ -46,6 +50,7 @@ export const SignUpForm = ({ onSubmit }: SignUpFormProps) => {
       displayName: "",
       email: "",
       password: "",
+      promoCode: "",
     },
   });
 
@@ -69,7 +74,11 @@ export const SignUpForm = ({ onSubmit }: SignUpFormProps) => {
       setUser(data.user);
       trackEvent("sign_up", { method: "email" });
       const params = new URLSearchParams(window.location.search);
-      window.location.assign(params.get("next") || "/dashboard");
+      // Reported via the URL rather than inline: this navigates away immediately.
+      // `PromoStatusBanner` renders the outcome on the destination page.
+      window.location.assign(
+        withPromoStatus(params.get("next") || "/dashboard", data.promo),
+      );
     } catch (error) {
       setFormError(
         error instanceof Error ? error.message : "Unable to create account.",
@@ -127,6 +136,16 @@ export const SignUpForm = ({ onSubmit }: SignUpFormProps) => {
           },
           required: "Password is required.",
         })}
+      />
+
+      <PromoCodeCallout />
+      <Input
+        autoCapitalize="characters"
+        autoComplete="off"
+        label="Promo code (optional)"
+        placeholder="Enter your promo code"
+        spellCheck={false}
+        {...register("promoCode")}
       />
 
       <Button

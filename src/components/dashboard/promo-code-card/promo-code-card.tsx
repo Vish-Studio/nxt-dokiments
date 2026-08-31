@@ -76,6 +76,11 @@ export const PromoCodeCard = () => {
       },
       onSuccess: () => {
         form.reset({ promoCode: "" });
+        // Not usually seen: the mutation writes the new record into the cache, so
+        // this component re-renders into its redeemed branch and the form holding
+        // this banner unmounts — the redeemed state *is* the confirmation. It
+        // still matters once a second campaign exists, where redeeming a
+        // different campaign's code from here leaves this card on its form.
         setFeedback({ message: promoMessages.applied, tone: "success" });
       },
     });

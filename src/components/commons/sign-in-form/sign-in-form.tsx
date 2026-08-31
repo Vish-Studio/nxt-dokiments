@@ -8,13 +8,17 @@ import { useForm } from "react-hook-form";
 import { Button } from "@/components/commons/button/button";
 import { GoogleSignInButton } from "@/components/commons/google-sign-in-button/google-sign-in-button";
 import { Input } from "@/components/commons/input/input";
+import { PromoCodeCallout } from "@/components/commons/promo-code-callout/promo-code-callout";
 import { trackEvent } from "@/lib/analytics/track";
+import { withPromoStatus } from "@/lib/promo/promo-status";
 import { queryKeys } from "@/lib/query/keys";
 import { useAuthStore } from "@/stores/auth-store";
 
 type SignInValues = {
   email: string;
   password: string;
+  /** Optional launch promo code; blank means the user simply doesn't have one. */
+  promoCode: string;
 };
 
 export type SignInFormProps = {
@@ -59,6 +63,7 @@ export const SignInForm = ({ notice, onSubmit }: SignInFormProps) => {
     defaultValues: {
       email: "",
       password: "",
+      promoCode: "",
     },
   });
 
@@ -82,7 +87,13 @@ export const SignInForm = ({ notice, onSubmit }: SignInFormProps) => {
       setUser(data.user);
       trackEvent("login", { method: "email" });
       const params = new URLSearchParams(window.location.search);
-      window.location.assign(params.get("next") || "/dashboard");
+      // The promo outcome rides along in the URL rather than being shown here:
+      // this navigates away immediately, and the Google flow — a server-side
+      // redirect with no client-side moment to render anything — has to report it
+      // this way regardless. `PromoStatusBanner` picks it up on arrival.
+      window.location.assign(
+        withPromoStatus(params.get("next") || "/dashboard", data.promo),
+      );
     } catch (error) {
       setFormError(
         error instanceof Error ? error.message : "Unable to sign in.",
@@ -136,6 +147,16 @@ export const SignInForm = ({ notice, onSubmit }: SignInFormProps) => {
         {...register("password", {
           required: "Password is required.",
         })}
+      />
+
+      <PromoCodeCallout />
+      <Input
+        autoCapitalize="characters"
+        autoComplete="off"
+        label="Promo code (optional)"
+        placeholder="Enter your promo code"
+        spellCheck={false}
+        {...register("promoCode")}
       />
 
       <div className="flex items-center justify-between gap-4 text-sm">
