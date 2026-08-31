@@ -7,6 +7,7 @@ import { Button } from "@/components/commons/button/button";
 import { Input } from "@/components/commons/input/input";
 import { ProfileFeedbackBanner } from "@/components/dashboard/profile-feedback-banner/profile-feedback-banner";
 import { ProfileSummary } from "@/components/dashboard/profile-summary/profile-summary";
+import { PromoCodeCard } from "@/components/dashboard/promo-code-card/promo-code-card";
 import { useUpdateProfileMutation } from "@/hooks/queries/use-auth";
 import { useAuthStore } from "@/stores/auth-store";
 
@@ -131,7 +132,10 @@ export const ProfileSettings = () => {
           </div>
         </form>
 
-        <ProfileSummary user={user} />
+        <div className="grid gap-4">
+          <ProfileSummary user={user} />
+          <PromoCodeCard />
+        </div>
       </div>
     </div>
   );
