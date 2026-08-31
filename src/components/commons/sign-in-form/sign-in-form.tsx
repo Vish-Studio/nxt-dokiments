@@ -14,9 +14,12 @@ import { withPromoStatus } from "@/lib/promo/promo-status";
 import { queryKeys } from "@/lib/query/keys";
 import { useAuthStore } from "@/stores/auth-store";
 
-type SignInValues = {
+type SignInFields = {
   email: string;
   password: string;
+};
+
+type SignInValues = SignInFields & {
   /** Optional launch promo code; blank means the user simply doesn't have one. */
   promoCode: string;
 };
@@ -42,6 +45,14 @@ export const SignInForm = ({ notice, onSubmit }: SignInFormProps) => {
   const [formError, setFormError] = useState("");
   const [next, setNext] = useState("/dashboard");
   const [urlNotice, setUrlNotice] = useState("");
+  /**
+   * Held as plain state rather than a `react-hook-form` field. The field has no
+   * validation for that library to run, and `GoogleSignInButton` is a real anchor
+   * whose `href` must already carry the code when clicked — which needs a re-render
+   * per keystroke. `watch()` would do that too, but it makes React Compiler skip
+   * memoising this entire component (`react-hooks/incompatible-library`).
+   */
+  const [promoCode, setPromoCode] = useState("");
 
   useEffect(() => {
     const timer = window.setTimeout(() => {
@@ -63,12 +74,12 @@ export const SignInForm = ({ notice, onSubmit }: SignInFormProps) => {
     defaultValues: {
       email: "",
       password: "",
-      promoCode: "",
     },
   });
 
-  const submitForm = handleSubmit(async (values) => {
+  const submitForm = handleSubmit(async (fields) => {
     setFormError("");
+    const values: SignInValues = { ...fields, promoCode };
 
     try {
       if (onSubmit) {
@@ -154,9 +165,11 @@ export const SignInForm = ({ notice, onSubmit }: SignInFormProps) => {
         autoCapitalize="characters"
         autoComplete="off"
         label="Promo code (optional)"
+        name="promoCode"
+        onChange={(event) => setPromoCode(event.target.value)}
         placeholder="Enter your promo code"
         spellCheck={false}
-        {...register("promoCode")}
+        value={promoCode}
       />
 
       <div className="flex items-center justify-between gap-4 text-sm">
@@ -186,6 +199,7 @@ export const SignInForm = ({ notice, onSubmit }: SignInFormProps) => {
       <GoogleSignInButton
         className="w-full"
         next={next}
+        promoCode={promoCode}
       />
     </form>
   );

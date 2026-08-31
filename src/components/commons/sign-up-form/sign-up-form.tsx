@@ -14,10 +14,13 @@ import { withPromoStatus } from "@/lib/promo/promo-status";
 import { queryKeys } from "@/lib/query/keys";
 import { useAuthStore } from "@/stores/auth-store";
 
-type SignUpValues = {
+type SignUpFields = {
   displayName: string;
   email: string;
   password: string;
+};
+
+type SignUpValues = SignUpFields & {
   /** Optional launch promo code; blank means the user simply doesn't have one. */
   promoCode: string;
 };
@@ -31,6 +34,14 @@ export const SignUpForm = ({ onSubmit }: SignUpFormProps) => {
   const queryClient = useQueryClient();
   const [formError, setFormError] = useState("");
   const [next, setNext] = useState("/dashboard");
+  /**
+   * Held as plain state rather than a `react-hook-form` field. The field has no
+   * validation for that library to run, and `GoogleSignInButton` is a real anchor
+   * whose `href` must already carry the code when clicked — which needs a re-render
+   * per keystroke. `watch()` would do that too, but it makes React Compiler skip
+   * memoising this entire component (`react-hooks/incompatible-library`).
+   */
+  const [promoCode, setPromoCode] = useState("");
 
   useEffect(() => {
     const timer = window.setTimeout(() => {
@@ -50,12 +61,12 @@ export const SignUpForm = ({ onSubmit }: SignUpFormProps) => {
       displayName: "",
       email: "",
       password: "",
-      promoCode: "",
     },
   });
 
-  const submitForm = handleSubmit(async (values) => {
+  const submitForm = handleSubmit(async (fields) => {
     setFormError("");
+    const values: SignUpValues = { ...fields, promoCode };
 
     try {
       if (onSubmit) {
@@ -143,9 +154,11 @@ export const SignUpForm = ({ onSubmit }: SignUpFormProps) => {
         autoCapitalize="characters"
         autoComplete="off"
         label="Promo code (optional)"
+        name="promoCode"
+        onChange={(event) => setPromoCode(event.target.value)}
         placeholder="Enter your promo code"
         spellCheck={false}
-        {...register("promoCode")}
+        value={promoCode}
       />
 
       <Button
@@ -166,6 +179,7 @@ export const SignUpForm = ({ onSubmit }: SignUpFormProps) => {
         className="w-full"
         label="Sign up with Google"
         next={next}
+        promoCode={promoCode}
       />
 
       <div className="grid gap-3 border-t border-steel-mist pt-5 text-center">
