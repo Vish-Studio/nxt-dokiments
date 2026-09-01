@@ -98,7 +98,7 @@ export const DashboardView = () => {
   const quickActions = [
     {
       color: "bg-play-purple hover:bg-play-purple/80",
-      href: "/documents",
+      href: "/my-documents",
       icon: FileTextIcon,
       label: "Open documents",
     },
@@ -257,7 +257,7 @@ export const DashboardView = () => {
             </div>
             <Link
               className="font-title text-sm font-bold text-nox-noir hover:underline"
-              href="/documents"
+              href="/my-documents"
             >
               View all
             </Link>
@@ -285,7 +285,7 @@ export const DashboardView = () => {
               </p>
               <Link
                 className="group btn btn-primary mt-5 min-h-11 h-11 font-title font-semibold tracking-normal"
-                href="/documents"
+                href="/my-documents"
               >
                 Open document
                 <ArrowRightIcon
@@ -316,7 +316,7 @@ export const DashboardView = () => {
                 </p>
                 <Link
                   className="group btn btn-primary mt-4 min-h-11 h-11 font-title font-semibold tracking-normal"
-                  href={`/documents?template=${latestTemplate.id}`}
+                  href={`/my-documents?template=${latestTemplate.id}`}
                 >
                   Use template
                   <ArrowRightIcon
@@ -403,7 +403,7 @@ export const DashboardView = () => {
             {recentDocuments.slice(0, 3).map((document) => (
               <Link
                 className="group flex items-center justify-between gap-4 py-3 transition hover:text-nox-noir/70"
-                href="/documents"
+                href="/my-documents"
                 key={document.id}
               >
                 <div className="min-w-0">
@@ -435,15 +435,15 @@ export const DashboardView = () => {
         tone="golden"
         useHref={
           previewTemplate
-            ? `/documents?template=${previewTemplate.id}`
-            : "/documents"
+            ? `/my-documents?template=${previewTemplate.id}`
+            : "/my-documents"
         }
       />
 
       {/* Hidden behind the preview dialog so it can't float over the modal. */}
       {previewTemplate ? null : (
         <FloatingActionButton
-          href="/documents?new=1"
+          href="/my-documents?new=1"
           icon={
             <PlusIcon
               aria-hidden

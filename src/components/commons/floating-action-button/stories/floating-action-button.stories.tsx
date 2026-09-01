@@ -62,14 +62,14 @@ export const Circle: Story = {
 /** Passing `href` swaps the button for a `next/link` anchor. */
 export const AsLink: Story = {
   args: {
-    href: "/documents?new=1",
+    href: "/my-documents?new=1",
     onClick: undefined,
     shape: "circle",
   },
   play: async ({ canvas }) => {
     const link = canvas.getByRole("link", { name: /new document/i });
     await expect(link).toBeVisible();
-    await expect(link).toHaveAttribute("href", "/documents?new=1");
+    await expect(link).toHaveAttribute("href", "/my-documents?new=1");
     await expect(
       canvas.queryByRole("button", { name: /new document/i }),
     ).not.toBeInTheDocument();

@@ -83,7 +83,9 @@ export const MyTemplatesView = () => {
         saved
         template={preview}
         tone="pink"
-        useHref={preview ? `/documents?template=${preview.id}` : "/documents"}
+        useHref={
+          preview ? `/my-documents?template=${preview.id}` : "/my-documents"
+        }
       />
 
       <ConfirmDialog

@@ -13,7 +13,7 @@ import {
 /** Route prefixes that require an authenticated session. */
 const PROTECTED_PREFIXES = [
   "/dashboard",
-  "/documents",
+  "/my-documents",
   "/my-clients",
   "/my-templates",
   "/marketplace",
