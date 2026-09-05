@@ -47,6 +47,12 @@ type FirestoreErrorBody = {
   error?: {
     /** Human-readable error message returned by the Firestore REST API. */
     message?: string;
+    /**
+     * Canonical error status, e.g. `ALREADY_EXISTS`, `FAILED_PRECONDITION`,
+     * `PERMISSION_DENIED`. Read by `createFirestoreDocument` to recognise a
+     * deliberately-failed write precondition without matching on prose.
+     */
+    status?: string;
   };
 };
 
@@ -148,6 +154,42 @@ export const getFirestoreDocument = async (
 };
 
 /**
+ * Issues Firestore's REST create-or-update `PATCH` and returns the parsed body
+ * alongside the raw response, leaving status interpretation to the caller.
+ *
+ * Exists because the two public writers disagree about what a non-2xx means:
+ * `patchFirestoreDocument` treats every one of them as a failure, while
+ * `createFirestoreDocument` first has to tell a precondition it asked for from a
+ * genuine error.
+ */
+const writeDocument = async (
+  url: string,
+  fields: FirestoreFields,
+  idToken?: string,
+): Promise<{
+  body: (FirestoreDocument & FirestoreErrorBody) | null;
+  response: Response;
+}> => {
+  const response = await fetchUpstream(url, {
+    body: JSON.stringify({ fields }),
+    headers: {
+      "Content-Type": "application/json",
+      ...(serverFirebaseConfig.apiKey
+        ? { "X-Goog-Api-Key": serverFirebaseConfig.apiKey }
+        : {}),
+      ...(idToken ? { Authorization: `Bearer ${idToken}` } : {}),
+    },
+    method: "PATCH",
+  });
+
+  const body = (await response.json().catch(() => null)) as
+    | (FirestoreDocument & FirestoreErrorBody)
+    | null;
+
+  return { body, response };
+};
+
+/**
  * Creates or updates a Firestore document via the REST API.
  *
  * @param path - Document path relative to the database root, e.g. `users/{uid}`.
@@ -170,29 +212,84 @@ export const patchFirestoreDocument = async (
     ? `?${fieldMask.map((field) => `updateMask.fieldPaths=${field}`).join("&")}`
     : "";
 
-  const response = await fetchUpstream(`${documentUrl(path)}${mask}`, {
-    body: JSON.stringify({ fields }),
-    headers: {
-      "Content-Type": "application/json",
-      ...(serverFirebaseConfig.apiKey
-        ? { "X-Goog-Api-Key": serverFirebaseConfig.apiKey }
-        : {}),
-      ...(idToken ? { Authorization: `Bearer ${idToken}` } : {}),
-    },
-    method: "PATCH",
-  });
-
-  const document = (await response.json().catch(() => null)) as
-    | (FirestoreDocument & FirestoreErrorBody)
-    | null;
+  const { body, response } = await writeDocument(
+    `${documentUrl(path)}${mask}`,
+    fields,
+    idToken,
+  );
 
   if (!response.ok) {
     throw new Error(
-      document?.error?.message || "Unable to write the requested document.",
+      body?.error?.message || "Unable to write the requested document.",
     );
   }
 
-  return document as FirestoreDocument;
+  return body as FirestoreDocument;
+};
+
+/**
+ * Canonical Firestore statuses for "you asked me not to overwrite an existing
+ * document, and one exists".
+ *
+ * Both are accepted because the REST API's choice between them is not something
+ * this code should depend on — the meaningful signal is that the write was
+ * refused for the reason we requested, not which of the two names it was given.
+ */
+const DOCUMENT_EXISTS_STATUSES = new Set([
+  "ALREADY_EXISTS",
+  "FAILED_PRECONDITION",
+]);
+
+/**
+ * Creates a Firestore document **only if it does not already exist**.
+ *
+ * `currentDocument.exists=false` turns Firestore's create-or-update `PATCH` into a
+ * create-only write: the server itself refuses the request when the document is
+ * already there. That is what makes "the first write wins" a database guarantee
+ * rather than something the caller arranges with a read-then-write — which two
+ * concurrent requests would both sail through, since both would read nothing.
+ *
+ * Returning `null` rather than throwing for the already-exists case mirrors
+ * `getFirestoreDocument`'s treatment of a 404: an absent/present document is an
+ * expected answer, not a failure.
+ *
+ * Note that a caller whose security rules grant `create` but not `update` may see
+ * `PERMISSION_DENIED` instead of an exists-status, because rule evaluation and
+ * precondition evaluation are both server-side and their order is not contractual.
+ * Such a failure is thrown, not folded into `null` — a genuine misconfiguration
+ * (rules never deployed) must not be reported to users as "already done". Callers
+ * that need to tell those two apart should re-read the document after a throw.
+ *
+ * @param path - Document path relative to the database root, e.g. `users/{uid}/promoRedemptions/{promoId}`.
+ * @param fields - Complete set of fields to write.
+ * @param idToken - Firebase ID token used to authorise the request.
+ * @returns The created document, or `null` when it already existed and nothing was written.
+ * @throws When the write fails for any reason other than the document already existing.
+ */
+export const createFirestoreDocument = async (
+  path: string,
+  fields: FirestoreFields,
+  idToken: string,
+): Promise<FirestoreDocument | null> => {
+  const { body, response } = await writeDocument(
+    `${documentUrl(path)}?currentDocument.exists=false`,
+    fields,
+    idToken,
+  );
+
+  if (!response.ok) {
+    const status = body?.error?.status;
+
+    if (status && DOCUMENT_EXISTS_STATUSES.has(status)) {
+      return null;
+    }
+
+    throw new Error(
+      body?.error?.message || "Unable to create the requested document.",
+    );
+  }
+
+  return body as FirestoreDocument;
 };
 
 /**

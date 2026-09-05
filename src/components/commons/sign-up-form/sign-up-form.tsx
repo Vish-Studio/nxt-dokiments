@@ -8,14 +8,21 @@ import { Button } from "@/components/commons/button/button";
 import { GoogleSignInButton } from "@/components/commons/google-sign-in-button/google-sign-in-button";
 import { Input } from "@/components/commons/input/input";
 import { LinkButton } from "@/components/commons/link-button/link-button";
+import { PromoCodeCallout } from "@/components/commons/promo-code-callout/promo-code-callout";
 import { trackEvent } from "@/lib/analytics/track";
+import { withPromoStatus } from "@/lib/promo/promo-status";
 import { queryKeys } from "@/lib/query/keys";
 import { useAuthStore } from "@/stores/auth-store";
 
-type SignUpValues = {
+type SignUpFields = {
   displayName: string;
   email: string;
   password: string;
+};
+
+type SignUpValues = SignUpFields & {
+  /** Optional launch promo code; blank means the user simply doesn't have one. */
+  promoCode: string;
 };
 
 export type SignUpFormProps = {
@@ -27,6 +34,14 @@ export const SignUpForm = ({ onSubmit }: SignUpFormProps) => {
   const queryClient = useQueryClient();
   const [formError, setFormError] = useState("");
   const [next, setNext] = useState("/dashboard");
+  /**
+   * Held as plain state rather than a `react-hook-form` field. The field has no
+   * validation for that library to run, and `GoogleSignInButton` is a real anchor
+   * whose `href` must already carry the code when clicked — which needs a re-render
+   * per keystroke. `watch()` would do that too, but it makes React Compiler skip
+   * memoising this entire component (`react-hooks/incompatible-library`).
+   */
+  const [promoCode, setPromoCode] = useState("");
 
   useEffect(() => {
     const timer = window.setTimeout(() => {
@@ -49,8 +64,9 @@ export const SignUpForm = ({ onSubmit }: SignUpFormProps) => {
     },
   });
 
-  const submitForm = handleSubmit(async (values) => {
+  const submitForm = handleSubmit(async (fields) => {
     setFormError("");
+    const values: SignUpValues = { ...fields, promoCode };
 
     try {
       if (onSubmit) {
@@ -69,7 +85,11 @@ export const SignUpForm = ({ onSubmit }: SignUpFormProps) => {
       setUser(data.user);
       trackEvent("sign_up", { method: "email" });
       const params = new URLSearchParams(window.location.search);
-      window.location.assign(params.get("next") || "/dashboard");
+      // Reported via the URL rather than inline: this navigates away immediately.
+      // `PromoStatusBanner` renders the outcome on the destination page.
+      window.location.assign(
+        withPromoStatus(params.get("next") || "/dashboard", data.promo),
+      );
     } catch (error) {
       setFormError(
         error instanceof Error ? error.message : "Unable to create account.",
@@ -129,6 +149,18 @@ export const SignUpForm = ({ onSubmit }: SignUpFormProps) => {
         })}
       />
 
+      <PromoCodeCallout />
+      <Input
+        autoCapitalize="characters"
+        autoComplete="off"
+        label="Promo code (optional)"
+        name="promoCode"
+        onChange={(event) => setPromoCode(event.target.value)}
+        placeholder="Enter your promo code"
+        spellCheck={false}
+        value={promoCode}
+      />
+
       <Button
         className="w-full"
         disabled={isSubmitting}
@@ -147,6 +179,7 @@ export const SignUpForm = ({ onSubmit }: SignUpFormProps) => {
         className="w-full"
         label="Sign up with Google"
         next={next}
+        promoCode={promoCode}
       />
 
       <div className="grid gap-3 border-t border-steel-mist pt-5 text-center">

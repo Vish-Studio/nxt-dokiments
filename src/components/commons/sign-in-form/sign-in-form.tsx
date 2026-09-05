@@ -8,13 +8,20 @@ import { useForm } from "react-hook-form";
 import { Button } from "@/components/commons/button/button";
 import { GoogleSignInButton } from "@/components/commons/google-sign-in-button/google-sign-in-button";
 import { Input } from "@/components/commons/input/input";
+import { PromoCodeCallout } from "@/components/commons/promo-code-callout/promo-code-callout";
 import { trackEvent } from "@/lib/analytics/track";
+import { withPromoStatus } from "@/lib/promo/promo-status";
 import { queryKeys } from "@/lib/query/keys";
 import { useAuthStore } from "@/stores/auth-store";
 
-type SignInValues = {
+type SignInFields = {
   email: string;
   password: string;
+};
+
+type SignInValues = SignInFields & {
+  /** Optional launch promo code; blank means the user simply doesn't have one. */
+  promoCode: string;
 };
 
 export type SignInFormProps = {
@@ -38,6 +45,14 @@ export const SignInForm = ({ notice, onSubmit }: SignInFormProps) => {
   const [formError, setFormError] = useState("");
   const [next, setNext] = useState("/dashboard");
   const [urlNotice, setUrlNotice] = useState("");
+  /**
+   * Held as plain state rather than a `react-hook-form` field. The field has no
+   * validation for that library to run, and `GoogleSignInButton` is a real anchor
+   * whose `href` must already carry the code when clicked — which needs a re-render
+   * per keystroke. `watch()` would do that too, but it makes React Compiler skip
+   * memoising this entire component (`react-hooks/incompatible-library`).
+   */
+  const [promoCode, setPromoCode] = useState("");
 
   useEffect(() => {
     const timer = window.setTimeout(() => {
@@ -62,8 +77,9 @@ export const SignInForm = ({ notice, onSubmit }: SignInFormProps) => {
     },
   });
 
-  const submitForm = handleSubmit(async (values) => {
+  const submitForm = handleSubmit(async (fields) => {
     setFormError("");
+    const values: SignInValues = { ...fields, promoCode };
 
     try {
       if (onSubmit) {
@@ -82,7 +98,13 @@ export const SignInForm = ({ notice, onSubmit }: SignInFormProps) => {
       setUser(data.user);
       trackEvent("login", { method: "email" });
       const params = new URLSearchParams(window.location.search);
-      window.location.assign(params.get("next") || "/dashboard");
+      // The promo outcome rides along in the URL rather than being shown here:
+      // this navigates away immediately, and the Google flow — a server-side
+      // redirect with no client-side moment to render anything — has to report it
+      // this way regardless. `PromoStatusBanner` picks it up on arrival.
+      window.location.assign(
+        withPromoStatus(params.get("next") || "/dashboard", data.promo),
+      );
     } catch (error) {
       setFormError(
         error instanceof Error ? error.message : "Unable to sign in.",
@@ -138,6 +160,18 @@ export const SignInForm = ({ notice, onSubmit }: SignInFormProps) => {
         })}
       />
 
+      <PromoCodeCallout />
+      <Input
+        autoCapitalize="characters"
+        autoComplete="off"
+        label="Promo code (optional)"
+        name="promoCode"
+        onChange={(event) => setPromoCode(event.target.value)}
+        placeholder="Enter your promo code"
+        spellCheck={false}
+        value={promoCode}
+      />
+
       <div className="flex items-center justify-between gap-4 text-sm">
         <Link
           className="font-title font-bold text-nox-noir hover:text-primary"
@@ -165,6 +199,7 @@ export const SignInForm = ({ notice, onSubmit }: SignInFormProps) => {
       <GoogleSignInButton
         className="w-full"
         next={next}
+        promoCode={promoCode}
       />
     </form>
   );

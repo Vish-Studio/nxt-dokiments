@@ -1,13 +1,14 @@
-# API Reference — Templates, Saved Templates, Documents, Clients
+# API Reference — Templates, Saved Templates, Documents, Clients, Promo Codes
 
-Documents the shape of four route groups:
+Documents the shape of five route groups:
 
 - `/api/templates` — read-only marketplace catalog, served from Firestore.
 - `/api/saved-templates` — per-user library of templates a user has added from the marketplace.
 - `/api/documents` — per-user documents created from a saved template.
 - `/api/clients` — per-user client book: the contact details a user reuses when preparing documents.
+- `/api/promo-redemptions` — per-user record of which promotional codes an account has redeemed.
 
-A saved template references a template; a document references a saved template's data. `clients` is independent of the other three.
+A saved template references a template; a document references a saved template's data. `clients` and `promo-redemptions` are independent of the other three.
 
 ## Firestore shape backing these routes
 
@@ -17,6 +18,7 @@ templateStyles/{styleId}                   — admin-managed style catalog, seed
 users/{uid}/savedTemplates/{templateId}    — join record; doc ID = templateId (idempotent save)
 users/{uid}/documents/{docId}              — user-created document, snapshots template fields at creation
 users/{uid}/clients/{clientId}             — user's own client contact details; doc ID server-generated
+users/{uid}/promoRedemptions/{promoId}     — redeemed promo code; doc ID = campaign slug (create-only)
 ```
 
 `templates`/`templateStyles` are seeded from the static arrays in `src/lib/market-place/` with matching IDs (e.g. `classic-contract`) and are read-only from the app's perspective — there are no admin write routes for them.
@@ -135,10 +137,56 @@ The `partyOne`/`partyTwo` aliases make an NDA work without a special case — th
 
 ---
 
+## `/api/promo-redemptions`
+
+Which promotional codes an account has redeemed, stored under `users/{uid}/promoRedemptions/{promoId}`. Backs the **Launch Promo** card in Settings → Profile and the promo field on the sign-in/sign-up forms.
+
+**A redemption currently confers no entitlement.** It records that an account used a code and displays that status; it does not change `role`, and it must not. `role` is the entitlement mechanism and [`firestore.rules`](../firestore.rules) deliberately forbids a user changing their own — so granting a benefit from a user-triggered route would mean weakening that rule. Every template is already free for everyone anyway while `NEXT_PUBLIC_DISABLE_TIER_LOCKS=true`. When a benefit does exist, derive it server-side from the redemption record (the way `getSavedTemplateLimit` could) rather than by mutating `role`.
+
+| Method | Route | Purpose | Auth | Request | Response | Why this method |
+|---|---|---|---|---|---|---|
+| `GET` | `/api/promo-redemptions` | List the codes the signed-in account has redeemed, for the Launch Promo card. | Session required (`401` if absent). | — | `200 { redemptions: PromoRedemption[] }` — `[]` for an account that has redeemed nothing. | `GET` — plain list read scoped to the caller's own subcollection. Returns a *list* rather than a "has the user redeemed the current promo?" boolean so a second campaign needs no change here; callers pick their campaign out by `promoId`. |
+| `POST` | `/api/promo-redemptions` | Redeem a code for the signed-in account. | Session required. | `{ promoCode: string }` (1–64 chars) | `201 { redemption }` on success. `400` for a code matching no campaign, or a malformed body. `409` when this account already redeemed it — including when a concurrent request won the race. | `POST` on the collection to create one record. Not idempotent on purpose: unlike saving a template, "you already did this" is a meaningful answer the user needs to see, not a no-op to absorb. |
+
+**No `DELETE`, and no `PATCH`.** A redemption has no mutable fields, and un-redeeming would defeat the once-per-account rule — the rules grant `create` only, so even a direct Firestore request cannot remove one.
+
+### Once per account, guaranteed by the database
+
+Four layers, in order of authority:
+
+1. **The document ID is the constraint.** It's the campaign's own slug (`launch-2026`), so the `(uid, campaign)` pair *is* the primary key and two records for one account are not representable — no unique index or transaction needed. Same trick as `savedTemplates`, which keys on `templateId`.
+2. **Rules deny mutation.** `allow read, create` and deliberately no `update`/`delete`, so a second redemption is an `update` in rules terms and is refused **at the database**, independent of this route.
+3. **A create-only write.** `createFirestoreDocument` sends `currentDocument.exists=false`, so Firestore itself refuses the write if a record is already there — which is what holds when two requests race past step 4 together.
+4. **A read before writing**, so the ordinary repeat gets a clean `409` without a failed write.
+
+After *any* write failure the record is re-read. Rules that grant `create` but not `update` can report the losing racer as `PERMISSION_DENIED` rather than an exists-status, and the re-read is what tells that apart from rules never having been deployed: record present means someone else won the race (`409`); record absent means the failure is real and surfaces as a `500` rather than being mis-reported to a first-time user as "already used".
+
+### Matching: case- and whitespace-insensitive
+
+`normalizePromoCode` strips **all** whitespace (not just the ends) and upper-cases before comparing, so `"  vishdok2026! "` matches `ViSHDOK2026!`. A launch code gets retyped from screenshots and emails, mobile keyboards auto-capitalise, and a code pasted from a wrapped email arrives with a line break in it — none of which should fail. There is no security argument for being stricter: the code is printed on the public sign-in page by design, so the boundary being defended is *redemption*, not knowledge of the string. The canonical `code` from the registry is what gets stored, never the user's casing.
+
+The Zod schema deliberately does **not** `.trim()`, unlike [`client-schema.ts`](../src/lib/api/client-schema.ts): nothing the user typed is ever stored, so all normalisation lives in one tested function, and a whitespace-only submission reaches the code lookup and gets `"Invalid promo code."` instead of a confusing `"Invalid request body."`.
+
+### Redeeming during authentication
+
+`POST /api/auth/sign-in`, `POST /api/auth/sign-up` and the Google callback all accept an optional promo code and redeem it through [`redeemPromoCodeAtAuth`](../src/lib/promo/server-auth-promo.ts), *after* the account exists — a redemption has nothing to attach to before that. That helper **never throws**: a promo code is a marketing extra, so whether it applies must have no bearing on whether authentication succeeds. Letting a Firestore failure propagate would turn a correct password into a `401`.
+
+The outcome is reported as `promo: "applied" | "already_redeemed" | "invalid" | "failed"` next to the user (absent entirely when no code was submitted), and the client carries it to the next page as `?promo=…` for `PromoStatusBanner` to render. The Google flow appends the same param server-side, because a redirect has no response body to put it in — which is why the param exists rather than an inline message. `failed` covers a redemption that could not be processed at all, so a code the user actually typed is never silently dropped.
+
+The `?promo=` value is user-editable and treated as a display hint only: it decides which sentence the banner shows and nothing else. `GET /api/promo-redemptions` is the authoritative answer, and that is what the Settings card reads.
+
+See [`server-promo-redemptions.ts`](../src/lib/firebase/server-promo-redemptions.ts), [`route.ts`](../src/app/api/promo-redemptions/route.ts), the registry in [`promo-codes.ts`](../src/lib/promo/promo-codes.ts), the shared schema in [`promo-schema.ts`](../src/lib/api/promo-schema.ts), and [`use-promo-redemptions.ts`](../src/hooks/queries/use-promo-redemptions.ts) (the hooks `PromoCodeCard` consumes).
+
+### Adding a second promo code
+
+Add an entry to `promoCodes` in [`promo-codes.ts`](../src/lib/promo/promo-codes.ts). Nothing else has to change: matching, redemption, the API and the rules are all campaign-agnostic, and existing redemption records keep working because they store `promoId` rather than depending on registry order. Expiry windows, usage caps or a benefit descriptor would become further fields on that entry, checked in the `POST` handler — no schema change to records already written. `activePromoCode` (the single advertised campaign) is the one thing that would need revisiting.
+
+---
+
 ## Cross-cutting notes
 
 - **Auth pattern**: every session-gated route uses the shared [`withSession`](../src/lib/api/with-session.ts) wrapper — resolves the session, 401s if `!session.user`, calls a `server-*.ts` Firestore helper with `session.idToken`, and catches anything thrown via [`handleApiError`](../src/lib/api/errors.ts) so routes don't need their own `try`/`catch`.
-- **Ownership enforcement**: for `saved-templates`, `documents` and `clients`, the `uid` in the Firestore path always comes from the session, never from the request body/URL — a user can never act on another user's subcollection regardless of what ID they pass.
+- **Ownership enforcement**: for `saved-templates`, `documents`, `clients` and `promo-redemptions`, the `uid` in the Firestore path always comes from the session, never from the request body/URL — a user can never act on another user's subcollection regardless of what ID they pass.
 - **Server-side tier re-validation**: `POST /api/saved-templates` re-checks `canUseTier` and the free-tier save limit server-side, not trusted from the client. `MarketplaceBrowser` still checks both client-side first, purely for UX (avoiding a round trip to show an error the server would reject anyway).
 - **Public-launch override**: `canUseTier` short-circuits to always-true when `NEXT_PUBLIC_DISABLE_TIER_LOCKS=true` (see [`src/lib/market-place/index.ts`](../src/lib/market-place/index.ts)) — any signed-in user may save/use any tier of template. The free-tier save limit is unaffected by this flag and is still enforced normally. See that file for the current flag state and behavior.
 - **`/api/templates` naming**: this route is the read-only catalog. Saved-template CRUD lives at `/api/saved-templates`.

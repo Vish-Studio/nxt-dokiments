@@ -24,11 +24,27 @@ const sanitizeNextPath = (next: string | null): string => {
 };
 
 /**
+ * Ceiling on a promo code carried through the OAuth round-trip.
+ *
+ * The value ends up inside a sealed cookie, and cookies have a hard size limit —
+ * so an oversized `promoCode` in a crafted link must not be able to produce a
+ * cookie the browser silently refuses, which would break sign-in entirely rather
+ * than just failing the promo. Matches the ceiling `promo-schema.ts` enforces on
+ * the redeem route; anything this long is rejected by the code lookup anyway.
+ */
+const MAX_PROMO_CODE = 64;
+
+/**
  * `GET /api/auth/google/start`
  *
  * First leg of the "Sign in with Google" flow. Generates a CSRF `state`,
  * seals it together with the sanitised `next` redirect target into a
  * short-lived cookie, then redirects to Google's OAuth 2.0 consent screen.
+ *
+ * An optional `promoCode` is sealed alongside them so a code typed on the sign-in
+ * form isn't silently lost by choosing Google instead of a password. It rides in
+ * the sealed cookie rather than through Google, which never sees it and would not
+ * return it.
  *
  * @returns A `302` redirect to Google, or an error redirect to `/sign-in` when Google OAuth is not configured.
  */
@@ -44,6 +60,8 @@ export const GET = async (request: Request): Promise<Response> => {
 
   const { searchParams } = new URL(request.url);
   const next = sanitizeNextPath(searchParams.get("next"));
+  const promoCode =
+    searchParams.get("promoCode")?.slice(0, MAX_PROMO_CODE) || undefined;
   // Random per-request CSRF token; `callback/route.ts` rejects the flow if
   // the `state` Google echoes back doesn't match the one sealed below.
   const state = crypto.randomUUID();
@@ -52,7 +70,7 @@ export const GET = async (request: Request): Promise<Response> => {
   // forging `state`/`next`. 10-minute TTL matches the cookie's `maxAge` —
   // both just need to outlive the Google consent round-trip.
   const sealedState = await sealData(
-    { next, state },
+    { next, promoCode, state },
     { password: sessionOptions.password as string, ttl: 600 },
   );
 

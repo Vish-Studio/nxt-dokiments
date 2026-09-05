@@ -39,4 +39,9 @@ export const queryKeys = {
     /** A single document by ID. */
     detail: (id: string) => ["documents", "detail", id] as const,
   },
+
+  promoRedemptions: {
+    /** The promo codes the signed-in user has redeemed. There is only ever one list — no filters. */
+    all: () => ["promo-redemptions"] as const,
+  },
 };

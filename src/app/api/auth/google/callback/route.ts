@@ -6,12 +6,21 @@ import { OAUTH_STATE_COOKIE } from "@/app/api/auth/google/start/route";
 import { startSession } from "@/lib/api/session-cookie";
 import { signInWithGoogle } from "@/lib/firebase/server-auth";
 import { exchangeGoogleCode } from "@/lib/google/server-oauth";
+import { PROMO_STATUS_PARAM } from "@/lib/promo/promo-status";
+import { redeemPromoCodeAtAuth } from "@/lib/promo/server-auth-promo";
 import { sessionOptions } from "@/lib/session";
 
 /** Sealed payload stored in the `dokiments-oauth-state` cookie by the `start` route. */
 type OAuthState = {
   /** Sanitised post-sign-in redirect path, e.g. `/dashboard`. */
   next: string;
+  /**
+   * Promo code the user typed on the auth form before choosing Google, if any.
+   *
+   * Optional so that a cookie sealed by the previous deployment — mid-flight while
+   * this ships — still unseals rather than bouncing the user to the error page.
+   */
+  promoCode?: string;
   /** CSRF token minted by `start/route.ts`, compared against the `state` query param here. */
   state: string;
 };
@@ -28,6 +37,10 @@ const SIGN_IN_ERROR_URL = (request: Request) =>
  * authorization `code` for a Google identity token, signs in (or silently
  * creates) the Firebase account, and writes the session cookie exactly as
  * `POST /api/auth/sign-in` does.
+ *
+ * If a promo code was sealed into the state cookie by `start/route.ts`, it is
+ * redeemed here — once the account exists — and the outcome is appended to the
+ * redirect as `?promo=…`, which is how the password flows report it too.
  *
  * @returns A `302` redirect to the original `next` path on success, or to
  *   `/sign-in?error=google_failed` if the user denied consent, the `state`
@@ -60,9 +73,10 @@ export const GET = async (request: NextRequest): Promise<Response> => {
   try {
     // Unsealing (rather than trusting the cookie's plaintext) proves the
     // cookie was set by `start/route.ts` and hasn't been tampered with.
-    const { next, state } = await unsealData<OAuthState>(sealedState, {
-      password: sessionOptions.password as string,
-    });
+    const { next, promoCode, state } = await unsealData<OAuthState>(
+      sealedState,
+      { password: sessionOptions.password as string },
+    );
 
     // CSRF check: `state` must match what `start/route.ts` minted, or this
     // request didn't originate from the redirect we issued.
@@ -80,7 +94,18 @@ export const GET = async (request: NextRequest): Promise<Response> => {
     const { idToken: googleIdToken } = await exchangeGoogleCode(code);
     const sessionData = await signInWithGoogle(googleIdToken);
 
-    const response = NextResponse.redirect(new URL(next, request.url));
+    // The account exists by now, so a redemption has something to attach to. This
+    // never throws — a promo failure must not send a successfully-authenticated
+    // user to the error page.
+    const promo = await redeemPromoCodeAtAuth(sessionData, promoCode);
+
+    // A redirect has no response body to report the outcome in, so it travels as a
+    // query param for `PromoStatusBanner` to render on arrival. The password forms
+    // append the same param client-side, so both flows land on one banner.
+    const destination = new URL(next, request.url);
+    if (promo) destination.searchParams.set(PROMO_STATUS_PARAM, promo);
+
+    const response = NextResponse.redirect(destination);
     // One-time-use cookie: clear it now that the flow it protected is done.
     response.cookies.delete({
       name: OAUTH_STATE_COOKIE,

@@ -98,6 +98,28 @@ authorisation decision reads the sealed cookie instead. Its name and reader live
 - Sign-out still only drops cookies; it does **not** revoke the Firebase refresh
   token, which would need an Admin SDK call.
 
+## Promo codes at sign-in
+
+The sign-in and sign-up forms carry an optional promo code, redeemed by the route
+once the account exists — see [`docs/api-templates-documents.md`](./api-templates-documents.md#apipromo-redemptions)
+for the data model and the once-per-account guarantee. Three things matter to the
+auth flow specifically:
+
+- **A promo code can never fail an authentication.** `redeemPromoCodeAtAuth`
+  (`src/lib/promo/server-auth-promo.ts`) swallows every failure and reports it as
+  `"failed"`, so a Firestore outage cannot turn a correct password into a `401`.
+- **Google sign-in carries the code through the redirect.** `/api/auth/google/start`
+  seals an optional `promoCode` into the same `dokiments-oauth-state` cookie as
+  `state` and `next` (capped at 64 characters so an oversized value can't produce a
+  cookie the browser refuses); the callback redeems it after `startSession` and
+  appends `?promo=<outcome>` to its redirect. Google never sees the code. The field
+  is optional on the sealed payload so cookies sealed by a previous deployment still
+  unseal mid-flight rather than bouncing the user to the error page.
+- **Nothing about the session changes.** Promo state lives in its own subcollection,
+  not on `users/{uid}`, so it never enters `AuthUser` or the sealed session cookie —
+  which is what keeps this feature clear of the "sessions sealed before field X
+  existed are treated as expired" problem described above.
+
 ## Roles
 
 Supported roles are:
@@ -148,9 +170,23 @@ service cloud.firestore {
         && request.resource.data.email == resource.data.email;
 
       allow update: if isSuperadmin();
+
+      // Redeemed promo codes. `create` only — no `update` and no `delete` — which is
+      // what makes "once per account" a database guarantee rather than an
+      // application one. The doc ID is the campaign slug, so a second redemption is
+      // an `update` and is refused here even if the route layer has a bug.
+      match /promoRedemptions/{promoId} {
+        allow read, create: if isOwner(uid);
+      }
     }
   }
 }
 ```
+
+The authoritative copy of these rules is [`firestore.rules`](../firestore.rules) in
+the repo root; deploy with `firebase deploy --only firestore:rules`. **Deploy the
+rules before shipping code that writes a new collection** — until they land, every
+write to `promoRedemptions` is refused with `PERMISSION_DENIED` and surfaces as a
+`500`.
 
 For stronger production RBAC, mirror roles into Firebase custom claims with the Admin SDK and verify those claims in backend endpoints or Firestore rules.

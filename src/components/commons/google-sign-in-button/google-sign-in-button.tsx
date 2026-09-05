@@ -6,6 +6,13 @@ export type GoogleSignInButtonProps = {
   label?: string;
   /** Path to redirect to after a successful sign-in. Sanitised server-side by `/api/auth/google/start`. */
   next?: string;
+  /**
+   * Promo code currently typed on the form, carried through the OAuth round-trip
+   * so choosing Google doesn't discard it. Passed in the URL rather than a body
+   * because this is a plain link; the code is public marketing copy, so there is
+   * nothing here to keep out of a URL. Validated and redeemed server-side.
+   */
+  promoCode?: string;
 };
 
 /** Google's official multi-colour "G" mark, inlined since no brand-icon package is a dependency. */
@@ -50,8 +57,12 @@ export const GoogleSignInButton = ({
   className,
   label = "Continue with Google",
   next = "/dashboard",
+  promoCode,
 }: GoogleSignInButtonProps) => {
-  const href = `/api/auth/google/start?next=${encodeURIComponent(next)}`;
+  const trimmedPromoCode = promoCode?.trim();
+  const href = `/api/auth/google/start?next=${encodeURIComponent(next)}${
+    trimmedPromoCode ? `&promoCode=${encodeURIComponent(trimmedPromoCode)}` : ""
+  }`;
 
   return (
     <a

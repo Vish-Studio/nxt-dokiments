@@ -42,3 +42,33 @@ export const CustomLabel: Story = {
     );
   },
 };
+
+/**
+ * A promo code typed on the auth form travels with the OAuth redirect, so choosing
+ * Google doesn't silently discard it. Encoded, since the code contains `!`.
+ */
+export const WithPromoCode: Story = {
+  args: {
+    promoCode: "ViSHDOK2026!",
+  },
+  play: async ({ canvas }) => {
+    await expect(
+      canvas.getByRole("link", { name: /continue with google/i }),
+    ).toHaveAttribute(
+      "href",
+      "/api/auth/google/start?next=%2Fdashboard&promoCode=ViSHDOK2026!",
+    );
+  },
+};
+
+/** An untouched field must not add an empty param to the redirect. */
+export const WithBlankPromoCode: Story = {
+  args: {
+    promoCode: "   ",
+  },
+  play: async ({ canvas }) => {
+    await expect(
+      canvas.getByRole("link", { name: /continue with google/i }),
+    ).toHaveAttribute("href", "/api/auth/google/start?next=%2Fdashboard");
+  },
+};
