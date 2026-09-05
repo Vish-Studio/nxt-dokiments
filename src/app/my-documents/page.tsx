@@ -4,9 +4,9 @@ import { DocumentsView } from "@/components/dashboard/documents-view/documents-v
 const DocumentsPage = () => {
   return (
     <AppShell
-      activeItem="Documents"
+      activeItem="My Documents"
       description="Create and manage documents from your saved templates."
-      title="Documents"
+      title="My Documents"
     >
       <DocumentsView />
     </AppShell>

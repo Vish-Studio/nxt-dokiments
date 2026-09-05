@@ -163,7 +163,7 @@ export const DocumentsView = () => {
 
     // Wait for the session before starting the document. `useAuthStore` begins as
     // `{ status: "loading", user: null }` and is populated by `AuthProvider` in its
-    // own effect, so on this deep-linked path (`/documents?template=…` from the
+    // own effect, so on this deep-linked path (`/my-documents?template=…` from the
     // marketplace) that fetch races the saved-templates fetch below. Starting early
     // would hand `startNewDocument` a null user and silently skip sender prefill.
     // Safe to re-run: this effect strips `?template` from the URL before starting,
@@ -239,7 +239,7 @@ export const DocumentsView = () => {
   const handleSavedContinue = () => {
     setIsSaveConfirmationOpen(false);
     goToList();
-    router.replace("/documents");
+    router.replace("/my-documents");
   };
 
   const handleDeleteConfirm = () => {
@@ -250,7 +250,7 @@ export const DocumentsView = () => {
     handleRemove(activeDocumentId);
     setIsDeleteConfirmationOpen(false);
     goToList();
-    router.replace("/documents");
+    router.replace("/my-documents");
   };
 
   const handleUsePreviewTemplate = () => {

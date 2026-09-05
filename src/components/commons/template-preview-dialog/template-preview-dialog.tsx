@@ -10,8 +10,8 @@ import Link from "next/link";
 
 import { Badge } from "@/components/commons/badge/badge";
 import { Button } from "@/components/commons/button/button";
-import { SidePanel } from "@/components/commons/side-panel/side-panel";
 import type { SidePanelTone } from "@/components/commons/side-panel/side-panel";
+import { SidePanel } from "@/components/commons/side-panel/side-panel";
 import { TemplateDocument } from "@/components/commons/template-document/template-document";
 import { getSampleValues, tierLabels } from "@/lib/market-place";
 import type { MarketplaceTemplate } from "@/types/template";
@@ -48,7 +48,7 @@ export const TemplatePreviewDialog = ({
   saved = false,
   template,
   tone,
-  useHref = "/documents",
+  useHref = "/my-documents",
   values,
 }: TemplatePreviewDialogProps) => {
   const resolvedValues =

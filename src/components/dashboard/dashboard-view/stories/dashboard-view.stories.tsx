@@ -121,7 +121,7 @@ export const Default: Story = {
 
     const newDocumentFab = canvas.getByRole("link", { name: "New document" });
     await expect(newDocumentFab).toBeVisible();
-    await expect(newDocumentFab).toHaveAttribute("href", "/documents?new=1");
+    await expect(newDocumentFab).toHaveAttribute("href", "/my-documents?new=1");
   },
 };
 

@@ -1,15 +1,15 @@
+import type { Icon } from "@phosphor-icons/react";
 import {
   CreditCardIcon,
-  FileText,
+  FileTextIcon,
   GearSixIcon,
-  House,
-  Layout,
+  HouseIcon,
+  LayoutIcon,
   SidebarIcon,
-  Storefront,
+  StorefrontIcon,
   UsersThreeIcon,
-  X,
+  XIcon,
 } from "@phosphor-icons/react";
-import type { Icon } from "@phosphor-icons/react";
 import type { FunctionComponent } from "react";
 
 import { ButtonIcon } from "@/components/commons/button-icon/button-icon";
@@ -34,14 +34,14 @@ interface Props {
 }
 
 const sidebarItems: SidebarNavigationItem[] = [
-  { label: "Dashboard", href: "/dashboard", icon: House },
-  { label: "Documents", href: "/documents", icon: FileText },
-  { label: "My Templates", href: "/my-templates", icon: Layout },
+  { label: "Dashboard", href: "/dashboard", icon: HouseIcon },
+  { label: "My Documents", href: "/my-documents", icon: FileTextIcon },
+  { label: "My Templates", href: "/my-templates", icon: LayoutIcon },
   { label: "My Clients", href: "/my-clients", icon: UsersThreeIcon },
   {
     label: "Marketplace",
     href: "/marketplace",
-    icon: Storefront,
+    icon: StorefrontIcon,
   },
   { label: "Subscription", href: "/subscription", icon: CreditCardIcon },
 ];
@@ -56,7 +56,7 @@ const Sidebar: FunctionComponent<Props> = ({
   return (
     <aside
       className={cn(
-        "sidebar fixed inset-y-0 left-0 z-[70] flex w-70 shrink-0 flex-col bg-app-chrome px-5 pt-6 lg:pt-9 pb-5 text-app-chrome-content transition-all duration-300 lg:static lg:z-auto lg:translate-x-0",
+        "sidebar fixed inset-y-0 left-0 z-70 flex w-70 shrink-0 flex-col bg-app-chrome px-5 pt-6 lg:pt-9 pb-5 text-app-chrome-content transition-all duration-300 lg:static lg:z-auto lg:translate-x-0",
         isMobileOpen ? "translate-x-0" : "-translate-x-full",
         isCollapsed ? "lg:w-24" : "lg:w-60",
       )}
@@ -72,15 +72,17 @@ const Sidebar: FunctionComponent<Props> = ({
             aria-label={isCollapsed ? "Expand sidebar" : "Dokiments home"}
             className={cn(
               "size-8 shrink-0 items-center justify-center transition-transform hover:scale-105",
-              isCollapsed ? "hidden lg:flex" : 'hidden',)}
+              isCollapsed ? "hidden lg:flex" : "hidden",
+            )}
             onClick={isCollapsed ? onToggleCollapse : undefined}
             type="button"
           >
             <Image
-              src={'/images/svg/icon-white.svg'}
+              src={"/images/svg/icon-white.svg"}
               width={100}
               height={100}
-              alt="Dokiments icon" />
+              alt="Dokiments icon"
+            />
           </button>
 
           <Link
@@ -89,16 +91,15 @@ const Sidebar: FunctionComponent<Props> = ({
               isCollapsed ? "flex lg:hidden" : "flex",
             )}
             aria-label="Dokiments home"
-            href="/">
+            href="/"
+          >
             <Image
-              className={cn(
-                "mb-1",
-
-              )}
-              src={'/images/svg/logo-white.svg'}
+              className={cn("mb-1")}
+              src={"/images/svg/logo-white.svg"}
               width={120}
               height={120}
-              alt="Dokiments logo" />
+              alt="Dokiments logo"
+            />
           </Link>
         </div>
         {isCollapsed && !isMobileOpen ? null : (
@@ -108,10 +109,18 @@ const Sidebar: FunctionComponent<Props> = ({
             icon={
               <>
                 <span className="lg:hidden">
-                  <X aria-hidden size={16} weight="bold" />
+                  <XIcon
+                    aria-hidden
+                    size={16}
+                    weight="bold"
+                  />
                 </span>
                 <span className="hidden lg:inline-flex">
-                  <SidebarIcon aria-hidden size={16} weight="bold" />
+                  <SidebarIcon
+                    aria-hidden
+                    size={16}
+                    weight="bold"
+                  />
                 </span>
               </>
             }

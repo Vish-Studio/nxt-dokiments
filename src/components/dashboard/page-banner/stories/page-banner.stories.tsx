@@ -1,5 +1,5 @@
-import type { Meta, StoryObj } from "@storybook/nextjs-vite";
 import { StorefrontIcon } from "@phosphor-icons/react";
+import type { Meta, StoryObj } from "@storybook/nextjs-vite";
 import { expect, within } from "storybook/test";
 
 import { PageBanner } from "../page-banner";
@@ -31,7 +31,9 @@ type Story = StoryObj<typeof meta>;
 export const Golden: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    await expect(canvas.getByRole("heading", { name: "Marketplace" })).toBeVisible();
+    await expect(
+      canvas.getByRole("heading", { name: "Marketplace" }),
+    ).toBeVisible();
   },
 };
 
@@ -52,7 +54,7 @@ export const Purple: Story = {
 };
 
 export const Blue: Story = {
-  args: { title: "Documents", tone: "blue" },
+  args: { title: "My Documents", tone: "blue" },
 };
 
 export const Mist: Story = {
@@ -64,5 +66,5 @@ export const Soft: Story = {
 };
 
 export const Outline: Story = {
-  args: { title: "Documents", tone: "blue", variant: "outline" },
+  args: { title: "My Documents", tone: "blue", variant: "outline" },
 };

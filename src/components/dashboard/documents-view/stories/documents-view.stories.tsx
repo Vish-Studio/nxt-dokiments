@@ -451,7 +451,7 @@ export const PrefillFromClient: Story = {
 };
 
 /**
- * Landing on `/documents?new=1` — the dashboard FAB's target — opens the
+ * Landing on `/my-documents?new=1` — the dashboard FAB's target — opens the
  * template picker directly, skipping the document list.
  *
  * `new=1` is added to the existing URL rather than replacing it: this runs inside

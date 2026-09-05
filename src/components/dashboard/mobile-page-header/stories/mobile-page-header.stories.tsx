@@ -16,7 +16,7 @@ const meta = {
     description: "Create and manage documents from your saved templates.",
     icon: FileTextIcon,
     onOpenNavigation: fn(),
-    title: "Documents",
+    title: "My Documents",
     tone: "blue",
     visualVariant: "documents",
   },
@@ -35,9 +35,13 @@ export const Expanded: Story = {
   ],
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    const navigationButton = canvas.getByRole("button", { name: /open navigation/i });
+    const navigationButton = canvas.getByRole("button", {
+      name: /open navigation/i,
+    });
     await expect(navigationButton).toBeVisible();
-    await expect(canvas.getByRole("heading", { name: "Documents" })).toBeVisible();
+    await expect(
+      canvas.getByRole("heading", { name: "My Documents" }),
+    ).toBeVisible();
     await userEvent.click(navigationButton);
     await expect(meta.args.onOpenNavigation).toHaveBeenCalledOnce();
   },
@@ -48,9 +52,17 @@ export const Compact: Story = {
   decorators: Expanded.decorators,
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    await expect(canvas.getByRole("heading", { name: "Documents" })).toBeVisible();
-    await expect(canvas.queryByText("Create and manage documents from your saved templates.")).toBeNull();
-    await expect(canvas.queryByRole("link", { name: "Open settings" })).toBeNull();
+    await expect(
+      canvas.getByRole("heading", { name: "My Documents" }),
+    ).toBeVisible();
+    await expect(
+      canvas.queryByText(
+        "Create and manage documents from your saved templates.",
+      ),
+    ).toBeNull();
+    await expect(
+      canvas.queryByRole("link", { name: "Open settings" }),
+    ).toBeNull();
   },
 };
 
@@ -64,6 +76,8 @@ export const DashboardCompact: Story = {
   decorators: Expanded.decorators,
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    await expect(canvas.getByRole("link", { name: "Open settings" })).toHaveAttribute("href", "/settings");
+    await expect(
+      canvas.getByRole("link", { name: "Open settings" }),
+    ).toHaveAttribute("href", "/settings");
   },
 };
