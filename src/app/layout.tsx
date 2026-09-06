@@ -1,3 +1,4 @@
+import { SerwistProvider } from "@serwist/turbopack/react";
 import type { Metadata, Viewport } from "next";
 import { Raleway, Urbanist } from "next/font/google";
 import Script from "next/script";
@@ -51,6 +52,12 @@ export const metadata: Metadata = {
   icons: {
     icon: [{ url: "/icon.svg", type: "image/svg+xml" }],
     shortcut: "/icon.svg",
+    apple: "/apple-icon.png",
+  },
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "default",
+    title: "Dokiments",
   },
   openGraph: {
     title: "Dokiments | Business Document Templates and Workspace",
@@ -96,62 +103,64 @@ const RootLayout = ({
       className={`${urbanist.variable} ${raleway.variable} h-full bg-background antialiased`}
     >
       <body className="min-h-full flex flex-col">
-        {hasAnalyticsConfig() ? (
-          <>
-            {/*
-              Consent Mode v2 defaults, pushed via `beforeInteractive` so they land
-              in `dataLayer` before gtag's own `config` command below. Next.js only
-              honors `beforeInteractive` when rendered directly in the root layout —
-              see the analytics module's `gtag.ts` for why the shim below pushes
-              `arguments` verbatim instead of the repo's usual arrow-function style.
-              Also synchronously reads the stored cookie choice so a returning,
-              already-accepted user's first hit is already granted.
-            */}
-            <Script
-              id="ga-consent-default"
-              strategy="beforeInteractive"
-            >
-              {`
-                window.dataLayer = window.dataLayer || [];
-                function gtag(){ window.dataLayer.push(arguments); }
-                gtag('consent', 'default', {
-                  'ad_storage': 'denied',
-                  'ad_user_data': 'denied',
-                  'ad_personalization': 'denied',
-                  'analytics_storage': 'denied'
-                });
-                try {
-                  var stored = window.localStorage.getItem('${COOKIE_CONSENT_STORAGE_KEY}');
-                  var consent = stored ? JSON.parse(stored) : null;
-                  if (consent && consent.version === 1 && consent.choice === 'all') {
-                    gtag('consent', 'update', { 'analytics_storage': 'granted' });
-                  }
-                } catch (error) {}
-              `}
-            </Script>
-            <Script
-              strategy="afterInteractive"
-              src={`https://www.googletagmanager.com/gtag/js?id=${analyticsConfig.measurementId}`}
-            />
-            <Script
-              id="ga-config"
-              strategy="afterInteractive"
-            >
-              {`
-                window.dataLayer = window.dataLayer || [];
-                function gtag(){ window.dataLayer.push(arguments); }
-                gtag('js', new Date());
-                gtag('config', '${analyticsConfig.measurementId}');
-              `}
-            </Script>
-          </>
-        ) : null}
-        <QueryProvider>
-          <AnalyticsProvider>
-            <AuthProvider>{children}</AuthProvider>
-          </AnalyticsProvider>
-        </QueryProvider>
-        <CookieConsent />
+        <SerwistProvider swUrl="/serwist/sw.js">
+          {hasAnalyticsConfig() ? (
+            <>
+              {/*
+                Consent Mode v2 defaults, pushed via `beforeInteractive` so they land
+                in `dataLayer` before gtag's own `config` command below. Next.js only
+                honors `beforeInteractive` when rendered directly in the root layout —
+                see the analytics module's `gtag.ts` for why the shim below pushes
+                `arguments` verbatim instead of the repo's usual arrow-function style.
+                Also synchronously reads the stored cookie choice so a returning,
+                already-accepted user's first hit is already granted.
+              */}
+              <Script
+                id="ga-consent-default"
+                strategy="beforeInteractive"
+              >
+                {`
+                  window.dataLayer = window.dataLayer || [];
+                  function gtag(){ window.dataLayer.push(arguments); }
+                  gtag('consent', 'default', {
+                    'ad_storage': 'denied',
+                    'ad_user_data': 'denied',
+                    'ad_personalization': 'denied',
+                    'analytics_storage': 'denied'
+                  });
+                  try {
+                    var stored = window.localStorage.getItem('${COOKIE_CONSENT_STORAGE_KEY}');
+                    var consent = stored ? JSON.parse(stored) : null;
+                    if (consent && consent.version === 1 && consent.choice === 'all') {
+                      gtag('consent', 'update', { 'analytics_storage': 'granted' });
+                    }
+                  } catch (error) {}
+                `}
+              </Script>
+              <Script
+                strategy="afterInteractive"
+                src={`https://www.googletagmanager.com/gtag/js?id=${analyticsConfig.measurementId}`}
+              />
+              <Script
+                id="ga-config"
+                strategy="afterInteractive"
+              >
+                {`
+                  window.dataLayer = window.dataLayer || [];
+                  function gtag(){ window.dataLayer.push(arguments); }
+                  gtag('js', new Date());
+                  gtag('config', '${analyticsConfig.measurementId}');
+                `}
+              </Script>
+            </>
+          ) : null}
+          <QueryProvider>
+            <AnalyticsProvider>
+              <AuthProvider>{children}</AuthProvider>
+            </AnalyticsProvider>
+          </QueryProvider>
+          <CookieConsent />
+        </SerwistProvider>
       </body>
     </html>
   );
