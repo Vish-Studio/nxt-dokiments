@@ -35,6 +35,7 @@ import { trackEvent } from "@/lib/analytics/track";
 import {
   clientPrefillValues,
   senderPrefillValues,
+  sharedContentPrefillValue,
 } from "@/lib/market-place/prefill";
 import { useAuthStore } from "@/stores/auth-store";
 import type { MarketplaceTemplate, UserDocument } from "@/types/template";
@@ -73,6 +74,10 @@ export const DocumentsView = () => {
   const [activeDocumentId, setActiveDocumentId] = useState<string | null>(null);
   const [draftName, setDraftName] = useState("");
   const [draftValues, setDraftValues] = useState<Record<string, string>>({});
+  // Set by the `?shared=` deep link from `/share-target`; consumed once by
+  // `startNewDocument` and cleared so a later template pick in the same
+  // session doesn't reapply stale shared text.
+  const [sharedContent, setSharedContent] = useState("");
   const [exportDocument, setExportDocument] = useState<UserDocument | null>(
     null,
   );
@@ -116,16 +121,21 @@ export const DocumentsView = () => {
       // Seeds the sender block from the user's own profile — identical on every
       // document they create, so there's nothing to pick. Only on a new document:
       // `openDocument` must keep the saved values untouched.
-      setDraftValues(senderPrefillValues(user, template.fields));
+      setDraftValues({
+        ...senderPrefillValues(user, template.fields),
+        ...sharedContentPrefillValue(sharedContent, template.fields),
+      });
+      setSharedContent("");
       setIsDeleteConfirmationOpen(false);
       setIsSaveConfirmationOpen(false);
       setIsEditorPreviewOpen(false);
       setMode("editor");
     },
-    [user],
+    [user, sharedContent],
   );
 
-  // Deep link from the dashboard's floating action button: open the template
+  // Deep link from the dashboard's floating action button, or from the
+  // `/share-target` redirect (which adds `&shared=`): open the template
   // picker straight away. Kept separate from the `?template=` effect below,
   // which bails out when the user owns no templates — here the picker's own
   // "No templates yet" state is exactly what we want them to land on.
@@ -136,11 +146,14 @@ export const DocumentsView = () => {
       return;
     }
 
-    // Strip the param — unconditionally, before the `?template=` check below — so
+    const shared = params.get("shared");
+
+    // Strip the params — unconditionally, before the `?template=` check below — so
     // a refresh or a back-navigation returns to the plain list instead of
     // reopening the picker from a stale URL.
     const nextUrl = new URL(window.location.href);
     nextUrl.searchParams.delete("new");
+    nextUrl.searchParams.delete("shared");
     window.history.replaceState(
       null,
       "",
@@ -154,7 +167,12 @@ export const DocumentsView = () => {
 
     // Deferred rather than set synchronously, matching the `?template=` effect
     // below: a setState in an effect body triggers a cascading render.
-    window.setTimeout(() => setMode("picker"), 0);
+    window.setTimeout(() => {
+      if (shared) {
+        setSharedContent(shared);
+      }
+      setMode("picker");
+    }, 0);
   }, []);
 
   useEffect(() => {

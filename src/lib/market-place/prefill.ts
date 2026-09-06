@@ -119,6 +119,32 @@ export const senderPrefillValues = (
   user ? applyRules(SENDER_RULES, user, fields) : {};
 
 /**
+ * Value to merge into a draft when the user arrives via the Web Share Target
+ * (`/share-target` redirect) with shared text/a shared URL in hand.
+ *
+ * Template fields have no shared "notes"/"details" key across document types
+ * the way sender/recipient fields do, so this targets the first `textarea`
+ * field instead — the generic free-text slot every document type that has
+ * one uses for exactly this kind of unstructured content.
+ *
+ * @param sharedText - Combined shared text/URL, or `""` if nothing was shared.
+ * @param fields - The target template's field definitions.
+ * @returns `{ [key]: sharedText }` for the first textarea field, or `{}` if
+ *   the template has none or nothing was shared.
+ */
+export const sharedContentPrefillValue = (
+  sharedText: string,
+  fields: TemplateField[],
+): Record<string, string> => {
+  if (!sharedText) return {};
+
+  const textareaField = fields.find((field) => field.type === "textarea");
+  if (!textareaField) return {};
+
+  return { [textareaField.key]: sharedText };
+};
+
+/**
  * Whether picking a client could fill anything on this template.
  *
  * `false` for document types with no counterparty (`meeting-minutes-action-brief`),
