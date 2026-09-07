@@ -1,12 +1,12 @@
 import type { Meta, StoryObj } from "@storybook/nextjs-vite";
-import { expect, fn } from "storybook/test";
+import { expect, fn, userEvent } from "storybook/test";
 
 import { ClientList } from "../client-list";
 
 const meta = {
   title: "Dashboard/Client List",
   component: ClientList,
-  args: { onDelete: fn() },
+  args: { onDelete: fn(), onPreview: fn() },
 } satisfies Meta<typeof ClientList>;
 
 export default meta;
@@ -38,5 +38,11 @@ export const WithClients: Story = {
     await expect(
       canvas.getByRole("button", { name: "Delete Maya Chen" }),
     ).toHaveClass("btn-error");
+
+    // The row itself opens the detail panel — the reason this list is clickable.
+    await userEvent.click(
+      canvas.getByRole("button", { name: "View details for Maya Chen" }),
+    );
+    await expect(meta.args.onPreview).toHaveBeenCalledOnce();
   },
 };

@@ -7,26 +7,81 @@ import { Button } from "@/components/commons/button/button";
 import { ConfirmDialog } from "@/components/commons/confirm-dialog/confirm-dialog";
 import { FloatingActionButton } from "@/components/commons/floating-action-button/floating-action-button";
 import { SidePanel } from "@/components/commons/side-panel/side-panel";
+import { ClientDetailPanel } from "@/components/dashboard/client-detail-panel/client-detail-panel";
 import { ClientForm } from "@/components/dashboard/client-form/client-form";
-import { ClientListSkeleton } from "@/components/dashboard/client-list-skeleton/client-list-skeleton";
-import { ClientList } from "@/components/dashboard/client-list/client-list";
+import {
+  ClientList,
+  clientListColumns,
+  clientSkeletonRow,
+} from "@/components/dashboard/client-list/client-list";
+import { DashboardListSkeleton } from "@/components/dashboard/dashboard-list-skeleton/dashboard-list-skeleton";
 import {
   useClientsQuery,
   useCreateClientMutation,
   useDeleteClientMutation,
+  useUpdateClientMutation,
 } from "@/hooks/queries/use-clients";
 import type { Client, ClientInput } from "@/types/client";
+
+/**
+ * Which side panel is showing. A single value rather than one boolean each,
+ * because `SidePanel` is a modal overlay — only one can be open, and the detail
+ * and edit panels are two modes of the same one.
+ *
+ * The open client is held by ID, not by value: `useUpdateClientMutation` patches
+ * the query cache optimistically, so deriving the client from `clients` on every
+ * render means a saved edit is reflected immediately and a deleted client closes
+ * the panel on its own.
+ */
+type Panel =
+  | { kind: "none" }
+  | { kind: "add" }
+  | { kind: "detail"; clientId: string }
+  | { kind: "edit"; clientId: string };
+
+const CLOSED: Panel = { kind: "none" };
 
 export const MyClientsView = () => {
   const { data: clients = [], isError, isLoading } = useClientsQuery();
   const { mutate: createClient } = useCreateClientMutation();
   const { mutate: deleteClient } = useDeleteClientMutation();
-  const [isAddPanelOpen, setIsAddPanelOpen] = useState(false);
+  const { isPending: isSaving, mutate: updateClient } =
+    useUpdateClientMutation();
+  const [panel, setPanel] = useState<Panel>(CLOSED);
   const [pendingDeletion, setPendingDeletion] = useState<Client | null>(null);
+
+  const activeClient =
+    panel.kind === "detail" || panel.kind === "edit"
+      ? (clients.find((client) => client.id === panel.clientId) ?? null)
+      : null;
+
+  const closePanel = () => setPanel(CLOSED);
 
   const handleAdd = (input: ClientInput) => {
     createClient(input);
-    setIsAddPanelOpen(false);
+    closePanel();
+  };
+
+  const handleSave = (input: ClientInput) => {
+    if (panel.kind !== "edit") {
+      return;
+    }
+
+    updateClient({ clientId: panel.clientId, patch: input });
+    // Straight back to the detail view so the user sees the change land, rather
+    // than closing out to the list and having to reopen to confirm it saved.
+    setPanel({ clientId: panel.clientId, kind: "detail" });
+  };
+
+  const requestDeletionFromPanel = () => {
+    if (!activeClient) {
+      return;
+    }
+
+    // Close first: a confirm dialog stacked over an open panel would leave two
+    // overlays fighting for the Escape key.
+    setPendingDeletion(activeClient);
+    closePanel();
   };
 
   const confirmDelete = () => {
@@ -39,7 +94,11 @@ export const MyClientsView = () => {
   return (
     <div className="my-clients-view flex w-full flex-col gap-6">
       {isLoading ? (
-        <ClientListSkeleton />
+        <DashboardListSkeleton
+          columns={clientListColumns}
+          message="Loading your clients…"
+          row={clientSkeletonRow}
+        />
       ) : isError ? (
         // Distinct from the empty state on purpose: showing "No clients yet"
         // after a failed request would tell the user their clients are gone.
@@ -56,19 +115,38 @@ export const MyClientsView = () => {
         <ClientList
           clients={clients}
           onDelete={setPendingDeletion}
+          onPreview={(client) =>
+            setPanel({ clientId: client.id, kind: "detail" })
+          }
         />
       )}
 
-      <FloatingActionButton
-        icon={
-          <PlusIcon
-            aria-hidden
-            size={18}
-            weight="bold"
-          />
-        }
-        label="Add client"
-        onClick={() => setIsAddPanelOpen(true)}
+      {panel.kind === "none" && !pendingDeletion ? (
+        <FloatingActionButton
+          icon={
+            <PlusIcon
+              aria-hidden
+              size={18}
+              weight="bold"
+            />
+          }
+          label="Add client"
+          onClick={() => setPanel({ kind: "add" })}
+        />
+      ) : null}
+
+      <ClientDetailPanel
+        client={activeClient}
+        isSaving={isSaving}
+        mode={panel.kind === "edit" ? "edit" : "detail"}
+        onClose={closePanel}
+        onDelete={requestDeletionFromPanel}
+        onEdit={() => {
+          if (activeClient) {
+            setPanel({ clientId: activeClient.id, kind: "edit" });
+          }
+        }}
+        onSave={handleSave}
       />
 
       <SidePanel
@@ -78,7 +156,7 @@ export const MyClientsView = () => {
           <div className="grid w-full grid-cols-2 gap-2">
             <Button
               className="w-full"
-              onClick={() => setIsAddPanelOpen(false)}
+              onClick={closePanel}
               variant="outline"
             >
               Cancel
@@ -101,14 +179,14 @@ export const MyClientsView = () => {
             </Button>
           </div>
         }
-        onClose={() => setIsAddPanelOpen(false)}
-        open={isAddPanelOpen}
+        onClose={closePanel}
+        open={panel.kind === "add"}
         title="Add client"
         tone="golden"
       >
         <ClientForm
           formId="add-client-form"
-          onAdd={handleAdd}
+          onSubmit={handleAdd}
         />
       </SidePanel>
 
