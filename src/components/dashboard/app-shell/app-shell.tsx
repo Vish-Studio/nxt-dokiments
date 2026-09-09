@@ -1,17 +1,6 @@
 "use client";
 
-import type { Icon } from "@phosphor-icons/react";
-import {
-  ChartLineUpIcon,
-  CreditCardIcon,
-  FilePlusIcon,
-  FolderSimpleStarIcon,
-  GearSixIcon,
-  HouseIcon,
-  ListIcon,
-  StorefrontIcon,
-  UsersThreeIcon,
-} from "@phosphor-icons/react";
+import { ListIcon } from "@phosphor-icons/react";
 import type { ReactNode, UIEvent } from "react";
 import { useRef, useState } from "react";
 
@@ -28,6 +17,7 @@ import type { PageHeaderVisualVariant } from "@/components/dashboard/page-header
 import { PromoStatusBanner } from "@/components/dashboard/promo-status-banner/promo-status-banner";
 import { PublicLaunchBanner } from "@/components/dashboard/public-launch-banner/public-launch-banner";
 import Sidebar from "@/components/dashboard/sidebar/sidebar";
+import { getPageIcon } from "@/lib/dashboard-navigation";
 import { useUiStore } from "@/stores/ui-store";
 
 export type AppShellProps = {
@@ -41,7 +31,6 @@ export type AppShellProps = {
 };
 
 type PageTheme = {
-  Icon: Icon;
   tone: PageBannerTone;
   variant?: PageBannerVariant;
   visual?: PageHeaderVisualVariant;
@@ -53,21 +42,19 @@ const SCROLL_COMPACT_ON_THRESHOLD = 32;
 const SCROLL_COMPACT_OFF_THRESHOLD = 16;
 
 const pageThemes: Record<string, PageTheme> = {
-  Dashboard: { Icon: ChartLineUpIcon, tone: "golden" },
-  Documents: { Icon: FilePlusIcon, tone: "purple", visual: "documents" },
+  Dashboard: { tone: "golden" },
+  Documents: { tone: "purple", visual: "documents" },
   "My Templates": {
-    Icon: FolderSimpleStarIcon,
     tone: "pink",
     visual: "templates",
   },
-  "My Clients": { Icon: UsersThreeIcon, tone: "golden" },
-  Marketplace: { Icon: StorefrontIcon, tone: "teal", visual: "marketplace" },
+  "My Clients": { tone: "golden" },
+  Marketplace: { tone: "teal", visual: "marketplace" },
   Subscription: {
-    Icon: CreditCardIcon,
     tone: "purple",
     visual: "subscription",
   },
-  Settings: { Icon: GearSixIcon, tone: "golden", visual: "settings" },
+  Settings: { tone: "golden", visual: "settings" },
 };
 
 export const AppShell = ({
@@ -87,9 +74,9 @@ export const AppShell = ({
   const latestScrollTopRef = useRef(0);
 
   const theme = pageThemes[activeItem] ?? {
-    Icon: HouseIcon,
     tone: "golden" as PageBannerTone,
   };
+  const pageIcon = getPageIcon(activeItem);
   const resolvedTone = bannerTone ?? theme.tone;
   const resolvedVariant = bannerVariant ?? theme.variant ?? "solid";
   const isDashboardHome = activeItem === "Dashboard";
@@ -149,7 +136,7 @@ export const AppShell = ({
                 <MobilePageHeader
                   alignTitleWithNavigation={isDashboardHome}
                   description={mobileDescription}
-                  icon={showBanner ? theme.Icon : undefined}
+                  icon={showBanner ? pageIcon : undefined}
                   isCompact={isContentScrolled}
                   onOpenNavigation={() => setIsMobileSidebarOpen(true)}
                   showSettingsLink={isDashboardHome}
@@ -162,7 +149,7 @@ export const AppShell = ({
                   <PageBanner
                     className="hidden lg:flex"
                     description={description}
-                    icon={theme.Icon}
+                    icon={pageIcon}
                     title={title}
                     tone={resolvedTone}
                     variant={resolvedVariant}
@@ -194,3 +181,5 @@ export const AppShell = ({
     </AuthGuard>
   );
 };
+
+export default AppShell;
