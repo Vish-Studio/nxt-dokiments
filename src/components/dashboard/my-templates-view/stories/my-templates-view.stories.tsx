@@ -149,7 +149,7 @@ export const FilterSortAndRecent: Story = {
     await userEvent.click(canvas.getByRole("button", { name: "Filters" }));
     await userEvent.click(canvas.getByRole("menuitemradio", { name: "Standard Invoice" }));
     await expect(canvas.queryByRole("region", { name: "Price Quotation" })).not.toBeInTheDocument();
-    await expect(within(canvas.getByRole("region", { name: "Standard Invoice" })).getByText("3")).toBeVisible();
+    await expect(within(canvas.getByRole("region", { name: "Standard Invoice" })).getByText("3 Templates")).toBeVisible();
     const invoices = canvas.getByRole("region", { name: "Standard Invoice" });
     await userEvent.click(canvas.getByRole("button", { name: "Sort" }));
     await userEvent.click(canvas.getByRole("menuitemradio", { name: "Oldest added" }));
@@ -159,11 +159,11 @@ export const FilterSortAndRecent: Story = {
     await expect(within(invoices).getAllByRole("button")[0]).toHaveTextContent("Minimalist designs");
     await userEvent.click(canvas.getByRole("button", { name: "Filters" }));
     await userEvent.click(canvas.getByRole("menuitemradio", { name: "Modern" }));
-    await expect(within(invoices).getByText("1")).toBeVisible();
+    await expect(within(invoices).getByText("1 Templates")).toBeVisible();
     await userEvent.type(canvas.getByLabelText("Search templates"), "no match");
     await expect(canvas.getByText(/No matching templates/)).toBeVisible();
     await userEvent.click(canvas.getByRole("button", { name: "Reset filters" }));
-    await expect(within(canvas.getByRole("region", { name: "Recently Added" })).getByText("4")).toBeVisible();
+    await expect(within(canvas.getByRole("region", { name: "Recently Added" })).getByText("4 Templates")).toBeVisible();
     await expect(within(canvas.getByRole("region", { name: "Recently Added" })).getAllByRole("button")).toHaveLength(4);
   },
 };

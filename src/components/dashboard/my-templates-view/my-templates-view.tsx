@@ -79,10 +79,10 @@ export const MyTemplatesView = ({ withShell = false }: Props) => {
 
   const toolbar = (
     <TemplateLibraryToolbar
-        search={search} documentType={documentType} style={style} sort={sort}
-        typeOptions={typeOptions} styleOptions={styleOptions}
-        onSearch={setSearch} onDocumentType={setDocumentType} onStyle={setStyle} onSort={setSort} onReset={resetFilters}
-      />
+      search={search} documentType={documentType} style={style} sort={sort}
+      typeOptions={typeOptions} styleOptions={styleOptions}
+      onSearch={setSearch} onDocumentType={setDocumentType} onStyle={setStyle} onSort={setSort} onReset={resetFilters}
+    />
   );
 
   const content = isLoading ? (
@@ -107,13 +107,20 @@ export const MyTemplatesView = ({ withShell = false }: Props) => {
       </Link>
     </div>
   ) : (
-    <div className="my-templates-view grid w-full min-w-0 gap-8">
+    <div className="my-templates-view grid w-full min-w-0 gap-20">
       {recent.length > 0 ? (
         <TemplateTypeGroup title="Recently Added" templates={recent.map(({ template }) => template)} onPreview={setPreview} />
       ) : (
-        <p className="py-8 text-center text-sm text-nox-noir/60">No matching templates. Try another search or reset the filters.</p>
+        <section className="grid place-items-center rounded-box border border-dashed border-steel-mist bg-base-100 p-10 text-center">
+          <h2 className="font-title text-lg font-bold text-nox-noir">
+            No matching templates
+          </h2>
+          <p className="mt-2 max-w-sm text-sm leading-6 text-nox-noir/60">
+            Try another search or reset the filters to see your saved templates.
+          </p>
+        </section>
       )}
-      <div className="grid gap-10">
+      <div className="grid gap-20">
         {sortedGroups.map(([documentType, templates]) => (
           <TemplateTypeGroup
             key={documentType}

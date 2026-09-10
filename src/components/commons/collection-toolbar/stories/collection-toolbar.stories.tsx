@@ -32,6 +32,17 @@ export const Default: Story = {
 };
 export const SearchOnly: Story = { args: { filters: [] } };
 
+export const SearchClearControl: Story = {
+  args: { search: "invoice" },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const search = canvas.getByRole("searchbox", { name: "Search documents" });
+
+    await expect(search).toHaveAttribute("type", "text");
+    await expect(canvas.getByRole("button", { name: "Clear search" })).toBeVisible();
+  },
+};
+
 export const ActiveFilters: Story = {
   play: async ({ canvasElement, args }) => {
     const canvas = within(canvasElement);

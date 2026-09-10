@@ -152,7 +152,7 @@ export const PageBanner = ({
         />
       ) : null}
 
-      {BannerIcon ? (
+      {/* {BannerIcon ? (
         <span
           className={cn(
             "hidden size-12 shrink-0 items-center justify-center rounded-box sm:flex",
@@ -161,7 +161,7 @@ export const PageBanner = ({
         >
           <BannerIcon aria-hidden size={26} weight="bold" />
         </span>
-      ) : null}
+      ) : null} */}
 
       <div className="min-w-0">
         <h2 className={cn("font-title text-2xl font-bold sm:text-3xl", style.title)}>{title}</h2>
@@ -178,9 +178,10 @@ export const PageBanner = ({
         ) : null}
       </div>
 
-      {visualVariant ? (
+      {/* {visualVariant ? (
         <PageHeaderVisual className="ml-auto hidden size-24 sm:block lg:size-28" variant={visualVariant} />
-      ) : null}
+      ) : null} */}
+
       {footer ? <div className="w-full min-w-0 border-t border-current/10 pt-4">{footer}</div> : null}
     </section>
   );

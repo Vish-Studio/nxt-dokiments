@@ -50,7 +50,15 @@ const CollectionToolbar = ({
           <span className="pointer-events-none absolute left-3 top-0 z-10 flex h-10 items-center text-nox-noir/45">
             <MagnifyingGlassIcon aria-hidden size={18} weight="bold" />
           </span>
-          <Input aria-label={searchLabel} className="h-10 rounded-field border-transparent! pl-10 pr-10 font-body text-sm! focus:border-nox-noir/20!" type="search" placeholder={searchPlaceholder} value={search} onChange={(event) => onSearch(event.target.value)} />
+          <Input
+            aria-label={searchLabel}
+            className="h-10 rounded-field border-transparent! pl-10 pr-10 font-body text-sm! focus:border-nox-noir/20!"
+            placeholder={searchPlaceholder}
+            role="searchbox"
+            type="text"
+            value={search}
+            onChange={(event) => onSearch(event.target.value)}
+          />
           {search ? <ButtonIcon aria-label="Clear search" className="absolute right-0 top-0" icon={<XIcon aria-hidden size={16} />} onClick={() => onSearch("")} size="sm" variant="ghost" /> : null}
         </div>
         <Dropdown

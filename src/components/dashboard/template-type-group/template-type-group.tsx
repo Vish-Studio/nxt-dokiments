@@ -22,7 +22,9 @@ const TemplateTypeGroup = ({ documentType, title, templates, onPreview }: Props)
       >
         {title ?? (documentType ? documentBlueprints[documentType].name : "Recently Added")}
       </h2>
-      <Badge variant="neutral">{templates.length}</Badge>
+      <Badge className="ml-auto" variant="neutral">
+        {templates.length} Templates
+      </Badge>
     </div>
     <div className="grid grid-cols-2 items-start gap-x-6 gap-y-8 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6">
       {templates.map((template) => (
