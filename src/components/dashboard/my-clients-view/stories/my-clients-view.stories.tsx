@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from "@storybook/nextjs-vite";
 import { QueryClientProvider } from "@tanstack/react-query";
-import { expect, userEvent, waitFor, within } from "storybook/test";
+import { expect, fireEvent, userEvent, waitFor, within } from "storybook/test";
 
 import { makeStoryQueryClient } from "@/lib/query/story-query-client";
 import { useAuthStore } from "@/stores/auth-store";
@@ -199,5 +199,146 @@ export const AddClient: Story = {
       expect(canvas.getByText("Ravi Patel")).toBeVisible();
     });
     await expect(canvas.getAllByText("Blue Harbour Ltd")).toHaveLength(2);
+  },
+};
+
+/**
+ * The full preview flow: row -> detail panel -> edit in place -> back to detail
+ * with the saved value. `PATCH /api/clients/:id` echoes the merged client back,
+ * and the follow-up `GET` returns the persisted list.
+ */
+export const PreviewAndEditClient: Story = {
+  decorators: [
+    (Story) => {
+      seedUser();
+      let stored: Client = mayaChen;
+
+      window.fetch = (async (url: string, init?: RequestInit) => {
+        if (init?.method === "PATCH") {
+          const patch = JSON.parse(String(init.body)) as Partial<Client>;
+          stored = { ...stored, ...patch, updatedAt: 1_755_000_200_000 };
+          return new Response(JSON.stringify({ client: stored }), {
+            status: 200,
+          });
+        }
+
+        return new Response(JSON.stringify({ clients: [stored] }), {
+          status: 200,
+        });
+      }) as typeof window.fetch;
+
+      return <Story />;
+    },
+  ],
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+
+    await userEvent.click(
+      await canvas.findByRole("button", {
+        name: "View details for Maya Chen",
+      }),
+    );
+
+    // The core of the feature: fields held on the client but shown in no column.
+    const detail = within(
+      canvas.getByRole("dialog", { name: "Maya Chen details" }),
+    );
+    await expect(detail.getByText("C12345678")).toBeVisible();
+    await expect(
+      detail.getByText("12 Rue La Bourdonnais, Port Louis"),
+    ).toBeVisible();
+
+    await userEvent.click(detail.getByRole("button", { name: "Edit client" }));
+
+    const edit = within(canvas.getByRole("dialog", { name: "Edit Maya Chen" }));
+    const phone = edit.getByLabelText("Phone number");
+    await expect(phone).toHaveValue("+230 5 123 4567");
+    // `fireEvent.change`, not `userEvent`: react-hook-form seeds prefilled inputs
+    // imperatively via its `ref`, and synthesized keystrokes then update the DOM
+    // without React re-firing `onChange`, so the form would submit the old number.
+    fireEvent.change(phone, { target: { value: "+230 5 000 1111" } });
+    await userEvent.click(edit.getByRole("button", { name: "Save changes" }));
+
+    // Back to detail, showing the new number rather than closing to the list.
+    await waitFor(() => {
+      expect(
+        within(
+          canvas.getByRole("dialog", { name: "Maya Chen details" }),
+        ).getByText("+230 5 000 1111"),
+      ).toBeVisible();
+    });
+  },
+};
+
+/**
+ * Regression, end to end: clicking "Edit client" twice — as an impatient user does
+ * when a panel seems slow — must land in edit mode and stay there. React reuses
+ * that same DOM button for "Save changes", so the second click used to submit the
+ * untouched form and drop straight back to detail.
+ */
+export const DoubleClickingEditStaysInEditMode: Story = {
+  decorators: [
+    (Story) => {
+      seedUser();
+      mockClients([mayaChen]);
+      return <Story />;
+    },
+  ],
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+
+    await userEvent.click(
+      await canvas.findByRole("button", {
+        name: "View details for Maya Chen",
+      }),
+    );
+
+    const editButton = within(
+      canvas.getByRole("dialog", { name: "Maya Chen details" }),
+    ).getByRole("button", { name: "Edit client" });
+
+    // Hold the same element across both clicks: that reuse is the bug.
+    await userEvent.click(editButton);
+    await userEvent.click(editButton);
+
+    await expect(
+      canvas.getByRole("dialog", { name: "Edit Maya Chen" }),
+    ).toBeVisible();
+    await expect(
+      canvas.queryByRole("dialog", { name: "Maya Chen details" }),
+    ).not.toBeInTheDocument();
+  },
+};
+
+/** Deleting from the panel closes it first, so only the confirm dialog is on screen. */
+export const DeleteFromPanel: Story = {
+  decorators: [
+    (Story) => {
+      seedUser();
+      mockClients([mayaChen]);
+      return <Story />;
+    },
+  ],
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+
+    await userEvent.click(
+      await canvas.findByRole("button", {
+        name: "View details for Maya Chen",
+      }),
+    );
+    await userEvent.click(
+      within(
+        canvas.getByRole("dialog", { name: "Maya Chen details" }),
+      ).getByRole("button", { name: "Delete" }),
+    );
+
+    await waitFor(() => {
+      expect(canvas.getByText("Delete client?")).toBeVisible();
+    });
+    // Two overlays at once would leave both competing for the Escape key.
+    await expect(
+      canvas.queryByRole("dialog", { name: "Maya Chen details" }),
+    ).not.toBeInTheDocument();
   },
 };

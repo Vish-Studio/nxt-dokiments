@@ -22,8 +22,13 @@ import { TemplateDocument } from "@/components/commons/template-document/templat
 import { TemplateForm } from "@/components/commons/template-form/template-form";
 import { TemplatePreviewDialog } from "@/components/commons/template-preview-dialog/template-preview-dialog";
 import { ClientPicker } from "@/components/dashboard/client-picker/client-picker";
+import { DashboardListSkeleton } from "@/components/dashboard/dashboard-list-skeleton/dashboard-list-skeleton";
 import { DocumentExportDialog } from "@/components/dashboard/document-export-dialog/document-export-dialog";
-import { DocumentList } from "@/components/dashboard/document-list/document-list";
+import {
+  DocumentList,
+  documentListColumns,
+  documentSkeletonRow,
+} from "@/components/dashboard/document-list/document-list";
 import {
   useCreateDocumentMutation,
   useDeleteDocumentMutation,
@@ -529,26 +534,12 @@ export const DocumentsView = () => {
   return (
     <div className="w-full">
       {isDocumentsLoading ? (
-        <div className="overflow-hidden rounded-box border border-steel-mist bg-base-100">
-          <LoadingStatus message="Loading your documents…" />
-          <div
-            aria-hidden
-            className="divide-y divide-steel-mist/70 p-4"
-          >
-            {Array.from({ length: 4 }, (_, index) => (
-              <div
-                className="flex items-center gap-3 py-3 first:pt-0 last:pb-0"
-                key={index}
-              >
-                <div className="skeleton size-10 shrink-0 rounded-field" />
-                <div className="flex-1 space-y-2">
-                  <div className="skeleton h-4 w-1/3 rounded-field" />
-                  <div className="skeleton h-3 w-1/4 rounded-field" />
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
+        <DashboardListSkeleton
+          columns={documentListColumns}
+          message="Loading your documents…"
+          ordered
+          row={documentSkeletonRow}
+        />
       ) : documents.length === 0 ? (
         <div className="grid place-items-center rounded-box border border-dashed border-steel-mist bg-base-100 p-12 text-center">
           <p className="font-title text-base font-bold text-nox-noir">

@@ -6,7 +6,7 @@ import {
 
 import { Badge } from "@/components/commons/badge/badge";
 import { ButtonIcon } from "@/components/commons/button-icon/button-icon";
-import { Button } from "@/components/commons/button/button";
+import { DashboardListRow } from "@/components/dashboard/dashboard-list-row/dashboard-list-row";
 import type { UserDocument } from "@/types/template";
 
 export interface DocumentListItemProps {
@@ -42,16 +42,11 @@ export const DocumentListItem = ({
   const createdDate = new Date(document.createdAt);
 
   return (
-    <li className="document-list-item group relative grid gap-4 border-t border-steel-mist/70 p-4 first:border-t-0 sm:grid-cols-12 sm:items-center sm:px-5 sm:first:border-t">
-      <Button
-        aria-label={`Open preview for ${documentTitle}`}
-        className="absolute inset-0 z-0 h-auto min-h-0 w-full rounded-none border-0 bg-transparent p-0 hover:bg-base-200/65 focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-nox-noir"
-        onClick={() => onPreview(document)}
-        variant="ghost"
-      >
-        <span className="sr-only">Open preview for {documentTitle}</span>
-      </Button>
-
+    <DashboardListRow
+      className="document-list-item"
+      onSelect={() => onPreview(document)}
+      selectLabel={`Open preview for ${documentTitle}`}
+    >
       <div className="pointer-events-none relative z-10 flex min-w-0 items-center gap-3 sm:col-span-5">
         <span className="flex size-10 shrink-0 items-center justify-center rounded-field bg-play-purple text-nox-noir">
           <FileTextIcon
@@ -119,6 +114,6 @@ export const DocumentListItem = ({
           variant="primary"
         />
       </div>
-    </li>
+    </DashboardListRow>
   );
 };
