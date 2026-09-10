@@ -3,23 +3,67 @@
 import Link from "next/link";
 import { useState } from "react";
 
+import { AppShell } from "@/components/dashboard/app-shell/app-shell";
 import { ConfirmDialog } from "@/components/commons/confirm-dialog/confirm-dialog";
 import { LoadingStatus } from "@/components/commons/loading-status/loading-status";
 import { TemplateCardSkeletonGrid } from "@/components/commons/template-card-skeleton/template-card-skeleton";
-import { TemplateCard } from "@/components/commons/template-card/template-card";
+import TemplateLibraryToolbar, { type TemplateSort } from "@/components/dashboard/template-library-toolbar/template-library-toolbar";
+import TemplateTypeGroup from "@/components/dashboard/template-type-group/template-type-group";
+import { documentBlueprints } from "@/lib/market-place/documents";
 import { TemplatePreviewDialog } from "@/components/commons/template-preview-dialog/template-preview-dialog";
 import {
   useRemoveSavedTemplateMutation,
   useSavedTemplatesQuery,
 } from "@/hooks/queries/use-saved-templates";
-import type { MarketplaceTemplate } from "@/types/template";
+import type { DocumentType, MarketplaceTemplate } from "@/types/template";
 
-export const MyTemplatesView = () => {
+interface Props {
+  withShell?: boolean;
+}
+
+export const MyTemplatesView = ({ withShell = false }: Props) => {
   const { data: saved = [], isLoading } = useSavedTemplatesQuery();
   const { mutate: removeSavedTemplate } = useRemoveSavedTemplateMutation();
   const [preview, setPreview] = useState<MarketplaceTemplate | null>(null);
   const [pendingRemoval, setPendingRemoval] =
     useState<MarketplaceTemplate | null>(null);
+
+  const [search, setSearch] = useState("");
+  const [documentType, setDocumentType] = useState("all");
+  const [style, setStyle] = useState("all");
+  const [sort, setSort] = useState<TemplateSort>("newest");
+  const query = search.trim().toLocaleLowerCase();
+  const filtered = saved.filter(({ template }) =>
+    (documentType === "all" || template.documentType === documentType) &&
+    (style === "all" || template.style.id === style) &&
+    `${template.name} ${template.style.name} ${documentBlueprints[template.documentType].name}`.toLocaleLowerCase().includes(query),
+  );
+  const sorted = [...filtered].sort((first, second) => {
+    if (sort === "oldest") return first.savedAt - second.savedAt;
+    if (sort === "name") return first.template.name.localeCompare(second.template.name) || first.template.style.name.localeCompare(second.template.style.name);
+    if (sort === "style") return first.template.style.name.localeCompare(second.template.style.name) || first.template.name.localeCompare(second.template.name);
+    return second.savedAt - first.savedAt;
+  });
+  const recent = [...filtered].sort((first, second) => second.savedAt - first.savedAt).slice(0, 4);
+  const groups = new Map<DocumentType, MarketplaceTemplate[]>();
+  for (const { template } of sorted) {
+    const group = groups.get(template.documentType) ?? [];
+    group.push(template);
+    groups.set(template.documentType, group);
+  }
+  const sortedGroups = [...groups];
+  const typeOptions = [...new Set(saved.map(({ template }) => template.documentType))]
+    .map((value) => ({ value, label: documentBlueprints[value].name }))
+    .sort((first, second) => first.label.localeCompare(second.label));
+  const styleOptions = [...new Map(saved.map(({ template }) => [template.style.id, template.style])).values()]
+    .map(({ id, name }) => ({ value: id, label: name }))
+    .sort((first, second) => first.label.localeCompare(second.label));
+  const resetFilters = () => {
+    setSearch("");
+    setDocumentType("all");
+    setStyle("all");
+    setSort("newest");
+  };
 
   const handlePrint = () => {
     window.print();
@@ -33,44 +77,49 @@ export const MyTemplatesView = () => {
     setPreview(null);
   };
 
-  if (isLoading) {
-    return (
-      <div className="w-full">
-        <LoadingStatus message="Loading your templates…" />
-        <TemplateCardSkeletonGrid />
-      </div>
-    );
-  }
+  const toolbar = (
+    <TemplateLibraryToolbar
+        search={search} documentType={documentType} style={style} sort={sort}
+        typeOptions={typeOptions} styleOptions={styleOptions}
+        onSearch={setSearch} onDocumentType={setDocumentType} onStyle={setStyle} onSort={setSort} onReset={resetFilters}
+      />
+  );
 
-  if (saved.length === 0) {
-    return (
-      <div className="grid w-full place-items-center rounded-box border border-dashed border-steel-mist bg-base-100 p-12 text-center">
-        <p className="font-title text-base font-bold text-nox-noir">
-          No templates yet
-        </p>
-        <p className="mt-1 max-w-sm text-sm text-nox-noir/60">
-          Save templates from the marketplace and they will appear here, ready
-          to use in your documents.
-        </p>
-        <Link
-          className="btn btn-sm btn-primary mt-5 font-title font-semibold tracking-normal"
-          href="/marketplace"
-        >
-          Browse marketplace
-        </Link>
-      </div>
-    );
-  }
-
-  return (
+  const content = isLoading ? (
     <div className="w-full">
-      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-        {saved.map((item) => (
-          <TemplateCard
-            key={item.templateId}
-            onPreview={() => setPreview(item.template)}
-            saved
-            template={item.template}
+      <LoadingStatus message="Loading your templates…" />
+      <TemplateCardSkeletonGrid className="grid-cols-2 gap-x-6 gap-y-8 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6" />
+    </div>
+  ) : saved.length === 0 ? (
+    <div className="grid w-full place-items-center rounded-box border border-dashed border-steel-mist bg-base-100 p-12 text-center">
+      <p className="font-title text-base font-bold text-nox-noir">
+        No templates yet
+      </p>
+      <p className="mt-1 max-w-sm text-sm text-nox-noir/60">
+        Save templates from the marketplace and they will appear here, ready
+        to use in your documents.
+      </p>
+      <Link
+        className="btn btn-sm btn-primary mt-5 font-title font-semibold tracking-normal"
+        href="/marketplace"
+      >
+        Browse marketplace
+      </Link>
+    </div>
+  ) : (
+    <div className="my-templates-view grid w-full min-w-0 gap-8">
+      {recent.length > 0 ? (
+        <TemplateTypeGroup title="Recently Added" templates={recent.map(({ template }) => template)} onPreview={setPreview} />
+      ) : (
+        <p className="py-8 text-center text-sm text-nox-noir/60">No matching templates. Try another search or reset the filters.</p>
+      )}
+      <div className="grid gap-10">
+        {sortedGroups.map(([documentType, templates]) => (
+          <TemplateTypeGroup
+            key={documentType}
+            documentType={documentType}
+            templates={templates}
+            onPreview={setPreview}
           />
         ))}
       </div>
@@ -99,4 +148,21 @@ export const MyTemplatesView = () => {
       />
     </div>
   );
+  return withShell ? (
+    <AppShell
+      activeItem="My Templates"
+      description="Templates saved to your account."
+      title="My Templates"
+    >
+      {toolbar}
+      {content}
+    </AppShell>
+  ) : (
+    <>
+      {!isLoading && saved.length > 0 ? toolbar : null}
+      {content}
+    </>
+  );
 };
+
+export default MyTemplatesView;

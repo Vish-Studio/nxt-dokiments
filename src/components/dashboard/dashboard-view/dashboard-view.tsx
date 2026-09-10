@@ -100,19 +100,19 @@ export const DashboardView = () => {
       color: "bg-play-purple hover:bg-play-purple/80",
       href: "/my-documents",
       icon: FileTextIcon,
-      label: "Open documents",
+      label: "Open my documents",
     },
     {
       href: "/my-templates",
       icon: LayoutIcon,
       color: "bg-play-pink hover:bg-play-pink/70",
-      label: "My templates",
+      label: "See my templates",
     },
     {
-      href: "/marketplace",
-      icon: StorefrontIcon,
+      href: "/my-clients",
+      icon: UsersThreeIcon,
       color: "bg-play-teal hover:brightness-95",
-      label: "Browse marketplace",
+      label: "Browse my clients",
     },
   ];
 

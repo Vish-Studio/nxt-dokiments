@@ -1,5 +1,7 @@
 "use client";
 
+import type { ReactNode } from "react";
+
 import type { Icon } from "@phosphor-icons/react";
 import { ListIcon } from "@phosphor-icons/react";
 import Link from "next/link";
@@ -17,6 +19,7 @@ import { cn } from "@/lib/utils";
 export interface MobilePageHeaderProps {
   alignTitleWithNavigation?: boolean;
   description?: string;
+  footer?: ReactNode;
   icon?: Icon;
   isCompact?: boolean;
   onOpenNavigation: () => void;
@@ -119,6 +122,7 @@ const toneStyles: Record<PageBannerTone, ToneStyle> = {
 export const MobilePageHeader = ({
   alignTitleWithNavigation = false,
   description,
+  footer,
   icon: HeaderIcon,
   isCompact = false,
   onOpenNavigation,
@@ -133,7 +137,7 @@ export const MobilePageHeader = ({
   return (
     <header
       className={cn(
-        "sticky top-0 z-50 rounded-box transition-all duration-300 ease-out lg:hidden",
+        "mobile-page-header shrink-0 sticky top-0 z-50 rounded-box transition-all duration-300 ease-out lg:hidden",
         style.container[variant],
         isCompact
           ? "min-h-16 p-2 px-4 shadow-[0_12px_30px_rgb(20_20_20/0.10)]"
@@ -232,6 +236,9 @@ export const MobilePageHeader = ({
           />
         ) : null}
       </div>
+      {footer ? <div className="mt-4 border-t border-current/10 pt-4">{footer}</div> : null}
     </header>
   );
 };
+
+export default MobilePageHeader;

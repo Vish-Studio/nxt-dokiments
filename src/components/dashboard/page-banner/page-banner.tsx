@@ -1,5 +1,7 @@
 "use client";
 
+import type { ReactNode } from "react";
+
 import { ListIcon } from "@phosphor-icons/react";
 import type { Icon } from "@phosphor-icons/react";
 
@@ -20,6 +22,7 @@ export type PageBannerVariant = "solid" | "soft" | "outline";
 
 export type PageBannerProps = {
   className?: string;
+  footer?: ReactNode;
   description?: string;
   icon?: Icon;
   onOpenNavigation?: () => void;
@@ -119,6 +122,7 @@ const toneStyles: Record<PageBannerTone, ToneStyle> = {
 
 export const PageBanner = ({
   className,
+  footer,
   description,
   icon: BannerIcon,
   onOpenNavigation,
@@ -132,7 +136,7 @@ export const PageBanner = ({
   return (
     <section
       className={cn(
-        "group flex items-start gap-4 rounded-box p-6 sm:p-8",
+        "page-banner group flex shrink-0 flex-wrap items-start gap-4 rounded-box p-6 sm:p-8",
         style.container[variant],
         className,
       )}
@@ -177,6 +181,9 @@ export const PageBanner = ({
       {visualVariant ? (
         <PageHeaderVisual className="ml-auto hidden size-24 sm:block lg:size-28" variant={visualVariant} />
       ) : null}
+      {footer ? <div className="w-full min-w-0 border-t border-current/10 pt-4">{footer}</div> : null}
     </section>
   );
 };
+
+export default PageBanner;

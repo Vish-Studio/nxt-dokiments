@@ -23,6 +23,7 @@ import { useUiStore } from "@/stores/ui-store";
 export type AppShellProps = {
   activeItem?: string;
   children?: ReactNode;
+  headerContent?: ReactNode;
   description?: string;
   bannerTone?: PageBannerTone;
   bannerVariant?: PageBannerVariant;
@@ -43,12 +44,12 @@ const SCROLL_COMPACT_OFF_THRESHOLD = 16;
 
 const pageThemes: Record<string, PageTheme> = {
   Dashboard: { tone: "golden" },
-  Documents: { tone: "purple", visual: "documents" },
+  "My Documents": { tone: "purple", visual: "documents" },
   "My Templates": {
     tone: "pink",
     visual: "templates",
   },
-  "My Clients": { tone: "golden" },
+  "My Clients": { tone: "teal" },
   Marketplace: { tone: "teal", visual: "marketplace" },
   Subscription: {
     tone: "purple",
@@ -62,6 +63,7 @@ export const AppShell = ({
   bannerTone,
   bannerVariant,
   children,
+  headerContent,
   description,
   showBanner = true,
   title = "Dashboard",
@@ -134,6 +136,7 @@ export const AppShell = ({
             <div className="flex min-h-0 flex-1 flex-col overflow-hidden bg-app-panel lg:mr-4 lg:mb-4 lg:mt-4 lg:rounded-4xl">
               <ContentContainer onScroll={handleContentScroll}>
                 <MobilePageHeader
+                  footer={headerContent}
                   alignTitleWithNavigation={isDashboardHome}
                   description={mobileDescription}
                   icon={showBanner ? pageIcon : undefined}
@@ -148,6 +151,7 @@ export const AppShell = ({
                 {showBanner ? (
                   <PageBanner
                     className="hidden lg:flex"
+                    footer={headerContent}
                     description={description}
                     icon={pageIcon}
                     title={title}

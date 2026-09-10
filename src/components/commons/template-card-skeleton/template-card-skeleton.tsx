@@ -15,16 +15,18 @@ export const TemplateCardSkeleton = ({
 );
 
 export type TemplateCardSkeletonGridProps = {
+  className?: string;
   count?: number;
 };
 
 /** Grid of `TemplateCardSkeleton`s matching the layout used by My Templates and the Documents template picker. */
 export const TemplateCardSkeletonGrid = ({
+  className,
   count = 6,
 }: TemplateCardSkeletonGridProps) => (
   <div
     aria-hidden
-    className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3"
+    className={cn("grid", className ?? "gap-4 sm:grid-cols-2 xl:grid-cols-3")}
   >
     {Array.from({ length: count }, (_, index) => (
       <TemplateCardSkeleton key={index} />
