@@ -8,7 +8,6 @@ import {
   LayoutIcon,
   PlusIcon,
   SparkleIcon,
-  StorefrontIcon,
   UsersThreeIcon,
 } from "@phosphor-icons/react";
 import Link from "next/link";
