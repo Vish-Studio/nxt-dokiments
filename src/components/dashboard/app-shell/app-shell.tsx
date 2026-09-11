@@ -2,7 +2,7 @@
 
 import { ListIcon } from "@phosphor-icons/react";
 import type { ReactNode } from "react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 import { AuthGuard } from "@/components/commons/auth-guard/auth-guard";
 import { ButtonIcon } from "@/components/commons/button-icon/button-icon";
@@ -67,6 +67,33 @@ export const AppShell = ({
   const resolvedTone = bannerTone ?? theme.tone;
   const resolvedVariant = bannerVariant ?? theme.variant ?? "solid";
   const isDashboardHome = activeItem === "Dashboard";
+
+  useEffect(() => {
+    const themeColor = document.querySelector<HTMLMetaElement>(
+      'meta[name="theme-color"]',
+    );
+    const previousThemeColor = themeColor?.content;
+    const previousHtmlBackground = document.documentElement.style.backgroundColor;
+    const previousBodyBackground = document.body.style.backgroundColor;
+    const colors = getComputedStyle(document.documentElement);
+    const nextColor = colors
+      .getPropertyValue(isMobileSidebarOpen ? "--color-nox-noir" : "--color-app-panel")
+      .trim();
+
+    if (themeColor) {
+      themeColor.content = nextColor;
+    }
+    document.documentElement.style.backgroundColor = nextColor;
+    document.body.style.backgroundColor = nextColor;
+
+    return () => {
+      if (themeColor && previousThemeColor) {
+        themeColor.content = previousThemeColor;
+      }
+      document.documentElement.style.backgroundColor = previousHtmlBackground;
+      document.body.style.backgroundColor = previousBodyBackground;
+    };
+  }, [isMobileSidebarOpen]);
 
   return (
     <AuthGuard>
