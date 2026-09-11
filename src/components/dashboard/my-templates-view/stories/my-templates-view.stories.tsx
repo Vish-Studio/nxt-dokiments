@@ -176,7 +176,7 @@ export const PageToolbar: Story = {
     const header = canvas.getByRole("heading", { name: "My Templates", level: 2 }).closest("section")!;
     await canvas.findByRole("region", { name: "Recently Added" });
     const search = canvas.getByRole("searchbox", { name: "Search templates" });
-    await expect(header.contains(search)).toBe(false);
+    await expect(header.contains(search)).toBe(true);
     await expect(header).toHaveClass("bg-play-pink");
     await expect(search).toBeVisible();
     await canvas.findByRole("region", { name: "Recently Added" });

@@ -11,6 +11,7 @@ import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
 
 import { Button } from "@/components/commons/button/button";
+import CollectionToolbar from "@/components/commons/collection-toolbar/collection-toolbar";
 import { ConfirmDialog } from "@/components/commons/confirm-dialog/confirm-dialog";
 import { FloatingActionButton } from "@/components/commons/floating-action-button/floating-action-button";
 import { Input } from "@/components/commons/input/input";
@@ -24,6 +25,7 @@ import { TemplatePreviewDialog } from "@/components/commons/template-preview-dia
 import { ClientPicker } from "@/components/dashboard/client-picker/client-picker";
 import { DocumentExportDialog } from "@/components/dashboard/document-export-dialog/document-export-dialog";
 import { DocumentList } from "@/components/dashboard/document-list/document-list";
+import { ResponsiveHeaderControls } from "@/components/dashboard/responsive-header-controls/responsive-header-controls";
 import {
   useCreateDocumentMutation,
   useDeleteDocumentMutation,
@@ -31,7 +33,9 @@ import {
   useUpdateDocumentMutation,
 } from "@/hooks/queries/use-documents";
 import { useSavedTemplatesQuery } from "@/hooks/queries/use-saved-templates";
+import { useScrollContentToTopOnMobile } from "@/hooks/use-scroll-content-to-top-on-mobile";
 import { trackEvent } from "@/lib/analytics/track";
+import { documentBlueprints } from "@/lib/market-place/documents";
 import {
   clientPrefillValues,
   senderPrefillValues,
@@ -50,9 +54,9 @@ const EMPTY_DOCUMENTS: UserDocument[] = [];
 const templateOf = (document: UserDocument): MarketplaceTemplate | null =>
   document.templateSnapshot
     ? snapshotToMarketplaceTemplate(
-        document.templateSnapshot,
-        document.templateId,
-      )
+      document.templateSnapshot,
+      document.templateId,
+    )
     : null;
 
 export const DocumentsView = () => {
@@ -90,18 +94,112 @@ export const DocumentsView = () => {
     null,
   );
   const [isEditorPreviewOpen, setIsEditorPreviewOpen] = useState(false);
+  const [search, setSearch] = useState("");
+  const [documentType, setDocumentType] = useState("all");
+  const [sort, setSort] = useState("newest");
+  const scrollContentToTop = useScrollContentToTopOnMobile();
 
   const ownedTemplates = useMemo(
     () => saved.map((item) => item.template),
     [saved],
   );
 
-  const sortedDocuments = useMemo(
+  const documentTypeOptions = useMemo(
     () =>
-      [...documents].sort(
-        (first, second) => second.createdAt - first.createdAt,
-      ),
+      [...new Set(
+        documents
+          .map((document) => templateOf(document)?.documentType)
+          .filter((value): value is keyof typeof documentBlueprints => Boolean(value)),
+      )]
+        .map((value) => ({ value, label: documentBlueprints[value].name }))
+        .sort((first, second) => first.label.localeCompare(second.label)),
     [documents],
+  );
+
+  const visibleDocuments = useMemo(() => {
+    const query = search.trim().toLocaleLowerCase();
+    const matches = documents.filter((document) => {
+      const template = templateOf(document);
+      return (
+        (documentType === "all" || template?.documentType === documentType) &&
+        `${document.name} ${template?.name ?? ""} ${template?.style.name ?? ""}`
+          .toLocaleLowerCase()
+          .includes(query)
+      );
+    });
+
+    return matches.sort((first, second) => {
+      if (sort === "oldest") return first.createdAt - second.createdAt;
+      if (sort === "name") return first.name.localeCompare(second.name);
+      return second.createdAt - first.createdAt;
+    });
+  }, [documentType, documents, search, sort]);
+
+  const resetControls = () => {
+    setSearch("");
+    setDocumentType("all");
+    setSort("newest");
+  };
+
+  const toolbar = (
+    <CollectionToolbar
+      ariaLabel="Search, sort, and filter documents"
+      appearance="compact"
+      canReset={Boolean(search || documentType !== "all" || sort !== "newest")}
+      endAction={
+        <Button
+          icon={<PlusIcon aria-hidden size={16} weight="bold" />}
+          iconPosition="left"
+          onClick={() => setMode("picker")}
+          size="sm"
+          variant="accent"
+        >
+          New document
+        </Button>
+      }
+      filters={[
+        {
+          id: "type",
+          label: "Document type",
+          value: documentType,
+          defaultValue: "all",
+          options: [
+            { label: "All document types", value: "all" },
+            ...documentTypeOptions,
+          ],
+          onChange: setDocumentType,
+        },
+      ]}
+      onReset={resetControls}
+      onCollectionChange={scrollContentToTop}
+      onSearch={setSearch}
+      onSort={setSort}
+      search={search}
+      searchLabel="Search documents"
+      searchPlaceholder="Search documents…"
+      sort={sort}
+      sortOptions={[
+        { label: "Recently created", value: "newest" },
+        { label: "Oldest created", value: "oldest" },
+        { label: "Name: A–Z", value: "name" },
+      ]}
+    />
+  );
+  const headerSearch = (
+    <CollectionToolbar
+      appearance="header-dark"
+      ariaLabel="Search documents"
+      layout="header-search"
+      onReset={resetControls}
+      onCollectionChange={scrollContentToTop}
+      onSearch={setSearch}
+      onSort={setSort}
+      search={search}
+      searchLabel="Search documents"
+      searchPlaceholder="Search documents…"
+      sort={sort}
+      sortOptions={[]}
+    />
   );
 
   const goToList = () => {
@@ -389,6 +487,8 @@ export const DocumentsView = () => {
 
           <div className="hidden lg:sticky lg:top-2 lg:block">
             <TemplateDocument
+              className="aspect-[210/297]"
+              density="compact"
               template={editorTemplate}
               values={draftValues}
             />
@@ -405,6 +505,8 @@ export const DocumentsView = () => {
         >
           <div className="min-h-full bg-app-panel p-3 sm:p-5">
             <TemplateDocument
+              className="aspect-[210/297]"
+              density="compact"
               template={editorTemplate}
               values={draftValues}
             />
@@ -527,9 +629,12 @@ export const DocumentsView = () => {
 
   // --- Document list --------------------------------------------------------
   return (
-    <div className="w-full">
+    <div className="flex min-h-0 w-full flex-1 flex-col gap-2 pt-6">
+      <ResponsiveHeaderControls desktopContent={toolbar} desktopHeader={headerSearch}>
+        {toolbar}
+      </ResponsiveHeaderControls>
       {isDocumentsLoading ? (
-        <div className="overflow-hidden rounded-box border border-steel-mist bg-base-100">
+        <div className="min-h-0 w-full flex-1 overflow-hidden rounded-box border border-steel-mist bg-base-100">
           <LoadingStatus message="Loading your documents…" />
           <div
             aria-hidden
@@ -550,7 +655,7 @@ export const DocumentsView = () => {
           </div>
         </div>
       ) : documents.length === 0 ? (
-        <div className="grid place-items-center rounded-box border border-dashed border-steel-mist bg-base-100 p-12 text-center">
+        <div className="grid min-h-72 w-full place-items-center rounded-box border border-dashed border-steel-mist bg-base-100 p-12 text-center">
           <p className="font-title text-base font-bold text-nox-noir">
             No documents yet
           </p>
@@ -560,7 +665,7 @@ export const DocumentsView = () => {
         </div>
       ) : (
         <DocumentList
-          documents={sortedDocuments}
+          documents={visibleDocuments}
           onEdit={openDocument}
           onPreview={setPreviewDocument}
           onPrint={handlePrintDocument}
@@ -604,6 +709,7 @@ export const DocumentsView = () => {
 
       {previewDocument || exportDocument ? null : (
         <FloatingActionButton
+          className="lg:hidden"
           icon={
             <PlusIcon
               aria-hidden

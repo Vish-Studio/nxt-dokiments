@@ -63,6 +63,7 @@ All UI components must reside exactly within one of these four subdirectories un
 ## 7. Shared Dashboard Patterns
 
 - **Dashboard lists:** Use `DashboardList` for the responsive 12-column header, surface, and borders. Keep entity-specific row data and actions in components such as `DocumentListItem` and `ClientList`.
+- **Collection surfaces:** My Documents, My Clients, and My Templates use full-width, full-available-height rounded collection surfaces. Tables fill the available surface width, and the template gallery lives inside the same type of surface rather than floating on the canvas. Group the collection toolbar with its surface: use `pt-6` from the page banner and `gap-2` before the collection surface.
 - **Right-side panels:** Use `SidePanel`, matching its `tone` to the active `PageBanner`: Documents `purple`, My Templates `pink`, Marketplace `teal`, and My Clients/Dashboard `golden`. Place panel actions in its `footer`.
 
 ## 8. Verification Checklist

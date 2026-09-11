@@ -4,7 +4,9 @@ import type { SelectOption } from "@/components/commons/select/select";
 export type TemplateSort = "newest" | "oldest" | "name" | "style";
 
 interface Props {
+  appearance?: "default" | "header-dark" | "compact";
   embedded?: boolean;
+  layout?: "standard" | "header" | "header-search";
   search: string;
   documentType: string;
   style: string;
@@ -15,20 +17,24 @@ interface Props {
   onDocumentType: (value: string) => void;
   onStyle: (value: string) => void;
   onSort: (value: TemplateSort) => void;
+  onCollectionChange?: () => void;
   onReset: () => void;
 }
 
 const TemplateLibraryToolbar = ({
-  embedded = false, search, documentType, style, sort, typeOptions, styleOptions,
-  onSearch, onDocumentType, onStyle, onSort, onReset,
+  appearance, embedded = false, layout, search, documentType, style, sort, typeOptions, styleOptions,
+  onSearch, onDocumentType, onStyle, onSort, onCollectionChange, onReset,
 }: Props) => (
   <CollectionToolbar
     variant={embedded ? "embedded" : "surface"}
+    appearance={appearance}
+    layout={layout}
     ariaLabel="Filter and sort templates"
     searchLabel="Search templates"
     searchPlaceholder="Search templates…"
     search={search}
     onSearch={onSearch}
+    onCollectionChange={onCollectionChange}
     sort={sort}
     onSort={(value) => onSort(value as TemplateSort)}
     sortOptions={[

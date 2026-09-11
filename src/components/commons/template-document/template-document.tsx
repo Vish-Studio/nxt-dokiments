@@ -3,6 +3,7 @@ import type { MarketplaceTemplate, TemplateStyleId } from "@/types/template";
 
 export type TemplateDocumentProps = {
   className?: string;
+  density?: "default" | "compact";
   layout?: "print" | "responsive";
   template: MarketplaceTemplate;
   values?: Record<string, string>;
@@ -59,10 +60,12 @@ const styleConfig: Record<TemplateStyleId, StyleConfig> = {
 
 export const TemplateDocument = ({
   className,
+  density = "default",
   layout = "responsive",
   template,
   values = {},
 }: TemplateDocumentProps) => {
+  const isCompact = density === "compact";
   const config = styleConfig[template.style.id];
   const title = values.title?.trim() || template.name;
   const metaFields = template.fields.filter((field) => field.type !== "textarea");
@@ -75,12 +78,12 @@ export const TemplateDocument = ({
 
   return (
     <article className={cn("flex flex-col bg-white text-nox-noir", config.paper, className)}>
-      <header className={config.header}>
-        <p className={config.eyebrow}>{template.name}</p>
-        <h2 className={config.title}>{title}</h2>
+      <header className={cn(config.header, isCompact && "px-5! py-4!")}>
+        <p className={cn(config.eyebrow, isCompact && "text-[11px]!")}>{template.name}</p>
+        <h2 className={cn(config.title, isCompact && "text-xl!")}>{title}</h2>
       </header>
 
-      <div className={config.body}>
+      <div className={cn(config.body, isCompact && "p-5!")}>
         <dl className={cn("grid gap-4", layout === "print" ? "grid-cols-2" : "sm:grid-cols-2")}>
           {metaFields.map((field) => {
             if (field.key === "title") {
@@ -90,8 +93,8 @@ export const TemplateDocument = ({
 
             return (
               <div className="grid gap-1" key={field.key}>
-                <dt className={config.label}>{field.label}</dt>
-                <dd className={cn("text-sm", isEmpty ? "italic text-nox-noir/35" : "font-medium")}>
+                <dt className={cn(config.label, isCompact && "text-[11px]!")}>{field.label}</dt>
+                <dd className={cn(isCompact ? "text-xs" : "text-sm", isEmpty ? "italic text-nox-noir/35" : "font-medium")}>
                   {text}
                 </dd>
               </div>
@@ -104,10 +107,11 @@ export const TemplateDocument = ({
 
           return (
             <section className="mt-6" key={field.key}>
-              <h3 className={config.sectionTitle}>{field.label}</h3>
+              <h3 className={cn(config.sectionTitle, isCompact && "text-xs")}>{field.label}</h3>
               <p
                 className={cn(
-                  "mt-2 whitespace-pre-line text-sm leading-6",
+                  "mt-2 whitespace-pre-line",
+                  isCompact ? "text-xs leading-5" : "text-sm leading-6",
                   isEmpty ? "italic text-nox-noir/35" : "text-nox-noir/80",
                 )}
               >

@@ -1,4 +1,4 @@
-import { SidebarIcon, XIcon } from "@phosphor-icons/react";
+import { XIcon } from "@phosphor-icons/react";
 import type { FunctionComponent } from "react";
 
 import { ButtonIcon } from "@/components/commons/button-icon/button-icon";
@@ -74,33 +74,16 @@ const Sidebar: FunctionComponent<Props> = ({
             />
           </Link>
         </div>
-        {isCollapsed && !isMobileOpen ? null : (
+        {isMobileOpen ? (
           <ButtonIcon
-            aria-label={isMobileOpen ? "Close navigation" : "Collapse sidebar"}
+            aria-label="Close navigation"
             className="border-none text-app-nav hover:bg-app-nav-hover hover:text-app-chrome-content"
-            icon={
-              <>
-                <span className="lg:hidden">
-                  <XIcon
-                    aria-hidden
-                    size={16}
-                    weight="bold"
-                  />
-                </span>
-                <span className="hidden lg:inline-flex">
-                  <SidebarIcon
-                    aria-hidden
-                    size={16}
-                    weight="bold"
-                  />
-                </span>
-              </>
-            }
-            onClick={isMobileOpen ? onCloseMobile : onToggleCollapse}
+            icon={<XIcon aria-hidden size={16} weight="bold" />}
+            onClick={onCloseMobile}
             size="sm"
             variant="ghost"
           />
-        )}
+        ) : null}
       </div>
 
       <nav className="mt-10 grid gap-3">

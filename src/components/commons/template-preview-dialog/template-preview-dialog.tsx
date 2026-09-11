@@ -4,7 +4,6 @@ import {
   BookmarkSimpleIcon,
   PrinterIcon,
   SpinnerGapIcon,
-  TrashIcon,
 } from "@phosphor-icons/react";
 import Link from "next/link";
 
@@ -83,44 +82,34 @@ export const TemplatePreviewDialog = ({
               </Button>
             </div>
           ) : mode === "library" ? (
-            <div
-              className={
-                onDelete
-                  ? "grid w-full grid-cols-[auto_1fr_1fr] gap-2"
-                  : "grid w-full grid-cols-2 gap-2"
-              }
-            >
-              {onDelete ? (
+            <div className="grid w-full grid-cols-2 gap-2">
+              {onPrint ? (
                 <Button
-                  aria-label="Remove template"
+                  className="w-full"
                   icon={
-                    <TrashIcon
+                    <PrinterIcon
                       aria-hidden
                       size={17}
                       weight="bold"
                     />
                   }
-                  onClick={onDelete}
+                  iconPosition="left"
+                  onClick={onPrint}
                   size="sm"
                   variant="outline"
-                />
-              ) : null}
-              <Button
-                className="w-full"
-                icon={
-                  <PrinterIcon
-                    aria-hidden
-                    size={17}
-                    weight="bold"
-                  />
-                }
-                iconPosition="left"
-                onClick={onPrint}
-                size="sm"
-                variant="outline"
-              >
-                Print template
-              </Button>
+                >
+                  Print template
+                </Button>
+              ) : (
+                <Button
+                  className="w-full"
+                  onClick={onClose}
+                  size="sm"
+                  variant="outline"
+                >
+                  Close
+                </Button>
+              )}
               {onUse ? (
                 <Button
                   className="w-full"
@@ -213,6 +202,8 @@ export const TemplatePreviewDialog = ({
           </section>
 
           <TemplateDocument
+            className="aspect-[210/297]"
+            density="compact"
             template={template}
             values={resolvedValues}
           />

@@ -174,7 +174,7 @@ export const Empty: Story = {
     const canvas = within(canvasElement);
     await expect(await canvas.findByText(/no documents yet/i)).toBeVisible();
     await expect(
-      canvas.getAllByRole("button", { name: /new document/i }).length,
+      (await canvas.findAllByRole("button", { name: /new document/i })).length,
     ).toBeGreaterThan(0);
   },
 };

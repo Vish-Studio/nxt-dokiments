@@ -25,9 +25,9 @@ export const ClientListSkeleton = ({
   count = 4,
   message = "Loading your clients…",
 }: ClientListSkeletonProps) => (
-  <div className="client-list-skeleton">
+  <div className="client-list-skeleton flex min-h-0 w-full flex-1 flex-col">
     <LoadingStatus message={message} />
-    <div aria-hidden>
+    <div aria-hidden className="flex min-h-0 flex-1 flex-col">
       <DashboardList columns={clientListColumns}>
         {Array.from({ length: count }, (_, index) => (
           <li

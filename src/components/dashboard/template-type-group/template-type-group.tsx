@@ -13,7 +13,7 @@ interface Props {
 const TemplateTypeGroup = ({ documentType, title, templates, onPreview }: Props) => (
   <section
     aria-labelledby={`template-group-${documentType ?? "recent"}`}
-    className="template-type-group min-w-0"
+    className="template-type-group min-w-0 rounded-box border border-steel-mist bg-base-100 p-4 sm:p-6"
   >
     <div className="mb-5 flex items-center gap-3">
       <h2

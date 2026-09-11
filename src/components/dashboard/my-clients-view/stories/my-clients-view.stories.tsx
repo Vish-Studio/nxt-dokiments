@@ -72,7 +72,7 @@ export const Empty: Story = {
     const canvas = within(canvasElement);
     await expect(await canvas.findByText("No clients yet")).toBeVisible();
     await expect(
-      canvas.getByRole("button", { name: "Add client" }),
+      await canvas.findByRole("button", { name: "Add client" }),
     ).toBeVisible();
   },
 };
@@ -180,7 +180,7 @@ export const AddClient: Story = {
     const canvas = within(canvasElement);
 
     await expect(await canvas.findByText("No clients yet")).toBeVisible();
-    await userEvent.click(canvas.getByRole("button", { name: "Add client" }));
+    await userEvent.click(await canvas.findByRole("button", { name: "Add client" }));
 
     // Scoped to the panel: the floating action button and the panel's submit
     // button share the accessible name "Add client" while the panel is open.
