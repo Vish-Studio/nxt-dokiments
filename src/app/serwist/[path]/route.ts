@@ -11,14 +11,44 @@ import { spawnSync } from "node:child_process";
 
 import { createSerwistRoute } from "@serwist/turbopack";
 
-// Ties the offline fallback's precache revision to the current commit, so a
-// deploy that changes `src/app/offline/page.tsx` busts the cached copy.
-// Falls back to a random id if `git` isn't available in the runtime
-// (e.g. a serverless container without the repo history).
+/**
+ * Narrows a possibly-absent, possibly-blank string to a usable value.
+ *
+ * Every candidate below goes through this rather than through `??`, because the
+ * failure this guards against is an *empty* string, not a missing one, and `""`
+ * is not nullish. An unset CI variable and one exported as empty have to be
+ * treated alike.
+ */
+const usable = (value: string | undefined): string | undefined =>
+  value && value.trim() ? value.trim() : undefined;
+
+/**
+ * Reads the commit from `git`, for local development where neither CI variable
+ * below is set.
+ *
+ * Only trusts the output of a command that actually succeeded: when `git` exists
+ * but exits non-zero — a build container holding the source without `.git`, say —
+ * it writes its diagnostic to stderr and leaves `stdout` as `""`.
+ */
+const gitRevision = (): string | undefined => {
+  const result = spawnSync("git", ["rev-parse", "HEAD"], { encoding: "utf-8" });
+  return result.status === 0 ? usable(result.stdout) : undefined;
+};
+
+// Ties the offline fallback's precache revision to the current build, so a deploy
+// that changes `src/app/offline/page.tsx` busts the cached copy. The commit SHA is
+// preferred over the random id only because it is stable across redeploys of an
+// identical commit, which spares users a pointless re-fetch.
+//
+// This value must never be empty. Serwist treats a falsy revision as "the URL is
+// its own version", dropping the `__WB_REVISION__` cache-key parameter, so the
+// precache install finds a match and skips the fetch — pinning `/offline` to the
+// first copy ever cached, permanently, on every installed device.
 const revision =
-  spawnSync("git", ["rev-parse", "HEAD"], {
-    encoding: "utf-8",
-  }).stdout?.trim() ?? crypto.randomUUID();
+  usable(process.env.VERCEL_GIT_COMMIT_SHA) ??
+  usable(process.env.GITHUB_SHA) ??
+  gitRevision() ??
+  crypto.randomUUID();
 
 export const { dynamic, dynamicParams, revalidate, generateStaticParams, GET } =
   createSerwistRoute({
