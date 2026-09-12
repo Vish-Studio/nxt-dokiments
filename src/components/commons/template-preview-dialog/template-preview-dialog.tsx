@@ -189,7 +189,7 @@ export const TemplatePreviewDialog = ({
       title={documentName ?? template?.name}
     >
       {template && resolvedValues ? (
-        <div className="bg-base-200 p-3">
+        <div className="template-preview-document bg-base-200 p-3">
           <section className="mb-4 rounded-box border border-steel-mist bg-base-100 p-4">
             <div className="flex flex-wrap items-center gap-2">
               <Badge variant={template.tier}>{tierLabels[template.tier]}</Badge>
@@ -202,7 +202,7 @@ export const TemplatePreviewDialog = ({
           </section>
 
           <TemplateDocument
-            className="aspect-[210/297]"
+            className="template-preview-paper"
             density="compact"
             template={template}
             values={resolvedValues}
