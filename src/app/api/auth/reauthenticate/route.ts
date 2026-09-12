@@ -1,7 +1,9 @@
 import { getIronSession } from "iron-session";
 
-import { handleApiError } from "@/lib/api/errors";
+import { ReauthenticateSchema } from "@/lib/api/auth-schema";
+import { ApiError, handleApiError } from "@/lib/api/errors";
 import { saveSession } from "@/lib/api/session-cookie";
+import { parseBody } from "@/lib/api/validate";
 import { reauthenticateWithFirebase } from "@/lib/firebase/server-auth";
 import { UpstreamUnavailableError } from "@/lib/http/fetch-upstream";
 import {
@@ -25,6 +27,7 @@ import {
  *
  * @returns `{ ok: true }` on success.
  * @returns `{ error: string }` with status `401` when no session is present.
+ * @returns `{ error: string }` with status `400` when the body fails validation.
  * @returns `{ error: string }` with status `400` when the account signs in via
  *   Google — there's no password to verify, so this rejects before calling Firebase.
  * @returns `{ error: string }` with status `400` when the password is incorrect
@@ -54,7 +57,12 @@ export const POST = async (request: Request): Promise<Response> => {
       );
     }
 
-    const { password } = (await request.json()) as { password: string };
+    // Validated after the gates above, so a caller with no session learns nothing
+    // about the expected body shape. `ReauthenticateSchema` puts no maximum on the
+    // password: it is verifying a credential that already exists, and a ceiling here
+    // would leave the owner of a long password unable to confirm it (see
+    // `credentialFieldLimits`).
+    const { password } = await parseBody(request, ReauthenticateSchema);
     const reauthenticated = await reauthenticateWithFirebase(
       probeSession.user.email,
       password,
@@ -68,8 +76,13 @@ export const POST = async (request: Request): Promise<Response> => {
 
     return response;
   } catch (error) {
-    // Firebase was never reached, so the password wasn't judged either way.
-    if (error instanceof UpstreamUnavailableError) {
+    // Neither of these means the password was wrong, which is what the 400 below
+    // reports. A rejected body is a 400 with a sanitized message of its own; an
+    // unreachable Firebase is a 503, since the password wasn't judged either way.
+    if (
+      error instanceof ApiError ||
+      error instanceof UpstreamUnavailableError
+    ) {
       return handleApiError(error);
     }
 

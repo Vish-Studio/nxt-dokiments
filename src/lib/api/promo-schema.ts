@@ -2,6 +2,8 @@ import "server-only";
 
 import { z } from "zod";
 
+import { MAX_PROMO_CODE } from "@/types/promo";
+
 /**
  * Zod schema for the promo-code routes.
  *
@@ -14,14 +16,7 @@ import { z } from "zod";
  */
 
 /**
- * Ceiling for a submitted promo code. Far longer than any code we would print;
- * it exists to stop an oversized payload (e.g. a direct Postman request) from
- * reaching the normaliser, not to constrain legitimate use.
- */
-const MAX_PROMO_CODE = 64;
-
-/**
- * A promo code submitted for redemption.
+ * A promo code as submitted, bounded but otherwise untouched.
  *
  * Deliberately **not** `.trim()`ed here, unlike the fields in `client-schema.ts`.
  * There the trimmed value is what gets stored, so trimming belongs in the schema;
@@ -30,7 +25,16 @@ const MAX_PROMO_CODE = 64;
  * whitespace intact means all normalisation lives in one tested place
  * (`normalizePromoCode`), and it keeps `"   "` reaching the code lookup so it is
  * answered with "Invalid promo code." rather than a generic "Invalid request body."
+ *
+ * Exported as a bare field, without `min(1)`, because `auth-schema.ts` reuses it for
+ * the optional code the sign-in and sign-up forms carry: those forms submit the
+ * field whether or not the user has a code, so an empty string has to be legal
+ * there. The redeem route below, where a code is the entire point of the request,
+ * adds the minimum back.
  */
+export const promoCodeField = z.string().max(MAX_PROMO_CODE);
+
+/** A promo code submitted for redemption, where an empty one is a `400`. */
 export const RedeemPromoSchema = z.object({
-  promoCode: z.string().min(1).max(MAX_PROMO_CODE),
+  promoCode: promoCodeField.min(1),
 });

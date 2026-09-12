@@ -13,6 +13,8 @@ import { trackEvent } from "@/lib/analytics/track";
 import { withPromoStatus } from "@/lib/promo/promo-status";
 import { queryKeys } from "@/lib/query/keys";
 import { useAuthStore } from "@/stores/auth-store";
+import { credentialFieldLimits } from "@/types/auth";
+import { MAX_PROMO_CODE } from "@/types/promo";
 
 type SignInFields = {
   email: string;
@@ -139,6 +141,7 @@ export const SignInForm = ({ notice, onSubmit }: SignInFormProps) => {
         autoComplete="email"
         error={errors.email?.message}
         label="Email"
+        maxLength={credentialFieldLimits.email}
         placeholder="you@company.com"
         type="email"
         {...register("email", {
@@ -149,6 +152,11 @@ export const SignInForm = ({ notice, onSubmit }: SignInFormProps) => {
           },
         })}
       />
+      {/* Deliberately no `maxLength` on the password, unlike the sign-up form:
+          `SignInSchema` doesn't bound it either. An account may hold a password longer
+          than the ceiling we now apply when one is *set*, and truncating it as its
+          owner typed would leave them staring at "the password is incorrect" with no
+          way to tell why. */}
       <Input
         autoComplete="current-password"
         error={errors.password?.message}
@@ -165,6 +173,9 @@ export const SignInForm = ({ notice, onSubmit }: SignInFormProps) => {
         autoCapitalize="characters"
         autoComplete="off"
         label="Promo code (optional)"
+        // Matches the ceiling `SignInSchema` enforces, so an oversized paste can't
+        // fail the *body* and take the whole sign-in with it.
+        maxLength={MAX_PROMO_CODE}
         name="promoCode"
         onChange={(event) => setPromoCode(event.target.value)}
         placeholder="Enter your promo code"

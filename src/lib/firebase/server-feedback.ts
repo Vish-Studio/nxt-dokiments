@@ -76,14 +76,14 @@ export const FEEDBACK_THROTTLE_MS = 60_000;
  * legitimate user. Losing the tail of an unusual display name costs a reviewer
  * nothing; losing the feedback would.
  *
- * **Kept even though `ProfileSchema` now bounds `displayName` at the same 200.**
- * That schema guards one of three write paths: `POST /api/auth/sign-up` still takes
- * `displayName` off an unvalidated body, and a Google sign-in seeds it from Google's
- * own token via `getUserProfile` — neither goes anywhere near
- * `POST /api/auth/update-profile`. Deliberately not imported from
- * `profileFieldLimits` either: whether this write can satisfy its security rules
- * must not depend on a validation rule belonging to an unrelated route, which is
- * exactly the coupling that would break silently the day someone relaxes it.
+ * **Kept even though `ProfileSchema` and `SignUpSchema` now bound `displayName` at
+ * the same 200.** Those two guard the paths a user types a name on; the third has no
+ * schema to guard it at all, because nobody submits it — a Google sign-in seeds
+ * `displayName` from Google's own token via `getUserProfile`, and Google's ceiling is
+ * not ours to set. Deliberately not imported from `profileFieldLimits` either:
+ * whether this write can satisfy its security rules must not depend on a validation
+ * rule belonging to an unrelated route, which is exactly the coupling that would
+ * break silently the day someone relaxes it.
  */
 const MAX_STORED_DISPLAY_NAME = 200;
 const MAX_STORED_EMAIL = 254;

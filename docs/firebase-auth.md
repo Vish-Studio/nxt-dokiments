@@ -108,6 +108,11 @@ auth flow specifically:
 - **A promo code can never fail an authentication.** `redeemPromoCodeAtAuth`
   (`src/lib/promo/server-auth-promo.ts`) swallows every failure and reports it as
   `"failed"`, so a Firestore outage cannot turn a correct password into a `401`.
+  The one boundary: this is about *redemption outcomes*, not about the request. A
+  code past the 64-character ceiling (`MAX_PROMO_CODE`) fails `SignInSchema` /
+  `SignUpSchema` like any other malformed field, so the sign-in never happens —
+  unreachable from either form, since both promo inputs carry that ceiling as
+  `maxLength`.
 - **Google sign-in carries the code through the redirect.** `/api/auth/google/start`
   seals an optional `promoCode` into the same `dokiments-oauth-state` cookie as
   `state` and `next` (capped at 64 characters so an oversized value can't produce a

@@ -1,4 +1,18 @@
 /**
+ * Ceiling for a submitted promo code, in characters. Far longer than any code we
+ * would print; it exists to stop an oversized payload (e.g. a direct Postman
+ * request) from reaching the normaliser, not to constrain legitimate use.
+ *
+ * Here rather than in `promo-schema.ts`, which is `server-only`, because the promo
+ * inputs on `SignInForm` and `SignUpForm` apply it as `maxLength` so the browser
+ * stops at the same place the server does — the pattern `MAX_FEEDBACK_MESSAGE` in
+ * `src/types/feedback.ts` follows. `/api/auth/google/start` keeps its own copy of
+ * this number for a different reason (a sealed cookie's size limit); see the note
+ * there.
+ */
+export const MAX_PROMO_CODE = 64;
+
+/**
  * One promotional code, as declared in the registry in
  * `src/lib/promo/promo-codes.ts`.
  *

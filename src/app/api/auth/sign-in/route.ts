@@ -1,5 +1,7 @@
-import { handleApiError } from "@/lib/api/errors";
+import { SignInSchema } from "@/lib/api/auth-schema";
+import { ApiError, handleApiError } from "@/lib/api/errors";
 import { startSession } from "@/lib/api/session-cookie";
+import { parseBody } from "@/lib/api/validate";
 import { signInWithFirebase } from "@/lib/firebase/server-auth";
 import { UpstreamUnavailableError } from "@/lib/http/fetch-upstream";
 import { redeemPromoCodeAtAuth } from "@/lib/promo/server-auth-promo";
@@ -19,19 +21,24 @@ import type { AuthSession } from "@/types/auth";
  * outcome is reported as `promo` and never affects whether the sign-in itself
  * succeeds — see `redeemPromoCodeAtAuth`.
  *
+ * The body is validated by `SignInSchema`, which deliberately puts **no maximum on
+ * `password`** — see `credentialFieldLimits`. An account may hold a password longer
+ * than any ceiling we would choose today, and refusing to forward it would lock its
+ * owner out permanently rather than merely tidy the request.
+ *
  * @returns `{ user: AuthUser, promo?: PromoStatus }` on success. `promo` is absent
  *   when no code was submitted.
+ * @returns `{ error: string }` with status `400` when the body fails validation.
  * @returns `{ error: string }` with status `401` on invalid credentials or any Firebase error.
  * @returns `{ error: string }` with status `503` when Firebase could not be reached —
  *   deliberately not a `401`, since unreachable says nothing about the credentials.
  */
 export const POST = async (request: Request): Promise<Response> => {
   try {
-    const { email, password, promoCode } = (await request.json()) as {
-      email: string;
-      password: string;
-      promoCode?: string;
-    };
+    const { email, password, promoCode } = await parseBody(
+      request,
+      SignInSchema,
+    );
 
     let sessionData: AuthSession;
 
@@ -50,9 +57,14 @@ export const POST = async (request: Request): Promise<Response> => {
 
     return response;
   } catch (error) {
-    // Firebase was never reached, so this says nothing about the credentials. Reporting
-    // it as 401 would tell the user their password is wrong during a network outage.
-    if (error instanceof UpstreamUnavailableError) {
+    // Neither of these is a judgement on the credentials, which is all the 401 below
+    // means. A rejected body is a 400 with a sanitized message; an unreachable
+    // Firebase is a 503 — reporting that as a 401 would tell the user their password
+    // is wrong during a network outage.
+    if (
+      error instanceof ApiError ||
+      error instanceof UpstreamUnavailableError
+    ) {
       return handleApiError(error);
     }
 
