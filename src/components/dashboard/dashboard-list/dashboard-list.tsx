@@ -17,8 +17,8 @@ export const DashboardList = ({ children, columns, ordered = false }: Props) => 
   const List = ordered ? "ol" : "ul";
 
   return (
-    <section className="dashboard-list min-h-0 w-full flex-1 overflow-hidden rounded-box border border-steel-mist bg-base-100">
-      <div className="hidden grid-cols-12 items-center px-5 py-3 sm:grid">
+    <section className="dashboard-list flex min-h-0 w-full flex-1 flex-col overflow-hidden rounded-box border border-steel-mist bg-base-100">
+      <div className="hidden shrink-0 grid-cols-12 items-center px-5 py-3 sm:grid">
         {columns.map((column) => (
           <span
             className={cn(
@@ -31,7 +31,9 @@ export const DashboardList = ({ children, columns, ordered = false }: Props) => 
           </span>
         ))}
       </div>
-      <List>{children}</List>
+      <List className="min-h-0 flex-1 overflow-y-auto overscroll-contain">
+        {children}
+      </List>
     </section>
   );
 };

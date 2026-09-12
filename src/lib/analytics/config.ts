@@ -10,11 +10,14 @@
 export type AnalyticsConfig = {
   /** GA4 measurement ID, e.g. `G-XXXXXXXXXX`. Empty when unconfigured. */
   measurementId: string;
+  /** Microsoft Clarity project ID. Empty when Clarity is unconfigured. */
+  clarityProjectId: string;
 };
 
 /** Resolved analytics config. Empty string keeps CI builds working without it. */
 export const analyticsConfig: AnalyticsConfig = {
   measurementId: process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID ?? "",
+  clarityProjectId: process.env.NEXT_PUBLIC_CLARITY_PROJECT_ID ?? "",
 };
 
 /**
@@ -25,3 +28,6 @@ export const analyticsConfig: AnalyticsConfig = {
  * observable in Storybook, where no measurement ID is ever configured.
  */
 export const hasAnalyticsConfig = () => Boolean(analyticsConfig.measurementId);
+
+/** Gates Clarity's consent-controlled client-side loader. */
+export const hasClarityConfig = () => Boolean(analyticsConfig.clarityProjectId);

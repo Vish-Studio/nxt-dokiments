@@ -74,13 +74,13 @@ export const ClientDetailPanel = ({
   // bottom. `name` is omitted: it's already the panel title.
   const details: { label: string; value: string }[] = client
     ? [
-        { label: "Company", value: client.companyName },
-        { label: "Email", value: client.email },
-        { label: "Phone", value: client.phone },
-        { label: "National ID", value: client.nationalId },
-        { label: "BRN", value: client.brn },
-        { label: "Address", value: client.address },
-      ]
+      { label: "Company", value: client.companyName },
+      { label: "Email", value: client.email },
+      { label: "Phone", value: client.phone },
+      { label: "National ID", value: client.nationalId },
+      { label: "BRN", value: client.brn },
+      { label: "Address", value: client.address },
+    ]
     : [];
 
   return (
@@ -170,7 +170,7 @@ export const ClientDetailPanel = ({
             onSubmit={onSave}
           />
         ) : (
-          <div className="client-detail-panel bg-base-200 p-3 sm:p-5">
+          <div className="client-detail-panel p-3 sm:p-5">
             <section className="rounded-box border border-steel-mist bg-base-100 p-6">
               <div className="flex items-center gap-4">
                 <Avatar
