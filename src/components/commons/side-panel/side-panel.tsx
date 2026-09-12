@@ -124,8 +124,8 @@ export const SidePanel = ({
         type="button"
       />
 
-      <div className="side-panel-enter absolute right-0 top-0 flex h-full w-full max-w-xl flex-col border-l border-steel-mist bg-base-100">
-        <header className={cn("flex items-start justify-between gap-4 border-b p-5 sm:p-6", style.header)}>
+      <div className="side-panel-enter absolute right-0 top-0 flex h-full w-full max-w-xl flex-col bg-base-100">
+        <header className={cn("flex justify-between gap-4 border-b p-5 sm:p-6", description ? 'items-start' : 'items-center', style.header)}>
           <div className="min-w-0">
             {title ? (
               <h3 className={cn("truncate font-title text-xl font-bold leading-tight sm:text-2xl", style.title)}>{title}</h3>

@@ -65,7 +65,7 @@ const CollectionToolbar = ({
           </span>
           <Input
             aria-label={searchLabel}
-            className={cn("h-10 rounded-field border-transparent! pl-10 pr-10 font-body text-sm! focus:border-nox-noir/20!", isHeaderSearchOnly && "lg:rounded-full", hasDarkHeaderAppearance && "lg:bg-white/45! lg:text-nox-noir lg:placeholder:text-nox-noir/50 lg:focus:border-nox-noir/25!")}
+            className={cn("h-10 rounded-field border-transparent! pl-10 pr-10 font-body text-base! lg:text-sm! focus:border-nox-noir/20!", isHeaderSearchOnly && "lg:rounded-full", hasDarkHeaderAppearance && "lg:bg-white/45! lg:text-nox-noir lg:placeholder:text-nox-noir/50 lg:focus:border-nox-noir/25!")}
             placeholder={searchPlaceholder}
             role="searchbox"
             type="text"
@@ -75,7 +75,7 @@ const CollectionToolbar = ({
               onCollectionChange?.();
             }}
           />
-          {search ? <ButtonIcon aria-label="Clear search" className={cn("absolute right-0 top-0", hasDarkHeaderAppearance && "lg:text-nox-noir lg:hover:bg-white/35")} icon={<XIcon aria-hidden size={16} />} onClick={() => { onSearch(""); onCollectionChange?.(); }} size="sm" variant="ghost" /> : null}
+          {search ? <ButtonIcon aria-label="Clear search" className="collection-toolbar-clear-search group absolute right-0 top-0 rounded-field! border-0! bg-transparent! hover:bg-transparent! lg:rounded-full!" icon={<span className={cn("collection-toolbar-clear-icon flex size-7 items-center justify-center rounded-field lg:rounded-full lg:group-hover:bg-nox-noir/10", hasDarkHeaderAppearance && "lg:group-hover:bg-white/35")}><XIcon aria-hidden size={16} /></span>} onClick={() => { onSearch(""); onCollectionChange?.(); }} shape="square" size="sm" variant="ghost" /> : null}
         </div>
         <div className={cn("flex shrink-0 items-center gap-3", isHeaderLayout && "lg:col-start-3 lg:row-start-1 lg:justify-self-end", isHeaderSearchOnly && "hidden", hasCompactAppearance && "lg:gap-2")}>
           <Dropdown

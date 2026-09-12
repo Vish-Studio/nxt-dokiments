@@ -56,11 +56,6 @@ export const TemplatePreviewDialog = ({
   return (
     <SidePanel
       ariaLabel={template ? `${template.name} preview` : "Template preview"}
-      description={
-        template
-          ? `${template.style.name} style · ${tierLabels[template.tier]}`
-          : undefined
-      }
       footer={
         template ? (
           mode === "document" ? (
