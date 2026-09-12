@@ -530,6 +530,96 @@
           }
         }
       ]
+    },
+    {
+      "name": "Feedback",
+      "item": [
+        {
+          "name": "Send general feedback",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"type\": \"feedback\",\n  \"message\": \"The document editor is genuinely pleasant to use.\",\n  \"path\": \"/dashboard\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/feedback",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "feedback"]
+            },
+            "description": "POST /api/feedback — expect 201 { feedback }. Note what the request does NOT carry: uid, email and displayName are read off the session, so there is no way to submit feedback in someone else's name; firestore.rules asserts the same uid independently. The record lands in the top-level feedback collection (not users/{uid}/…) so an administrator can read everyone's in one query. If this returns 500, the most likely cause by far is that the rules have not been deployed — run `firebase deploy --only firestore:rules`."
+          }
+        },
+        {
+          "name": "Report a problem",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"type\": \"problem\",\n  \"message\": \"Exporting a quotation to PDF gives me a blank second page.\",\n  \"path\": \"/my-documents\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/feedback",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "feedback"]
+            },
+            "description": "The only other accepted `type`. Send this at least 60 seconds after the previous request or it will 429 — see the next entry. `path` is the one piece of context captured automatically, because \"the export is broken\" is unactionable without knowing which screen it came from."
+          }
+        },
+        {
+          "name": "Throttled (429) check",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"type\": \"feedback\",\n  \"message\": \"Sent immediately after the previous request.\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/feedback",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "feedback"]
+            },
+            "description": "Send immediately after a successful submission. Expect 429 — one submission per account per minute, enforced in the route against users/{uid}/feedbackMeta/latest rather than in the rules. Route-level is enough because the Firebase ID token never reaches the browser (it lives in the encrypted session cookie), so there is no path to Firestore that skips this endpoint. Wait 60s and it succeeds again."
+          }
+        },
+        {
+          "name": "Whitespace-only message (400) check",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"type\": \"feedback\",\n  \"message\": \"     \"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/feedback",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "feedback"]
+            },
+            "description": "Expect 400 { error: \"Invalid request body.\" }. The schema trims before checking the minimum length, so whitespace alone is rejected rather than stored as an empty record. A `type` outside [\"feedback\", \"problem\"] — try \"idea\" — gives the same 400, and so does a message over 2000 characters."
+          }
+        },
+        {
+          "name": "Unauthorised (401) check",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"type\": \"feedback\",\n  \"message\": \"Sent without a session.\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/feedback",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "feedback"]
+            },
+            "description": "Run AFTER \"Sign out\". Expect 401 — feedback is for signed-in users only, so that every record is attributable to an account. There is deliberately no public/anonymous intake route (that would be a different security problem, and anonymous feedback is far harder to act on)."
+          }
+        }
+      ]
     }
   ]
 }

@@ -10,6 +10,7 @@ import { ProfileSummary } from "@/components/dashboard/profile-summary/profile-s
 import { PromoCodeCard } from "@/components/dashboard/promo-code-card/promo-code-card";
 import { useUpdateProfileMutation } from "@/hooks/queries/use-auth";
 import { useAuthStore } from "@/stores/auth-store";
+import { profileFieldLimits } from "@/types/auth";
 
 type ProfileValues = {
   address: string;
@@ -57,7 +58,10 @@ export const ProfileSettings = () => {
       {
         onError: (error) => {
           setProfileFeedback({
-            message: error instanceof Error ? error.message : "Unable to update profile.",
+            message:
+              error instanceof Error
+                ? error.message
+                : "Unable to update profile.",
             tone: "error",
           });
         },
@@ -73,7 +77,8 @@ export const ProfileSettings = () => {
       <div className="pb-4">
         <h3 className="font-title text-lg font-bold text-nox-noir">Profile</h3>
         <p className="mt-1 text-sm leading-6 text-nox-noir/60">
-          Add your contact and business details. This information stays on your account.
+          Add your contact and business details. This information stays on your
+          account.
         </p>
       </div>
 
@@ -83,10 +88,15 @@ export const ProfileSettings = () => {
           onSubmit={submitProfile}
         >
           <ProfileFeedbackBanner feedback={profileFeedback} />
+          {/* `maxLength` on every field mirrors `profileFieldLimits`, which is what
+              ProfileSchema enforces server-side — a hard stop in the browser is
+              friendlier than a rejected save, and nobody reaches these ceilings
+              with a real name or address. */}
           <Input
             autoComplete="name"
             error={profileForm.formState.errors.displayName?.message}
             label="Display name"
+            maxLength={profileFieldLimits.displayName}
             placeholder="Shown across your workspace"
             {...profileForm.register("displayName", {
               required: "Display name is required.",
@@ -96,18 +106,21 @@ export const ProfileSettings = () => {
           <Input
             autoComplete="name"
             label="Full name"
+            maxLength={profileFieldLimits.fullName}
             placeholder="Your legal name"
             {...profileForm.register("fullName")}
           />
           <Input
             autoComplete="organization"
             label="Company name"
+            maxLength={profileFieldLimits.companyName}
             placeholder="Your company"
             {...profileForm.register("companyName")}
           />
           <Input
             autoComplete="tel"
             label="Phone"
+            maxLength={profileFieldLimits.phone}
             placeholder="Mobile number"
             type="tel"
             {...profileForm.register("phone")}
@@ -115,6 +128,7 @@ export const ProfileSettings = () => {
           <Input
             autoComplete="tel-national"
             label="Tel"
+            maxLength={profileFieldLimits.tel}
             placeholder="Office / landline"
             type="tel"
             {...profileForm.register("tel")}
@@ -122,11 +136,15 @@ export const ProfileSettings = () => {
           <Input
             autoComplete="street-address"
             label="Address"
+            maxLength={profileFieldLimits.address}
             placeholder="Street, city, postal code"
             {...profileForm.register("address")}
           />
           <div>
-            <Button disabled={isPending} type="submit">
+            <Button
+              disabled={isPending}
+              type="submit"
+            >
               {isPending ? "Saving..." : "Save changes"}
             </Button>
           </div>
