@@ -22,7 +22,7 @@ type Story = StoryObj<typeof meta>;
 export const Default: Story = {
   play: async ({ canvasElement, args }) => {
     const canvas = within(canvasElement);
-    const quotation = canvas.getByRole("button", { name: "Quotation" });
+    const quotation = canvas.getByRole("button", { name: "Price Quotation" });
 
     await userEvent.click(quotation);
     await expect(args.onChange).toHaveBeenCalledWith("quotation");

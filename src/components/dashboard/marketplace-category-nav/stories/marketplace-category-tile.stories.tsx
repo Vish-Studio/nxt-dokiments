@@ -21,7 +21,7 @@ export const Default: Story = {
   play: async ({ canvasElement, args }) => {
     const canvas = within(canvasElement);
 
-    await userEvent.click(canvas.getByRole("button", { name: "Quotation" }));
+    await userEvent.click(canvas.getByRole("button", { name: "Price Quotation" }));
     await expect(args.onSelect).toHaveBeenCalledWith("quotation");
   },
 };

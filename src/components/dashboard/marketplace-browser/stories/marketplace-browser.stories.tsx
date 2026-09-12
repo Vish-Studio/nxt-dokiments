@@ -89,7 +89,7 @@ export const FreeUser: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     await expect(
-      await canvas.findByRole("heading", { name: /invoice/i }),
+      await canvas.findByRole("heading", { name: "Classic designs" }),
     ).toBeVisible();
     await expect(
       canvas.getAllByRole("button", { name: /preview/i }).length,
