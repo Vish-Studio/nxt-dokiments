@@ -1,32 +1,35 @@
 "use client";
 
-import { LockIcon } from "@phosphor-icons/react";
 import { useEffect, useMemo, useState } from "react";
 
-import { Badge } from "@/components/commons/badge/badge";
-import { Carousel } from "@/components/commons/carousel/carousel";
 import { ConfirmDialog } from "@/components/commons/confirm-dialog/confirm-dialog";
 import { LoadingStatus } from "@/components/commons/loading-status/loading-status";
-import { TabMenu } from "@/components/commons/tab-menu/tab-menu";
-import { TemplateCardSkeleton } from "@/components/commons/template-card-skeleton/template-card-skeleton";
-import { TemplateCard } from "@/components/commons/template-card/template-card";
+import { TemplateCardSkeletonGrid } from "@/components/commons/template-card-skeleton/template-card-skeleton";
 import { TemplatePreviewDialog } from "@/components/commons/template-preview-dialog/template-preview-dialog";
 import { UpgradeDialog } from "@/components/commons/upgrade-dialog/upgrade-dialog";
+import { MarketplacePromoBanner } from "@/components/dashboard/marketplace-promo-banner/marketplace-promo-banner";
+import { MarketplaceCategoryNav } from "@/components/dashboard/marketplace-category-nav/marketplace-category-nav";
+import { ResponsiveHeaderControls } from "@/components/dashboard/responsive-header-controls/responsive-header-controls";
+import TemplateLibraryToolbar, {
+  type TemplateSort,
+} from "@/components/dashboard/template-library-toolbar/template-library-toolbar";
+import TemplateTypeGroup from "@/components/dashboard/template-type-group/template-type-group";
 import {
   useSaveTemplateMutation,
   useSavedTemplatesQuery,
 } from "@/hooks/queries/use-saved-templates";
 import { useTemplatesQuery } from "@/hooks/queries/use-templates";
+import { useScrollContentToTopOnMobile } from "@/hooks/use-scroll-content-to-top-on-mobile";
 import {
   canUseTier,
   getSavedTemplateLimit,
-  tierLabels,
 } from "@/lib/market-place";
+import { documentBlueprints } from "@/lib/market-place/documents";
 import { useAuthStore } from "@/stores/auth-store";
 import type {
+  DocumentType,
   MarketplaceTemplate,
   TemplateStyle,
-  TemplateStyleId,
 } from "@/types/template";
 
 const NO_STYLES: TemplateStyle[] = [];
@@ -41,9 +44,6 @@ export const MarketplaceBrowser = () => {
   const templateStyles = catalog?.styles ?? NO_STYLES;
   const allTemplates = catalog?.templates ?? NO_TEMPLATES;
   const limit = getSavedTemplateLimit(user?.role);
-  const [activeStyleId, setActiveStyleId] = useState<TemplateStyleId | null>(
-    null,
-  );
   const [preview, setPreview] = useState<MarketplaceTemplate | null>(null);
   const [isUpgradeOpen, setIsUpgradeOpen] = useState(false);
   const [upgradeReason, setUpgradeReason] = useState<
@@ -51,64 +51,129 @@ export const MarketplaceBrowser = () => {
   >("saved_template_limit");
   const [pendingTemplate, setPendingTemplate] =
     useState<MarketplaceTemplate | null>(null);
+  const [search, setSearch] = useState("");
+  const [documentType, setDocumentType] = useState("all");
+  const [style, setStyle] = useState("all");
+  const [sort, setSort] = useState<TemplateSort>("newest");
+  const scrollContentToTop = useScrollContentToTopOnMobile();
 
   const savedIds = useMemo(
     () => new Set(saved.map((item) => item.templateId)),
     [saved],
   );
   const isFreeTier = !user || user.role === "free";
-  const activeStyle =
-    templateStyles.find((style) => style.id === activeStyleId) ??
-    templateStyles[0];
-  const activeStyleLocked = activeStyle
-    ? !canUseTier(user?.role, activeStyle.tier)
-    : false;
-  const activeTemplates = useMemo(
+  const visibleTemplates = useMemo(() => {
+    const query = search.trim().toLocaleLowerCase();
+    const matches = allTemplates.filter(
+      (template) =>
+        (documentType === "all" || template.documentType === documentType) &&
+        (style === "all" || template.style.id === style) &&
+        `${template.name} ${template.style.name} ${documentBlueprints[template.documentType].name}`
+          .toLocaleLowerCase()
+          .includes(query),
+    );
+
+    return matches.sort((first, second) => {
+      if (sort === "name") return first.name.localeCompare(second.name);
+      if (sort === "style") {
+        return first.style.name.localeCompare(second.style.name);
+      }
+      if (sort === "oldest") return first.id.localeCompare(second.id);
+      return 0;
+    });
+  }, [allTemplates, documentType, search, sort, style]);
+
+  const typeOptions = useMemo(
     () =>
-      (activeStyle
-        ? allTemplates.filter(
-            (template) => template.style.id === activeStyle.id,
-          )
-        : []
-      )
-        .slice()
-        .sort((a, b) => {
-          const aSaved = savedIds.has(a.id);
-          const bSaved = savedIds.has(b.id);
-
-          if (aSaved === bSaved) {
-            return a.name.localeCompare(b.name);
-          }
-
-          return aSaved ? -1 : 1;
-        }),
-    [activeStyle, allTemplates, savedIds],
+      [...new Set(allTemplates.map((template) => template.documentType))]
+        .map((value) => ({ value, label: documentBlueprints[value].name }))
+        .sort((first, second) => first.label.localeCompare(second.label)),
+    [allTemplates],
   );
-
-  const tabItems = templateStyles.map((style) => {
-    const locked = !canUseTier(user?.role, style.tier);
-
-    return {
-      badge: (
-        <Badge
-          icon={
-            locked ? (
-              <LockIcon
-                aria-hidden
-                size={12}
-                weight="bold"
-              />
-            ) : null
-          }
-          variant={style.tier}
-        >
-          {tierLabels[style.tier]}
-        </Badge>
+  const styleOptions = useMemo(
+    () =>
+      templateStyles
+        .map(({ id, name }) => ({ value: id, label: name }))
+        .sort((first, second) => first.label.localeCompare(second.label)),
+    [templateStyles],
+  );
+  const lockedTemplateIds = useMemo(
+    () =>
+      new Set(
+        allTemplates
+          .filter((template) => !canUseTier(user?.role, template.tier))
+          .map((template) => template.id),
       ),
-      id: style.id,
-      label: style.name,
-    };
-  });
+    [allTemplates, user?.role],
+  );
+  const templateSections = useMemo(() => {
+    if (search.trim()) {
+      return visibleTemplates.length > 0
+        ? [{ id: "searched", templates: visibleTemplates, title: "Searched templates" }]
+        : [];
+    }
+
+    return templateStyles
+      .map((templateStyle) => ({
+        id: `style-${templateStyle.id}`,
+        templates: visibleTemplates.filter(
+          (template) => template.style.id === templateStyle.id,
+        ),
+        title: templateStyle.name,
+      }))
+      .filter((section) => section.templates.length > 0);
+  }, [search, templateStyles, visibleTemplates]);
+
+  const resetFilters = () => {
+    setSearch("");
+    setDocumentType("all");
+    setStyle("all");
+    setSort("newest");
+  };
+  const handleCategoryChange = (nextDocumentType: "all" | DocumentType) => {
+    setDocumentType(nextDocumentType);
+    window.requestAnimationFrame(() => {
+      document
+        .getElementById("marketplace-template-sections")
+        ?.scrollIntoView({ behavior: "smooth", block: "start" });
+    });
+  };
+
+  const toolbar = (
+    <TemplateLibraryToolbar
+      appearance="compact"
+      documentType={documentType}
+      onCollectionChange={scrollContentToTop}
+      onDocumentType={setDocumentType}
+      onReset={resetFilters}
+      onSearch={setSearch}
+      onSort={setSort}
+      onStyle={setStyle}
+      search={search}
+      sort={sort}
+      style={style}
+      styleOptions={styleOptions}
+      typeOptions={typeOptions}
+    />
+  );
+  const headerSearch = (
+    <TemplateLibraryToolbar
+      appearance="header-dark"
+      documentType={documentType}
+      layout="header-search"
+      onCollectionChange={scrollContentToTop}
+      onDocumentType={setDocumentType}
+      onReset={resetFilters}
+      onSearch={setSearch}
+      onSort={setSort}
+      onStyle={setStyle}
+      search={search}
+      sort={sort}
+      style={style}
+      styleOptions={styleOptions}
+      typeOptions={typeOptions}
+    />
+  );
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -131,8 +196,6 @@ export const MarketplaceBrowser = () => {
     if (!template || savedIds.has(template.id)) {
       return;
     }
-
-    window.setTimeout(() => setActiveStyleId(template.style.id), 0);
 
     if (!canUseTier(user?.role, template.tier)) {
       window.setTimeout(() => {
@@ -181,92 +244,58 @@ export const MarketplaceBrowser = () => {
 
   if (isCatalogLoading) {
     return (
-      <div className="flex w-full min-w-0 flex-col gap-14">
+      <div className="marketplace-browser flex min-h-0 w-full flex-1 flex-col gap-6 pt-6">
+        <MarketplacePromoBanner />
         <LoadingStatus message="Loading marketplace templates…" />
-        <div
-          aria-hidden
-          className="flex gap-1 rounded-box bg-base-200 p-1"
-        >
-          {Array.from({ length: 4 }, (_, index) => (
-            <div
-              className="skeleton h-9 w-28 rounded-box"
-              key={index}
-            />
-          ))}
-        </div>
-        <div
-          aria-hidden
-          className="flex gap-4 overflow-hidden"
-        >
-          {Array.from({ length: 4 }, (_, index) => (
-            <TemplateCardSkeleton
-              className="w-56 shrink-0 sm:w-64 lg:w-72"
-              key={index}
-            />
-          ))}
+        <div className="w-full flex-1 rounded-box border border-steel-mist bg-base-100 p-4 sm:p-6">
+          <TemplateCardSkeletonGrid className="grid-cols-2 gap-x-6 gap-y-8 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6" />
         </div>
       </div>
     );
   }
 
-  if (!activeStyle) {
-    return null;
-  }
-
   return (
-    <div className="flex w-full min-w-0 flex-col gap-14">
-      <TabMenu
-        ariaLabel="Template style categories"
-        items={tabItems}
-        onChange={(styleId) => setActiveStyleId(styleId as TemplateStyleId)}
-        value={activeStyle.id}
+    <div className="marketplace-browser flex min-h-0 w-full flex-1 flex-col gap-6 pt-6">
+      <MarketplacePromoBanner />
+      <MarketplaceCategoryNav
+        categories={typeOptions.map((option) => option.value as DocumentType)}
+        onChange={handleCategoryChange}
+        value={documentType as "all" | DocumentType}
       />
-
-      <Carousel
-        ariaLabel={`${activeStyle.name} templates`}
-        header={
-          <div>
-            <div className="flex items-center gap-2">
-              <h4 className="font-title text-2xl font-bold text-nox-noir">
-                {activeStyle.name}
-              </h4>
-              <Badge
-                icon={
-                  activeStyleLocked ? (
-                    <LockIcon
-                      aria-hidden
-                      size={12}
-                      weight="bold"
-                    />
-                  ) : null
-                }
-                variant={activeStyle.tier}
-              >
-                {tierLabels[activeStyle.tier]}
-              </Badge>
+      <div className="flex min-w-0 flex-col gap-2">
+        <ResponsiveHeaderControls desktopContent={toolbar} desktopHeader={headerSearch}>
+          {toolbar}
+        </ResponsiveHeaderControls>
+        <div id="marketplace-template-sections" className="scroll-mt-6">
+          {templateSections.length > 0 ? (
+            <div className="grid min-w-0 gap-6">
+              {templateSections.map(({ id, templates, title }) => (
+                <TemplateTypeGroup
+                  key={id}
+                  lockedTemplateIds={lockedTemplateIds}
+                  onPreview={setPreview}
+                  savedTemplateIds={savedIds}
+                  sectionId={id}
+                  templates={templates}
+                  title={title}
+                />
+              ))}
             </div>
-            <p className="mt-0.5 truncate text-sm text-nox-noir/60">
-              {activeStyle.description}
-            </p>
-          </div>
-        }
-        key={activeStyle.id}
-      >
-        {activeTemplates.map((template) => (
-          <div
-            className="flex w-56 shrink-0 sm:w-64 lg:w-72"
-            key={template.id}
-          >
-            <TemplateCard
-              className="w-56 sm:w-64 lg:w-72"
-              locked={activeStyleLocked}
-              onPreview={() => setPreview(template)}
-              saved={savedIds.has(template.id)}
-              template={template}
-            />
-          </div>
-        ))}
-      </Carousel>
+          ) : (
+            <section className="grid min-h-72 w-full flex-1 place-items-center rounded-box border border-dashed border-steel-mist bg-base-100 p-10 text-center">
+              <div>
+                <h2 className="font-title text-lg font-bold text-nox-noir">
+                  No matching templates
+                </h2>
+                <p className="mt-2 max-w-sm text-sm leading-6 text-nox-noir/60">
+                  Try another search or reset the filters to browse the full
+                  marketplace.
+                </p>
+              </div>
+            </section>
+          )}
+        </div>
+      </div>
 
       <TemplatePreviewDialog
         locked={preview ? !canUseTier(user?.role, preview.tier) : false}

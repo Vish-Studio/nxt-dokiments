@@ -502,7 +502,6 @@ export const DocumentsView = () => {
 
           <div className="hidden lg:sticky lg:top-2 lg:block">
             <TemplateDocument
-              className="aspect-210/297"
               density="compact"
               template={editorTemplate}
               values={draftValues}
@@ -520,7 +519,6 @@ export const DocumentsView = () => {
         >
           <div className="min-h-full bg-app-panel p-3 sm:p-5">
             <TemplateDocument
-              className="aspect-210/297"
               density="compact"
               template={editorTemplate}
               values={draftValues}

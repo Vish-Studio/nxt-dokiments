@@ -170,6 +170,22 @@ button:disabled {
   animation: side-panel-in 0.25s cubic-bezier(0.2, 0.85, 0.2, 1);
 }
 
+.collection-toolbar-clear-search,
+.collection-toolbar-clear-search:hover {
+  background-color: transparent !important;
+}
+
+/* An A4 document is 210 × 297. Container units keep the preview's minimum
+   paper height proportional to its rendered width, while ordinary content flow
+   allows field-heavy templates to extend beyond that baseline. */
+.template-preview-document {
+  container-type: inline-size;
+}
+
+.template-preview-paper {
+  min-height: 141.428571cqi;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .side-panel-enter {
     animation: none;

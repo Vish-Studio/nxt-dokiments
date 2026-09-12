@@ -30,7 +30,7 @@ const sections = [
   {
     title: "Optional cookies",
     paragraphs: [
-      "Dokiments uses Google Analytics to understand how the service is used. Analytics storage is disabled by default and only loads after you Accept all in the consent banner; choosing Reject non-essential keeps it off. Dokiments does not load advertising cookies.",
+      "Dokiments uses Google Analytics and Microsoft Clarity to understand how the service is used. Analytics storage is disabled by default and only loads after you Accept all in the consent banner; choosing Reject non-essential keeps it off. Dokiments does not load advertising cookies.",
     ],
   },
   {

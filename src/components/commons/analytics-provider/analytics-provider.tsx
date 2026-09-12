@@ -8,11 +8,69 @@ import type {
   AnalyticsEventMap,
   AnalyticsEventName,
 } from "@/lib/analytics/events";
+import { analyticsConfig, hasClarityConfig } from "@/lib/analytics/config";
 import { clearUserId, setUserId } from "@/lib/analytics/gtag";
 import { trackEvent } from "@/lib/analytics/track";
+import {
+  COOKIE_CONSENT_CHANGED_EVENT,
+  readCookieConsent,
+} from "@/lib/cookie-consent";
 
 export type AnalyticsProviderProps = {
   children: ReactNode;
+};
+
+type ClarityConsentStorage = "granted" | "denied";
+
+type ClarityCommand = ((...args: unknown[]) => void) & {
+  q?: unknown[][];
+};
+
+declare global {
+  interface Window {
+    clarity?: ClarityCommand;
+  }
+}
+
+/**
+ * Creates the command queue used by Clarity before its remote script is ready.
+ * Keeping the queue local lets consent be recorded before the script finishes
+ * loading, and avoids loading the remote script at all without permission.
+ */
+const getClarityCommand = (): ClarityCommand => {
+  if (window.clarity) {
+    return window.clarity;
+  }
+
+  const clarity: ClarityCommand = (...args) => {
+    clarity.q = clarity.q ?? [];
+    clarity.q.push(args);
+  };
+
+  window.clarity = clarity;
+  return clarity;
+};
+
+const updateClarityConsent = (analyticsStorage: ClarityConsentStorage) => {
+  getClarityCommand()("consentv2", {
+    ad_Storage: "denied",
+    analytics_Storage: analyticsStorage,
+  });
+};
+
+const loadClarity = () => {
+  if (
+    !hasClarityConfig() ||
+    document.querySelector('script[data-clarity-loader="true"]')
+  ) {
+    return;
+  }
+
+  const script = document.createElement("script");
+  script.async = true;
+  script.src = `https://www.clarity.ms/tag/${analyticsConfig.clarityProjectId}`;
+  script.dataset.clarityLoader = "true";
+  document.head.append(script);
 };
 
 /**
@@ -83,6 +141,31 @@ export const AnalyticsProvider = ({ children }: AnalyticsProviderProps) => {
 
     return () => {
       document.removeEventListener("click", handleClick, { capture: true });
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!hasClarityConfig()) {
+      return;
+    }
+
+    const applyClarityConsent = () => {
+      const hasAnalyticsConsent = readCookieConsent() === "all";
+      updateClarityConsent(hasAnalyticsConsent ? "granted" : "denied");
+
+      if (hasAnalyticsConsent) {
+        loadClarity();
+      }
+    };
+
+    applyClarityConsent();
+    window.addEventListener(COOKIE_CONSENT_CHANGED_EVENT, applyClarityConsent);
+
+    return () => {
+      window.removeEventListener(
+        COOKIE_CONSENT_CHANGED_EVENT,
+        applyClarityConsent,
+      );
     };
   }, []);
 
