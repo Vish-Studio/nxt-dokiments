@@ -41,6 +41,31 @@ export const profileFieldLimits = {
   tel: 50,
 } as const;
 
+/**
+ * Ceilings on the credentials the `/api/auth/*` routes accept, in characters.
+ *
+ * Enforced by the schemas in `src/lib/api/auth-schema.ts` and applied as
+ * `maxLength` on the matching inputs in `SignUpForm`, `SignInForm`,
+ * `ForgotPasswordForm` and `PasswordSettings`. They live here for the same reason
+ * `profileFieldLimits` does: `auth-schema.ts` is `server-only`, so a component
+ * cannot read the numbers the server enforces.
+ *
+ * `email` is the RFC 5321 address limit, the same number `client-schema.ts` uses —
+ * kept as a separate declaration for the reason described above.
+ *
+ * **`password` applies only where a password is being *set*** — sign-up and
+ * `update-password`. Sign-in and re-authentication deliberately have no ceiling:
+ * this limit postdates the accounts it would judge, so an account holding a longer
+ * password must still be able to prove it. Enforcing a maximum on a *verify* path
+ * would lock that account's owner out with no way back in. The value is generous
+ * for anything a password manager generates; it exists so an oversized payload is
+ * never shipped to Firebase, not to constrain a legitimate choice.
+ */
+export const credentialFieldLimits = {
+  email: 254,
+  password: 128,
+} as const;
+
 export type AuthProfileDetails = {
   /** Mailing/street address. */
   address?: string;

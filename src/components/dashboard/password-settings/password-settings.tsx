@@ -11,6 +11,7 @@ import {
   useUpdatePasswordMutation,
 } from "@/hooks/queries/use-auth";
 import { useAuthStore } from "@/stores/auth-store";
+import { credentialFieldLimits } from "@/types/auth";
 
 type PasswordValues = {
   confirmPassword: string;
@@ -117,10 +118,14 @@ export const PasswordSettings = () => {
             {feedback.message}
           </div>
         ) : null}
+        {/* Both fields are capped at what `UpdatePasswordSchema` accepts. This is a
+            password being *set*, so the ceiling applies — the `ReauthDialog` that may
+            follow asks for the existing one and deliberately has none. */}
         <Input
           autoComplete="new-password"
           error={form.formState.errors.password?.message}
           label="New password"
+          maxLength={credentialFieldLimits.password}
           placeholder="Enter a new password"
           type="password"
           {...passwordField}
@@ -135,6 +140,7 @@ export const PasswordSettings = () => {
           autoComplete="new-password"
           error={form.formState.errors.confirmPassword?.message}
           label="Confirm new password"
+          maxLength={credentialFieldLimits.password}
           placeholder="Re-enter the new password"
           type="password"
           {...form.register("confirmPassword", {

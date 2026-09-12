@@ -13,6 +13,8 @@ import { trackEvent } from "@/lib/analytics/track";
 import { withPromoStatus } from "@/lib/promo/promo-status";
 import { queryKeys } from "@/lib/query/keys";
 import { useAuthStore } from "@/stores/auth-store";
+import { credentialFieldLimits, profileFieldLimits } from "@/types/auth";
+import { MAX_PROMO_CODE } from "@/types/promo";
 
 type SignUpFields = {
   displayName: string;
@@ -111,10 +113,17 @@ export const SignUpForm = ({ onSubmit }: SignUpFormProps) => {
         </div>
       ) : null}
 
+      {/* `maxLength` on each field mirrors what `SignUpSchema` enforces server-side,
+          so the browser stops where the server would reject: a hard stop while typing
+          is friendlier than a "Invalid request body." banner after a round trip, and
+          nobody reaches these ceilings with a real name, address or password. The
+          name shares `profileFieldLimits.displayName` with Settings because sign-up
+          and `update-profile` write to the same `users/{uid}` field. */}
       <Input
         autoComplete="name"
         error={errors.displayName?.message}
         label="Full name"
+        maxLength={profileFieldLimits.displayName}
         placeholder="Anthony Alverizko"
         {...register("displayName", {
           required: "Full name is required.",
@@ -124,6 +133,7 @@ export const SignUpForm = ({ onSubmit }: SignUpFormProps) => {
         autoComplete="email"
         error={errors.email?.message}
         label="Email"
+        maxLength={credentialFieldLimits.email}
         placeholder="you@company.com"
         type="email"
         {...register("email", {
@@ -138,6 +148,7 @@ export const SignUpForm = ({ onSubmit }: SignUpFormProps) => {
         autoComplete="new-password"
         error={errors.password?.message}
         label="Password"
+        maxLength={credentialFieldLimits.password}
         placeholder="Create a password"
         type="password"
         {...register("password", {
@@ -154,6 +165,9 @@ export const SignUpForm = ({ onSubmit }: SignUpFormProps) => {
         autoCapitalize="characters"
         autoComplete="off"
         label="Promo code (optional)"
+        // Capped like the fields above, and here it also keeps an oversized paste
+        // from failing the *body* — which would take the whole sign-up with it.
+        maxLength={MAX_PROMO_CODE}
         name="promoCode"
         onChange={(event) => setPromoCode(event.target.value)}
         placeholder="Enter your promo code"

@@ -7,6 +7,7 @@ import { useForm } from "react-hook-form";
 import { Button } from "@/components/commons/button/button";
 import { Input } from "@/components/commons/input/input";
 import { useForgotPasswordMutation } from "@/hooks/queries/use-auth";
+import { credentialFieldLimits } from "@/types/auth";
 
 type ForgotPasswordValues = {
   email: string;
@@ -60,10 +61,13 @@ export const ForgotPasswordForm = ({ onSubmit }: ForgotPasswordFormProps) => {
         </div>
       ) : null}
 
+      {/* Capped at what `ForgotPasswordSchema` accepts (the RFC 5321 limit), so the
+          browser stops where the server would reject. */}
       <Input
         autoComplete="email"
         error={errors.email?.message}
         label="Email"
+        maxLength={credentialFieldLimits.email}
         placeholder="you@company.com"
         type="email"
         {...register("email", {

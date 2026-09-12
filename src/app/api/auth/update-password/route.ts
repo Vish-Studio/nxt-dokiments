@@ -1,7 +1,9 @@
 import { getIronSession } from "iron-session";
 
-import { handleApiError } from "@/lib/api/errors";
+import { UpdatePasswordSchema } from "@/lib/api/auth-schema";
+import { ApiError, handleApiError } from "@/lib/api/errors";
 import { saveSession } from "@/lib/api/session-cookie";
+import { parseBody } from "@/lib/api/validate";
 import { updateAccountPassword } from "@/lib/firebase/server-auth";
 import { FirebaseReauthRequiredError } from "@/lib/firebase/server-identity";
 import { UpstreamUnavailableError } from "@/lib/http/fetch-upstream";
@@ -26,6 +28,7 @@ import {
  *
  * @returns `{ ok: true }` on success.
  * @returns `{ error: string }` with status `401` when no session is present.
+ * @returns `{ error: string }` with status `400` when the body fails validation.
  * @returns `{ error: string }` with status `400` when the account signs in via
  *   Google — there's no password to change, so this rejects before calling Firebase.
  * @returns `{ code: "REAUTH_REQUIRED", error: string }` with status `403` when
@@ -58,7 +61,11 @@ export const POST = async (request: Request): Promise<Response> => {
       );
     }
 
-    const { password } = (await request.json()) as { password: string };
+    // Validated after both gates above, so a caller who has no business changing a
+    // password learns nothing about the expected body shape. `UpdatePasswordSchema`
+    // bounds the new password but deliberately leaves Firebase to judge a weak one,
+    // whose message is more useful than "Invalid request body."
+    const { password } = await parseBody(request, UpdatePasswordSchema);
     const updated = await updateAccountPassword(session, password);
     await saveSession(request, response, {
       ...updated,
@@ -67,9 +74,13 @@ export const POST = async (request: Request): Promise<Response> => {
 
     return response;
   } catch (error) {
-    // Firebase was never reached — the password wasn't changed, and it wasn't refused.
-    // In particular this is not a stale-credential problem, so don't prompt for reauth.
-    if (error instanceof UpstreamUnavailableError) {
+    // Neither of these is a stale-credential problem, so neither must prompt for
+    // reauth. A rejected body is a 400 with a sanitized message; an unreachable
+    // Firebase is a 503 — the password wasn't changed, and it wasn't refused either.
+    if (
+      error instanceof ApiError ||
+      error instanceof UpstreamUnavailableError
+    ) {
       return handleApiError(error);
     }
 

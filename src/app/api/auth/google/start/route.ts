@@ -29,8 +29,14 @@ const sanitizeNextPath = (next: string | null): string => {
  * The value ends up inside a sealed cookie, and cookies have a hard size limit —
  * so an oversized `promoCode` in a crafted link must not be able to produce a
  * cookie the browser silently refuses, which would break sign-in entirely rather
- * than just failing the promo. Matches the ceiling `promo-schema.ts` enforces on
- * the redeem route; anything this long is rejected by the code lookup anyway.
+ * than just failing the promo. Anything this long is rejected by the code lookup
+ * anyway.
+ *
+ * Deliberately its own declaration rather than the shared `MAX_PROMO_CODE` in
+ * `src/types/promo.ts`, which the schemas and the forms apply: this leg *truncates*
+ * where they *reject*, because a promo code arriving in a link must never be able to
+ * fail the redirect that is about to sign the user in. The numbers agreeing is a
+ * convenience, not a constraint either one should inherit from the other.
  */
 const MAX_PROMO_CODE = 64;
 
