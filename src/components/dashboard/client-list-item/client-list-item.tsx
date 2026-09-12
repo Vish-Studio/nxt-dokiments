@@ -31,7 +31,7 @@ export const ClientListItem = ({
           name={client.name}
         />
         <div className="min-w-0">
-          <p className="truncate font-title text-sm font-bold text-nox-noir sm:text-base">
+          <p className="truncate font-title text-md md:text-lg lg:text-sm font-bold text-nox-noir sm:text-base">
             {client.name}
           </p>
           <p className="mt-0.5 truncate text-xs text-nox-noir/50 sm:hidden">
