@@ -17,7 +17,7 @@ export const DashboardList = ({ children, columns, ordered = false }: Props) => 
   const List = ordered ? "ol" : "ul";
 
   return (
-    <section className="dashboard-list overflow-hidden rounded-box border border-steel-mist bg-base-100">
+    <section className="dashboard-list min-h-0 w-full flex-1 overflow-hidden rounded-box border border-steel-mist bg-base-100">
       <div className="hidden grid-cols-12 items-center px-5 py-3 sm:grid">
         {columns.map((column) => (
           <span

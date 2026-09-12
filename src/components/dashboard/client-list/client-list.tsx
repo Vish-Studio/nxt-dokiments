@@ -56,7 +56,7 @@ export const clientSkeletonRow = (
 export const ClientList = ({ clients, onDelete, onPreview }: Props) => {
   if (clients.length === 0) {
     return (
-      <section className="client-list grid place-items-center rounded-box border border-dashed border-steel-mist bg-base-100 p-10 text-center">
+      <section className="client-list grid min-h-72 w-full place-items-center rounded-box border border-dashed border-steel-mist bg-base-100 p-10 text-center">
         <span className="flex size-12 items-center justify-center rounded-box bg-base-200 text-nox-noir">
           <UsersThreeIcon
             aria-hidden

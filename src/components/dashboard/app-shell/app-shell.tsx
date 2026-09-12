@@ -1,19 +1,8 @@
 "use client";
 
-import type { Icon } from "@phosphor-icons/react";
-import {
-  ChartLineUpIcon,
-  CreditCardIcon,
-  FilePlusIcon,
-  FolderSimpleStarIcon,
-  GearSixIcon,
-  HouseIcon,
-  ListIcon,
-  StorefrontIcon,
-  UsersThreeIcon,
-} from "@phosphor-icons/react";
-import type { ReactNode, UIEvent } from "react";
-import { useRef, useState } from "react";
+import { ListIcon } from "@phosphor-icons/react";
+import type { ReactNode } from "react";
+import { useEffect, useState } from "react";
 
 import { AuthGuard } from "@/components/commons/auth-guard/auth-guard";
 import { ButtonIcon } from "@/components/commons/button-icon/button-icon";
@@ -24,7 +13,6 @@ import type {
   PageBannerVariant,
 } from "@/components/dashboard/page-banner/page-banner";
 import { PageBanner } from "@/components/dashboard/page-banner/page-banner";
-import type { PageHeaderVisualVariant } from "@/components/dashboard/page-header-visual/page-header-visual";
 import { PromoStatusBanner } from "@/components/dashboard/promo-status-banner/promo-status-banner";
 import { PublicLaunchBanner } from "@/components/dashboard/public-launch-banner/public-launch-banner";
 import Sidebar from "@/components/dashboard/sidebar/sidebar";
@@ -33,6 +21,7 @@ import { useUiStore } from "@/stores/ui-store";
 export type AppShellProps = {
   activeItem?: string;
   children?: ReactNode;
+  headerContent?: ReactNode;
   description?: string;
   bannerTone?: PageBannerTone;
   bannerVariant?: PageBannerVariant;
@@ -41,33 +30,22 @@ export type AppShellProps = {
 };
 
 type PageTheme = {
-  Icon: Icon;
   tone: PageBannerTone;
   variant?: PageBannerVariant;
-  visual?: PageHeaderVisualVariant;
 };
 
-// Two separate thresholds create hysteresis: the header won't flicker between
-// compact/expanded when the user scrolls right at the boundary.
-const SCROLL_COMPACT_ON_THRESHOLD = 32;
-const SCROLL_COMPACT_OFF_THRESHOLD = 16;
-
 const pageThemes: Record<string, PageTheme> = {
-  Dashboard: { Icon: ChartLineUpIcon, tone: "golden" },
-  Documents: { Icon: FilePlusIcon, tone: "purple", visual: "documents" },
+  Dashboard: { tone: "golden" },
+  "My Documents": { tone: "purple" },
   "My Templates": {
-    Icon: FolderSimpleStarIcon,
     tone: "pink",
-    visual: "templates",
   },
-  "My Clients": { Icon: UsersThreeIcon, tone: "golden" },
-  Marketplace: { Icon: StorefrontIcon, tone: "teal", visual: "marketplace" },
+  "My Clients": { tone: "teal" },
+  Marketplace: { tone: "teal" },
   Subscription: {
-    Icon: CreditCardIcon,
     tone: "purple",
-    visual: "subscription",
   },
-  Settings: { Icon: GearSixIcon, tone: "golden", visual: "settings" },
+  Settings: { tone: "golden" },
 };
 
 export const AppShell = ({
@@ -75,52 +53,47 @@ export const AppShell = ({
   bannerTone,
   bannerVariant,
   children,
-  description,
+  headerContent,
   showBanner = true,
   title = "Dashboard",
 }: AppShellProps) => {
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
-  const [isContentScrolled, setIsContentScrolled] = useState(false);
   const isSidebarCollapsed = useUiStore((state) => state.isSidebarCollapsed);
   const toggleSidebar = useUiStore((state) => state.toggleSidebar);
-  const scrollRafRef = useRef<number | null>(null);
-  const latestScrollTopRef = useRef(0);
 
   const theme = pageThemes[activeItem] ?? {
-    Icon: HouseIcon,
     tone: "golden" as PageBannerTone,
   };
   const resolvedTone = bannerTone ?? theme.tone;
   const resolvedVariant = bannerVariant ?? theme.variant ?? "solid";
   const isDashboardHome = activeItem === "Dashboard";
-  const mobileDescription =
-    showBanner && !isContentScrolled && !isDashboardHome ? description : undefined;
 
-  const handleContentScroll = (event: UIEvent<HTMLDivElement>) => {
-    // Always capture the latest scroll position so the RAF callback uses a
-    // fresh value even if many scroll events fired while it was queued.
-    latestScrollTopRef.current = event.currentTarget.scrollTop;
+  useEffect(() => {
+    const themeColor = document.querySelector<HTMLMetaElement>(
+      'meta[name="theme-color"]',
+    );
+    const previousThemeColor = themeColor?.content;
+    const previousHtmlBackground = document.documentElement.style.backgroundColor;
+    const previousBodyBackground = document.body.style.backgroundColor;
+    const colors = getComputedStyle(document.documentElement);
+    const nextColor = colors
+      .getPropertyValue(isMobileSidebarOpen ? "--color-nox-noir" : "--color-app-panel")
+      .trim();
 
-    // Skip if a frame is already scheduled — one RAF per paint is enough and
-    // prevents queuing up dozens of state updates during fast scrolling.
-    if (scrollRafRef.current !== null) {
-      return;
+    if (themeColor) {
+      themeColor.content = nextColor;
     }
+    document.documentElement.style.backgroundColor = nextColor;
+    document.body.style.backgroundColor = nextColor;
 
-    scrollRafRef.current = requestAnimationFrame(() => {
-      scrollRafRef.current = null;
-      const scrollTop = latestScrollTopRef.current;
-      setIsContentScrolled((previous) => {
-        if (!previous && scrollTop > SCROLL_COMPACT_ON_THRESHOLD) {
-          return true;
-        }
-        if (previous && scrollTop < SCROLL_COMPACT_OFF_THRESHOLD) {
-          return false;
-        }
-        return previous;
-      });
-    });
-  };
+    return () => {
+      if (themeColor && previousThemeColor) {
+        themeColor.content = previousThemeColor;
+      }
+      document.documentElement.style.backgroundColor = previousHtmlBackground;
+      document.body.style.backgroundColor = previousBodyBackground;
+    };
+  }, [isMobileSidebarOpen]);
 
   return (
     <AuthGuard>
@@ -145,28 +118,24 @@ export const AppShell = ({
 
           <section className="flex h-dvh min-w-0 flex-1 flex-col overflow-hidden bg-app-chrome">
             <div className="flex min-h-0 flex-1 flex-col overflow-hidden bg-app-panel lg:mr-4 lg:mb-4 lg:mt-4 lg:rounded-4xl">
-              <ContentContainer onScroll={handleContentScroll}>
+              <ContentContainer>
                 <MobilePageHeader
-                  alignTitleWithNavigation={isDashboardHome}
-                  description={mobileDescription}
-                  icon={showBanner ? theme.Icon : undefined}
-                  isCompact={isContentScrolled}
                   onOpenNavigation={() => setIsMobileSidebarOpen(true)}
-                  showSettingsLink={isDashboardHome}
+                  showSettingsLink
                   title={title}
                   tone={isDashboardHome ? "noir" : resolvedTone}
                   variant={resolvedVariant}
-                  visualVariant={showBanner ? theme.visual : undefined}
                 />
                 {showBanner ? (
                   <PageBanner
                     className="hidden lg:flex"
-                    description={description}
-                    icon={theme.Icon}
+                    footer={headerContent}
+                    isSidebarCollapsed={isSidebarCollapsed}
+                    onToggleSidebar={toggleSidebar}
+                    showSettingsLink
                     title={title}
                     tone={resolvedTone}
                     variant={resolvedVariant}
-                    visualVariant={theme.visual}
                   />
                 ) : (
                   <ButtonIcon
@@ -194,3 +163,5 @@ export const AppShell = ({
     </AuthGuard>
   );
 };
+
+export default AppShell;

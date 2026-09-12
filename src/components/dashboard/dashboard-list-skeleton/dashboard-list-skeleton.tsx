@@ -38,9 +38,9 @@ export const DashboardListSkeleton = ({
   ordered = false,
   row,
 }: DashboardListSkeletonProps) => (
-  <div className="dashboard-list-skeleton">
+  <div className="dashboard-list-skeleton flex min-h-0 w-full flex-1 flex-col">
     <LoadingStatus message={message} />
-    <div aria-hidden>
+    <div aria-hidden className="flex min-h-0 flex-1 flex-col">
       <DashboardList
         columns={columns}
         ordered={ordered}

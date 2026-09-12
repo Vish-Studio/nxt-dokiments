@@ -1,4 +1,3 @@
-import { StorefrontIcon } from "@phosphor-icons/react";
 import type { Meta, StoryObj } from "@storybook/nextjs-vite";
 import { expect, within } from "storybook/test";
 
@@ -17,11 +16,8 @@ const meta = {
     ),
   ],
   args: {
-    description: "Ready-to-use business documents in three styles.",
-    icon: StorefrontIcon,
     title: "Marketplace",
     tone: "golden",
-    visualVariant: "marketplace",
   },
 } satisfies Meta<typeof PageBanner>;
 
