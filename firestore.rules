@@ -79,6 +79,22 @@ service cloud.firestore {
         allow read, create: if isOwner(uid);
       }
 
+      // --- users/{uid}/feedbackMeta/latest — feedback rate-limit state -------------
+      //
+      // When this account last sent feedback, and how many times in total. A
+      // document of its own rather than fields on users/{uid}, because that
+      // profile document's shape is what the create/update rules above assert
+      // against — widening it for an unrelated concern means editing those rules.
+      //
+      // No `delete`: nothing needs to remove this, and a user who could would be
+      // clearing their own rate limit. Not that they can reach Firestore directly
+      // — the Firebase ID token never leaves the server (it lives inside the
+      // encrypted iron-session cookie), which is why the one-minute window is
+      // enforced in POST /api/feedback rather than here.
+      match /feedbackMeta/{documentId} {
+        allow read, create, update: if isOwner(uid);
+      }
+
       // --- users/{uid}/clients/{clientId} — the user's own client book -------------
       //
       // Contact details a user reuses when preparing documents. Doc IDs are
@@ -107,6 +123,57 @@ service cloud.firestore {
     match /templateStyles/{styleId} {
       allow read: if signedIn();
       allow write: if isSuperadmin();
+    }
+
+    // --- feedback/{feedbackId} — in-app feedback and problem reports -------------
+    //
+    // The one collection holding per-user data that does NOT live under
+    // users/{uid}. Every other one is scoped to its owner because only its owner
+    // reads it; this inverts that — an administrator has to read everyone's. A
+    // subcollection would need a collection-group query to do that, which
+    // src/lib/firebase/server-firestore.ts does not implement.
+    //
+    // The consequence is that ownership is no longer implied by the path, so it
+    // has to be asserted on the record. `uid == request.auth.uid` is the
+    // load-bearing line here: it makes "feedback cannot be submitted in someone
+    // else's name" a database guarantee rather than something POST /api/feedback
+    // arranges by reading uid off the session (which it also does).
+    //
+    // Append-only: `create` and read, deliberately no `update` and no `delete`.
+    // A record its author could later edit or erase is not a record, and there is
+    // no product reason to allow either — the app exposes no way to try.
+    //
+    // Read is superadmin-only. Note that the Firebase console — how submissions are
+    // reviewed until an admin screen exists — authenticates through Google Cloud
+    // project permissions and bypasses these rules entirely, so no application
+    // account needs role: superadmin for that.
+    //
+    // The field assertions bound the record from both directions: hasOnly() caps
+    // the key set, and each `is string`/`is timestamp` check fails for an absent
+    // field as well as a wrong-typed one, so together they pin the shape exactly.
+    // Sizes are re-asserted here even though SubmitFeedbackSchema already checked
+    // them, because that is the whole point of a second gate. Rules count
+    // characters where Zod counts UTF-16 units, and a code point is never more than
+    // one unit — so these ceilings can never reject something the schema accepted.
+    match /feedback/{feedbackId} {
+      allow read: if isSuperadmin();
+
+      allow create: if signedIn()
+        && request.resource.data.uid == request.auth.uid
+        && request.resource.data.keys().hasOnly([
+          'createdAt', 'displayName', 'email', 'message', 'path', 'type', 'uid'
+        ])
+        && request.resource.data.type in ['feedback', 'problem']
+        && request.resource.data.message is string
+        && request.resource.data.message.size() > 0
+        && request.resource.data.message.size() <= 2000
+        && request.resource.data.email is string
+        && request.resource.data.email.size() <= 254
+        && request.resource.data.displayName is string
+        && request.resource.data.displayName.size() <= 200
+        && request.resource.data.path is string
+        && request.resource.data.path.size() <= 512
+        && request.resource.data.createdAt is timestamp;
     }
 
     // --- newsletter/{subscriberId} — public subscription intake -----------------

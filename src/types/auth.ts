@@ -14,6 +14,33 @@ export const authProviders = ["password", "google"] as const;
 
 export type AuthProviderId = (typeof authProviders)[number];
 
+/**
+ * Ceilings on the profile fields a user can edit, in characters.
+ *
+ * Enforced by `ProfileSchema` on `POST /api/auth/update-profile` and applied as
+ * `maxLength` on the matching inputs in `ProfileSettings`. They live here — in a
+ * module the client may import — precisely so those two agree: `profile-schema.ts`
+ * is `server-only`, so a component cannot read the numbers the server enforces.
+ *
+ * The values deliberately match the equivalents in `src/lib/api/client-schema.ts`
+ * (`MAX_NAME`, `MAX_ADDRESS`, `MAX_PHONE`). Both describe the same kinds of
+ * hand-entered contact field, and a user editing their own details has no reason
+ * to be held to a different limit than a client they enter. Kept as separate
+ * declarations rather than shared because the two schemas describe different
+ * entities; a third would be the moment to extract them.
+ *
+ * These are generous ceilings meant to stop an oversized payload from being
+ * written, not to constrain legitimate use.
+ */
+export const profileFieldLimits = {
+  address: 500,
+  companyName: 200,
+  displayName: 200,
+  fullName: 200,
+  phone: 50,
+  tel: 50,
+} as const;
+
 export type AuthProfileDetails = {
   /** Mailing/street address. */
   address?: string;
