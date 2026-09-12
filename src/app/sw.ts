@@ -77,8 +77,13 @@ self.addEventListener("activate", (event) => {
 const serwist = new Serwist({
   // Assets to cache on install, generated at build time.
   precacheEntries: self.__SW_MANIFEST,
-  // Activate this worker immediately instead of waiting for old tabs to close.
-  skipWaiting: true,
+  // Park in `waiting` until the user accepts the update via `AppUpdateBanner`,
+  // which posts `SKIP_WAITING` back here. Activating immediately would put this
+  // worker in charge of a page still running the previous build's JavaScript, whose
+  // chunks this worker's install has already pruned from the precache — so a
+  // lazily-imported route would 404. Serwist registers the `SKIP_WAITING` listener
+  // itself whenever this is false.
+  skipWaiting: false,
   // Take control of any open tabs as soon as this worker activates.
   clientsClaim: true,
   // Let the browser start fetching navigation requests in parallel with worker startup.
