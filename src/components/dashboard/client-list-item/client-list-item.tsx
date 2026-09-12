@@ -21,7 +21,7 @@ export const ClientListItem = ({
 
   return (
     <DashboardListRow
-      className="client-list-item"
+      className="client-list-item grid-cols-[minmax(0,1fr)_auto] items-center gap-3 sm:grid-cols-12 sm:gap-4"
       onSelect={isPending ? undefined : () => onPreview(client)}
       selectLabel={`View details for ${client.name}`}
     >
@@ -35,7 +35,7 @@ export const ClientListItem = ({
             {client.name}
           </p>
           <p className="mt-0.5 truncate text-xs text-nox-noir/50 sm:hidden">
-            {client.companyName || client.phone || "No contact details"}
+            {client.companyName || "No company"}
           </p>
         </div>
       </div>
