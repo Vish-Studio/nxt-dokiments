@@ -44,6 +44,21 @@ export type AnalyticsEventMap = {
     name_changed: boolean;
     values_changed: boolean;
   };
+  /**
+   * A user sent feedback or reported a problem.
+   *
+   * Carries the type and nothing else — deliberately never the message. The body
+   * is free text a user may put anything into, including personal details, and it
+   * belongs only in Firestore where administrators read it. GA4 is not a place to
+   * send it, and a truncated 100-character fragment would be useless anyway.
+   *
+   * The union is written out rather than imported from `@/types/feedback` so this
+   * file stays the standalone description of the analytics contract, matching how
+   * `promo_code_failed` inlines its own reasons.
+   */
+  feedback_submitted: {
+    feedback_type: "feedback" | "problem";
+  };
   login: {
     method: "email";
   };
