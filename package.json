@@ -9,7 +9,8 @@
     "lint": "eslint",
     "storybook": "storybook dev -p 6006",
     "build-storybook": "storybook build",
-    "seed:templates": "tsc -p tsconfig.seed.json && node .scratch-seed/scripts/seed-templates.js"
+    "seed:templates": "tsc -p tsconfig.seed.json && node .scratch-seed/scripts/seed-templates.js",
+    "pre-pr-check": "npm run lint && npm run build && npx vitest run"
   },
   "dependencies": {
     "@phosphor-icons/react": "^2.1.10",

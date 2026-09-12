@@ -1,13 +1,27 @@
 "use client";
 
+import { useEffect } from "react";
 import { useForm } from "react-hook-form";
 
 import { Input } from "@/components/commons/input/input";
-import type { ClientInput } from "@/types/client";
+import type { Client, ClientInput } from "@/types/client";
 
 interface Props {
+  /**
+   * The client being edited. Omit to add a new one.
+   *
+   * Callers must key the element on the client's ID (`key={client?.id ?? "new"}`) —
+   * react-hook-form reads `defaultValues` on first render only, so without a
+   * remount a second client opened in the same session shows the first one's values.
+   */
+  client?: Client;
   formId: string;
-  onAdd: (input: ClientInput) => void;
+  /**
+   * Reports whether any field differs from `defaultValues`. Lets a caller whose
+   * submit button lives outside the form disable it while the form is untouched.
+   */
+  onDirtyChange?: (isDirty: boolean) => void;
+  onSubmit: (input: ClientInput) => void;
 }
 
 const emptyClient: ClientInput = {
@@ -20,25 +34,52 @@ const emptyClient: ClientInput = {
   phone: "",
 };
 
-export const ClientForm = ({ formId, onAdd }: Props) => {
+/** Narrows a stored client to just the editable fields, dropping `id`/`createdAt`/`updatedAt`. */
+const toClientInput = (client: Client): ClientInput => ({
+  address: client.address,
+  brn: client.brn,
+  companyName: client.companyName,
+  email: client.email,
+  name: client.name,
+  nationalId: client.nationalId,
+  phone: client.phone,
+});
+
+export const ClientForm = ({
+  client,
+  formId,
+  onDirtyChange,
+  onSubmit,
+}: Props) => {
   const {
-    formState: { errors },
+    formState: { errors, isDirty },
     handleSubmit,
     register,
     reset,
-  } = useForm<ClientInput>({ defaultValues: emptyClient });
+  } = useForm<ClientInput>({
+    defaultValues: client ? toClientInput(client) : emptyClient,
+  });
 
-  const submitForm = (client: ClientInput) => {
-    onAdd({
-      address: client.address.trim(),
-      brn: client.brn.trim(),
-      companyName: client.companyName.trim(),
-      email: client.email.trim(),
-      name: client.name.trim(),
-      nationalId: client.nationalId.trim(),
-      phone: client.phone.trim(),
+  useEffect(() => {
+    onDirtyChange?.(isDirty);
+  }, [isDirty, onDirtyChange]);
+
+  const submitForm = (values: ClientInput) => {
+    onSubmit({
+      address: values.address.trim(),
+      brn: values.brn.trim(),
+      companyName: values.companyName.trim(),
+      email: values.email.trim(),
+      name: values.name.trim(),
+      nationalId: values.nationalId.trim(),
+      phone: values.phone.trim(),
     });
-    reset(emptyClient);
+
+    // Add mode only. Clearing after an edit would blank the fields the user just
+    // saved, while the panel behind is still showing them.
+    if (!client) {
+      reset(emptyClient);
+    }
   };
 
   return (
