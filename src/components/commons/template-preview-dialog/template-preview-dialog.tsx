@@ -202,7 +202,7 @@ export const TemplatePreviewDialog = ({
           </section>
 
           <TemplateDocument
-            className="aspect-[210/297]"
+            className="aspect-210/297"
             density="compact"
             template={template}
             values={resolvedValues}

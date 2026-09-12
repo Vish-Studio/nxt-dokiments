@@ -59,9 +59,9 @@ const EMPTY_DOCUMENTS: UserDocument[] = [];
 const templateOf = (document: UserDocument): MarketplaceTemplate | null =>
   document.templateSnapshot
     ? snapshotToMarketplaceTemplate(
-      document.templateSnapshot,
-      document.templateId,
-    )
+        document.templateSnapshot,
+        document.templateId,
+      )
     : null;
 
 export const DocumentsView = () => {
@@ -111,11 +111,15 @@ export const DocumentsView = () => {
 
   const documentTypeOptions = useMemo(
     () =>
-      [...new Set(
-        documents
-          .map((document) => templateOf(document)?.documentType)
-          .filter((value): value is keyof typeof documentBlueprints => Boolean(value)),
-      )]
+      [
+        ...new Set(
+          documents
+            .map((document) => templateOf(document)?.documentType)
+            .filter((value): value is keyof typeof documentBlueprints =>
+              Boolean(value),
+            ),
+        ),
+      ]
         .map((value) => ({ value, label: documentBlueprints[value].name }))
         .sort((first, second) => first.label.localeCompare(second.label)),
     [documents],
@@ -153,7 +157,13 @@ export const DocumentsView = () => {
       canReset={Boolean(search || documentType !== "all" || sort !== "newest")}
       endAction={
         <Button
-          icon={<PlusIcon aria-hidden size={16} weight="bold" />}
+          icon={
+            <PlusIcon
+              aria-hidden
+              size={16}
+              weight="bold"
+            />
+          }
           iconPosition="left"
           onClick={() => setMode("picker")}
           size="sm"
@@ -492,7 +502,7 @@ export const DocumentsView = () => {
 
           <div className="hidden lg:sticky lg:top-2 lg:block">
             <TemplateDocument
-              className="aspect-[210/297]"
+              className="aspect-210/297"
               density="compact"
               template={editorTemplate}
               values={draftValues}
@@ -510,7 +520,7 @@ export const DocumentsView = () => {
         >
           <div className="min-h-full bg-app-panel p-3 sm:p-5">
             <TemplateDocument
-              className="aspect-[210/297]"
+              className="aspect-210/297"
               density="compact"
               template={editorTemplate}
               values={draftValues}
@@ -635,7 +645,10 @@ export const DocumentsView = () => {
   // --- Document list --------------------------------------------------------
   return (
     <div className="flex min-h-0 w-full flex-1 flex-col gap-2 pt-6">
-      <ResponsiveHeaderControls desktopContent={toolbar} desktopHeader={headerSearch}>
+      <ResponsiveHeaderControls
+        desktopContent={toolbar}
+        desktopHeader={headerSearch}
+      >
         {toolbar}
       </ResponsiveHeaderControls>
       {isDocumentsLoading ? (
