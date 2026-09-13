@@ -75,7 +75,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
         ref={ref}
         type={type}
         className={cn(
-          "btn group font-title font-semibold transition-all duration-200",
+          "btn group rounded-field font-title font-semibold transition-all duration-200",
           variantClasses[variant],
           sizeClasses[size],
           className,
