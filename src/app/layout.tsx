@@ -4,8 +4,8 @@ import { Raleway, Urbanist } from "next/font/google";
 import Script from "next/script";
 
 import { AnalyticsProvider } from "@/components/commons/analytics-provider/analytics-provider";
-import { AppUpdateBanner } from "@/components/commons/app-update-banner/app-update-banner";
 import { AuthProvider } from "@/components/commons/auth-provider/auth-provider";
+import { BottomNotices } from "@/components/commons/bottom-notices/bottom-notices";
 import { CookieConsent } from "@/components/website/cookie-consent/cookie-consent";
 import { analyticsConfig, hasAnalyticsConfig } from "@/lib/analytics/config";
 import { COOKIE_CONSENT_STORAGE_KEY } from "@/lib/cookie-consent";
@@ -163,11 +163,12 @@ const RootLayout = ({
           <CookieConsent />
           {/*
             Inside `SerwistProvider`, which owns the service worker registration it
-            reads. Rendered after `<CookieConsent />` so that if both were ever
-            visible at once the banner would paint on top — though the update banner
-            waits for the cookie choice precisely so that cannot happen.
+            reads, and inside `AuthProvider`'s store, which the install nudge reads
+            to stay out of a visitor's way. Rendered after `<CookieConsent />` so
+            that if both were ever visible at once these would paint on top — though
+            both of them wait for the cookie choice precisely so that cannot happen.
           */}
-          <AppUpdateBanner />
+          <BottomNotices />
         </SerwistProvider>
       </body>
     </html>

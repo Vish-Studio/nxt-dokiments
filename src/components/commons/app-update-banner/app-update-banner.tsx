@@ -1,8 +1,6 @@
 "use client";
 
 import { Button } from "@/components/commons/button/button";
-import { useAppUpdate } from "@/hooks/use-app-update";
-import { useCookieConsentSettled } from "@/hooks/use-cookie-consent-settled";
 
 type AppUpdateBannerViewProps = {
   onReload: () => void;
@@ -12,9 +10,10 @@ type AppUpdateBannerViewProps = {
 /**
  * The banner itself, with visibility decided by its caller.
  *
- * Split from `AppUpdateBanner` so it can be rendered in isolation: the container
- * reads the live service worker through context, which a story has no way to put a
- * waiting worker into.
+ * That caller is `BottomNotices`, which owns `useAppUpdate` and the order this
+ * takes its turn in relative to the install nudge. Keeping the decision there and
+ * the markup here also means this can be rendered in isolation, which a container
+ * reading a live waiting service worker through context could never be.
  *
  * Deliberately not a dialog. A backdrop would block a user mid-document to ask
  * about a version number, and a full-screen backdrop doubles as a giant dismiss
@@ -61,27 +60,3 @@ export const AppUpdateBannerView = ({
     </div>
   </section>
 );
-
-/**
- * Offers the user the new build once a worker is waiting.
- *
- * Held back until the cookie choice is settled: `CookieConsent` occupies this same
- * strip at the bottom of the viewport, and asking two unrelated questions in one
- * frame is how a visitor ends up answering neither deliberately. Nothing is lost by
- * waiting — the worker stays waiting too.
- */
-export const AppUpdateBanner = () => {
-  const { isUpdateReady, acceptUpdate, dismissUpdate } = useAppUpdate();
-  const isCookieConsentSettled = useCookieConsentSettled();
-
-  if (!isUpdateReady || !isCookieConsentSettled) {
-    return null;
-  }
-
-  return (
-    <AppUpdateBannerView
-      onDismiss={dismissUpdate}
-      onReload={acceptUpdate}
-    />
-  );
-};

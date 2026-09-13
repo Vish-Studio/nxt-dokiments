@@ -17,6 +17,51 @@
 export type EmptyAnalyticsParams = Record<string, never>;
 
 export type AnalyticsEventMap = {
+  /**
+   * The install button explained the browser's own menu path, because this
+   * browser has no way for a page to ask.
+   *
+   * `platform` is how the two are told apart in reports: a guide opened on `ios`
+   * is the expected path for a large share of traffic, while one opened on
+   * `browser-menu` usually means Chromium declined to offer an install and is
+   * worth looking into.
+   */
+  app_install_guide_opened: {
+    platform:
+      | "ios"
+      | "ios-in-app-browser"
+      | "safari-desktop"
+      | "firefox-android"
+      | "browser-menu";
+    surface: "footer" | "nudge" | "sidebar";
+  };
+  /**
+   * The one-time install nudge was closed without installing.
+   *
+   * Paired with `app_install_nudge_shown` this is the ignore rate for the single
+   * interruption the app allows itself. If it runs high the nudge is not earning
+   * its place and should go back to being button-only.
+   */
+  app_install_nudge_dismissed: EmptyAnalyticsParams;
+  /**
+   * The one-time install nudge appeared. Fires at most once per browser, ever, so
+   * it doubles as the denominator for install conversion.
+   */
+  app_install_nudge_shown: EmptyAnalyticsParams;
+  /**
+   * The user was shown the browser's native install dialog, and this is what
+   * they chose.
+   *
+   * `surface` distinguishes the three places an install can start: the marketing
+   * `footer`, the dashboard `sidebar`, and the one-time `nudge`. The unions here
+   * are written out rather than imported from `@/lib/pwa/install-availability`, so
+   * this file stays the standalone description of the analytics contract —
+   * matching how `promo_code_failed` inlines its own reasons.
+   */
+  app_install_prompted: {
+    outcome: "accepted" | "dismissed";
+    surface: "footer" | "nudge" | "sidebar";
+  };
   client_created: {
     has_address: boolean;
   };

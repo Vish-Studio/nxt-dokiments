@@ -24,7 +24,8 @@ import {
  * behind does not outrank the user's work.
  *
  * Mount once, inside `SerwistProvider` — the root layout does this via
- * `AppUpdateBanner`.
+ * `BottomNotices`, which is also why the install nudge is handed the update state
+ * rather than calling this hook itself.
  */
 export const useAppUpdate = () => {
   const { serwist } = useSerwist();
