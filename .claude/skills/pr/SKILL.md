@@ -95,6 +95,10 @@ The whole reply looks exactly like this:
 
     <1–3 sentence overview of what this PR does and why>
 
+    ## Implementation Summary
+
+    <concise explanation of how the changed code implements the behavior>
+
     ### `<file or module>`
 
     <per-area breakdown>
@@ -131,10 +135,15 @@ is a primary key, append it in parentheses: `Add x feature (DOK-1234)`. Append
 at most one key, never a list.
 
 **PR description** — starts at `## Summary`; the title is not repeated inside
-it. Covers the cumulative branch diff from step 3. One `###` section per changed
-area, covering every changed area. Say what changed and the non-obvious
-reasoning behind it. For deleted files, say what they replaced and why they're
-gone. For new files, explain their role and any design decisions worth noting.
+it. Covers the cumulative branch diff from step 3. Include a concise
+`## Implementation Summary` section after the overview that explains the
+concrete implementation: the main control flow, data flow, state changes, API
+contracts, or test strategy that make the behavior work. Derive it only from
+the code changes and keep it distinct from the high-level rationale in
+`## Summary`. Then include one `###` section per changed area, covering every
+changed area. Say what changed and the non-obvious reasoning behind it. For
+deleted files, say what they replaced and why they're gone. For new files,
+explain their role and any design decisions worth noting.
 
 **`## Jira` section** — include it only if at least one key was found. List every
 distinct key, one per line, in the order collected. Omit the entire section when
