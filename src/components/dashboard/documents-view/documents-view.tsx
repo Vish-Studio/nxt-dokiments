@@ -440,6 +440,8 @@ export const DocumentsView = () => {
             </div>
 
             <div className="mt-6 grid gap-5">
+              <TemplateForm
+                documentNameField={
               <Input
                 label="Document name"
                 onChange={(event) => {
@@ -448,6 +450,8 @@ export const DocumentsView = () => {
                 placeholder="e.g. Acme service contract"
                 value={draftName}
               />
+                }
+                recipientPicker={
               <ClientPicker
                 fields={editorTemplate.fields}
                 onSelect={(client) => {
@@ -460,7 +464,7 @@ export const DocumentsView = () => {
                   });
                 }}
               />
-              <TemplateForm
+                }
                 fields={editorTemplate.fields}
                 onChange={(key, value) => {
                   setDraftValues((previous) => ({ ...previous, [key]: value }));

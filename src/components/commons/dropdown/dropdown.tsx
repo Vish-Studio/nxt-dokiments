@@ -8,6 +8,14 @@ import { Button } from "@/components/commons/button/button";
 import type { SelectOption } from "@/components/commons/select/select";
 import { cn } from "@/lib/utils";
 
+/**
+ * The shared trigger treatment for every application dropdown. It matches the
+ * collection toolbar's sort and filter controls while allowing each caller to
+ * add its own responsive sizing or width.
+ */
+export const dropdownControlClassName =
+  "gap-2 whitespace-nowrap rounded-field border border-steel-mist/70 bg-base-200 text-nox-noir hover:border-steel-mist hover:bg-base-200 aria-expanded:bg-base-200";
+
 export interface DropdownGroup {
   label: string;
   value: string;
@@ -90,7 +98,7 @@ export const Dropdown = ({
         aria-expanded={isOpen}
         aria-haspopup={groups ? "menu" : undefined}
         aria-label={ariaLabel}
-        className={buttonClassName}
+        className={cn(dropdownControlClassName, buttonClassName)}
         onClick={() => { initialFocus.current = "first"; setIsOpen((current) => !current); }}
         onKeyDown={(event) => {
           if (groups && ["ArrowDown", "ArrowUp"].includes(event.key)) {

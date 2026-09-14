@@ -70,7 +70,7 @@ export const LinkButton = ({
   return (
     <Link
       className={cn(
-        "link-button group inline-flex items-center justify-center gap-2 rounded-box border font-title font-bold transition",
+        "link-button group inline-flex items-center justify-center gap-2 rounded-field border font-title font-bold transition",
         variantClasses[variant],
         sizeClasses[size],
         className,

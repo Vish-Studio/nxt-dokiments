@@ -428,14 +428,16 @@ export const PrefillFromClient: Story = {
       canvas.getByDisplayValue("12 Studio Lane, Port Louis"),
     ).toBeVisible();
 
-    await userEvent.selectOptions(
-      canvas.getByLabelText("Prefill from client (optional)"),
-      "client_northline_01",
+    await userEvent.click(
+      canvas.getByRole("button", { name: "Prefill from client (optional)" }),
+    );
+    await userEvent.click(
+      canvas.getByRole("menuitemradio", { name: "Northline Studio" }),
     );
 
     // companyName wins over the contact name for `toName`. Asserted via the "To"
-    // label rather than `findByDisplayValue`, since that query also matches the
-    // picker's own `<select>` — its selected option's label is this same client name.
+    // label rather than `findByDisplayValue`, so this remains specific to the
+    // recipient field rather than the picker trigger.
     await expect(await canvas.findByLabelText("To")).toHaveValue(
       "Northline Studio",
     );

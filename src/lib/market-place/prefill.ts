@@ -1,6 +1,7 @@
 import type { AuthUser } from "@/types/auth";
 import type { Client } from "@/types/client";
 import type { TemplateField } from "@/types/template";
+import { withPartyContacts } from "./party-fields";
 
 /**
  * Maps a saved client, or the signed-in user's own profile, onto a template's
@@ -26,9 +27,8 @@ type PrefillRule<TSource> = {
  * person, since documents normally address the business entity; the contact name
  * is the fallback for clients stored without a company.
  *
- * `toEmail`/`toPhone`/`toBrn` only exist on the billing document types (see
- * `recipientContactFields`), so on a contract or a letter those rules find no
- * matching key and are skipped.
+ * Optional email/phone inputs are supplemented by `withPartyContacts` for
+ * From/To documents, including legacy snapshots. BRN remains billing-specific.
  */
 const CLIENT_RULES: PrefillRule<Client>[] = [
   {
@@ -47,6 +47,8 @@ const CLIENT_RULES: PrefillRule<Client>[] = [
  * (receiving party) gets the client.
  */
 const SENDER_RULES: PrefillRule<AuthUser>[] = [
+  { keys: ["fromPhone"], value: (user) => user.phone || user.tel || "" },
+  { keys: ["fromEmail"], value: (user) => user.email },
   {
     keys: ["fromName", "partyOne"],
     value: (user) => user.companyName || user.fullName || user.displayName,
@@ -69,7 +71,7 @@ const applyRules = <TSource>(
   source: TSource,
   fields: TemplateField[],
 ): Record<string, string> => {
-  const templateKeys = new Set(fields.map((field) => field.key));
+  const templateKeys = new Set(withPartyContacts(fields).map((field) => field.key));
   const values: Record<string, string> = {};
 
   rules.forEach((rule) => {

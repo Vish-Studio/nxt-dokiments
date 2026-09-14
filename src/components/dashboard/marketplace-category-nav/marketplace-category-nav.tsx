@@ -10,24 +10,18 @@ interface Props {
 }
 
 export const MarketplaceCategoryNav = ({ categories, onChange, value }: Props) => (
-  <section aria-labelledby="marketplace-categories-heading" className="marketplace-category-nav min-w-0 rounded-box border border-steel-mist bg-base-100 p-4 lg:border-0 lg:bg-transparent lg:p-0">
-    <div className="mb-3 flex items-center justify-between gap-4">
-      <div>
-        <p className="font-title text-xs font-bold uppercase tracking-widest text-nox-noir/55">
-          Browse by category
-        </p>
-        <h2
-          className="mt-1 font-title text-xl font-bold text-nox-noir"
-          id="marketplace-categories-heading"
-        >
-          Find the document you need
-        </h2>
-      </div>
-    </div>
-
+  <section aria-label="Browse by category" className="marketplace-category-nav min-w-0 rounded-box border border-steel-mist bg-base-100 p-4 lg:border-0 lg:bg-transparent lg:p-0">
     <div className="lg:hidden">
       <Carousel
         ariaLabel="Document categories"
+        header={
+          <h2
+            className="font-title text-xl font-bold text-nox-noir"
+          >
+            Browse by category
+          </h2>
+        }
+        navigationPlacement="header"
         trackClassName="gap-3"
         viewportClassName="mt-0 py-0"
       >
@@ -44,20 +38,37 @@ export const MarketplaceCategoryNav = ({ categories, onChange, value }: Props) =
       </Carousel>
     </div>
 
-    <div className="hidden min-w-0 gap-3 overflow-x-auto pb-1 lg:flex">
-      <MarketplaceCategoryTile
-        documentType="all"
-        isActive={value === "all"}
-        onSelect={onChange}
-      />
-      {categories.map((documentType) => (
-        <MarketplaceCategoryTile
-          documentType={documentType}
-          isActive={value === documentType}
-          key={documentType}
-          onSelect={onChange}
-        />
-      ))}
+    <div className="hidden lg:block">
+      <Carousel
+        ariaLabel="Document categories"
+        header={
+          <h2
+            className="font-title text-xl font-bold text-nox-noir"
+          >
+            Browse by category
+          </h2>
+        }
+        navigationPlacement="header"
+        trackClassName="gap-3"
+        viewportClassName="mt-0 py-0"
+      >
+        <div className="shrink-0">
+          <MarketplaceCategoryTile
+            documentType="all"
+            isActive={value === "all"}
+            onSelect={onChange}
+          />
+        </div>
+        {categories.map((documentType) => (
+          <div className="shrink-0" key={documentType}>
+            <MarketplaceCategoryTile
+              documentType={documentType}
+              isActive={value === documentType}
+              onSelect={onChange}
+            />
+          </div>
+        ))}
+      </Carousel>
     </div>
   </section>
 );
