@@ -29,8 +29,7 @@ export const Default: Story = {
     <div className="grid justify-items-center gap-6">
       <Dropdown
         {...args}
-        buttonClassName="btn rounded-box bg-base-200 text-nox-noir"
-        menuClassName="mt-3 w-48 rounded-box bg-base-100 p-2 shadow-soft"
+        menuClassName="mt-3 w-48"
       >
         <ul className="menu p-0">
           <li>

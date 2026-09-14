@@ -7,7 +7,7 @@ import { Badge } from "@/components/commons/badge/badge";
 import { cn } from "@/lib/utils";
 import { ButtonIcon } from "@/components/commons/button-icon/button-icon";
 import { Button } from "@/components/commons/button/button";
-import { Dropdown } from "@/components/commons/dropdown/dropdown";
+import { Dropdown, dropdownControlClassName } from "@/components/commons/dropdown/dropdown";
 import { Input } from "@/components/commons/input/input";
 import type { SelectOption } from "@/components/commons/select/select";
 
@@ -50,7 +50,8 @@ const CollectionToolbar = ({
   const hasCompactAppearance = appearance === "compact";
   const activeFilters = filters.filter((filter) => filter.value !== filter.defaultValue);
   const controlClassName = cn(
-    "size-10 shrink-0 gap-2 whitespace-nowrap rounded-field border border-steel-mist/70 bg-base-200 px-0! sm:w-auto sm:px-3! text-nox-noir hover:border-steel-mist hover:bg-base-200 aria-expanded:bg-base-200",
+    dropdownControlClassName,
+    "size-10 shrink-0 px-0! sm:w-auto sm:px-3!",
     hasDarkHeaderAppearance && "lg:border-nox-noir/15 lg:bg-white/45 lg:text-nox-noir lg:hover:border-nox-noir/25 lg:hover:bg-white/65 lg:aria-expanded:bg-white/65",
     hasCompactAppearance && "lg:h-9 lg:min-h-9 lg:gap-1.5 lg:rounded-field lg:border lg:border-steel-mist/60 lg:bg-base-200 lg:px-3! lg:text-xs lg:hover:bg-base-100 lg:aria-expanded:bg-base-100",
   );

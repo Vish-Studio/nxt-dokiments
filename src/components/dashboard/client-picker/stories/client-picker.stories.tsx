@@ -80,19 +80,22 @@ export const WithClients: Story = {
   ],
   play: async ({ args, canvasElement }) => {
     const canvas = within(canvasElement);
-    const select = await canvas.findByLabelText(
-      "Prefill from client (optional)",
-    );
+    const trigger = await canvas.findByRole("button", {
+      name: "Prefill from client (optional)",
+    });
 
+    await userEvent.click(trigger);
     await expect(
-      canvas.getByRole("option", { name: "Northline Studio" }),
+      canvas.getByRole("menuitemradio", { name: "Northline Studio" }),
     ).toBeInTheDocument();
     // Falls back to the contact name when the client has no company.
     await expect(
-      canvas.getByRole("option", { name: "Ravi Patel" }),
+      canvas.getByRole("menuitemradio", { name: "Ravi Patel" }),
     ).toBeInTheDocument();
 
-    await userEvent.selectOptions(select, "client_northline_01");
+    await userEvent.click(
+      canvas.getByRole("menuitemradio", { name: "Northline Studio" }),
+    );
     await expect(args.onSelect).toHaveBeenCalledWith(clients[0]);
   },
 };

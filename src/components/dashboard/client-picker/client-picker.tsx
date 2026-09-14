@@ -1,8 +1,10 @@
 "use client";
 
+import { CaretDownIcon } from "@phosphor-icons/react";
 import Link from "next/link";
+import { useState } from "react";
 
-import { Select } from "@/components/commons/select/select";
+import { Dropdown } from "@/components/commons/dropdown/dropdown";
 import { useClientsQuery } from "@/hooks/queries/use-clients";
 import { supportsClientPrefill } from "@/lib/market-place/prefill";
 import type { Client } from "@/types/client";
@@ -24,6 +26,7 @@ export type ClientPickerProps = {
  */
 export const ClientPicker = ({ fields, onSelect }: ClientPickerProps) => {
   const { data: clients = [] } = useClientsQuery();
+  const [selectedClientId, setSelectedClientId] = useState("");
 
   if (!supportsClientPrefill(fields)) {
     return null;
@@ -41,27 +44,44 @@ export const ClientPicker = ({ fields, onSelect }: ClientPickerProps) => {
     );
   }
 
+  const selectedClient = clients.find((client) => client.id === selectedClientId);
+  const selectedLabel = selectedClient
+    ? selectedClient.companyName || selectedClient.name
+    : "Choose a client";
+
   return (
     <div className="client-picker">
-      <Select
-        label="Prefill from client (optional)"
-        onChange={(event) => {
-          const client = clients.find(
-            (candidate) => candidate.id === event.target.value,
-          );
-          if (client) {
-            onSelect(client);
-          }
-        }}
-        options={clients.map((client) => ({
-          label: client.companyName || client.name,
-          value: client.id,
-        }))}
-        placeholder="Choose a client"
-        // Uncontrolled on purpose: this is an action, not a stored field. The
-        // document records the filled values, not which client they came from,
-        // so there is no selection state to keep in sync with the draft.
-        defaultValue=""
+      <p className="mb-2 font-title text-sm font-semibold text-nox-noir">
+        Prefill from client (optional)
+      </p>
+      <Dropdown
+        ariaLabel="Prefill from client (optional)"
+        buttonClassName="w-full justify-between"
+        className="w-full"
+        groups={[
+          {
+            label: "Saved clients",
+            onChange: (value) => {
+              const client = clients.find((candidate) => candidate.id === value);
+              if (client) {
+                setSelectedClientId(value);
+                onSelect(client);
+              }
+            },
+            options: clients.map((client) => ({
+              label: client.companyName || client.name,
+              value: client.id,
+            })),
+            value: selectedClientId,
+          },
+        ]}
+        menuClassName="w-full"
+        trigger={
+          <>
+            <span className="min-w-0 truncate text-left">{selectedLabel}</span>
+            <CaretDownIcon aria-hidden className="shrink-0" size={14} />
+          </>
+        }
       />
     </div>
   );

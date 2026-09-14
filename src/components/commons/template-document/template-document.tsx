@@ -1,5 +1,7 @@
 import { cn } from "@/lib/utils";
 import type { MarketplaceTemplate, TemplateStyleId } from "@/types/template";
+import { partyFieldKeys, TemplateParties } from "./template-parties";
+import { DocumentItems } from "@/components/commons/document-items/document-items";
 
 export type TemplateDocumentProps = {
   className?: string;
@@ -68,8 +70,19 @@ export const TemplateDocument = ({
   const isCompact = density === "compact";
   const config = styleConfig[template.style.id];
   const title = values.title?.trim() || template.name;
-  const metaFields = template.fields.filter((field) => field.type !== "textarea");
-  const bodyFields = template.fields.filter((field) => field.type === "textarea");
+  const isLetter = template.documentType === "formal-business-letter";
+  const billing = ["invoice", "quotation", "receipt", "purchase-order"].includes(template.documentType);
+  const totals = new Set(billing ? ["subtotal", "tax", "total", "amountPaid"] : []);
+  const endKeys = new Set(["senderSignature", "recipientSignature", "approval", ...(isLetter ? ["closing"] : [])]);
+  const fields = template.fields.filter((field) => field.key !== "title" && !partyFieldKeys.has(field.key));
+  const metaFields = fields.filter((field) => field.type !== "textarea" && !totals.has(field.key) && !endKeys.has(field.key) && !(isLetter && field.key === "salutation"));
+  const bodyFields = fields.filter((field) => field.type === "textarea" && !endKeys.has(field.key));
+  const totalFields = fields.filter((field) => totals.has(field.key));
+  // Preserve free-text line items; never parse or recalculate saved monetary values.
+  const contentFields = bodyFields.flatMap((field) => field.key === "items" ? [field, ...totalFields] : [field]);
+  if (!bodyFields.some((field) => field.key === "items")) contentFields.push(...totalFields);
+  if (isLetter) contentFields.unshift(...fields.filter((field) => field.key === "salutation"));
+  contentFields.push(...fields.filter((field) => endKeys.has(field.key)));
 
   const valueFor = (key: string, fallback?: string) => ({
     isEmpty: !values[key]?.trim(),
@@ -84,6 +97,7 @@ export const TemplateDocument = ({
       </header>
 
       <div className={cn(config.body, isCompact && "p-5!")}>
+        <TemplateParties fields={template.fields} values={values} compact={isCompact} labelClassName={cn(config.label, isCompact && "text-[11px]!")} />
         <dl className={cn("grid gap-4", layout === "print" ? "grid-cols-2" : "sm:grid-cols-2")}>
           {metaFields.map((field) => {
             if (field.key === "title") {
@@ -102,12 +116,13 @@ export const TemplateDocument = ({
           })}
         </dl>
 
-        {bodyFields.map((field) => {
+        {contentFields.map((field) => {
           const { isEmpty, text } = valueFor(field.key, field.placeholder);
+          if (field.key === "items" && ["invoice", "quotation"].includes(template.documentType)) return <DocumentItems key={field.key} value={text} />;
 
           return (
-            <section className="mt-6" key={field.key}>
-              <h3 className={cn(config.sectionTitle, isCompact && "text-xs")}>{field.label}</h3>
+            <section className={cn("mt-6 break-words", totals.has(field.key) && "ml-auto max-w-xs border-t border-steel-mist pt-3")} key={field.key}>
+              <h3 className={cn(config.sectionTitle, isCompact && "text-xs", isLetter && ["salutation", "body", "closing", "senderSignature"].includes(field.key) && "sr-only")}>{field.label}</h3>
               <p
                 className={cn(
                   "mt-2 whitespace-pre-line",
@@ -124,3 +139,5 @@ export const TemplateDocument = ({
     </article>
   );
 };
+
+export default TemplateDocument;
