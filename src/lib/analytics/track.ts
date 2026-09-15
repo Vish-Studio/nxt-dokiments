@@ -3,6 +3,7 @@ import type {
   AnalyticsEventName,
 } from "@/lib/analytics/events";
 import { pushGtag } from "@/lib/analytics/gtag";
+import { mirrorToMetaPixel } from "@/lib/analytics/meta-pixel";
 
 /** GA4 truncates string params past this length; do it ourselves so the
  * value that lands in reports is predictable rather than silently clipped. */
@@ -32,6 +33,10 @@ const truncateStringParams = (params: Record<string, unknown>) =>
  * after, and an in-flight request would otherwise be cancelled by the
  * unload. This is best-effort only: under `analytics_storage: "denied"`
  * nothing is sent at all.
+ *
+ * Also mirrors the event to the Meta Pixel, for the small subset of events
+ * `meta-pixel.ts` maps. That call is silent unless the visitor accepted
+ * optional cookies, since the pixel script is only loaded on consent.
  */
 export const trackEvent = <TName extends AnalyticsEventName>(
   name: TName,
@@ -45,4 +50,6 @@ export const trackEvent = <TName extends AnalyticsEventName>(
     ...truncateStringParams(params),
     transport_type: "beacon",
   });
+
+  mirrorToMetaPixel(name, params);
 };
