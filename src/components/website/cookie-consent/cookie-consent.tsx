@@ -52,8 +52,8 @@ export const CookieConsent = () => {
           </h2>
           <p className="mt-2 max-w-2xl text-sm leading-6 text-white/70">
             Dokiments uses necessary browser storage to keep the site working
-            and remember your choice. Optional cookies are used only with your
-            permission. Read our{" "}
+            and remember your choice. Optional analytics and advertising cookies
+            are used only with your permission. Read our{" "}
             <Link
               className="font-semibold text-white underline underline-offset-4"
               href="/cookies"

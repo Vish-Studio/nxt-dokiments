@@ -38,15 +38,24 @@ export const pushGtag = (...args: GtagArgs) => {
 export type ConsentState = "denied" | "granted";
 
 /**
- * Upgrades or downgrades Consent Mode v2's `analytics_storage` grant after
- * the user picks an option in the cookie banner.
+ * Upgrades or downgrades every Consent Mode v2 grant after the user picks an
+ * option in the cookie banner.
  *
- * Only `analytics_storage` moves: Dokiments loads no advertising tags, so the
- * ad-related grants set in the `beforeInteractive` consent-default script
- * stay denied permanently rather than being toggled here.
+ * The ad-related grants move together with `analytics_storage` because
+ * "Accept all" now also permits the Meta Pixel, an advertising tag that sets
+ * a first-party `_fbp` cookie. Meta does not read Google's consent signal —
+ * `meta-pixel.ts` enforces the choice itself by not loading at all — so these
+ * grants change no behaviour today. They are kept faithful to what the visitor
+ * actually agreed to so that adding a Google ad tag later needs no second
+ * consent audit, and so the signal never contradicts the Cookie Policy.
  */
 export const updateConsent = (state: ConsentState) => {
-  pushGtag("consent", "update", { analytics_storage: state });
+  pushGtag("consent", "update", {
+    ad_personalization: state,
+    ad_storage: state,
+    ad_user_data: state,
+    analytics_storage: state,
+  });
 };
 
 /**
