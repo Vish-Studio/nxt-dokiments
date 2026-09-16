@@ -30,7 +30,12 @@ const sections = [
   {
     title: "Optional cookies",
     paragraphs: [
-      "Dokiments uses Google Analytics and Microsoft Clarity to understand how the service is used. Analytics storage is disabled by default and only loads after you Accept all in the consent banner; choosing Reject non-essential keeps it off. Dokiments does not load advertising cookies.",
+      "Optional storage is disabled by default. It is only used after you Accept all in the consent banner; choosing Reject non-essential keeps every item below switched off, and the scripts that set them are never downloaded.",
+    ],
+    bullets: [
+      "Google Analytics and Microsoft Clarity help us understand how the service is used, which pages are visited, and where people get stuck.",
+      "The Meta Pixel measures the results of our advertising on Facebook and Instagram, so we can see which campaigns lead to sign-ups. It sets a _fbp cookie in your browser and may read an fbclid value from links you arrive through, and it reports a small number of actions to Meta: creating an account, creating a document, and exporting a document.",
+      "The Meta Pixel does not receive your name, email address, or any content from the documents you create.",
     ],
   },
   {
@@ -53,7 +58,7 @@ const CookiesPage = () => (
     description="This policy explains the storage Dokiments uses to operate the service and remember your privacy choices."
     sections={sections}
     title="Cookie Policy"
-    updatedAt="15 August 2026"
+    updatedAt="16 September 2026"
   />
 );
 

@@ -1,15 +1,25 @@
 "use client";
 
+import { usePathname } from "next/navigation";
 import type { ReactNode } from "react";
 import { useEffect } from "react";
 
 import { useSessionQuery } from "@/hooks/queries/use-session";
+import {
+  analyticsConfig,
+  hasClarityConfig,
+  hasMetaPixelConfig,
+} from "@/lib/analytics/config";
 import type {
   AnalyticsEventMap,
   AnalyticsEventName,
 } from "@/lib/analytics/events";
-import { analyticsConfig, hasClarityConfig } from "@/lib/analytics/config";
 import { clearUserId, setUserId } from "@/lib/analytics/gtag";
+import {
+  loadMetaPixel,
+  revokeMetaPixelConsent,
+  trackMetaPageView,
+} from "@/lib/analytics/meta-pixel";
 import { trackEvent } from "@/lib/analytics/track";
 import {
   COOKIE_CONSENT_CHANGED_EVENT,
@@ -106,12 +116,15 @@ const readAnalyticsTrigger = (element: HTMLElement) => {
  * Root analytics provider. Mount once in the root layout, inside
  * `QueryProvider` (it reads the session via `useSessionQuery`).
  *
- * Two jobs:
+ * Three jobs:
  * 1. Delegated click tracking — a single capture-phase listener resolves
  *    `[data-analytics-event]` via `closest`, which lets `Button`/`LinkButton`
  *    stay server-renderable and ship zero JS while still declaring
  *    analytics as plain data.
- * 2. GA4 User-ID mirroring — reads `useSessionQuery` rather than
+ * 2. Consent-gated loading of the two optional third-party tags, Clarity and
+ *    the Meta Pixel. Neither script is requested until a visitor chooses
+ *    "Accept all"; both react to a later change of mind.
+ * 3. GA4 User-ID mirroring — reads `useSessionQuery` rather than
  *    `useAuthStore`, since the store is documented as transitional in
  *    `auth-provider.tsx`.
  *
@@ -120,6 +133,14 @@ const readAnalyticsTrigger = (element: HTMLElement) => {
  */
 export const AnalyticsProvider = ({ children }: AnalyticsProviderProps) => {
   const { data: user, isLoading } = useSessionQuery();
+  /**
+   * Drives the Meta Pixel's per-navigation `PageView`. `usePathname` only —
+   * `useSearchParams` in a root-layout client component would opt every
+   * otherwise-static route into dynamic rendering unless wrapped in
+   * `Suspense`, which is far too high a price for counting a `?tab=` change
+   * as a separate page view.
+   */
+  const pathname = usePathname();
 
   useEffect(() => {
     const handleClick = (event: MouseEvent) => {
@@ -168,6 +189,54 @@ export const AnalyticsProvider = ({ children }: AnalyticsProviderProps) => {
       );
     };
   }, []);
+
+  /**
+   * Loads the Meta Pixel on consent and sends exactly one `PageView` per
+   * route.
+   *
+   * Keyed on `pathname` rather than mounted once, because Meta's base code
+   * only fires `PageView` on a full document load and App Router client
+   * navigations are not that. Re-running the whole effect per navigation is
+   * what keeps the count exact: the body runs once per commit, and the
+   * consent listener only fires when the visitor actually changes their
+   * choice — so neither path can double-count the other's page view.
+   *
+   * Known gap, verified against the live `fbevents.js` rather than assumed: a
+   * visitor who accepts, withdraws, then accepts again *without navigating*
+   * loses that last `PageView` to Meta's own duplicate suppression. Ordinary
+   * events resume immediately and the next navigation is counted normally, so
+   * this is left alone — the alternative is passing a synthetic `eventID` to
+   * defeat a dedupe rule Meta does not document, which would then collide with
+   * the meaning `eventID` carries if the Conversions API is ever added.
+   */
+  useEffect(() => {
+    if (!hasMetaPixelConfig()) {
+      return;
+    }
+
+    const applyMetaPixelConsent = () => {
+      if (readCookieConsent() !== "all") {
+        revokeMetaPixelConsent();
+        return;
+      }
+
+      loadMetaPixel();
+      trackMetaPageView();
+    };
+
+    applyMetaPixelConsent();
+    window.addEventListener(
+      COOKIE_CONSENT_CHANGED_EVENT,
+      applyMetaPixelConsent,
+    );
+
+    return () => {
+      window.removeEventListener(
+        COOKIE_CONSENT_CHANGED_EVENT,
+        applyMetaPixelConsent,
+      );
+    };
+  }, [pathname]);
 
   useEffect(() => {
     if (isLoading) {

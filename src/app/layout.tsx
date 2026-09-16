@@ -133,7 +133,12 @@ const RootLayout = ({
                     var stored = window.localStorage.getItem('${COOKIE_CONSENT_STORAGE_KEY}');
                     var consent = stored ? JSON.parse(stored) : null;
                     if (consent && consent.version === 1 && consent.choice === 'all') {
-                      gtag('consent', 'update', { 'analytics_storage': 'granted' });
+                      gtag('consent', 'update', {
+                        'ad_storage': 'granted',
+                        'ad_user_data': 'granted',
+                        'ad_personalization': 'granted',
+                        'analytics_storage': 'granted'
+                      });
                     }
                   } catch (error) {}
                 `}
