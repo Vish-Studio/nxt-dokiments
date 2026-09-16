@@ -2,14 +2,17 @@
 
 import { useQueryClient } from "@tanstack/react-query";
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import type { SubmitEvent } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useForm } from "react-hook-form";
 
 import { Button } from "@/components/commons/button/button";
 import { GoogleSignInButton } from "@/components/commons/google-sign-in-button/google-sign-in-button";
 import { Input } from "@/components/commons/input/input";
 import { PromoCodeCallout } from "@/components/commons/promo-code-callout/promo-code-callout";
+import { useAutofillSubmit } from "@/hooks/use-autofill-submit";
 import { trackEvent } from "@/lib/analytics/track";
+import { syncAutofilledFields } from "@/lib/forms/autofill";
 import { withPromoStatus } from "@/lib/promo/promo-status";
 import { queryKeys } from "@/lib/query/keys";
 import { useAuthStore } from "@/stores/auth-store";
@@ -41,9 +44,17 @@ export type SignInFormProps = {
 const EXPIRED_NOTICE =
   "Your session expired after 24 hours. Please sign in again.";
 
+/**
+ * The registered fields a password manager fills. Drives both halves of the
+ * AutoFill handling: `syncAutofilledFields` reconciles them into form state, and
+ * `useAutofillSubmit` watches them so choosing a saved login signs the user in.
+ */
+const AUTOFILLED_FIELDS = ["email", "password"] as const;
+
 export const SignInForm = ({ notice, onSubmit }: SignInFormProps) => {
   const setUser = useAuthStore((state) => state.setUser);
   const queryClient = useQueryClient();
+  const formRef = useRef<HTMLFormElement>(null);
   const [formError, setFormError] = useState("");
   const [next, setNext] = useState("/dashboard");
   const [urlNotice, setUrlNotice] = useState("");
@@ -66,12 +77,18 @@ export const SignInForm = ({ notice, onSubmit }: SignInFormProps) => {
     return () => window.clearTimeout(timer);
   }, []);
 
+  // Picking a saved login from the keyboard is a complete sign-in gesture on its
+  // own, so it submits without a second tap on the button.
+  useAutofillSubmit(formRef, AUTOFILLED_FIELDS);
+
   const activeNotice = notice ?? urlNotice;
 
   const {
     formState: { errors, isSubmitting },
+    getValues,
     handleSubmit,
     register,
+    setValue,
   } = useForm<SignInValues>({
     defaultValues: {
       email: "",
@@ -114,10 +131,21 @@ export const SignInForm = ({ notice, onSubmit }: SignInFormProps) => {
     }
   });
 
+  const handleFormSubmit = (event: SubmitEvent<HTMLFormElement>) => {
+    syncAutofilledFields(
+      event.currentTarget,
+      { getValues, setValue },
+      AUTOFILLED_FIELDS,
+    );
+
+    return submitForm(event);
+  };
+
   return (
     <form
+      ref={formRef}
       className="grid gap-5"
-      onSubmit={submitForm}
+      onSubmit={handleFormSubmit}
     >
       {activeNotice ? (
         <div
@@ -159,6 +187,10 @@ export const SignInForm = ({ notice, onSubmit }: SignInFormProps) => {
           way to tell why. */}
       <Input
         autoComplete="current-password"
+        // Labels the iOS keyboard's return key "Go" instead of "return", so the
+        // optional promo field sitting below doesn't make submitting look like it
+        // needs the button. Pressing it submits the form as Enter always did.
+        enterKeyHint="go"
         error={errors.password?.message}
         label="Password"
         placeholder="Enter your password"

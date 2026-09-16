@@ -1,5 +1,6 @@
 "use client";
 
+import type { SubmitEvent } from "react";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 
@@ -10,6 +11,7 @@ import {
   ReauthRequiredError,
   useUpdatePasswordMutation,
 } from "@/hooks/queries/use-auth";
+import { syncAutofilledFields } from "@/lib/forms/autofill";
 import { useAuthStore } from "@/stores/auth-store";
 import { credentialFieldLimits } from "@/types/auth";
 
@@ -67,6 +69,15 @@ export const PasswordSettings = () => {
     attemptUpdate(password);
   });
 
+  const handleFormSubmit = (event: SubmitEvent<HTMLFormElement>) => {
+    syncAutofilledFields(event.currentTarget, form, [
+      "password",
+      "confirmPassword",
+    ]);
+
+    return submit(event);
+  };
+
   const handleReauthenticated = () => {
     setIsReauthOpen(false);
     attemptUpdate(form.getValues("password"));
@@ -104,7 +115,7 @@ export const PasswordSettings = () => {
 
       <form
         className="mt-6 grid gap-5"
-        onSubmit={submit}
+        onSubmit={handleFormSubmit}
       >
         {feedback ? (
           <div

@@ -1,11 +1,13 @@
 "use client";
 
+import type { SubmitEvent } from "react";
 import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 
 import { Button } from "@/components/commons/button/button";
 import { Input } from "@/components/commons/input/input";
 import { useReauthenticateMutation } from "@/hooks/queries/use-auth";
+import { syncAutofilledFields } from "@/lib/forms/autofill";
 
 type ReauthValues = {
   password: string;
@@ -38,9 +40,11 @@ export const ReauthDialog = ({
   const { isPending, mutate: reauthenticate } = useReauthenticateMutation();
   const {
     formState: { errors },
+    getValues,
     handleSubmit,
     register,
     reset,
+    setValue,
   } = useForm<ReauthValues>({ defaultValues: { password: "" } });
 
   useEffect(() => {
@@ -85,6 +89,14 @@ export const ReauthDialog = ({
     });
   });
 
+  const handleFormSubmit = (event: SubmitEvent<HTMLFormElement>) => {
+    syncAutofilledFields(event.currentTarget, { getValues, setValue }, [
+      "password",
+    ]);
+
+    return submit(event);
+  };
+
   return (
     <div
       aria-label="Confirm your password"
@@ -102,7 +114,7 @@ export const ReauthDialog = ({
 
       <form
         className="relative z-10 w-full max-w-sm rounded-box border border-steel-mist bg-base-100 p-6"
-        onSubmit={submit}
+        onSubmit={handleFormSubmit}
       >
         <h3 className="font-title text-lg font-bold text-nox-noir">
           Confirm your password

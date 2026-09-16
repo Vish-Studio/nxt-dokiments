@@ -1,12 +1,14 @@
 "use client";
 
 import Link from "next/link";
+import type { SubmitEvent } from "react";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 
 import { Button } from "@/components/commons/button/button";
 import { Input } from "@/components/commons/input/input";
 import { useForgotPasswordMutation } from "@/hooks/queries/use-auth";
+import { syncAutofilledFields } from "@/lib/forms/autofill";
 import { credentialFieldLimits } from "@/types/auth";
 
 type ForgotPasswordValues = {
@@ -23,8 +25,10 @@ export const ForgotPasswordForm = ({ onSubmit }: ForgotPasswordFormProps) => {
   const { mutateAsync: sendResetEmail } = useForgotPasswordMutation();
   const {
     formState: { errors, isSubmitting },
+    getValues,
     handleSubmit,
     register,
+    setValue,
   } = useForm<ForgotPasswordValues>({
     defaultValues: {
       email: "",
@@ -44,19 +48,38 @@ export const ForgotPasswordForm = ({ onSubmit }: ForgotPasswordFormProps) => {
 
       setSuccessMessage("Password reset email sent. Check your inbox.");
     } catch (error) {
-      setFormError(error instanceof Error ? error.message : "Unable to send reset email.");
+      setFormError(
+        error instanceof Error ? error.message : "Unable to send reset email.",
+      );
     }
   });
 
+  const handleFormSubmit = (event: SubmitEvent<HTMLFormElement>) => {
+    syncAutofilledFields(event.currentTarget, { getValues, setValue }, [
+      "email",
+    ]);
+
+    return submitForm(event);
+  };
+
   return (
-    <form className="grid gap-5" onSubmit={submitForm}>
+    <form
+      className="grid gap-5"
+      onSubmit={handleFormSubmit}
+    >
       {formError ? (
-        <div className="rounded-box bg-error/10 px-4 py-3 text-sm text-error" role="alert">
+        <div
+          className="rounded-box bg-error/10 px-4 py-3 text-sm text-error"
+          role="alert"
+        >
           {formError}
         </div>
       ) : null}
       {successMessage ? (
-        <div className="rounded-box bg-success/10 px-4 py-3 text-sm text-success" role="status">
+        <div
+          className="rounded-box bg-success/10 px-4 py-3 text-sm text-success"
+          role="status"
+        >
           {successMessage}
         </div>
       ) : null}
@@ -79,11 +102,18 @@ export const ForgotPasswordForm = ({ onSubmit }: ForgotPasswordFormProps) => {
         })}
       />
 
-      <Button className="w-full" disabled={isSubmitting} type="submit">
+      <Button
+        className="w-full"
+        disabled={isSubmitting}
+        type="submit"
+      >
         {isSubmitting ? "Sending..." : "Send reset link"}
       </Button>
 
-      <Link className="text-center font-title text-sm font-bold text-nox-noir hover:text-primary" href="/sign-in">
+      <Link
+        className="text-center font-title text-sm font-bold text-nox-noir hover:text-primary"
+        href="/sign-in"
+      >
         Back to sign in
       </Link>
     </form>

@@ -2,6 +2,7 @@ import { withSerwist } from "@serwist/turbopack";
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  allowedDevOrigins: ["192.168.100.*"],
   images: {
     remotePatterns: [
       {

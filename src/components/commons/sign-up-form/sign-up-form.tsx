@@ -1,6 +1,7 @@
 "use client";
 
 import { useQueryClient } from "@tanstack/react-query";
+import type { SubmitEvent } from "react";
 import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 
@@ -10,6 +11,7 @@ import { Input } from "@/components/commons/input/input";
 import { LinkButton } from "@/components/commons/link-button/link-button";
 import { PromoCodeCallout } from "@/components/commons/promo-code-callout/promo-code-callout";
 import { trackEvent } from "@/lib/analytics/track";
+import { syncAutofilledFields } from "@/lib/forms/autofill";
 import { withPromoStatus } from "@/lib/promo/promo-status";
 import { queryKeys } from "@/lib/query/keys";
 import { useAuthStore } from "@/stores/auth-store";
@@ -30,6 +32,9 @@ type SignUpValues = SignUpFields & {
 export type SignUpFormProps = {
   onSubmit?: (values: SignUpValues) => Promise<void>;
 };
+
+/** The registered fields a password manager fills — see `syncAutofilledFields`. */
+const AUTOFILLED_FIELDS = ["displayName", "email", "password"] as const;
 
 export const SignUpForm = ({ onSubmit }: SignUpFormProps) => {
   const setUser = useAuthStore((state) => state.setUser);
@@ -56,8 +61,10 @@ export const SignUpForm = ({ onSubmit }: SignUpFormProps) => {
 
   const {
     formState: { errors, isSubmitting },
+    getValues,
     handleSubmit,
     register,
+    setValue,
   } = useForm<SignUpValues>({
     defaultValues: {
       displayName: "",
@@ -99,10 +106,20 @@ export const SignUpForm = ({ onSubmit }: SignUpFormProps) => {
     }
   });
 
+  const handleFormSubmit = (event: SubmitEvent<HTMLFormElement>) => {
+    syncAutofilledFields(
+      event.currentTarget,
+      { getValues, setValue },
+      AUTOFILLED_FIELDS,
+    );
+
+    return submitForm(event);
+  };
+
   return (
     <form
       className="grid gap-5"
-      onSubmit={submitForm}
+      onSubmit={handleFormSubmit}
     >
       {formError ? (
         <div
