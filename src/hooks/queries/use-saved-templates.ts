@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
+import { trackEvent } from "@/lib/analytics/track";
 import { queryKeys } from "@/lib/query/keys";
 import type { MarketplaceTemplate } from "@/types/template";
 
@@ -17,7 +18,9 @@ const fetchSavedTemplates = async (): Promise<HydratedSavedTemplate[]> => {
     throw new Error("Unable to load your saved templates.");
   }
 
-  const data = (await response.json()) as { savedTemplates: HydratedSavedTemplate[] };
+  const data = (await response.json()) as {
+    savedTemplates: HydratedSavedTemplate[];
+  };
   return data.savedTemplates;
 };
 
@@ -39,14 +42,19 @@ export const useSavedTemplatesQuery = () =>
 /** Error shape returned by the saved-templates API on a non-2xx response. */
 type SavedTemplatesApiError = { error: string };
 
-const postSaveTemplate = async (templateId: string): Promise<{ savedAt: number; templateId: string }> => {
+const postSaveTemplate = async (
+  templateId: string,
+): Promise<{ savedAt: number; templateId: string }> => {
   const response = await fetch("/api/saved-templates", {
     body: JSON.stringify({ templateId }),
     headers: { "Content-Type": "application/json" },
     method: "POST",
   });
 
-  const data = (await response.json()) as { savedAt: number; templateId: string } & Partial<SavedTemplatesApiError>;
+  const data = (await response.json()) as {
+    savedAt: number;
+    templateId: string;
+  } & Partial<SavedTemplatesApiError>;
 
   if (!response.ok) {
     throw new Error(data.error ?? "Unable to save this template.");
@@ -69,7 +77,8 @@ export const useSaveTemplateMutation = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (template: MarketplaceTemplate) => postSaveTemplate(template.id),
+    mutationFn: (template: MarketplaceTemplate) =>
+      postSaveTemplate(template.id),
     onMutate: async (template) => {
       const key = queryKeys.savedTemplates.all();
       const previous = queryClient.getQueryData<HydratedSavedTemplate[]>(key);
@@ -84,16 +93,31 @@ export const useSaveTemplateMutation = () => {
       return { previous };
     },
     onError: (_error, _template, context) => {
-      queryClient.setQueryData(queryKeys.savedTemplates.all(), context?.previous);
+      queryClient.setQueryData(
+        queryKeys.savedTemplates.all(),
+        context?.previous,
+      );
     },
     onSettled: () => {
-      void queryClient.invalidateQueries({ queryKey: queryKeys.savedTemplates.all() });
+      void queryClient.invalidateQueries({
+        queryKey: queryKeys.savedTemplates.all(),
+      });
+    },
+    onSuccess: (_data, template) => {
+      trackEvent("template_saved", {
+        document_type: template.documentType,
+        style_id: template.style.id,
+        template_id: template.id,
+        tier: template.tier,
+      });
     },
   });
 };
 
 const deleteSavedTemplate = async (templateId: string): Promise<void> => {
-  const response = await fetch(`/api/saved-templates/${templateId}`, { method: "DELETE" });
+  const response = await fetch(`/api/saved-templates/${templateId}`, {
+    method: "DELETE",
+  });
 
   if (!response.ok) {
     throw new Error("Unable to remove this template.");
@@ -113,19 +137,36 @@ export const useRemoveSavedTemplateMutation = () => {
     onMutate: async (templateId) => {
       const key = queryKeys.savedTemplates.all();
       const previous = queryClient.getQueryData<HydratedSavedTemplate[]>(key);
+      const removed = previous?.find((item) => item.templateId === templateId);
 
       queryClient.setQueryData<HydratedSavedTemplate[]>(
         key,
-        (current) => current?.filter((item) => item.templateId !== templateId) ?? [],
+        (current) =>
+          current?.filter((item) => item.templateId !== templateId) ?? [],
       );
 
-      return { previous };
+      return { previous, removed };
     },
     onError: (_error, _templateId, context) => {
-      queryClient.setQueryData(queryKeys.savedTemplates.all(), context?.previous);
+      queryClient.setQueryData(
+        queryKeys.savedTemplates.all(),
+        context?.previous,
+      );
     },
     onSettled: () => {
-      void queryClient.invalidateQueries({ queryKey: queryKeys.savedTemplates.all() });
+      void queryClient.invalidateQueries({
+        queryKey: queryKeys.savedTemplates.all(),
+      });
+    },
+    onSuccess: (_data, templateId, context) => {
+      const template = context?.removed?.template;
+
+      trackEvent("template_removed", {
+        document_type: template?.documentType ?? "unknown",
+        style_id: template?.style.id ?? "unknown",
+        template_id: templateId,
+        tier: template?.tier ?? "unknown",
+      });
     },
   });
 };

@@ -4,7 +4,8 @@ import { LegalPage } from "@/components/website/legal-page/legal-page";
 
 export const metadata: Metadata = {
   title: "Privacy Policy | Dokiments",
-  description: "How Dokiments collects, uses, stores, and protects personal information.",
+  description:
+    "How Dokiments collects, uses, stores, and protects personal information.",
 };
 
 const sections = [
@@ -17,7 +18,9 @@ const sections = [
   },
   {
     title: "How we use information",
-    paragraphs: ["We use information only for legitimate service and business purposes."],
+    paragraphs: [
+      "We use information only for legitimate service and business purposes.",
+    ],
     bullets: [
       "Provide authentication, document creation, storage, previews, and account features.",
       "Maintain service reliability, prevent abuse, and protect accounts.",
@@ -29,6 +32,7 @@ const sections = [
     title: "Storage and service providers",
     paragraphs: [
       "Dokiments uses browser storage for account sessions, consent preferences, and locally saved document data. Account and template information may also be processed through Firebase services used to operate authentication and cloud features.",
+      "If you accept optional cookies, we also use Google Analytics and Microsoft Clarity to understand how the service is used, and the Meta Pixel to measure the results of our advertising on Facebook and Instagram. The Meta Pixel reports a small number of actions — creating an account, creating a document, and exporting a document — and never receives your name, email address, or document content. Meta acts as an independent controller of the data it receives. You can withdraw this consent at any time through Cookie settings in the footer, and our Cookie Policy lists exactly what each provider is used for.",
       "We do not sell personal information. We may share information with service providers acting on our behalf, or where disclosure is required by law, security, or the protection of users and the service.",
     ],
   },
@@ -60,7 +64,7 @@ const PrivacyPage = () => (
     description="This policy explains what information Dokiments uses, why it is needed, and the choices available to you."
     sections={sections}
     title="Privacy Policy"
-    updatedAt="22 June 2026"
+    updatedAt="16 September 2026"
   />
 );
 

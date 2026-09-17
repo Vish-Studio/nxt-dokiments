@@ -17,6 +17,9 @@ type Story = StoryObj<typeof meta>;
 
 export const Default: Story = {
   play: async ({ canvas }) => {
+    const footerLogo = canvas.getByRole("link", { name: "Dokiments home" }).firstElementChild;
+
+    await expect(footerLogo).toHaveClass("footer-logo");
     await expect(canvas.getByRole("link", { name: "Privacy Policy" })).toHaveAttribute(
       "href",
       "/privacy",

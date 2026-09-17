@@ -2,31 +2,93 @@
 
 import { useQueryClient } from "@tanstack/react-query";
 import Link from "next/link";
-import { useState } from "react";
+import type { SubmitEvent } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useForm } from "react-hook-form";
 
 import { Button } from "@/components/commons/button/button";
+import { GoogleSignInButton } from "@/components/commons/google-sign-in-button/google-sign-in-button";
 import { Input } from "@/components/commons/input/input";
+import { PromoCodeCallout } from "@/components/commons/promo-code-callout/promo-code-callout";
+import { useAutofillSubmit } from "@/hooks/use-autofill-submit";
+import { trackEvent } from "@/lib/analytics/track";
+import { syncAutofilledFields } from "@/lib/forms/autofill";
+import { withPromoStatus } from "@/lib/promo/promo-status";
 import { queryKeys } from "@/lib/query/keys";
 import { useAuthStore } from "@/stores/auth-store";
+import { credentialFieldLimits } from "@/types/auth";
+import { MAX_PROMO_CODE } from "@/types/promo";
 
-type SignInValues = {
+type SignInFields = {
   email: string;
   password: string;
 };
 
+type SignInValues = SignInFields & {
+  /** Optional launch promo code; blank means the user simply doesn't have one. */
+  promoCode: string;
+};
+
 export type SignInFormProps = {
+  /**
+   * Informational message shown above the form, for arriving at sign-in for a
+   * reason other than clicking "Sign in" — currently a session that hit its
+   * 1-day cap. Defaults to whatever `?expired=1` in the URL implies; pass it
+   * explicitly to render a fixed message (stories, tests).
+   */
+  notice?: string;
   onSubmit?: (values: SignInValues) => Promise<void>;
 };
 
-export const SignInForm = ({ onSubmit }: SignInFormProps) => {
+/** Shown when `proxy.ts` or `useSessionTimeout` bounced the user here with `?expired=1`. */
+const EXPIRED_NOTICE =
+  "Your session expired after 24 hours. Please sign in again.";
+
+/**
+ * The registered fields a password manager fills. Drives both halves of the
+ * AutoFill handling: `syncAutofilledFields` reconciles them into form state, and
+ * `useAutofillSubmit` watches them so choosing a saved login signs the user in.
+ */
+const AUTOFILLED_FIELDS = ["email", "password"] as const;
+
+export const SignInForm = ({ notice, onSubmit }: SignInFormProps) => {
   const setUser = useAuthStore((state) => state.setUser);
   const queryClient = useQueryClient();
+  const formRef = useRef<HTMLFormElement>(null);
   const [formError, setFormError] = useState("");
+  const [next, setNext] = useState("/dashboard");
+  const [urlNotice, setUrlNotice] = useState("");
+  /**
+   * Held as plain state rather than a `react-hook-form` field. The field has no
+   * validation for that library to run, and `GoogleSignInButton` is a real anchor
+   * whose `href` must already carry the code when clicked — which needs a re-render
+   * per keystroke. `watch()` would do that too, but it makes React Compiler skip
+   * memoising this entire component (`react-hooks/incompatible-library`).
+   */
+  const [promoCode, setPromoCode] = useState("");
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      const params = new URLSearchParams(window.location.search);
+      setNext(params.get("next") || "/dashboard");
+      setUrlNotice(params.get("expired") ? EXPIRED_NOTICE : "");
+    }, 0);
+
+    return () => window.clearTimeout(timer);
+  }, []);
+
+  // Picking a saved login from the keyboard is a complete sign-in gesture on its
+  // own, so it submits without a second tap on the button.
+  useAutofillSubmit(formRef, AUTOFILLED_FIELDS);
+
+  const activeNotice = notice ?? urlNotice;
+
   const {
     formState: { errors, isSubmitting },
+    getValues,
     handleSubmit,
     register,
+    setValue,
   } = useForm<SignInValues>({
     defaultValues: {
       email: "",
@@ -34,8 +96,9 @@ export const SignInForm = ({ onSubmit }: SignInFormProps) => {
     },
   });
 
-  const submitForm = handleSubmit(async (values) => {
+  const submitForm = handleSubmit(async (fields) => {
     setFormError("");
+    const values: SignInValues = { ...fields, promoCode };
 
     try {
       if (onSubmit) {
@@ -52,8 +115,15 @@ export const SignInForm = ({ onSubmit }: SignInFormProps) => {
       if (!res.ok) throw new Error(data.error ?? "Unable to sign in.");
       queryClient.setQueryData(queryKeys.session(), data.user);
       setUser(data.user);
+      trackEvent("login", { method: "email" });
       const params = new URLSearchParams(window.location.search);
-      window.location.assign(params.get("next") || "/dashboard");
+      // The promo outcome rides along in the URL rather than being shown here:
+      // this navigates away immediately, and the Google flow — a server-side
+      // redirect with no client-side moment to render anything — has to report it
+      // this way regardless. `PromoStatusBanner` picks it up on arrival.
+      window.location.assign(
+        withPromoStatus(params.get("next") || "/dashboard", data.promo),
+      );
     } catch (error) {
       setFormError(
         error instanceof Error ? error.message : "Unable to sign in.",
@@ -61,11 +131,31 @@ export const SignInForm = ({ onSubmit }: SignInFormProps) => {
     }
   });
 
+  const handleFormSubmit = (event: SubmitEvent<HTMLFormElement>) => {
+    syncAutofilledFields(
+      event.currentTarget,
+      { getValues, setValue },
+      AUTOFILLED_FIELDS,
+    );
+
+    return submitForm(event);
+  };
+
   return (
     <form
+      ref={formRef}
       className="grid gap-5"
-      onSubmit={submitForm}
+      onSubmit={handleFormSubmit}
     >
+      {activeNotice ? (
+        <div
+          className="rounded-box bg-nox-noir/5 px-4 py-3 text-sm text-nox-noir/80"
+          role="status"
+        >
+          {activeNotice}
+        </div>
+      ) : null}
+
       {formError ? (
         <div
           className="rounded-box bg-error/10 px-4 py-3 text-sm text-error"
@@ -79,6 +169,7 @@ export const SignInForm = ({ onSubmit }: SignInFormProps) => {
         autoComplete="email"
         error={errors.email?.message}
         label="Email"
+        maxLength={credentialFieldLimits.email}
         placeholder="you@company.com"
         type="email"
         {...register("email", {
@@ -89,8 +180,17 @@ export const SignInForm = ({ onSubmit }: SignInFormProps) => {
           },
         })}
       />
+      {/* Deliberately no `maxLength` on the password, unlike the sign-up form:
+          `SignInSchema` doesn't bound it either. An account may hold a password longer
+          than the ceiling we now apply when one is *set*, and truncating it as its
+          owner typed would leave them staring at "the password is incorrect" with no
+          way to tell why. */}
       <Input
         autoComplete="current-password"
+        // Labels the iOS keyboard's return key "Go" instead of "return", so the
+        // optional promo field sitting below doesn't make submitting look like it
+        // needs the button. Pressing it submits the form as Enter always did.
+        enterKeyHint="go"
         error={errors.password?.message}
         label="Password"
         placeholder="Enter your password"
@@ -98,6 +198,21 @@ export const SignInForm = ({ onSubmit }: SignInFormProps) => {
         {...register("password", {
           required: "Password is required.",
         })}
+      />
+
+      <PromoCodeCallout />
+      <Input
+        autoCapitalize="characters"
+        autoComplete="off"
+        label="Promo code (optional)"
+        // Matches the ceiling `SignInSchema` enforces, so an oversized paste can't
+        // fail the *body* and take the whole sign-in with it.
+        maxLength={MAX_PROMO_CODE}
+        name="promoCode"
+        onChange={(event) => setPromoCode(event.target.value)}
+        placeholder="Enter your promo code"
+        spellCheck={false}
+        value={promoCode}
       />
 
       <div className="flex items-center justify-between gap-4 text-sm">
@@ -117,6 +232,18 @@ export const SignInForm = ({ onSubmit }: SignInFormProps) => {
       >
         {isSubmitting ? "Signing in..." : "Sign in"}
       </Button>
+
+      <div className="flex items-center gap-3 text-xs font-title uppercase text-nox-noir/40">
+        <span className="h-px flex-1 bg-steel-mist" />
+        or
+        <span className="h-px flex-1 bg-steel-mist" />
+      </div>
+
+      <GoogleSignInButton
+        className="w-full"
+        next={next}
+        promoCode={promoCode}
+      />
     </form>
   );
 };

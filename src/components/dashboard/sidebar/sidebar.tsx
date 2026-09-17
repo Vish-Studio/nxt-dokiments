@@ -1,28 +1,14 @@
-import {
-  CreditCardIcon,
-  FileText,
-  GearSixIcon,
-  House,
-  Layout,
-  SidebarIcon,
-  Storefront,
-  X,
-} from "@phosphor-icons/react";
-import type { Icon } from "@phosphor-icons/react";
+import { XIcon } from "@phosphor-icons/react";
 import type { FunctionComponent } from "react";
 
 import { ButtonIcon } from "@/components/commons/button-icon/button-icon";
 import SidebarAccount from "@/components/dashboard/sidebar-account/sidebar-account";
+import SidebarFeedback from "@/components/dashboard/sidebar-feedback/sidebar-feedback";
 import SidebarItem from "@/components/dashboard/sidebar-item/sidebar-item";
+import { sidebarItems, settingsNavigationItem } from "@/lib/dashboard-navigation";
 import { cn } from "@/lib/utils";
 import Image from "next/image";
 import Link from "next/link";
-
-interface SidebarNavigationItem {
-  href: string;
-  icon: Icon;
-  label: string;
-}
 
 interface Props {
   activeItem?: string;
@@ -32,17 +18,6 @@ interface Props {
   onToggleCollapse?: () => void;
 }
 
-const sidebarItems: SidebarNavigationItem[] = [
-  { label: "Dashboard", href: "/dashboard", icon: House },
-  { label: "Documents", href: "/documents", icon: FileText },
-  { label: "My Templates", href: "/my-templates", icon: Layout },
-  {
-    label: "Marketplace",
-    href: "/marketplace",
-    icon: Storefront,
-  },
-  { label: "Subscription", href: "/subscription", icon: CreditCardIcon },
-];
 
 const Sidebar: FunctionComponent<Props> = ({
   activeItem = "Dashboard",
@@ -54,7 +29,7 @@ const Sidebar: FunctionComponent<Props> = ({
   return (
     <aside
       className={cn(
-        "sidebar fixed inset-y-0 left-0 z-[70] flex w-70 shrink-0 flex-col bg-app-chrome px-5 pt-6 lg:pt-9 pb-5 text-app-chrome-content transition-all duration-300 lg:static lg:z-auto lg:translate-x-0",
+        "sidebar fixed inset-y-0 left-0 z-70 flex w-70 shrink-0 flex-col bg-app-chrome px-5 pt-6 lg:pt-9 pb-5 text-app-chrome-content transition-all duration-300 lg:static lg:z-auto lg:translate-x-0",
         isMobileOpen ? "translate-x-0" : "-translate-x-full",
         isCollapsed ? "lg:w-24" : "lg:w-60",
       )}
@@ -70,15 +45,17 @@ const Sidebar: FunctionComponent<Props> = ({
             aria-label={isCollapsed ? "Expand sidebar" : "Dokiments home"}
             className={cn(
               "size-8 shrink-0 items-center justify-center transition-transform hover:scale-105",
-              isCollapsed ? "hidden lg:flex" : 'hidden',)}
+              isCollapsed ? "hidden lg:flex" : "hidden",
+            )}
             onClick={isCollapsed ? onToggleCollapse : undefined}
             type="button"
           >
             <Image
-              src={'/images/svg/icon-white.svg'}
+              src={"/images/svg/icon-white.svg"}
               width={100}
               height={100}
-              alt="Dokiments icon" />
+              alt="Dokiments icon"
+            />
           </button>
 
           <Link
@@ -87,37 +64,27 @@ const Sidebar: FunctionComponent<Props> = ({
               isCollapsed ? "flex lg:hidden" : "flex",
             )}
             aria-label="Dokiments home"
-            href="/">
+            href="/"
+          >
             <Image
-              className={cn(
-                "mb-1",
-
-              )}
-              src={'/images/svg/logo-white.svg'}
+              className={cn("mb-1")}
+              src={"/images/svg/logo-white.svg"}
               width={120}
               height={120}
-              alt="Dokiments logo" />
+              alt="Dokiments logo"
+            />
           </Link>
         </div>
-        {isCollapsed && !isMobileOpen ? null : (
+        {isMobileOpen ? (
           <ButtonIcon
-            aria-label={isMobileOpen ? "Close navigation" : "Collapse sidebar"}
+            aria-label="Close navigation"
             className="border-none text-app-nav hover:bg-app-nav-hover hover:text-app-chrome-content"
-            icon={
-              <>
-                <span className="lg:hidden">
-                  <X aria-hidden size={16} weight="bold" />
-                </span>
-                <span className="hidden lg:inline-flex">
-                  <SidebarIcon aria-hidden size={16} weight="bold" />
-                </span>
-              </>
-            }
-            onClick={isMobileOpen ? onCloseMobile : onToggleCollapse}
+            icon={<XIcon aria-hidden size={16} weight="bold" />}
+            onClick={onCloseMobile}
             size="sm"
             variant="ghost"
           />
-        )}
+        ) : null}
       </div>
 
       <nav className="mt-10 grid gap-3">
@@ -133,12 +100,14 @@ const Sidebar: FunctionComponent<Props> = ({
       </nav>
 
       <div className="mt-auto grid gap-3 pt-8">
+        <SidebarFeedback
+          isCollapsed={isCollapsed}
+          onCloseMobile={onCloseMobile}
+        />
         <SidebarItem
-          href="/settings"
-          icon={GearSixIcon}
+          {...settingsNavigationItem}
           isActive={activeItem === "Settings"}
           isCollapsed={isCollapsed}
-          label="Settings"
           onCloseMobile={onCloseMobile}
         />
         <SidebarAccount isCollapsed={isCollapsed} />

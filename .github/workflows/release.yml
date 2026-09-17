@@ -1,0 +1,111 @@
+# Tags and publishes a GitHub Release every time `prod` moves.
+#
+# The version itself is chosen by a human, on `dev`, before the promotion:
+#
+#   npm version <major|minor|patch> --no-git-tag-version
+#
+# committed as a `chore: release vX.Y.Z` commit and promoted through
+# `dev -> staging -> prod` like any other change. This workflow only records what
+# shipped; it never decides or edits the number.
+#
+# That split is deliberate. Bumping `package.json` from CI would mean pushing a
+# commit to `prod`, which has two costs: `dev` and `staging` never receive it, so
+# every release leaves a commit of permanent drift behind, and moving the `prod`
+# branch makes Vercel build and deploy production a second time for the same
+# release. Pushing a tag does neither — a tag is not a branch, so the Git
+# integration has nothing new to deploy.
+name: Release
+
+on:
+  push:
+    branches:
+      - prod
+
+# Two overlapping runs would both try to create the same tag, and the loser fails
+# only after the winner has already published a release. Queue instead of
+# cancelling: a superseded run still represents a production deploy worth tagging.
+concurrency:
+  group: release-prod
+  cancel-in-progress: false
+
+permissions:
+  # Needed to push the tag and publish the release. Everything else stays read-only.
+  contents: write
+
+jobs:
+  release:
+    name: Tag and publish
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+        with:
+          # The duplicate-version check below reads existing tags, and a shallow
+          # clone carries none of them.
+          fetch-depth: 0
+
+      - name: Read version from package.json
+        id: version
+        run: |
+          set -euo pipefail
+          version="$(node -p "require('./package.json').version")"
+
+          if [ -z "$version" ] || [ "$version" = "undefined" ]; then
+            echo "::error::package.json has no version field to release."
+            exit 1
+          fi
+
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          echo "tag=v$version" >> "$GITHUB_OUTPUT"
+
+      - name: Fail if this version was already released
+        env:
+          TAG: ${{ steps.version.outputs.tag }}
+        run: |
+          set -euo pipefail
+
+          if git rev-parse -q --verify "refs/tags/$TAG" >/dev/null; then
+            echo "::error::$TAG already exists, so this production deploy would ship untagged. Bump the version on dev with 'npm version <major|minor|patch> --no-git-tag-version', then promote again."
+            exit 1
+          fi
+
+      - name: Create annotated tag
+        env:
+          TAG: ${{ steps.version.outputs.tag }}
+        run: |
+          set -euo pipefail
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          # Annotated rather than lightweight, so the tag carries its own date and
+          # author and `git describe` treats it as a real release marker.
+          git tag -a "$TAG" -m "Release $TAG"
+          git push origin "refs/tags/$TAG"
+
+      - name: Publish GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ steps.version.outputs.tag }}
+        run: |
+          set -euo pipefail
+
+          # --generate-notes builds the changelog from the commits since the
+          # previous release, which is why the tag is pushed first.
+          gh release create "$TAG" \
+            --verify-tag \
+            --generate-notes \
+            --title "$TAG"
+
+      - name: Summarise
+        env:
+          TAG: ${{ steps.version.outputs.tag }}
+        run: |
+          set -euo pipefail
+
+          {
+            echo "### Released $TAG"
+            echo
+            echo "- Commit: \`$GITHUB_SHA\`"
+            echo "- Release: $GITHUB_SERVER_URL/$GITHUB_REPOSITORY/releases/tag/$TAG"
+          } >> "$GITHUB_STEP_SUMMARY"

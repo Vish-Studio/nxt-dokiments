@@ -1,33 +1,27 @@
 "use client";
 
-import {
-  ChartLineUpIcon,
-  CreditCardIcon,
-  FilePlusIcon,
-  FolderSimpleStarIcon,
-  GearSixIcon,
-  HouseIcon,
-  ListIcon,
-  StorefrontIcon,
-} from "@phosphor-icons/react";
-import type { Icon } from "@phosphor-icons/react";
-import { useState } from "react";
-import type { UIEvent } from "react";
+import { ListIcon } from "@phosphor-icons/react";
 import type { ReactNode } from "react";
+import { useEffect, useState } from "react";
 
 import { AuthGuard } from "@/components/commons/auth-guard/auth-guard";
 import { ButtonIcon } from "@/components/commons/button-icon/button-icon";
 import { ContentContainer } from "@/components/dashboard/content-container/content-container";
 import { MobilePageHeader } from "@/components/dashboard/mobile-page-header/mobile-page-header";
+import type {
+  PageBannerTone,
+  PageBannerVariant,
+} from "@/components/dashboard/page-banner/page-banner";
 import { PageBanner } from "@/components/dashboard/page-banner/page-banner";
-import type { PageBannerTone, PageBannerVariant } from "@/components/dashboard/page-banner/page-banner";
-import type { PageHeaderVisualVariant } from "@/components/dashboard/page-header-visual/page-header-visual";
+import { PromoStatusBanner } from "@/components/dashboard/promo-status-banner/promo-status-banner";
+import { PublicLaunchBanner } from "@/components/dashboard/public-launch-banner/public-launch-banner";
 import Sidebar from "@/components/dashboard/sidebar/sidebar";
 import { useUiStore } from "@/stores/ui-store";
 
 export type AppShellProps = {
   activeItem?: string;
   children?: ReactNode;
+  headerContent?: ReactNode;
   description?: string;
   bannerTone?: PageBannerTone;
   bannerVariant?: PageBannerVariant;
@@ -36,19 +30,22 @@ export type AppShellProps = {
 };
 
 type PageTheme = {
-  Icon: Icon;
   tone: PageBannerTone;
   variant?: PageBannerVariant;
-  visual?: PageHeaderVisualVariant;
 };
 
 const pageThemes: Record<string, PageTheme> = {
-  Dashboard: { Icon: ChartLineUpIcon, tone: "golden" },
-  Documents: { Icon: FilePlusIcon, tone: "purple", visual: "documents" },
-  "My Templates": { Icon: FolderSimpleStarIcon, tone: "pink", visual: "templates" },
-  Marketplace: { Icon: StorefrontIcon, tone: "teal", visual: "marketplace" },
-  Subscription: { Icon: CreditCardIcon, tone: "purple", visual: "subscription" },
-  Settings: { Icon: GearSixIcon, tone: "golden", visual: "settings" },
+  Dashboard: { tone: "golden" },
+  "My Documents": { tone: "purple" },
+  "My Templates": {
+    tone: "pink",
+  },
+  "My Clients": { tone: "teal" },
+  Marketplace: { tone: "teal" },
+  Subscription: {
+    tone: "purple",
+  },
+  Settings: { tone: "golden" },
 };
 
 export const AppShell = ({
@@ -56,24 +53,47 @@ export const AppShell = ({
   bannerTone,
   bannerVariant,
   children,
-  description,
+  headerContent,
   showBanner = true,
   title = "Dashboard",
 }: AppShellProps) => {
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
-  const [isContentScrolled, setIsContentScrolled] = useState(false);
   const isSidebarCollapsed = useUiStore((state) => state.isSidebarCollapsed);
   const toggleSidebar = useUiStore((state) => state.toggleSidebar);
 
-  const theme = pageThemes[activeItem] ?? { Icon: HouseIcon, tone: "golden" as PageBannerTone };
+  const theme = pageThemes[activeItem] ?? {
+    tone: "golden" as PageBannerTone,
+  };
   const resolvedTone = bannerTone ?? theme.tone;
   const resolvedVariant = bannerVariant ?? theme.variant ?? "solid";
-  const mobileDescription = showBanner && !isContentScrolled ? description : undefined;
+  const isDashboardHome = activeItem === "Dashboard";
 
-  const handleContentScroll = (event: UIEvent<HTMLDivElement>) => {
-    const nextScrolled = event.currentTarget.scrollTop > 24;
-    setIsContentScrolled((previous) => (previous === nextScrolled ? previous : nextScrolled));
-  };
+  useEffect(() => {
+    const themeColor = document.querySelector<HTMLMetaElement>(
+      'meta[name="theme-color"]',
+    );
+    const previousThemeColor = themeColor?.content;
+    const previousHtmlBackground = document.documentElement.style.backgroundColor;
+    const previousBodyBackground = document.body.style.backgroundColor;
+    const colors = getComputedStyle(document.documentElement);
+    const nextColor = colors
+      .getPropertyValue(isMobileSidebarOpen ? "--color-nox-noir" : "--color-app-panel")
+      .trim();
+
+    if (themeColor) {
+      themeColor.content = nextColor;
+    }
+    document.documentElement.style.backgroundColor = nextColor;
+    document.body.style.backgroundColor = nextColor;
+
+    return () => {
+      if (themeColor && previousThemeColor) {
+        themeColor.content = previousThemeColor;
+      }
+      document.documentElement.style.backgroundColor = previousHtmlBackground;
+      document.body.style.backgroundColor = previousBodyBackground;
+    };
+  }, [isMobileSidebarOpen]);
 
   return (
     <AuthGuard>
@@ -90,7 +110,7 @@ export const AppShell = ({
           {isMobileSidebarOpen ? (
             <button
               aria-label="Close navigation"
-              className="fixed inset-0 z-[60] bg-app-chrome/55 lg:hidden"
+              className="fixed inset-0 z-60 bg-app-chrome/55 lg:hidden"
               onClick={() => setIsMobileSidebarOpen(false)}
               type="button"
             />
@@ -98,36 +118,42 @@ export const AppShell = ({
 
           <section className="flex h-dvh min-w-0 flex-1 flex-col overflow-hidden bg-app-chrome">
             <div className="flex min-h-0 flex-1 flex-col overflow-hidden bg-app-panel lg:mr-4 lg:mb-4 lg:mt-4 lg:rounded-4xl">
-              <ContentContainer onScroll={handleContentScroll}>
+              <ContentContainer>
                 <MobilePageHeader
-                  description={mobileDescription}
-                  icon={showBanner ? theme.Icon : undefined}
-                  isCompact={isContentScrolled}
                   onOpenNavigation={() => setIsMobileSidebarOpen(true)}
+                  showSettingsLink
                   title={title}
-                  tone={resolvedTone}
+                  tone={isDashboardHome ? "noir" : resolvedTone}
                   variant={resolvedVariant}
-                  visualVariant={showBanner ? theme.visual : undefined}
                 />
                 {showBanner ? (
                   <PageBanner
                     className="hidden lg:flex"
-                    description={description}
-                    icon={theme.Icon}
+                    footer={headerContent}
+                    isSidebarCollapsed={isSidebarCollapsed}
+                    onToggleSidebar={toggleSidebar}
+                    showSettingsLink
                     title={title}
                     tone={resolvedTone}
                     variant={resolvedVariant}
-                    visualVariant={theme.visual}
                   />
                 ) : (
                   <ButtonIcon
                     aria-label="Open navigation"
                     className="hidden border border-steel-mist text-nox-noir hover:bg-base-200"
-                    icon={<ListIcon aria-hidden size={18} weight="bold" />}
+                    icon={
+                      <ListIcon
+                        aria-hidden
+                        size={18}
+                        weight="bold"
+                      />
+                    }
                     onClick={() => setIsMobileSidebarOpen(true)}
                     variant="ghost"
                   />
                 )}
+                <PromoStatusBanner />
+                <PublicLaunchBanner />
                 {children}
               </ContentContainer>
             </div>
@@ -137,3 +163,5 @@ export const AppShell = ({
     </AuthGuard>
   );
 };
+
+export default AppShell;

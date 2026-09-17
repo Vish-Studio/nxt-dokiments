@@ -1,26 +1,41 @@
-import { forwardRef } from "react";
 import type { ButtonHTMLAttributes, ReactNode } from "react";
+import { forwardRef } from "react";
 
+import type { AnalyticsTrigger } from "@/lib/analytics/events";
+import { toAnalyticsAttributes } from "@/lib/analytics/events";
 import { cn } from "@/lib/utils";
 
-type ButtonVariant = "primary" | "accent" | "secondary" | "neutral" | "ghost" | "outline" | "danger";
+type ButtonVariant =
+  | "primary"
+  | "accent"
+  | "secondary"
+  | "neutral"
+  | "ghost"
+  | "outline"
+  | "danger";
 type ButtonSize = "sm" | "md" | "lg";
+type ButtonIconMotion = "left" | "right" | "up-right";
 
 export type ButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {
+  analytics?: AnalyticsTrigger;
   variant?: ButtonVariant;
   size?: ButtonSize;
   icon?: ReactNode;
+  iconMotion?: ButtonIconMotion;
   iconPosition?: "left" | "right";
 };
 
 const variantClasses: Record<ButtonVariant, string> = {
-  primary: "btn-primary hover:bg-steel-mist border-steel-mist hover:text-nox-noir",
-  accent: "border border-transparent bg-golden-harvest text-nox-noir hover:brightness-95",
+  primary:
+    "btn-primary hover:bg-steel-mist border-steel-mist hover:text-nox-noir",
+  accent:
+    "border border-transparent bg-golden-harvest text-nox-noir hover:brightness-95",
   secondary:
     "border border-transparent bg-base-200 text-nox-noir hover:bg-base-300",
   neutral: "btn-neutral",
   ghost: "btn-ghost",
-  outline: "border border-steel-mist bg-transparent text-nox-noir hover:bg-base-200",
+  outline:
+    "border border-steel-mist bg-transparent text-nox-noir hover:bg-base-200",
   danger: "btn-error",
 };
 
@@ -33,29 +48,39 @@ const sizeClasses: Record<ButtonSize, string> = {
 export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
   (
     {
+      analytics,
       children,
       className,
       variant = "primary",
       size = "md",
       icon,
+      iconMotion,
       iconPosition = "right",
       type = "button",
       ...props
     },
     ref,
   ) => {
-    const renderedIcon = icon ?? null;
+    const renderedIcon = icon ? (
+      <span
+        className={cn(iconMotion ? "button-arrow-icon" : null)}
+        data-direction={iconMotion}
+      >
+        {icon}
+      </span>
+    ) : null;
 
     return (
       <button
         ref={ref}
         type={type}
         className={cn(
-          "btn font-title font-semibold transition-all duration-200",
+          "btn group rounded-field font-title font-semibold transition-all duration-200",
           variantClasses[variant],
           sizeClasses[size],
           className,
         )}
+        {...toAnalyticsAttributes(analytics)}
         {...props}
       >
         {iconPosition === "left" ? renderedIcon : null}

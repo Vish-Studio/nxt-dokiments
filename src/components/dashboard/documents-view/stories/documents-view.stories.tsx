@@ -5,6 +5,7 @@ import { expect, userEvent, within } from "storybook/test";
 import { getTemplateById } from "@/lib/market-place";
 import { makeStoryQueryClient } from "@/lib/query/story-query-client";
 import { useAuthStore } from "@/stores/auth-store";
+import type { Client } from "@/types/client";
 import type { TemplateSnapshot, UserDocument } from "@/types/template";
 
 import { DocumentsView } from "../documents-view";
@@ -21,15 +22,39 @@ const toSnapshot = (templateId: string): TemplateSnapshot => {
   };
 };
 
+/** The client the editor's `ClientPicker` offers, for prefill assertions. */
+const northlineClient: Client = {
+  address: "24 Market Street, Ebene",
+  brn: "C09876543",
+  companyName: "Northline Studio",
+  createdAt: 1_755_000_000_000,
+  email: "accounts@northline.com",
+  id: "client_northline_01",
+  name: "Maya Chen",
+  nationalId: "",
+  phone: "+230 5 987 6543",
+  updatedAt: 1_755_000_000_000,
+};
+
 /**
- * Mocks `GET /api/saved-templates` and the full `/api/documents` CRUD surface
- * (`GET`/`POST`/`PATCH`/`DELETE`) so `DocumentsView`'s queries and mutations all
- * resolve against in-memory fixture data, dispatching on request URL/method.
+ * Mocks `GET /api/saved-templates`, `GET /api/clients` and the full
+ * `/api/documents` CRUD surface (`GET`/`POST`/`PATCH`/`DELETE`) so
+ * `DocumentsView`'s queries and mutations all resolve against in-memory fixture
+ * data, dispatching on request URL/method.
  */
-const mockDocumentsApi = (initialDocuments: UserDocument[]) => {
+const mockDocumentsApi = (
+  initialDocuments: UserDocument[],
+  clients: Client[] = [northlineClient],
+) => {
   let documents = initialDocuments;
 
   window.fetch = (async (url: string, init?: RequestInit) => {
+    // Must precede the /api/documents handling below: the editor renders
+    // `ClientPicker`, so this request fires as soon as the editor mounts.
+    if (url.includes("/api/clients")) {
+      return new Response(JSON.stringify({ clients }), { status: 200 });
+    }
+
     if (url.includes("/api/saved-templates")) {
       return new Response(
         JSON.stringify({
@@ -104,8 +129,14 @@ const seedUser = () => {
   useAuthStore.setState({
     status: "authenticated",
     user: {
+      // `address`/`companyName` are what `senderPrefillValues` reads to seed a new
+      // document's From block. They don't affect the edit-an-existing-document
+      // stories below, which load saved values rather than prefilling.
+      address: "12 Studio Lane, Port Louis",
+      companyName: "Dokiments Studio",
       displayName: "Anthony Alverizko",
       email: "anthony@dokiments.com",
+      provider: "password",
       role: "silver",
       uid: "story-uid",
     },
@@ -143,7 +174,7 @@ export const Empty: Story = {
     const canvas = within(canvasElement);
     await expect(await canvas.findByText(/no documents yet/i)).toBeVisible();
     await expect(
-      canvas.getAllByRole("button", { name: /new document/i }).length,
+      (await canvas.findAllByRole("button", { name: /new document/i })).length,
     ).toBeGreaterThan(0);
   },
 };
@@ -355,5 +386,135 @@ export const MobileEditorPreview: Story = {
     await expect(
       canvas.getByRole("heading", { name: "Document preview" }),
     ).toBeVisible();
+  },
+};
+
+/**
+ * Walks the full new-document path — New document → template preview → Use
+ * document — then prefills the recipient block from a saved client.
+ *
+ * Uses `classic-invoice` because invoices are one of the four billing types that
+ * carry `recipientContactFields`, so this also covers `toEmail`/`toPhone`/`toBrn`
+ * being filled. On a contract those keys don't exist and are silently skipped.
+ */
+export const PrefillFromClient: Story = {
+  decorators: [
+    (Story) => {
+      seedUser();
+      mockDocumentsApi([]);
+      return <Story />;
+    },
+  ],
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+
+    await userEvent.click(
+      (await canvas.findAllByRole("button", { name: /new document/i }))[0],
+    );
+    await userEvent.click(
+      await canvas.findByRole("button", {
+        name: "Preview Standard Invoice, saved",
+      }),
+    );
+    await userEvent.click(
+      await canvas.findByRole("button", { name: "Use document" }),
+    );
+
+    // Sender block seeded from the signed-in user's profile, no interaction needed.
+    await expect(
+      await canvas.findByDisplayValue("Dokiments Studio"),
+    ).toBeVisible();
+    await expect(
+      canvas.getByDisplayValue("12 Studio Lane, Port Louis"),
+    ).toBeVisible();
+
+    await userEvent.click(
+      canvas.getByRole("button", { name: "Prefill from client (optional)" }),
+    );
+    await userEvent.click(
+      canvas.getByRole("menuitemradio", { name: "Northline Studio" }),
+    );
+
+    // companyName wins over the contact name for `toName`. Asserted via the "To"
+    // label rather than `findByDisplayValue`, so this remains specific to the
+    // recipient field rather than the picker trigger.
+    await expect(await canvas.findByLabelText("To")).toHaveValue(
+      "Northline Studio",
+    );
+    await expect(
+      canvas.getByDisplayValue("24 Market Street, Ebene"),
+    ).toBeVisible();
+    await expect(
+      canvas.getByDisplayValue("accounts@northline.com"),
+    ).toBeVisible();
+    await expect(canvas.getByDisplayValue("+230 5 987 6543")).toBeVisible();
+    await expect(canvas.getByDisplayValue("C09876543")).toBeVisible();
+  },
+};
+
+/**
+ * Landing on `/my-documents?new=1` — the dashboard FAB's target — opens the
+ * template picker directly, skipping the document list.
+ *
+ * `new=1` is added to the existing URL rather than replacing it: this runs inside
+ * Storybook's `/iframe.html?id=…`, and dropping that `id` would unmount the story.
+ */
+export const NewDocumentDeepLink: Story = {
+  decorators: [
+    (Story) => {
+      seedUser();
+      mockDocumentsApi([]);
+      // Runs during render, so it lands before the component's mount effect reads it.
+      const url = new URL(window.location.href);
+      url.searchParams.set("new", "1");
+      window.history.replaceState(null, "", `${url.pathname}${url.search}`);
+      return <Story />;
+    },
+  ],
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+
+    await expect(
+      await canvas.findByRole("heading", { name: "Choose a template" }),
+    ).toBeVisible();
+    // The picker replaced the list rather than stacking on top of it.
+    await expect(
+      canvas.queryByText(/no documents yet/i),
+    ).not.toBeInTheDocument();
+    // The param is consumed, so a refresh returns to the plain list.
+    await expect(window.location.search).not.toContain("new=1");
+  },
+};
+
+/** With no saved clients the picker offers a link to My Clients instead of an empty dropdown. */
+export const PrefillWithNoClients: Story = {
+  decorators: [
+    (Story) => {
+      seedUser();
+      mockDocumentsApi([], []);
+      return <Story />;
+    },
+  ],
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+
+    await userEvent.click(
+      (await canvas.findAllByRole("button", { name: /new document/i }))[0],
+    );
+    await userEvent.click(
+      await canvas.findByRole("button", {
+        name: "Preview Standard Invoice, saved",
+      }),
+    );
+    await userEvent.click(
+      await canvas.findByRole("button", { name: "Use document" }),
+    );
+
+    await expect(
+      await canvas.findByRole("link", { name: "My clients" }),
+    ).toBeVisible();
+    await expect(
+      canvas.queryByLabelText("Prefill from client (optional)"),
+    ).not.toBeInTheDocument();
   },
 };

@@ -35,3 +35,7 @@ export const WithFooter: Story = {
     footer: <Button size="sm">Save</Button>,
   },
 };
+
+export const Teal: Story = {
+  args: { tone: "teal" },
+};

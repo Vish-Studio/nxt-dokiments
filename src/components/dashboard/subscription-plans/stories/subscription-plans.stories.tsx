@@ -19,6 +19,7 @@ const meta = {
         user: {
           displayName: "Anthony Alverizko",
           email: "anthony@dokiments.com",
+          provider: "password",
           role: "silver",
           uid: "story-uid",
         },
@@ -40,6 +41,8 @@ export const Default: Story = {
     const canvas = within(canvasElement);
     await expect(canvas.getByRole("heading", { name: /plans/i })).toBeVisible();
     // Current role (silver) shows a disabled "Current plan" button.
-    await expect(canvas.getByRole("button", { name: /current plan/i })).toBeDisabled();
+    await expect(
+      canvas.getByRole("button", { name: /current plan/i }),
+    ).toBeDisabled();
   },
 };

@@ -22,6 +22,8 @@ export const Default: Story = {
         canvas.getByRole("heading", { name: /business documents without the blank page/i }),
       ).toBeVisible();
     });
-    await expect(canvas.getAllByRole("link", { name: /browse marketplace/i })[0]).toBeVisible();
+    await expect(
+      canvas.getByRole("link", { name: /create a free account/i }),
+    ).toBeVisible();
   },
 };

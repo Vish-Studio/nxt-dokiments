@@ -11,9 +11,9 @@ const meta = {
   parameters: { layout: "centered", nextjs: { appDirectory: true } },
   args: {
     description: "Open saved templates and create polished client-ready files.",
-    href: "/documents",
+    href: "/my-documents",
     icon: FileTextIcon,
-    label: "Documents",
+    label: "My Documents",
     metric: "3 active files",
     tone: "blue",
   },
@@ -32,7 +32,9 @@ export const Default: Story = {
   ],
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    await expect(canvas.getByRole("link", { name: /documents/i })).toBeVisible();
+    await expect(
+      canvas.getByRole("link", { name: /my documents/i }),
+    ).toBeVisible();
     await expect(canvas.getByText("3 active files")).toBeVisible();
   },
 };

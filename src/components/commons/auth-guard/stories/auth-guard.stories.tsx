@@ -29,6 +29,7 @@ export const Authenticated: Story = {
       user: {
         displayName: "Story User",
         email: "story@dokiments.test",
+        provider: "password",
         role: "free",
         uid: "story-user",
       },

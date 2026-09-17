@@ -8,9 +8,10 @@ import {
 } from "@phosphor-icons/react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 
 import { Button } from "@/components/commons/button/button";
+import CollectionToolbar from "@/components/commons/collection-toolbar/collection-toolbar";
 import { ConfirmDialog } from "@/components/commons/confirm-dialog/confirm-dialog";
 import { FloatingActionButton } from "@/components/commons/floating-action-button/floating-action-button";
 import { Input } from "@/components/commons/input/input";
@@ -21,8 +22,15 @@ import { TemplateCard } from "@/components/commons/template-card/template-card";
 import { TemplateDocument } from "@/components/commons/template-document/template-document";
 import { TemplateForm } from "@/components/commons/template-form/template-form";
 import { TemplatePreviewDialog } from "@/components/commons/template-preview-dialog/template-preview-dialog";
+import { ClientPicker } from "@/components/dashboard/client-picker/client-picker";
+import { DashboardListSkeleton } from "@/components/dashboard/dashboard-list-skeleton/dashboard-list-skeleton";
 import { DocumentExportDialog } from "@/components/dashboard/document-export-dialog/document-export-dialog";
-import { DocumentList } from "@/components/dashboard/document-list/document-list";
+import {
+  DocumentList,
+  documentListColumns,
+  documentSkeletonRow,
+} from "@/components/dashboard/document-list/document-list";
+import { ResponsiveHeaderControls } from "@/components/dashboard/responsive-header-controls/responsive-header-controls";
 import {
   useCreateDocumentMutation,
   useDeleteDocumentMutation,
@@ -30,6 +38,15 @@ import {
   useUpdateDocumentMutation,
 } from "@/hooks/queries/use-documents";
 import { useSavedTemplatesQuery } from "@/hooks/queries/use-saved-templates";
+import { useScrollContentToTopOnMobile } from "@/hooks/use-scroll-content-to-top-on-mobile";
+import { trackEvent } from "@/lib/analytics/track";
+import { documentBlueprints } from "@/lib/market-place/documents";
+import {
+  clientPrefillValues,
+  senderPrefillValues,
+  sharedContentPrefillValue,
+} from "@/lib/market-place/prefill";
+import { useAuthStore } from "@/stores/auth-store";
 import type { MarketplaceTemplate, UserDocument } from "@/types/template";
 import { snapshotToMarketplaceTemplate } from "@/types/template";
 
@@ -49,6 +66,8 @@ const templateOf = (document: UserDocument): MarketplaceTemplate | null =>
 
 export const DocumentsView = () => {
   const router = useRouter();
+  const user = useAuthStore((state) => state.user);
+  const authStatus = useAuthStore((state) => state.status);
   const { data: saved = [], isLoading: isSavedLoading } =
     useSavedTemplatesQuery();
   const { data: documents = EMPTY_DOCUMENTS, isLoading: isDocumentsLoading } =
@@ -64,6 +83,10 @@ export const DocumentsView = () => {
   const [activeDocumentId, setActiveDocumentId] = useState<string | null>(null);
   const [draftName, setDraftName] = useState("");
   const [draftValues, setDraftValues] = useState<Record<string, string>>({});
+  // Set by the `?shared=` deep link from `/share-target`; consumed once by
+  // `startNewDocument` and cleared so a later template pick in the same
+  // session doesn't reapply stale shared text.
+  const [sharedContent, setSharedContent] = useState("");
   const [exportDocument, setExportDocument] = useState<UserDocument | null>(
     null,
   );
@@ -76,18 +99,122 @@ export const DocumentsView = () => {
     null,
   );
   const [isEditorPreviewOpen, setIsEditorPreviewOpen] = useState(false);
+  const [search, setSearch] = useState("");
+  const [documentType, setDocumentType] = useState("all");
+  const [sort, setSort] = useState("newest");
+  const scrollContentToTop = useScrollContentToTopOnMobile();
 
   const ownedTemplates = useMemo(
     () => saved.map((item) => item.template),
     [saved],
   );
 
-  const sortedDocuments = useMemo(
+  const documentTypeOptions = useMemo(
     () =>
-      [...documents].sort(
-        (first, second) => second.createdAt - first.createdAt,
-      ),
+      [
+        ...new Set(
+          documents
+            .map((document) => templateOf(document)?.documentType)
+            .filter((value): value is keyof typeof documentBlueprints =>
+              Boolean(value),
+            ),
+        ),
+      ]
+        .map((value) => ({ value, label: documentBlueprints[value].name }))
+        .sort((first, second) => first.label.localeCompare(second.label)),
     [documents],
+  );
+
+  const visibleDocuments = useMemo(() => {
+    const query = search.trim().toLocaleLowerCase();
+    const matches = documents.filter((document) => {
+      const template = templateOf(document);
+      return (
+        (documentType === "all" || template?.documentType === documentType) &&
+        `${document.name} ${template?.name ?? ""} ${template?.style.name ?? ""}`
+          .toLocaleLowerCase()
+          .includes(query)
+      );
+    });
+
+    return matches.sort((first, second) => {
+      if (sort === "oldest") return first.createdAt - second.createdAt;
+      if (sort === "name") return first.name.localeCompare(second.name);
+      return second.createdAt - first.createdAt;
+    });
+  }, [documentType, documents, search, sort]);
+
+  const resetControls = () => {
+    setSearch("");
+    setDocumentType("all");
+    setSort("newest");
+  };
+
+  const toolbar = (
+    <CollectionToolbar
+      ariaLabel="Search, sort, and filter documents"
+      appearance="compact"
+      canReset={Boolean(search || documentType !== "all" || sort !== "newest")}
+      endAction={
+        <Button
+          icon={
+            <PlusIcon
+              aria-hidden
+              size={16}
+              weight="bold"
+            />
+          }
+          iconPosition="left"
+          onClick={() => setMode("picker")}
+          size="sm"
+          variant="accent"
+        >
+          New document
+        </Button>
+      }
+      filters={[
+        {
+          id: "type",
+          label: "Document type",
+          value: documentType,
+          defaultValue: "all",
+          options: [
+            { label: "All document types", value: "all" },
+            ...documentTypeOptions,
+          ],
+          onChange: setDocumentType,
+        },
+      ]}
+      onReset={resetControls}
+      onCollectionChange={scrollContentToTop}
+      onSearch={setSearch}
+      onSort={setSort}
+      search={search}
+      searchLabel="Search documents"
+      searchPlaceholder="Search documents…"
+      sort={sort}
+      sortOptions={[
+        { label: "Recently created", value: "newest" },
+        { label: "Oldest created", value: "oldest" },
+        { label: "Name: A–Z", value: "name" },
+      ]}
+    />
+  );
+  const headerSearch = (
+    <CollectionToolbar
+      appearance="header-dark"
+      ariaLabel="Search documents"
+      layout="header-search"
+      onReset={resetControls}
+      onCollectionChange={scrollContentToTop}
+      onSearch={setSearch}
+      onSort={setSort}
+      search={search}
+      searchLabel="Search documents"
+      searchPlaceholder="Search documents…"
+      sort={sort}
+      sortOptions={[]}
+    />
   );
 
   const goToList = () => {
@@ -99,22 +226,84 @@ export const DocumentsView = () => {
     setIsEditorPreviewOpen(false);
   };
 
-  const startNewDocument = (template: MarketplaceTemplate) => {
-    setActiveTemplate(template);
-    setActiveDocumentId(null);
-    setDraftName(template.name);
-    setDraftValues({});
-    setIsDeleteConfirmationOpen(false);
-    setIsSaveConfirmationOpen(false);
-    setIsEditorPreviewOpen(false);
-    setMode("editor");
-  };
+  const startNewDocument = useCallback(
+    (template: MarketplaceTemplate) => {
+      setActiveTemplate(template);
+      setActiveDocumentId(null);
+      setDraftName(template.name);
+      // Seeds the sender block from the user's own profile — identical on every
+      // document they create, so there's nothing to pick. Only on a new document:
+      // `openDocument` must keep the saved values untouched.
+      setDraftValues({
+        ...senderPrefillValues(user, template.fields),
+        ...sharedContentPrefillValue(sharedContent, template.fields),
+      });
+      setSharedContent("");
+      setIsDeleteConfirmationOpen(false);
+      setIsSaveConfirmationOpen(false);
+      setIsEditorPreviewOpen(false);
+      setMode("editor");
+    },
+    [user, sharedContent],
+  );
+
+  // Deep link from the dashboard's floating action button, or from the
+  // `/share-target` redirect (which adds `&shared=`): open the template
+  // picker straight away. Kept separate from the `?template=` effect below,
+  // which bails out when the user owns no templates — here the picker's own
+  // "No templates yet" state is exactly what we want them to land on.
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+
+    if (!params.get("new")) {
+      return;
+    }
+
+    const shared = params.get("shared");
+
+    // Strip the params — unconditionally, before the `?template=` check below — so
+    // a refresh or a back-navigation returns to the plain list instead of
+    // reopening the picker from a stale URL.
+    const nextUrl = new URL(window.location.href);
+    nextUrl.searchParams.delete("new");
+    nextUrl.searchParams.delete("shared");
+    window.history.replaceState(
+      null,
+      "",
+      `${nextUrl.pathname}${nextUrl.search}`,
+    );
+
+    // `?template=` wins: it lands on the editor, a step past the picker.
+    if (params.get("template")) {
+      return;
+    }
+
+    // Deferred rather than set synchronously, matching the `?template=` effect
+    // below: a setState in an effect body triggers a cascading render.
+    window.setTimeout(() => {
+      if (shared) {
+        setSharedContent(shared);
+      }
+      setMode("picker");
+    }, 0);
+  }, []);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const templateId = params.get("template");
 
-    if (!templateId || ownedTemplates.length === 0) {
+    // Wait for the session before starting the document. `useAuthStore` begins as
+    // `{ status: "loading", user: null }` and is populated by `AuthProvider` in its
+    // own effect, so on this deep-linked path (`/my-documents?template=…` from the
+    // marketplace) that fetch races the saved-templates fetch below. Starting early
+    // would hand `startNewDocument` a null user and silently skip sender prefill.
+    // Safe to re-run: this effect strips `?template` from the URL before starting,
+    // so the pass that happens once `status` resolves finds nothing to do.
+    if (
+      authStatus === "loading" ||
+      !templateId ||
+      ownedTemplates.length === 0
+    ) {
       return;
     }
 
@@ -132,7 +321,7 @@ export const DocumentsView = () => {
       `${nextUrl.pathname}${nextUrl.search}`,
     );
     window.setTimeout(() => startNewDocument(template), 0);
-  }, [ownedTemplates]);
+  }, [authStatus, ownedTemplates, startNewDocument]);
 
   const openDocument = (document: UserDocument) => {
     setActiveTemplate(templateOf(document));
@@ -181,7 +370,7 @@ export const DocumentsView = () => {
   const handleSavedContinue = () => {
     setIsSaveConfirmationOpen(false);
     goToList();
-    router.replace("/documents");
+    router.replace("/my-documents");
   };
 
   const handleDeleteConfirm = () => {
@@ -192,7 +381,7 @@ export const DocumentsView = () => {
     handleRemove(activeDocumentId);
     setIsDeleteConfirmationOpen(false);
     goToList();
-    router.replace("/documents");
+    router.replace("/my-documents");
   };
 
   const handleUsePreviewTemplate = () => {
@@ -208,6 +397,10 @@ export const DocumentsView = () => {
 
   const handlePrintDocument = (document: UserDocument) => {
     setExportDocument(document);
+    trackEvent("pdf_export_open", {
+      document_id: document.id,
+      template_id: document.templateId,
+    });
   };
 
   // --- Editor ---------------------------------------------------------------
@@ -225,6 +418,7 @@ export const DocumentsView = () => {
             />
           }
           iconPosition="left"
+          iconMotion="left"
           onClick={goToList}
           size="sm"
           variant="outline"
@@ -246,6 +440,8 @@ export const DocumentsView = () => {
             </div>
 
             <div className="mt-6 grid gap-5">
+              <TemplateForm
+                documentNameField={
               <Input
                 label="Document name"
                 onChange={(event) => {
@@ -254,7 +450,21 @@ export const DocumentsView = () => {
                 placeholder="e.g. Acme service contract"
                 value={draftName}
               />
-              <TemplateForm
+                }
+                recipientPicker={
+              <ClientPicker
+                fields={editorTemplate.fields}
+                onSelect={(client) => {
+                  setDraftValues((previous) => ({
+                    ...previous,
+                    ...clientPrefillValues(client, editorTemplate.fields),
+                  }));
+                  trackEvent("document_client_prefilled", {
+                    document_type: editorTemplate.documentType,
+                  });
+                }}
+              />
+                }
                 fields={editorTemplate.fields}
                 onChange={(key, value) => {
                   setDraftValues((previous) => ({ ...previous, [key]: value }));
@@ -296,6 +506,7 @@ export const DocumentsView = () => {
 
           <div className="hidden lg:sticky lg:top-2 lg:block">
             <TemplateDocument
+              density="compact"
               template={editorTemplate}
               values={draftValues}
             />
@@ -308,9 +519,11 @@ export const DocumentsView = () => {
           onClose={() => setIsEditorPreviewOpen(false)}
           open={isEditorPreviewOpen}
           title="Document preview"
+          tone="purple"
         >
           <div className="min-h-full bg-app-panel p-3 sm:p-5">
             <TemplateDocument
+              density="compact"
               template={editorTemplate}
               values={draftValues}
             />
@@ -361,12 +574,14 @@ export const DocumentsView = () => {
     return (
       <div className="w-full">
         <button
-          className="inline-flex items-center gap-2 font-title text-sm font-semibold text-nox-noir/60 transition-colors hover:text-nox-noir"
+          className="group inline-flex items-center gap-2 font-title text-sm font-semibold text-nox-noir/60 transition-colors hover:text-nox-noir"
           onClick={goToList}
           type="button"
         >
           <ArrowLeftIcon
             aria-hidden
+            className="arrow-cta-icon"
+            data-direction="left"
             size={16}
             weight="bold"
           />
@@ -423,6 +638,7 @@ export const DocumentsView = () => {
           onUse={handleUsePreviewTemplate}
           saved
           template={previewTemplate}
+          tone="purple"
         />
       </div>
     );
@@ -430,30 +646,22 @@ export const DocumentsView = () => {
 
   // --- Document list --------------------------------------------------------
   return (
-    <div className="w-full">
+    <div className="flex min-h-0 w-full flex-1 flex-col gap-2 pt-6">
+      <ResponsiveHeaderControls
+        desktopContent={toolbar}
+        desktopHeader={headerSearch}
+      >
+        {toolbar}
+      </ResponsiveHeaderControls>
       {isDocumentsLoading ? (
-        <div className="overflow-hidden rounded-box border border-steel-mist bg-base-100">
-          <LoadingStatus message="Loading your documents…" />
-          <div
-            aria-hidden
-            className="divide-y divide-steel-mist/70 p-4"
-          >
-            {Array.from({ length: 4 }, (_, index) => (
-              <div
-                className="flex items-center gap-3 py-3 first:pt-0 last:pb-0"
-                key={index}
-              >
-                <div className="skeleton size-10 shrink-0 rounded-field" />
-                <div className="flex-1 space-y-2">
-                  <div className="skeleton h-4 w-1/3 rounded-field" />
-                  <div className="skeleton h-3 w-1/4 rounded-field" />
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
+        <DashboardListSkeleton
+          columns={documentListColumns}
+          message="Loading your documents…"
+          ordered
+          row={documentSkeletonRow}
+        />
       ) : documents.length === 0 ? (
-        <div className="grid place-items-center rounded-box border border-dashed border-steel-mist bg-base-100 p-12 text-center">
+        <div className="grid min-h-72 w-full place-items-center rounded-box border border-dashed border-steel-mist bg-base-100 p-12 text-center">
           <p className="font-title text-base font-bold text-nox-noir">
             No documents yet
           </p>
@@ -463,7 +671,7 @@ export const DocumentsView = () => {
         </div>
       ) : (
         <DocumentList
-          documents={sortedDocuments}
+          documents={visibleDocuments}
           onEdit={openDocument}
           onPreview={setPreviewDocument}
           onPrint={handlePrintDocument}
@@ -489,6 +697,7 @@ export const DocumentsView = () => {
           }
         }}
         template={previewDocument ? templateOf(previewDocument) : null}
+        tone="purple"
         values={previewDocument?.values}
       />
 
@@ -506,6 +715,7 @@ export const DocumentsView = () => {
 
       {previewDocument || exportDocument ? null : (
         <FloatingActionButton
+          className="lg:hidden"
           icon={
             <PlusIcon
               aria-hidden

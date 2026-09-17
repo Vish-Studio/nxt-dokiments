@@ -4,12 +4,12 @@ import {
   BookmarkSimpleIcon,
   PrinterIcon,
   SpinnerGapIcon,
-  TrashIcon,
 } from "@phosphor-icons/react";
 import Link from "next/link";
 
 import { Badge } from "@/components/commons/badge/badge";
 import { Button } from "@/components/commons/button/button";
+import type { SidePanelTone } from "@/components/commons/side-panel/side-panel";
 import { SidePanel } from "@/components/commons/side-panel/side-panel";
 import { TemplateDocument } from "@/components/commons/template-document/template-document";
 import { getSampleValues, tierLabels } from "@/lib/market-place";
@@ -28,6 +28,7 @@ export type TemplatePreviewDialogProps = {
   saveLoading?: boolean;
   saved?: boolean;
   template: MarketplaceTemplate | null;
+  tone?: SidePanelTone;
   useHref?: string;
   values?: Record<string, string>;
 };
@@ -45,7 +46,8 @@ export const TemplatePreviewDialog = ({
   saveLoading = false,
   saved = false,
   template,
-  useHref = "/documents",
+  tone,
+  useHref = "/my-documents",
   values,
 }: TemplatePreviewDialogProps) => {
   const resolvedValues =
@@ -54,11 +56,6 @@ export const TemplatePreviewDialog = ({
   return (
     <SidePanel
       ariaLabel={template ? `${template.name} preview` : "Template preview"}
-      description={
-        template
-          ? `${template.style.name} style · ${tierLabels[template.tier]}`
-          : undefined
-      }
       footer={
         template ? (
           mode === "document" ? (
@@ -80,44 +77,34 @@ export const TemplatePreviewDialog = ({
               </Button>
             </div>
           ) : mode === "library" ? (
-            <div
-              className={
-                onDelete
-                  ? "grid w-full grid-cols-[auto_1fr_1fr] gap-2"
-                  : "grid w-full grid-cols-2 gap-2"
-              }
-            >
-              {onDelete ? (
+            <div className="grid w-full grid-cols-2 gap-2">
+              {onPrint ? (
                 <Button
-                  aria-label="Remove template"
+                  className="w-full"
                   icon={
-                    <TrashIcon
+                    <PrinterIcon
                       aria-hidden
                       size={17}
                       weight="bold"
                     />
                   }
-                  onClick={onDelete}
+                  iconPosition="left"
+                  onClick={onPrint}
                   size="sm"
                   variant="outline"
-                />
-              ) : null}
-              <Button
-                className="w-full"
-                icon={
-                  <PrinterIcon
-                    aria-hidden
-                    size={17}
-                    weight="bold"
-                  />
-                }
-                iconPosition="left"
-                onClick={onPrint}
-                size="sm"
-                variant="outline"
-              >
-                Print template
-              </Button>
+                >
+                  Print template
+                </Button>
+              ) : (
+                <Button
+                  className="w-full"
+                  onClick={onClose}
+                  size="sm"
+                  variant="outline"
+                >
+                  Close
+                </Button>
+              )}
               {onUse ? (
                 <Button
                   className="w-full"
@@ -191,12 +178,13 @@ export const TemplatePreviewDialog = ({
           )
         ) : undefined
       }
+      tone={tone}
       onClose={onClose}
       open={Boolean(template)}
       title={documentName ?? template?.name}
     >
       {template && resolvedValues ? (
-        <div className="bg-base-200 p-3">
+        <div className="template-preview-document bg-base-200 p-3">
           <section className="mb-4 rounded-box border border-steel-mist bg-base-100 p-4">
             <div className="flex flex-wrap items-center gap-2">
               <Badge variant={template.tier}>{tierLabels[template.tier]}</Badge>
@@ -209,6 +197,8 @@ export const TemplatePreviewDialog = ({
           </section>
 
           <TemplateDocument
+            className="template-preview-paper"
+            density="compact"
             template={template}
             values={resolvedValues}
           />

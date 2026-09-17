@@ -31,6 +31,39 @@ const fromToFields: TemplateField[] = [
   },
 ];
 
+/**
+ * Recipient contact details, spread only into the billing document types
+ * (`invoice`, `quotation`, `receipt`, `purchase-order`) where a payer's contact
+ * and registration details genuinely belong on the finished document.
+ *
+ * Deliberately not part of `fromToFields`: adding these to every document type
+ * would make a letter of intent or a statement of work ask for a phone number
+ * and a business registration number it has no use for.
+ *
+ * These are the fields `clientPrefillValues` fills from a saved client — see
+ * `src/lib/market-place/prefill.ts`.
+ */
+const recipientContactFields: TemplateField[] = [
+  {
+    key: "toEmail",
+    label: "Recipient email",
+    placeholder: "client@company.com",
+    type: "text",
+  },
+  {
+    key: "toPhone",
+    label: "Recipient phone",
+    placeholder: "e.g. +230 5 123 4567",
+    type: "text",
+  },
+  {
+    key: "toBrn",
+    label: "Recipient BRN",
+    placeholder: "e.g. C12345678",
+    type: "text",
+  },
+];
+
 const signatureFields: TemplateField[] = [
   {
     key: "senderSignature",
@@ -258,6 +291,7 @@ export const invoice: DocumentMeta = {
       type: "text",
     },
     ...fromToFields,
+    ...recipientContactFields,
     { key: "date", label: "Issue date", type: "date" },
     { key: "dueDate", label: "Due date", type: "date" },
     {
@@ -292,6 +326,7 @@ export const quotation: DocumentMeta = {
       type: "text",
     },
     ...fromToFields,
+    ...recipientContactFields,
     { key: "date", label: "Date", type: "date" },
     {
       key: "items",
@@ -326,6 +361,7 @@ export const receipt: DocumentMeta = {
       type: "text",
     },
     ...fromToFields,
+    ...recipientContactFields,
     { key: "paymentDate", label: "Payment date", type: "date" },
     {
       key: "paymentMethod",
@@ -652,6 +688,7 @@ export const purchaseOrder: DocumentMeta = {
       type: "text",
     },
     ...fromToFields,
+    ...recipientContactFields,
     { key: "date", label: "Date", type: "date" },
     { key: "deliveryDate", label: "Delivery date", type: "date" },
     {

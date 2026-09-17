@@ -25,6 +25,11 @@ export const queryKeys = {
     all: () => ["saved-templates"] as const,
   },
 
+  clients: {
+    /** The signed-in user's client book. There is only ever one list — no filters. */
+    all: () => ["clients"] as const,
+  },
+
   documents: {
     /** Prefix covering every documents query, list or detail. */
     all: () => ["documents"] as const,
@@ -33,5 +38,10 @@ export const queryKeys = {
       ["documents", "list", templateId ?? null] as const,
     /** A single document by ID. */
     detail: (id: string) => ["documents", "detail", id] as const,
+  },
+
+  promoRedemptions: {
+    /** The promo codes the signed-in user has redeemed. There is only ever one list — no filters. */
+    all: () => ["promo-redemptions"] as const,
   },
 };
