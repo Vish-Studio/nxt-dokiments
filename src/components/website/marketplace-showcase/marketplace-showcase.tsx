@@ -1,12 +1,10 @@
 "use client";
 
-import {
-  ArrowRight,
-} from "@phosphor-icons/react/dist/ssr";
 import type { CSSProperties } from "react";
 import { useState } from "react";
 
 import { Carousel } from "@/components/commons/carousel/carousel";
+import { LinkButton } from "@/components/commons/link-button/link-button";
 import { TemplateCard } from "@/components/commons/template-card/template-card";
 import { TemplatePreviewDialog } from "@/components/commons/template-preview-dialog/template-preview-dialog";
 import { getTemplateById } from "@/lib/market-place";
@@ -72,17 +70,20 @@ export const MarketplaceShowcase = () => {
           </div>
 
           <div className="website-reveal flex justify-start lg:justify-end">
-            <a
-              className="inline-flex items-center justify-center gap-2 rounded-box bg-nox-noir px-5 py-3 font-title text-sm font-bold text-golden-harvest transition hover:brightness-110"
+            <LinkButton
               href="/marketplace"
+              variant="primary"
             >
               Browse all templates
-              <ArrowRight aria-hidden size={17} weight="bold" />
-            </a>
+            </LinkButton>
           </div>
         </div>
 
-        <Carousel ariaLabel="Featured marketplace templates" className="mt-14">
+        <Carousel
+          ariaLabel="Featured marketplace templates"
+          className="mt-14"
+          viewportClassName="xl:py-20"
+        >
           {showcaseItems.map((item, index) => (
             <div
               className={cn(

@@ -19,6 +19,7 @@ const meta = {
         user: {
           displayName: "Anthony Alverizko",
           email: "anthony@dokiments.com",
+          provider: "password",
           role: "free",
           uid: "story-uid",
         },
@@ -43,6 +44,8 @@ export const Default: Story = {
       "true",
     );
     await userEvent.click(canvas.getByRole("tab", { name: /password/i }));
-    await expect(canvas.getByRole("heading", { name: /password/i })).toBeVisible();
+    await expect(
+      canvas.getByRole("heading", { name: /password/i }),
+    ).toBeVisible();
   },
 };

@@ -56,7 +56,7 @@ export const LibraryActions: Story = {
   args: {
     mode: "library",
     onPrint: () => {},
-    useHref: "/documents?template=modern-quotation",
+    useHref: "/my-documents?template=modern-quotation",
   },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);

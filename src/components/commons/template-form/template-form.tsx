@@ -1,16 +1,46 @@
+import { CurrencyDollarIcon, FileTextIcon, IdentificationCardIcon, ListBulletsIcon, SignatureIcon, UserIcon } from "@phosphor-icons/react";
+import type { Icon } from "@phosphor-icons/react";
 import { Input } from "@/components/commons/input/input";
+import { LineItemsEditor } from "@/components/commons/line-items-editor/line-items-editor";
 import type { TemplateField } from "@/types/template";
+import { getFormSections } from "@/lib/market-place/form-sections";
+import type { ReactNode } from "react";
+
+const sectionIcons: Record<string, Icon> = {
+  details: FileTextIcon,
+  from: UserIcon,
+  to: IdentificationCardIcon,
+  content: ListBulletsIcon,
+  payment: CurrencyDollarIcon,
+  signatures: SignatureIcon,
+};
 
 export type TemplateFormProps = {
   fields: TemplateField[];
   onChange: (key: string, value: string) => void;
   values: Record<string, string>;
+  documentNameField?: ReactNode;
+  recipientPicker?: ReactNode;
 };
 
-export const TemplateForm = ({ fields, onChange, values }: TemplateFormProps) => {
+export const TemplateForm = ({ fields, onChange, values, documentNameField, recipientPicker }: TemplateFormProps) => {
   return (
-    <div className="grid gap-5">
-      {fields.map((field) => {
+    <div className="template-form grid min-w-0 gap-8">
+      {getFormSections(fields).filter((section) => section.fields.length || (section.id === "details" && documentNameField)).map((section) => {
+        const SectionIcon = sectionIcons[section.id] ?? FileTextIcon;
+        return (
+        <fieldset className="min-w-0 border-0 border-t border-steel-mist/60 pt-6 first:border-t-0 first:pt-0" key={section.id}>
+          <legend className="float-left mb-5 flex w-full items-center gap-2 font-title text-base font-bold text-nox-noir">
+            <SectionIcon aria-hidden className="size-5 shrink-0" />
+            {section.title}
+          </legend>
+          <div className="clear-both grid min-w-0 gap-4">
+            {section.id === "details" ? documentNameField : null}
+            {section.id === "to" ? recipientPicker : null}
+      {section.fields.map((field) => {
+        if (field.key === "items" && fields.some((entry) => ["invoiceNumber", "quoteNumber"].includes(entry.key))) {
+          return <LineItemsEditor key={field.key} value={values.items ?? ""} onChange={(value) => onChange("items", value)} />;
+        }
         if (field.type === "textarea") {
           return (
             <label className="form-control w-full" key={field.key}>
@@ -40,6 +70,12 @@ export const TemplateForm = ({ fields, onChange, values }: TemplateFormProps) =>
           />
         );
       })}
+          </div>
+        </fieldset>
+        );
+      })}
     </div>
   );
 };
+
+export default TemplateForm;

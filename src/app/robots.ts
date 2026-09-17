@@ -10,7 +10,7 @@ export default function robots(): MetadataRoute.Robots {
       disallow: [
         "/api/",
         "/dashboard",
-        "/documents",
+        "/my-documents",
         "/my-templates",
         "/settings",
       ],

@@ -4,6 +4,7 @@ import type { ReactNode } from "react";
 import { useEffect } from "react";
 
 import { useSessionQuery } from "@/hooks/queries/use-session";
+import { useSessionTimeout } from "@/hooks/use-session-timeout";
 import { useAuthStore } from "@/stores/auth-store";
 
 export type AuthProviderProps = {
@@ -17,6 +18,9 @@ export type AuthProviderProps = {
  * mirrors its result into `useAuthStore`, so no tokens are ever exposed to the
  * browser — the store only ever holds the public `AuthUser` object.
  *
+ * Also the single mount point for `useSessionTimeout`, which signs the user out
+ * when the session reaches its 1-day cap.
+ *
  * This mirroring is a deliberate transitional step: `useAuthStore` still exists
  * because most components read session state from it directly rather than
  * calling `useSessionQuery` themselves. As those call sites migrate, this sync
@@ -25,6 +29,8 @@ export type AuthProviderProps = {
 export const AuthProvider = ({ children }: AuthProviderProps) => {
   const { data: user, isLoading } = useSessionQuery();
   const setUser = useAuthStore((state) => state.setUser);
+
+  useSessionTimeout();
 
   useEffect(() => {
     if (!isLoading) {

@@ -54,9 +54,25 @@ export const tierLabels: Record<TemplateTier, string> = {
   silver: "Silver",
 };
 
+/**
+ * Temporary public-launch switch: set NEXT_PUBLIC_DISABLE_TIER_LOCKS=true to lift
+ * tier locks for every user — any signed-in user may select/preview any tier
+ * of template. The saved-template count limit (getSavedTemplateLimit below)
+ * is unaffected by this flag and keeps applying normally.
+ *
+ * canUseTier checks this, so every enforcement point (client and server) is
+ * covered without touching call sites.
+ *
+ * This is inlined into the JS bundle at build time (NEXT_PUBLIC_ prefix), so
+ * unsetting it to restore normal tier behavior requires a rebuild + redeploy
+ * — it will not take effect just by changing the env var at runtime.
+ */
+export const tierLocksDisabled =
+  process.env.NEXT_PUBLIC_DISABLE_TIER_LOCKS === "true";
+
 /** Whether a user's role unlocks a given subscription tier. */
 export const canUseTier = (role: UserRole | undefined, tier: TemplateTier) =>
-  roleRanks[role ?? "free"] >= tierRanks[tier];
+  tierLocksDisabled || roleRanks[role ?? "free"] >= tierRanks[tier];
 
 /** Free accounts may keep at most this many saved templates. */
 export const FREE_SAVED_TEMPLATE_LIMIT = 2;

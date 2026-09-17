@@ -4,7 +4,8 @@ import { LegalPage } from "@/components/website/legal-page/legal-page";
 
 export const metadata: Metadata = {
   title: "Cookie Policy | Dokiments",
-  description: "How Dokiments uses cookies and browser storage, and how to manage your choices.",
+  description:
+    "How Dokiments uses cookies and browser storage, and how to manage your choices.",
 };
 
 const sections = [
@@ -29,7 +30,12 @@ const sections = [
   {
     title: "Optional cookies",
     paragraphs: [
-      "Dokiments does not currently load advertising or optional analytics cookies on the public website. If optional services are introduced, they should remain disabled until you accept them, and this policy will be updated with their purpose and duration.",
+      "Optional storage is disabled by default. It is only used after you Accept all in the consent banner; choosing Reject non-essential keeps every item below switched off, and the scripts that set them are never downloaded.",
+    ],
+    bullets: [
+      "Google Analytics and Microsoft Clarity help us understand how the service is used, which pages are visited, and where people get stuck.",
+      "The Meta Pixel measures the results of our advertising on Facebook and Instagram, so we can see which campaigns lead to sign-ups. It sets a _fbp cookie in your browser and may read an fbclid value from links you arrive through, and it reports a small number of actions to Meta: creating an account, creating a document, and exporting a document.",
+      "The Meta Pixel does not receive your name, email address, or any content from the documents you create.",
     ],
   },
   {
@@ -52,7 +58,7 @@ const CookiesPage = () => (
     description="This policy explains the storage Dokiments uses to operate the service and remember your privacy choices."
     sections={sections}
     title="Cookie Policy"
-    updatedAt="22 June 2026"
+    updatedAt="16 September 2026"
   />
 );
 

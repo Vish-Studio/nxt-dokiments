@@ -1,33 +1,70 @@
 "use client";
 
 import { useQueryClient } from "@tanstack/react-query";
-import { useState } from "react";
+import type { SubmitEvent } from "react";
+import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 
 import { Button } from "@/components/commons/button/button";
+import { GoogleSignInButton } from "@/components/commons/google-sign-in-button/google-sign-in-button";
 import { Input } from "@/components/commons/input/input";
 import { LinkButton } from "@/components/commons/link-button/link-button";
+import { PromoCodeCallout } from "@/components/commons/promo-code-callout/promo-code-callout";
+import { trackEvent } from "@/lib/analytics/track";
+import { syncAutofilledFields } from "@/lib/forms/autofill";
+import { withPromoStatus } from "@/lib/promo/promo-status";
 import { queryKeys } from "@/lib/query/keys";
 import { useAuthStore } from "@/stores/auth-store";
+import { credentialFieldLimits, profileFieldLimits } from "@/types/auth";
+import { MAX_PROMO_CODE } from "@/types/promo";
 
-type SignUpValues = {
+type SignUpFields = {
   displayName: string;
   email: string;
   password: string;
+};
+
+type SignUpValues = SignUpFields & {
+  /** Optional launch promo code; blank means the user simply doesn't have one. */
+  promoCode: string;
 };
 
 export type SignUpFormProps = {
   onSubmit?: (values: SignUpValues) => Promise<void>;
 };
 
+/** The registered fields a password manager fills — see `syncAutofilledFields`. */
+const AUTOFILLED_FIELDS = ["displayName", "email", "password"] as const;
+
 export const SignUpForm = ({ onSubmit }: SignUpFormProps) => {
   const setUser = useAuthStore((state) => state.setUser);
   const queryClient = useQueryClient();
   const [formError, setFormError] = useState("");
+  const [next, setNext] = useState("/dashboard");
+  /**
+   * Held as plain state rather than a `react-hook-form` field. The field has no
+   * validation for that library to run, and `GoogleSignInButton` is a real anchor
+   * whose `href` must already carry the code when clicked — which needs a re-render
+   * per keystroke. `watch()` would do that too, but it makes React Compiler skip
+   * memoising this entire component (`react-hooks/incompatible-library`).
+   */
+  const [promoCode, setPromoCode] = useState("");
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      const params = new URLSearchParams(window.location.search);
+      setNext(params.get("next") || "/dashboard");
+    }, 0);
+
+    return () => window.clearTimeout(timer);
+  }, []);
+
   const {
     formState: { errors, isSubmitting },
+    getValues,
     handleSubmit,
     register,
+    setValue,
   } = useForm<SignUpValues>({
     defaultValues: {
       displayName: "",
@@ -36,8 +73,9 @@ export const SignUpForm = ({ onSubmit }: SignUpFormProps) => {
     },
   });
 
-  const submitForm = handleSubmit(async (values) => {
+  const submitForm = handleSubmit(async (fields) => {
     setFormError("");
+    const values: SignUpValues = { ...fields, promoCode };
 
     try {
       if (onSubmit) {
@@ -54,8 +92,13 @@ export const SignUpForm = ({ onSubmit }: SignUpFormProps) => {
       if (!res.ok) throw new Error(data.error ?? "Unable to create account.");
       queryClient.setQueryData(queryKeys.session(), data.user);
       setUser(data.user);
+      trackEvent("sign_up", { method: "email" });
       const params = new URLSearchParams(window.location.search);
-      window.location.assign(params.get("next") || "/dashboard");
+      // Reported via the URL rather than inline: this navigates away immediately.
+      // `PromoStatusBanner` renders the outcome on the destination page.
+      window.location.assign(
+        withPromoStatus(params.get("next") || "/dashboard", data.promo),
+      );
     } catch (error) {
       setFormError(
         error instanceof Error ? error.message : "Unable to create account.",
@@ -63,10 +106,20 @@ export const SignUpForm = ({ onSubmit }: SignUpFormProps) => {
     }
   });
 
+  const handleFormSubmit = (event: SubmitEvent<HTMLFormElement>) => {
+    syncAutofilledFields(
+      event.currentTarget,
+      { getValues, setValue },
+      AUTOFILLED_FIELDS,
+    );
+
+    return submitForm(event);
+  };
+
   return (
     <form
       className="grid gap-5"
-      onSubmit={submitForm}
+      onSubmit={handleFormSubmit}
     >
       {formError ? (
         <div
@@ -77,10 +130,17 @@ export const SignUpForm = ({ onSubmit }: SignUpFormProps) => {
         </div>
       ) : null}
 
+      {/* `maxLength` on each field mirrors what `SignUpSchema` enforces server-side,
+          so the browser stops where the server would reject: a hard stop while typing
+          is friendlier than a "Invalid request body." banner after a round trip, and
+          nobody reaches these ceilings with a real name, address or password. The
+          name shares `profileFieldLimits.displayName` with Settings because sign-up
+          and `update-profile` write to the same `users/{uid}` field. */}
       <Input
         autoComplete="name"
         error={errors.displayName?.message}
         label="Full name"
+        maxLength={profileFieldLimits.displayName}
         placeholder="Anthony Alverizko"
         {...register("displayName", {
           required: "Full name is required.",
@@ -90,6 +150,7 @@ export const SignUpForm = ({ onSubmit }: SignUpFormProps) => {
         autoComplete="email"
         error={errors.email?.message}
         label="Email"
+        maxLength={credentialFieldLimits.email}
         placeholder="you@company.com"
         type="email"
         {...register("email", {
@@ -104,6 +165,7 @@ export const SignUpForm = ({ onSubmit }: SignUpFormProps) => {
         autoComplete="new-password"
         error={errors.password?.message}
         label="Password"
+        maxLength={credentialFieldLimits.password}
         placeholder="Create a password"
         type="password"
         {...register("password", {
@@ -115,6 +177,21 @@ export const SignUpForm = ({ onSubmit }: SignUpFormProps) => {
         })}
       />
 
+      <PromoCodeCallout />
+      <Input
+        autoCapitalize="characters"
+        autoComplete="off"
+        label="Promo code (optional)"
+        // Capped like the fields above, and here it also keeps an oversized paste
+        // from failing the *body* — which would take the whole sign-up with it.
+        maxLength={MAX_PROMO_CODE}
+        name="promoCode"
+        onChange={(event) => setPromoCode(event.target.value)}
+        placeholder="Enter your promo code"
+        spellCheck={false}
+        value={promoCode}
+      />
+
       <Button
         className="w-full"
         disabled={isSubmitting}
@@ -123,9 +200,26 @@ export const SignUpForm = ({ onSubmit }: SignUpFormProps) => {
         {isSubmitting ? "Creating account..." : "Create account"}
       </Button>
 
+      <div className="flex items-center gap-3 text-xs font-title uppercase text-nox-noir/40">
+        <span className="h-px flex-1 bg-steel-mist" />
+        or
+        <span className="h-px flex-1 bg-steel-mist" />
+      </div>
+
+      <GoogleSignInButton
+        className="w-full"
+        label="Sign up with Google"
+        next={next}
+        promoCode={promoCode}
+      />
+
       <div className="grid gap-3 border-t border-steel-mist pt-5 text-center">
         <p className="text-sm text-nox-noir/60">Already have an account?</p>
-        <LinkButton className="w-full" href="/sign-in" variant="outline">
+        <LinkButton
+          className="w-full"
+          href="/sign-in"
+          variant="outline"
+        >
           Sign in
         </LinkButton>
       </div>

@@ -10,17 +10,37 @@ import { cn } from "@/lib/utils";
 
 export type CarouselProps = {
   ariaLabel?: string;
+  /** Advances through slides at the supplied interval while motion is allowed. */
+  autoPlay?: boolean;
+  autoPlayInterval?: number;
   children: ReactNode;
   className?: string;
   /** Content shown to the left of the navigation arrows (e.g. a category title). */
   header?: ReactNode;
+  /** Places navigation beside the header instead of below the viewport. */
+  navigationPlacement?: "below" | "header";
+  /** Overrides the default spacing between carousel slides. */
+  trackClassName?: string;
+  /** Adds layout space within the clipped carousel viewport. */
+  viewportClassName?: string;
 };
 
-export const Carousel = ({ ariaLabel, children, className, header }: CarouselProps) => {
+export const Carousel = ({
+  ariaLabel,
+  autoPlay = false,
+  autoPlayInterval = 6000,
+  children,
+  className,
+  header,
+  navigationPlacement = "below",
+  trackClassName,
+  viewportClassName,
+}: CarouselProps) => {
   const [emblaRef, emblaApi] = useEmblaCarousel({
     align: "start",
     containScroll: "trimSnaps",
     dragFree: false,
+    loop: autoPlay,
     slidesToScroll: 1,
   });
   const [canScrollPrev, setCanScrollPrev] = useState(false);
@@ -54,13 +74,73 @@ export const Carousel = ({ ariaLabel, children, className, header }: CarouselPro
     };
   }, [emblaApi, onSelect]);
 
+  useEffect(() => {
+    if (
+      !autoPlay ||
+      !emblaApi ||
+      window.matchMedia("(prefers-reduced-motion: reduce)").matches
+    ) {
+      return;
+    }
+
+    const interval = window.setInterval(
+      () => emblaApi.scrollNext(),
+      autoPlayInterval,
+    );
+
+    return () => window.clearInterval(interval);
+  }, [autoPlay, autoPlayInterval, emblaApi]);
+
   const progress = snapCount > 0 ? ((selectedIndex + 1) / snapCount) * 100 : 0;
   const currentSlide = String(selectedIndex + 1).padStart(2, "0");
   const totalSlides = String(snapCount).padStart(2, "0");
+  const navigation = snapCount > 1 ? (
+    <div className="flex shrink-0 items-center gap-2">
+      <ButtonIcon
+        aria-label="Previous slide"
+        className="border-nox-noir/20 bg-base-100 !text-nox-noir hover:bg-base-200 disabled:border-nox-noir/10 disabled:bg-base-100 disabled:!text-nox-noir/30"
+        disabled={!canScrollPrev}
+        icon={
+          <CaretLeftIcon
+            aria-hidden
+            className="block text-nox-noir"
+            size={18}
+            weight="bold"
+          />
+        }
+        onClick={() => emblaApi?.scrollPrev()}
+        shape="square"
+        size="sm"
+        variant="outline"
+      />
+      <ButtonIcon
+        aria-label="Next slide"
+        className="border-nox-noir bg-nox-noir !text-base-100 hover:bg-nox-noir disabled:border-nox-noir/15 disabled:bg-transparent disabled:!text-nox-noir/30"
+        disabled={!canScrollNext}
+        icon={
+          <CaretRightIcon
+            aria-hidden
+            className="block text-base-100"
+            size={18}
+            weight="bold"
+          />
+        }
+        onClick={() => emblaApi?.scrollNext()}
+        shape="square"
+        size="sm"
+        variant="primary"
+      />
+    </div>
+  ) : null;
 
   return (
     <div className={cn("app-carousel min-w-0", className)}>
-      {header ? <div className="min-w-0">{header}</div> : null}
+      {header ? (
+        <div className="flex min-w-0 items-center justify-between gap-4">
+          <div className="min-w-0">{header}</div>
+          {navigationPlacement === "header" ? navigation : null}
+        </div>
+      ) : null}
 
       <div
         aria-label={ariaLabel}
@@ -68,14 +148,17 @@ export const Carousel = ({ ariaLabel, children, className, header }: CarouselPro
         className={cn(
           "app-carousel-viewport overflow-hidden py-2",
           header ? "mt-4" : "mt-0",
+          viewportClassName,
         )}
         ref={emblaRef}
         role="region"
       >
-        <div className="app-carousel-track flex touch-pan-y gap-4">{children}</div>
+        <div className={cn("app-carousel-track flex touch-pan-y gap-4", trackClassName)}>
+          {children}
+        </div>
       </div>
 
-      {snapCount > 1 ? (
+      {navigation && navigationPlacement === "below" ? (
         <div className="mt-4 flex items-center gap-4 border-t border-nox-noir/10 pt-4">
           <p
             aria-live="polite"
@@ -93,28 +176,7 @@ export const Carousel = ({ ariaLabel, children, className, header }: CarouselPro
             />
           </div>
 
-          <div className="flex shrink-0 items-center gap-2">
-            <ButtonIcon
-              aria-label="Previous slide"
-              className="border-nox-noir/15 bg-transparent text-nox-noir hover:bg-nox-noir/5 disabled:bg-transparent"
-              disabled={!canScrollPrev}
-              icon={<CaretLeftIcon aria-hidden size={16} weight="bold" />}
-              onClick={() => emblaApi?.scrollPrev()}
-              shape="square"
-              size="sm"
-              variant="outline"
-            />
-            <ButtonIcon
-              aria-label="Next slide"
-              className="border-nox-noir bg-nox-noir text-white hover:bg-nox-noir disabled:border-nox-noir/15 disabled:bg-transparent disabled:text-nox-noir/30"
-              disabled={!canScrollNext}
-              icon={<CaretRightIcon aria-hidden size={16} weight="bold" />}
-              onClick={() => emblaApi?.scrollNext()}
-              shape="square"
-              size="sm"
-              variant="primary"
-            />
-          </div>
+          {navigation}
         </div>
       ) : null}
     </div>

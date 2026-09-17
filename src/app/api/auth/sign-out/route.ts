@@ -1,11 +1,10 @@
-import { getIronSession } from "iron-session";
-
-import { sessionOptions, type SessionData } from "@/lib/session";
+import { destroySession } from "@/lib/api/session-cookie";
 
 /**
  * `POST /api/auth/sign-out`
  *
- * Destroys the iron-session cookie, effectively signing the user out.
+ * Destroys the iron-session cookie and the readable session-expiry cookie,
+ * effectively signing the user out.
  * No Firebase API call is needed — Firebase tokens are stateless JWTs and
  * expire on their own. Revoking refresh tokens server-side would require an
  * Admin SDK call, which is out of scope for the current auth model.
@@ -14,7 +13,6 @@ import { sessionOptions, type SessionData } from "@/lib/session";
  */
 export const POST = async (request: Request): Promise<Response> => {
   const response = Response.json({ ok: true });
-  const session = await getIronSession<SessionData>(request, response, sessionOptions);
-  session.destroy();
+  await destroySession(request, response);
   return response;
 };

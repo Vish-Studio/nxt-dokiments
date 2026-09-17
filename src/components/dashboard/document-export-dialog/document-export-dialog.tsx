@@ -10,6 +10,7 @@ import { useEffect, useRef, useState } from "react";
 
 import { Button } from "@/components/commons/button/button";
 import { TemplateDocument } from "@/components/commons/template-document/template-document";
+import { trackEvent } from "@/lib/analytics/track";
 import { generateDocumentPdf } from "@/lib/pdf/generate-document-pdf";
 import type { MarketplaceTemplate } from "@/types/template";
 
@@ -52,10 +53,16 @@ export const DocumentExportDialog = ({
       return;
     }
 
-    const exportElement = exportRef.current.querySelector<HTMLElement>("article");
+    const exportElement =
+      exportRef.current.querySelector<HTMLElement>("article");
 
     if (!exportElement) {
       setStatus("error");
+      trackEvent("pdf_export_error", {
+        error_message: "Export element not found in the DOM.",
+        failure_stage: "missing_element",
+        template_id: template.id,
+      });
       return;
     }
 
@@ -69,11 +76,21 @@ export const DocumentExportDialog = ({
           if (!cancelled) {
             setPdfBlob(blob);
             setStatus("ready");
+            trackEvent("pdf_export_success", {
+              file_size_bytes: blob.size,
+              template_id: template.id,
+            });
           }
         })
-        .catch(() => {
+        .catch((error: unknown) => {
           if (!cancelled) {
             setStatus("error");
+            trackEvent("pdf_export_error", {
+              error_message:
+                error instanceof Error ? error.message : "Unknown error.",
+              failure_stage: "generate",
+              template_id: template.id,
+            });
           }
         });
     });
@@ -111,6 +128,7 @@ export const DocumentExportDialog = ({
     downloadLink.href = downloadUrl;
     downloadLink.click();
     window.setTimeout(() => URL.revokeObjectURL(downloadUrl), 1000);
+    trackEvent("pdf_export_download", { template_id: template.id });
   };
 
   return (
@@ -139,7 +157,10 @@ export const DocumentExportDialog = ({
             <h3 className="mt-4 font-title text-lg font-bold text-nox-noir">
               Preparing your document
             </h3>
-            <p aria-live="polite" className="mt-2 text-sm leading-6 text-nox-noir/60">
+            <p
+              aria-live="polite"
+              className="mt-2 text-sm leading-6 text-nox-noir/60"
+            >
               Creating a print-ready PDF of {documentName}.
             </p>
           </>
@@ -148,15 +169,31 @@ export const DocumentExportDialog = ({
         {status === "ready" ? (
           <>
             <span className="mx-auto flex size-12 items-center justify-center rounded-full bg-success text-success-content">
-              <CheckCircleIcon aria-hidden size={26} weight="bold" />
+              <CheckCircleIcon
+                aria-hidden
+                size={26}
+                weight="bold"
+              />
             </span>
-            <h3 className="mt-4 font-title text-lg font-bold text-nox-noir">Document ready</h3>
-            <p aria-live="polite" className="mt-2 text-sm leading-6 text-nox-noir/60">
-              Your PDF contains only the document and is ready to save to this device.
+            <h3 className="mt-4 font-title text-lg font-bold text-nox-noir">
+              Document ready
+            </h3>
+            <p
+              aria-live="polite"
+              className="mt-2 text-sm leading-6 text-nox-noir/60"
+            >
+              Your PDF contains only the document and is ready to save to this
+              device.
             </p>
             <Button
               className="mt-6 w-full"
-              icon={<DownloadSimpleIcon aria-hidden size={18} weight="bold" />}
+              icon={
+                <DownloadSimpleIcon
+                  aria-hidden
+                  size={18}
+                  weight="bold"
+                />
+              }
               iconPosition="left"
               onClick={handleDownload}
             >
@@ -168,21 +205,43 @@ export const DocumentExportDialog = ({
         {status === "error" ? (
           <>
             <span className="mx-auto flex size-12 items-center justify-center rounded-full bg-error text-error-content">
-              <WarningCircleIcon aria-hidden size={26} weight="bold" />
+              <WarningCircleIcon
+                aria-hidden
+                size={26}
+                weight="bold"
+              />
             </span>
             <h3 className="mt-4 font-title text-lg font-bold text-nox-noir">
               PDF could not be created
             </h3>
-            <p aria-live="assertive" className="mt-2 text-sm leading-6 text-nox-noir/60">
+            <p
+              aria-live="assertive"
+              className="mt-2 text-sm leading-6 text-nox-noir/60"
+            >
               Keep this dialog open and try generating the document again.
             </p>
-            <Button className="mt-6 w-full" onClick={() => setRetryCount((count) => count + 1)}>
+            <Button
+              className="mt-6 w-full"
+              onClick={() => {
+                const nextRetryCount = retryCount + 1;
+                setRetryCount(nextRetryCount);
+                trackEvent("pdf_export_retry", {
+                  retry_count: nextRetryCount,
+                  template_id: template.id,
+                });
+              }}
+            >
               Try again
             </Button>
           </>
         ) : null}
 
-        <Button className="mt-2 w-full" onClick={onClose} size="sm" variant="ghost">
+        <Button
+          className="mt-2 w-full"
+          onClick={onClose}
+          size="sm"
+          variant="ghost"
+        >
           {status === "generating" ? "Cancel" : "Close"}
         </Button>
       </div>

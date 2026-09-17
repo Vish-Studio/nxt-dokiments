@@ -1,4 +1,3 @@
-import { FileTextIcon } from "@phosphor-icons/react";
 import type { Meta, StoryObj } from "@storybook/nextjs-vite";
 import { expect, fn, userEvent, within } from "storybook/test";
 
@@ -13,19 +12,16 @@ const meta = {
     viewport: { value: "mobile1", isRotated: false },
   },
   args: {
-    description: "Create and manage documents from your saved templates.",
-    icon: FileTextIcon,
     onOpenNavigation: fn(),
-    title: "Documents",
+    title: "My Documents",
     tone: "blue",
-    visualVariant: "documents",
   },
 } satisfies Meta<typeof MobilePageHeader>;
 
 export default meta;
 type Story = StoryObj<typeof meta>;
 
-export const Expanded: Story = {
+export const Default: Story = {
   decorators: [
     (Story) => (
       <div className="min-h-screen bg-app-panel p-5">
@@ -35,20 +31,29 @@ export const Expanded: Story = {
   ],
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    const navigationButton = canvas.getByRole("button", { name: /open navigation/i });
+    const navigationButton = canvas.getByRole("button", {
+      name: /open navigation/i,
+    });
     await expect(navigationButton).toBeVisible();
-    await expect(canvas.getByRole("heading", { name: "Documents" })).toBeVisible();
+    const title = canvas.getByRole("heading", { name: "My Documents" });
+    await expect(title).toBeVisible();
+    await expect(title).toHaveClass("text-xl");
     await userEvent.click(navigationButton);
     await expect(meta.args.onOpenNavigation).toHaveBeenCalledOnce();
   },
 };
 
-export const Compact: Story = {
-  args: { isCompact: true },
-  decorators: Expanded.decorators,
+export const Dashboard: Story = {
+  args: {
+    showSettingsLink: true,
+    title: "Dashboard",
+    tone: "noir",
+  },
+  decorators: Default.decorators,
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    await expect(canvas.getByRole("heading", { name: "Documents" })).toBeVisible();
-    await expect(canvas.queryByText("Create and manage documents from your saved templates.")).toBeNull();
+    await expect(
+      canvas.getByRole("link", { name: "Open settings" }),
+    ).toHaveAttribute("href", "/settings");
   },
 };

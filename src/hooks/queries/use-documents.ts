@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
+import { trackEvent } from "@/lib/analytics/track";
 import { queryKeys } from "@/lib/query/keys";
 import type { UserDocument } from "@/types/template";
 
@@ -86,9 +87,14 @@ export const useCreateDocumentMutation = () => {
 
   return useMutation({
     mutationFn: postDocument,
-    onSuccess: () => {
+    onSuccess: (document, variables) => {
       void queryClient.invalidateQueries({
         queryKey: queryKeys.documents.all(),
+      });
+      trackEvent("document_created", {
+        document_id: document.id,
+        document_type: document.templateSnapshot?.documentType ?? "unknown",
+        template_id: variables.templateId,
       });
     },
   });
@@ -181,6 +187,13 @@ export const useUpdateDocumentMutation = () => {
         queryKey: queryKeys.documents.detail(documentId),
       });
     },
+    onSuccess: (_document, { documentId, patch }) => {
+      trackEvent("document_updated", {
+        document_id: documentId,
+        name_changed: patch.name !== undefined,
+        values_changed: patch.values !== undefined,
+      });
+    },
   });
 };
 
@@ -208,6 +221,10 @@ export const useDeleteDocumentMutation = () => {
       const previousLists = queryClient.getQueriesData<UserDocument[]>({
         queryKey: queryKeys.documents.all(),
       });
+      const deletedDocument = previousLists
+        .flatMap(([, documents]) => documents ?? [])
+        .find((document) => document.id === documentId);
+
       previousLists.forEach(([key, documents]) => {
         if (!documents) return;
         queryClient.setQueryData<UserDocument[]>(
@@ -216,7 +233,7 @@ export const useDeleteDocumentMutation = () => {
         );
       });
 
-      return { previousLists };
+      return { deletedDocument, previousLists };
     },
     onError: (_error, _documentId, context) => {
       context?.previousLists.forEach(([key, documents]) => {
@@ -226,6 +243,12 @@ export const useDeleteDocumentMutation = () => {
     onSettled: () => {
       void queryClient.invalidateQueries({
         queryKey: queryKeys.documents.all(),
+      });
+    },
+    onSuccess: (_data, documentId, context) => {
+      trackEvent("document_deleted", {
+        document_id: documentId,
+        template_id: context?.deletedDocument?.templateId ?? "",
       });
     },
   });

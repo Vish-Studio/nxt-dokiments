@@ -10,7 +10,9 @@
     { "key": "password", "value": "yourpassword" },
     { "key": "newPassword", "value": "yournewpassword" },
     { "key": "templateId", "value": "classic-contract" },
-    { "key": "documentId", "value": "" }
+    { "key": "documentId", "value": "" },
+    { "key": "clientId", "value": "" },
+    { "key": "promoCode", "value": "ViSHDOK2026!" }
   ],
   "item": [
     {
@@ -23,14 +25,46 @@
             "header": [{ "key": "Content-Type", "value": "application/json" }],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"email\": \"{{email}}\",\n  \"password\": \"{{password}}\"\n}"
+              "raw": "{\n  \"email\": \"{{email}}\",\n  \"password\": \"{{password}}\",\n  \"promoCode\": \"{{promoCode}}\"\n}"
             },
             "url": {
               "raw": "{{baseUrl}}/api/auth/sign-in",
               "host": ["{{baseUrl}}"],
               "path": ["api", "auth", "sign-in"]
             },
-            "description": "Establishes the session cookie (dokiments-session) that every other request in this collection relies on. Response body is { user: AuthUser } only — tokens never leave the server. Check the collection's Cookies panel for localhost after sending this to confirm the cookie was set. If DEV_AUTH_BYPASS=true is set in .env.local, any email/password works and you'll get a fake session with role: \"special\" — useful for testing everything except the seed script, which needs a real superadmin account."
+            "description": "Establishes the session cookie (dokiments-session) that every other request in this collection relies on. Response body is { user: AuthUser } only — tokens never leave the server. Check the collection's Cookies panel for localhost after sending this to confirm the cookie was set. If DEV_AUTH_BYPASS=true is set in .env.local, any email/password works and you'll get a fake session with role: \"special\" — useful for testing everything except the seed script, which needs a real superadmin account. promoCode is optional: when present it is redeemed after the credentials are accepted, and the outcome comes back as promo: \"applied\" | \"already_redeemed\" | \"invalid\" | \"failed\" next to the user. It never affects whether the sign-in itself succeeds — send a wrong code with a correct password to confirm you still get 200, with promo: \"invalid\". Omit the field and no promo key is returned at all."
+          }
+        },
+        {
+          "name": "Continue with Google (browser only)",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/google/start?next=%2Fdashboard&promoCode={{promoCode}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "auth", "google", "start"],
+              "query": [
+                { "key": "next", "value": "%2Fdashboard" },
+                { "key": "promoCode", "value": "{{promoCode}}" }
+              ]
+            },
+            "description": "First leg of Google sign-in — generates a CSRF state, seals it with the sanitised `next` path into a short-lived dokiments-oauth-state cookie, then 302s to Google's OAuth consent screen. Open this URL in an actual browser tab, not \"Send\" in Postman — completing it requires a real interactive Google login, and Postman can't drive that consent screen. Returns a redirect to /sign-in?error=google_failed instead if GOOGLE_CLIENT_ID/GOOGLE_CLIENT_SECRET aren't set in .env.local. promoCode is optional and sealed into that same state cookie, so a code typed on the form isn't lost by choosing Google — Google never sees it. The callback redeems it once the account exists and appends ?promo=<outcome> to the redirect, which PromoStatusBanner renders on arrival. It is capped at 64 characters before sealing so an oversized value can't produce a cookie the browser refuses."
+          }
+        },
+        {
+          "name": "Google callback (browser only, not directly callable)",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/google/callback?code=&state=",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "auth", "google", "callback"],
+              "query": [
+                { "key": "code", "value": "" },
+                { "key": "state", "value": "" }
+              ]
+            },
+            "description": "Second leg of Google sign-in — Google redirects here itself with real `code`/`state` query params after consent; this entry exists for reference only and can't be usefully sent from Postman (it needs the dokiments-oauth-state cookie set by \"Continue with Google\" in the same browser, plus a `code` that's only valid once and only from that same flow). On success it exchanges `code` for a Google id_token, signs into Firebase via accounts:signInWithIdp, writes the dokiments-session cookie exactly like \"Sign in\" does, and 302s to the `next` path. Same 400/401-style failures all collapse to a redirect to /sign-in?error=google_failed — check the server terminal for the real cause (state mismatch, Google token exchange failure, or Firebase rejecting the id_token, most commonly because GOOGLE_CLIENT_ID/SECRET don't match the Web client Firebase has on file for the Google provider)."
           }
         },
         {
@@ -338,6 +372,251 @@
               "path": ["api", "documents"]
             },
             "description": "Run AFTER \"Sign out\" to confirm this route also 401s without a session."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Clients",
+      "item": [
+        {
+          "name": "List clients",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/clients",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "clients"]
+            },
+            "description": "GET /api/clients — the signed-in user's client book, newest first (empty array for a brand-new user). Session required. Unlike saved templates there is no tier gate and no count limit on this collection: clients are private reference data, not an entitlement."
+          }
+        },
+        {
+          "name": "Add a client",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Maya Chen\",\n  \"companyName\": \"Northline Studio\",\n  \"email\": \"maya@northline.com\",\n  \"phone\": \"+230 5 123 4567\",\n  \"address\": \"12 Rue La Bourdonnais, Port Louis\",\n  \"brn\": \"C12345678\",\n  \"nationalId\": \"\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/clients",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "clients"]
+            },
+            "description": "POST /api/clients — creates one client with a server-generated ID (client_…). Returns 201 { client }. Copy the returned id into the clientId collection variable to run the PATCH/DELETE requests below. name, companyName, email and phone are required; address, brn and nationalId are optional and default to \"\". Try omitting \"name\", or sending \"email\": \"nope\", to confirm you get 400 { error: \"Invalid request body.\" } — the validation details are logged server-side only and never returned to the caller."
+          }
+        },
+        {
+          "name": "Update a client",
+          "request": {
+            "method": "PATCH",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"phone\": \"+230 5 000 0000\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/clients/{{clientId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "clients", "{{clientId}}"]
+            },
+            "description": "PATCH /api/clients/:clientId — partial update; only the fields you send change, and updatedAt is bumped. Send {} to confirm you get 400 (at least one field is required). Point clientId at a value that was never created to confirm you get 404 rather than a newly-created partial record — Firestore's REST PATCH is an upsert, so the route reads the document before writing specifically to prevent that."
+          }
+        },
+        {
+          "name": "Delete a client",
+          "request": {
+            "method": "DELETE",
+            "url": {
+              "raw": "{{baseUrl}}/api/clients/{{clientId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "clients", "{{clientId}}"]
+            },
+            "description": "DELETE /api/clients/:clientId. Returns 204 with an empty body whether or not the client existed (idempotent delete). Documents already prepared for this client are unaffected — their recipient details were copied into the document's own values at fill time, not referenced."
+          }
+        },
+        {
+          "name": "Unauthorised (401) check",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/clients",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "clients"]
+            },
+            "description": "Run AFTER \"Sign out\" to confirm this route also 401s without a session."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Promo Codes",
+      "item": [
+        {
+          "name": "List redemptions",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/promo-redemptions",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "promo-redemptions"]
+            },
+            "description": "GET /api/promo-redemptions — the promo codes this account has redeemed; this is what the Launch Promo card in Settings reads. Returns { redemptions: [] } for an account that has redeemed nothing, which includes every account created before this feature shipped — absence of a record IS \"not redeemed\", so no back-fill was needed. Each entry is { code, promoId, redeemedAt }, where promoId is the campaign slug (launch-2026) and is also the Firestore document ID."
+          }
+        },
+        {
+          "name": "Redeem the promo code",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"promoCode\": \"{{promoCode}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/promo-redemptions",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "promo-redemptions"]
+            },
+            "description": "POST /api/promo-redemptions — redeems the launch code for this account. Expect 201 { redemption } the first time. Matching is case-insensitive and ignores whitespace, so setting promoCode to \"  vishdok2026! \" is accepted and the canonical \"ViSHDOK2026!\" is what gets stored — worth trying, then confirming with \"List redemptions\". The write is a create-only Firestore PATCH (currentDocument.exists=false) against users/{uid}/promoRedemptions/launch-2026, and firestore.rules grants create but neither update nor delete there, so once-per-account is a database guarantee rather than something this route enforces on its own."
+          }
+        },
+        {
+          "name": "Redeem again (409) check",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"promoCode\": \"{{promoCode}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/promo-redemptions",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "promo-redemptions"]
+            },
+            "description": "Send immediately after \"Redeem the promo code\" succeeded. Expect 409 { error: \"This promo code has already been used for your account.\" } — the once-per-account rule. Note it is per account, not global: sign in as a different user and the same code redeems fine."
+          }
+        },
+        {
+          "name": "Invalid code (400) check",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"promoCode\": \"NOTAPROMO\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/promo-redemptions",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "promo-redemptions"]
+            },
+            "description": "Expect 400 { error: \"Invalid promo code.\" }. The code is matched server-side against the registry in src/lib/promo/promo-codes.ts — the browser knows the code (it's printed on the sign-in page by design, so it isn't a secret) but never decides the outcome. A whitespace-only value gives this same 400 rather than a generic \"Invalid request body.\", which is why the Zod schema deliberately doesn't trim."
+          }
+        },
+        {
+          "name": "Unauthorised (401) check",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/promo-redemptions",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "promo-redemptions"]
+            },
+            "description": "Run AFTER \"Sign out\" to confirm this route also 401s without a session."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Feedback",
+      "item": [
+        {
+          "name": "Send general feedback",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"type\": \"feedback\",\n  \"message\": \"The document editor is genuinely pleasant to use.\",\n  \"path\": \"/dashboard\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/feedback",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "feedback"]
+            },
+            "description": "POST /api/feedback — expect 201 { feedback }. Note what the request does NOT carry: uid, email and displayName are read off the session, so there is no way to submit feedback in someone else's name; firestore.rules asserts the same uid independently. The record lands in the top-level feedback collection (not users/{uid}/…) so an administrator can read everyone's in one query. If this returns 500, the most likely cause by far is that the rules have not been deployed — run `firebase deploy --only firestore:rules`."
+          }
+        },
+        {
+          "name": "Report a problem",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"type\": \"problem\",\n  \"message\": \"Exporting a quotation to PDF gives me a blank second page.\",\n  \"path\": \"/my-documents\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/feedback",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "feedback"]
+            },
+            "description": "The only other accepted `type`. Send this at least 60 seconds after the previous request or it will 429 — see the next entry. `path` is the one piece of context captured automatically, because \"the export is broken\" is unactionable without knowing which screen it came from."
+          }
+        },
+        {
+          "name": "Throttled (429) check",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"type\": \"feedback\",\n  \"message\": \"Sent immediately after the previous request.\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/feedback",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "feedback"]
+            },
+            "description": "Send immediately after a successful submission. Expect 429 — one submission per account per minute, enforced in the route against users/{uid}/feedbackMeta/latest rather than in the rules. Route-level is enough because the Firebase ID token never reaches the browser (it lives in the encrypted session cookie), so there is no path to Firestore that skips this endpoint. Wait 60s and it succeeds again."
+          }
+        },
+        {
+          "name": "Whitespace-only message (400) check",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"type\": \"feedback\",\n  \"message\": \"     \"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/feedback",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "feedback"]
+            },
+            "description": "Expect 400 { error: \"Invalid request body.\" }. The schema trims before checking the minimum length, so whitespace alone is rejected rather than stored as an empty record. A `type` outside [\"feedback\", \"problem\"] — try \"idea\" — gives the same 400, and so does a message over 2000 characters."
+          }
+        },
+        {
+          "name": "Unauthorised (401) check",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"type\": \"feedback\",\n  \"message\": \"Sent without a session.\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/feedback",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "feedback"]
+            },
+            "description": "Run AFTER \"Sign out\". Expect 401 — feedback is for signed-in users only, so that every record is attributable to an account. There is deliberately no public/anonymous intake route (that would be a different security problem, and anonymous feedback is far harder to act on)."
           }
         }
       ]
