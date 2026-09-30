@@ -1,15 +1,13 @@
 import { UsersThreeIcon } from "@phosphor-icons/react";
 
 import { ClientListItem } from "@/components/dashboard/client-list-item/client-list-item";
-import {
-  DashboardList,
-  type DashboardListColumn,
-} from "@/components/dashboard/dashboard-list/dashboard-list";
+import type { DashboardListColumn } from "@/components/dashboard/dashboard-list/dashboard-list";
 import type { Client } from "@/types/client";
 
 interface Props {
   clients: Client[];
   onDelete: (client: Client) => void;
+  onEdit: (client: Client) => void;
   onPreview: (client: Client) => void;
 }
 
@@ -53,7 +51,7 @@ export const clientSkeletonRow = (
   </>
 );
 
-export const ClientList = ({ clients, onDelete, onPreview }: Props) => {
+export const ClientList = ({ clients, onDelete, onEdit, onPreview }: Props) => {
   if (clients.length === 0) {
     return (
       <section className="client-list grid min-h-72 w-full place-items-center rounded-box border border-dashed border-steel-mist bg-base-100 p-10 text-center">
@@ -76,15 +74,16 @@ export const ClientList = ({ clients, onDelete, onPreview }: Props) => {
   }
 
   return (
-    <DashboardList columns={clientListColumns}>
+    <section className="client-list grid w-full grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
       {clients.map((client) => (
         <ClientListItem
           client={client}
           key={client.id}
           onDelete={onDelete}
+          onEdit={onEdit}
           onPreview={onPreview}
         />
       ))}
-    </DashboardList>
+    </section>
   );
 };

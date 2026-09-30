@@ -5,6 +5,7 @@ import type { KeyboardEvent, ReactNode } from "react";
 import { useEffect, useId, useRef, useState } from "react";
 
 import { Button } from "@/components/commons/button/button";
+import { ButtonIcon } from "@/components/commons/button-icon/button-icon";
 import type { SelectOption } from "@/components/commons/select/select";
 import { cn } from "@/lib/utils";
 
@@ -26,7 +27,8 @@ export interface DropdownGroup {
 export interface DropdownProps {
   ariaLabel: string;
   children?: ReactNode;
-  trigger: ReactNode;
+  trigger?: ReactNode;
+  iconTrigger?: ReactNode;
   groups?: DropdownGroup[];
   closeOnSelect?: boolean;
   align?: "start" | "end";
@@ -37,7 +39,7 @@ export interface DropdownProps {
 
 export const Dropdown = ({
   align = "end", ariaLabel, buttonClassName, children, className,
-  closeOnSelect = true, groups, menuClassName, trigger,
+  closeOnSelect = true, groups, iconTrigger, menuClassName, trigger,
 }: DropdownProps) => {
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -91,26 +93,51 @@ export const Dropdown = ({
     items[next]?.focus();
   };
 
+  const toggleMenu = () => {
+    initialFocus.current = "first";
+    setIsOpen((current) => !current);
+  };
+
+  const openWithKeyboard = (event: KeyboardEvent<HTMLButtonElement>) => {
+    if (groups && ["ArrowDown", "ArrowUp"].includes(event.key)) {
+      event.preventDefault();
+      initialFocus.current = event.key === "ArrowUp" ? "last" : "first";
+      setIsOpen(true);
+    }
+  };
+
   return (
     <div className={cn("dropdown", align === "end" ? "dropdown-end" : "dropdown-start", isOpen && "dropdown-open", className)} ref={dropdownRef}>
-      <Button
-        aria-controls={isOpen ? menuId : undefined}
-        aria-expanded={isOpen}
-        aria-haspopup={groups ? "menu" : undefined}
-        aria-label={ariaLabel}
-        className={cn(dropdownControlClassName, buttonClassName)}
-        onClick={() => { initialFocus.current = "first"; setIsOpen((current) => !current); }}
-        onKeyDown={(event) => {
-          if (groups && ["ArrowDown", "ArrowUp"].includes(event.key)) {
-            event.preventDefault();
-            initialFocus.current = event.key === "ArrowUp" ? "last" : "first";
-            setIsOpen(true);
-          }
-        }}
-        ref={triggerRef}
-        size="sm"
-        variant="ghost"
-      >{trigger}</Button>
+      {iconTrigger ? (
+        <ButtonIcon
+          aria-controls={isOpen ? menuId : undefined}
+          aria-expanded={isOpen}
+          aria-haspopup={groups || children ? "menu" : undefined}
+          aria-label={ariaLabel}
+          className={buttonClassName}
+          icon={iconTrigger}
+          onClick={toggleMenu}
+          onKeyDown={openWithKeyboard}
+          ref={triggerRef}
+          size="sm"
+          variant="ghost"
+        />
+      ) : (
+        <Button
+          aria-controls={isOpen ? menuId : undefined}
+          aria-expanded={isOpen}
+          aria-haspopup={groups || children ? "menu" : undefined}
+          aria-label={ariaLabel}
+          className={cn(dropdownControlClassName, buttonClassName)}
+          onClick={toggleMenu}
+          onKeyDown={openWithKeyboard}
+          ref={triggerRef}
+          size="sm"
+          variant="ghost"
+        >
+          {trigger}
+        </Button>
+      )}
       {isOpen ? (
         <div
           aria-label={ariaLabel}

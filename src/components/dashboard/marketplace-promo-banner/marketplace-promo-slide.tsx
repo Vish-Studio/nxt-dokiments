@@ -1,93 +1,89 @@
-import {
-  FilesIcon,
-  GiftIcon,
-  UsersThreeIcon,
-} from "@phosphor-icons/react/dist/ssr";
 import Image from "next/image";
-import type { ReactNode } from "react";
 
 import { LinkButton } from "@/components/commons/link-button/link-button";
-
-export type MarketplacePromoSlideIcon = "clients" | "offer" | "templates";
+import { cn } from "@/lib/utils";
 
 export interface MarketplacePromoSlideProps {
   actionHref: string;
   actionLabel: string;
+  backgroundClassName: string;
   detail: string;
-  eyebrow: string;
-  icon: MarketplacePromoSlideIcon;
+  eyebrow?: string;
   imageSrc: string;
-  promoCode?: string;
   title: string;
 }
-
-const slideIcons = {
-  clients: <UsersThreeIcon aria-hidden size={20} weight="fill" />,
-  offer: <GiftIcon aria-hidden size={20} weight="fill" />,
-  templates: <FilesIcon aria-hidden size={20} weight="fill" />,
-} satisfies Record<MarketplacePromoSlideIcon, ReactNode>;
 
 export const MarketplacePromoSlide = ({
   actionHref,
   actionLabel,
+  backgroundClassName,
   detail,
   eyebrow,
-  icon,
   imageSrc,
-  promoCode,
   title,
 }: MarketplacePromoSlideProps) => {
   return (
-    <article className="marketplace-promo-slide marketplace-promo-slide-enter relative flex h-full w-full shrink-0 overflow-hidden rounded-box border border-nox-noir bg-nox-noir text-base-100">
-      <Image
-        alt=""
-        aria-hidden
-        className="object-cover"
-        fill
-        priority={icon === "offer"}
-        sizes="100vw"
-        src={imageSrc}
-        unoptimized
-      />
+    <article
+      className={cn(
+        "marketplace-promo-slide relative flex h-full w-full shrink-0 overflow-hidden rounded-3xl text-nox-noir",
+      )}
+    >
       <div
         aria-hidden
-        className="absolute inset-0 bg-nox-noir/70"
+        className={cn(
+          "marketplace-promo-color-enter absolute inset-0",
+          backgroundClassName,
+        )}
       />
+      <div aria-hidden className="absolute -left-48 top-0 size-96 opacity-10">
+        <Image
+          alt=""
+          className="object-contain brightness-0"
+          fill
+          sizes="24rem"
+          src="/images/svg/icon-vish-studio.svg"
+        />
+      </div>
+      <div
+        aria-hidden
+        className="marketplace-promo-visual-enter absolute inset-y-0 right-0 hidden w-1/2 overflow-hidden sm:block"
+      >
+        <Image
+          alt=""
+          className="marketplace-promo-mockup object-contain object-right-bottom"
+          fill
+          priority
+          sizes="(max-width: 640px) 0vw, 50vw"
+          src={imageSrc}
+        />
+      </div>
 
-      <div className="relative z-10 flex w-full flex-col justify-between gap-8 p-5 sm:p-8 lg:p-10">
-        <div className="max-w-2xl">
-          <div className="flex min-w-0 items-center gap-3">
-            <span className="flex size-10 shrink-0 items-center justify-center rounded-field border border-play-teal bg-play-teal text-nox-noir">
-              {slideIcons[icon]}
-            </span>
-            <p className="font-title text-xs font-bold uppercase tracking-widest text-play-teal">
-              {eyebrow}
-            </p>
+      <div className="relative z-10 flex w-full flex-col justify-center gap-6 p-5 sm:p-8 lg:p-10">
+        <div className="max-w-xl">
+          <div className="marketplace-promo-title-enter">
+            {eyebrow ? (
+              <p className="font-logo text-xl font-black text-nox-noir sm:text-2xl">
+                {eyebrow}
+              </p>
+            ) : null}
+
+            <h2 className="mt-4 font-title text-3xl font-bold leading-tight text-nox-noir sm:text-4xl">
+              {title}
+            </h2>
           </div>
-
-          <h2 className="mt-5 font-title text-3xl font-bold leading-tight sm:text-4xl">
-            {title}
-          </h2>
-          <p className="mt-3 max-w-xl text-sm leading-6 text-base-100/75 sm:text-base">
+          <p className="marketplace-promo-detail-enter mt-3 max-w-2xl text-base leading-7 text-nox-noir/70">
             {detail}
           </p>
         </div>
 
-        <div className="flex flex-wrap items-center gap-3">
-          {promoCode ? (
-            <span className="rounded-field border border-base-100/30 bg-nox-noir px-3 py-2 font-title text-sm font-bold tracking-wide text-base-100">
-              {promoCode}
-            </span>
-          ) : null}
-          <LinkButton
-            className="w-fit"
-            href={actionHref}
-            size="sm"
-            variant="accent"
-          >
-            {actionLabel}
-          </LinkButton>
-        </div>
+        <LinkButton
+          className="marketplace-promo-action-enter w-fit"
+          href={actionHref}
+          size="md"
+          variant="primary"
+        >
+          {actionLabel}
+        </LinkButton>
       </div>
     </article>
   );

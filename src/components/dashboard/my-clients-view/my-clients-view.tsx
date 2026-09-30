@@ -216,6 +216,7 @@ export const MyClientsView = () => {
         <ClientList
           clients={visibleClients}
           onDelete={setPendingDeletion}
+          onEdit={(client) => setPanel({ clientId: client.id, kind: "edit" })}
           onPreview={(client) =>
             setPanel({ clientId: client.id, kind: "detail" })
           }
