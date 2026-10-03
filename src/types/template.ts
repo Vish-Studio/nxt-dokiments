@@ -60,6 +60,8 @@ export type MarketplaceTemplate = {
   name: string;
   style: TemplateStyle;
   tier: TemplateTier;
+  /** Epoch ms the template was added to the catalog; absent on templates seeded before it existed. */
+  createdAt?: number;
 };
 
 /** A template a user has added to their account (ownership only — no values). */

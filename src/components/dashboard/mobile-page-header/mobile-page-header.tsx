@@ -1,5 +1,7 @@
 "use client";
 
+import type { ReactNode } from "react";
+
 import { ListIcon, UserIcon } from "@phosphor-icons/react";
 import Link from "next/link";
 
@@ -14,6 +16,8 @@ import type {
 import { cn } from "@/lib/utils";
 
 export interface MobilePageHeaderProps {
+  /** Rendered beside the settings link, e.g. the notification bell. */
+  actions?: ReactNode;
   onOpenNavigation: () => void;
   showSettingsLink?: boolean;
   title: string;
@@ -95,6 +99,7 @@ const toneStyles: Record<PageBannerTone, ToneStyle> = {
 };
 
 export const MobilePageHeader = ({
+  actions,
   onOpenNavigation,
   showSettingsLink = false,
   title,
@@ -118,7 +123,7 @@ export const MobilePageHeader = ({
       <div className="flex min-h-12 items-center gap-3">
         <ButtonIcon
           aria-label="Open navigation"
-          className={cn("!size-9 !min-h-9 shrink-0", controlClassName)}
+          className={cn("size-9! min-h-9! shrink-0", controlClassName)}
           icon={
             <ListIcon
               aria-hidden
@@ -144,25 +149,30 @@ export const MobilePageHeader = ({
           </div>
         </div>
 
+        {actions}
         {showSettingsLink ? (
           <Link
             aria-label="Open settings"
             className={cn(
               "shrink-0 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-current",
               buttonIconClasses({
-                className: cn("!size-9 !min-h-9", controlClassName),
+                className: cn("size-9! min-h-9!", controlClassName),
                 size: "sm",
                 variant: "ghost",
               }),
             )}
             href="/settings"
           >
-            <UserIcon aria-hidden size={15} weight="bold" />
+            <UserIcon
+              aria-hidden
+              size={15}
+              weight="bold"
+            />
           </Link>
         ) : null}
       </div>
       <div
-        className="mobile-page-header-controls mt-3 empty:hidden [&_.collection-toolbar_.input]:!border-transparent [&_.collection-toolbar_.input]:!bg-white/45 [&_.collection-toolbar_.input]:!text-nox-noir [&_.collection-toolbar_.input::placeholder]:!text-nox-noir/50 [&_.collection-toolbar_.input:focus]:!border-nox-noir/25 [&_.collection-toolbar_.btn]:!border-nox-noir/15 [&_.collection-toolbar_.btn]:!bg-white/45 [&_.collection-toolbar_.btn]:!text-nox-noir [&_.collection-toolbar_.btn:hover]:!border-nox-noir/25 [&_.collection-toolbar_.btn:hover]:!bg-white/65"
+        className="mobile-page-header-controls mt-3 empty:hidden [&_.collection-toolbar_.input]:border-transparent! [&_.collection-toolbar_.input]:bg-white/45! [&_.collection-toolbar_.input]:text-nox-noir! [&_.collection-toolbar_.input::placeholder]:text-nox-noir/50! [&_.collection-toolbar_.input:focus]:border-nox-noir/25! [&_.collection-toolbar_.btn]:border-nox-noir/15! [&_.collection-toolbar_.btn]:bg-white/45! [&_.collection-toolbar_.btn]:text-nox-noir! [&_.collection-toolbar_.btn:hover]:border-nox-noir/25! [&_.collection-toolbar_.btn:hover]:bg-white/65!"
         id="mobile-page-header-controls"
       />
     </header>
