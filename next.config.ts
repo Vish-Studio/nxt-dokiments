@@ -1,8 +1,15 @@
 import { withSerwist } from "@serwist/turbopack";
 import type { NextConfig } from "next";
 
+import packageJson from "./package.json" with { type: "json" };
+
 const nextConfig: NextConfig = {
   allowedDevOrigins: ["192.168.100.*"],
+  env: {
+    // Inlined into the client bundle at build time so the signed-in sidebar can
+    // display the running app version without shipping the whole package.json.
+    APP_VERSION: packageJson.version,
+  },
   images: {
     remotePatterns: [
       {
