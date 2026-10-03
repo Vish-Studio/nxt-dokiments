@@ -105,6 +105,14 @@ service cloud.firestore {
       match /clients/{clientId} {
         allow read, create, update, delete: if isOwner(uid);
       }
+
+      // --- users/{uid}/notificationMeta/state — notification read marker ----------
+      //
+      // One document holding `lastSeenAt`, when the user last marked their
+      // notifications as read. Private to the owner; no `delete`, as nothing needs one.
+      match /notificationMeta/{documentId} {
+        allow read, create, update: if isOwner(uid);
+      }
     }
 
     // --- templates/{templateId} — marketplace catalog ---------------------------

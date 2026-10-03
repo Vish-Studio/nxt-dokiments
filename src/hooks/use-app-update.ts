@@ -121,6 +121,8 @@ export const useAppUpdate = () => {
 
   return {
     isUpdateReady: isUpdateReady && !isDismissed,
+    /** Like `isUpdateReady`, but unaffected by dismissing the banner — for the notification center. */
+    isUpdateWaiting: isUpdateReady,
     acceptUpdate,
     dismissUpdate,
   };

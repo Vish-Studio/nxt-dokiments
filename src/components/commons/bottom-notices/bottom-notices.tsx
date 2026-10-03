@@ -2,8 +2,11 @@
 
 import { AppUpdateBannerView } from "@/components/commons/app-update-banner/app-update-banner";
 import { InstallNudge } from "@/components/commons/install-nudge/install-nudge";
+import { useEffect } from "react";
+
 import { useAppUpdate } from "@/hooks/use-app-update";
 import { useCookieConsentSettled } from "@/hooks/use-cookie-consent-settled";
+import { useAppUpdateStore } from "@/stores/app-update-store";
 
 /**
  * Keeps the notices along the bottom of the viewport from talking over each other.
@@ -26,7 +29,15 @@ import { useCookieConsentSettled } from "@/hooks/use-cookie-consent-settled";
  * here and handed down rather than read a second time inside the nudge.
  */
 export const BottomNotices = () => {
-  const { isUpdateReady, acceptUpdate, dismissUpdate } = useAppUpdate();
+  const { isUpdateReady, isUpdateWaiting, acceptUpdate, dismissUpdate } =
+    useAppUpdate();
+  const setUpdate = useAppUpdateStore((state) => state.setUpdate);
+
+  // This is the only place `useAppUpdate` runs, so the notification center reads
+  // the update state from this store instead of calling the hook a second time.
+  useEffect(() => {
+    setUpdate({ accept: acceptUpdate, isWaiting: isUpdateWaiting });
+  }, [acceptUpdate, isUpdateWaiting, setUpdate]);
   const isCookieConsentSettled = useCookieConsentSettled();
 
   return (

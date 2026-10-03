@@ -46,6 +46,8 @@ const mapValue = (fields: Record<string, unknown>) => ({
   mapValue: { fields },
 });
 
+const timestampValue = (date: Date) => ({ timestampValue: date.toISOString() });
+
 const signInAsAdmin = async (email: string, password: string) => {
   const apiKey = requireEnv("FIREBASE_API_KEY");
   const response = await fetch(
@@ -71,13 +73,32 @@ const signInAsAdmin = async (email: string, password: string) => {
   return data.idToken;
 };
 
+const documentUrl = (path: string) =>
+  `${FIRESTORE_BASE_URL}/projects/${requireEnv("FIREBASE_PROJECT_ID")}/databases/(default)/documents/${path}`;
+
+const documentExists = async (path: string, idToken: string) => {
+  const response = await fetch(documentUrl(path), {
+    headers: { Authorization: `Bearer ${idToken}` },
+  });
+  if (response.status === 404) return false;
+  if (!response.ok) {
+    throw new Error(`Read of ${path} failed: ${response.statusText}`);
+  }
+  return true;
+};
+
 const putDocument = async (
   path: string,
   fields: Record<string, unknown>,
   idToken: string,
+  preserveOtherFields = false,
 ) => {
-  const projectId = requireEnv("FIREBASE_PROJECT_ID");
-  const url = `${FIRESTORE_BASE_URL}/projects/${projectId}/databases/(default)/documents/${path}`;
+  const mask = preserveOtherFields
+    ? `?${Object.keys(fields)
+        .map((key) => `updateMask.fieldPaths=${key}`)
+        .join("&")}`
+    : "";
+  const url = `${documentUrl(path)}${mask}`;
 
   const response = await fetch(url, {
     body: JSON.stringify({ fields }),
@@ -124,9 +145,16 @@ const seedTemplate = async (
   sortOrder: number,
   idToken: string,
 ) => {
+  const path = `templates/${templateId}`;
+  // `createdAt` drives the "new template" notification, so it is written once on
+  // creation and never touched on a re-seed — otherwise every run would re-notify
+  // all users about the whole catalog.
+  const isNew = !(await documentExists(path, idToken));
+
   await putDocument(
-    `templates/${templateId}`,
+    path,
     {
+      ...(isNew ? { createdAt: timestampValue(new Date()) } : {}),
       description: stringValue(blueprint.description),
       documentType: stringValue(blueprint.type),
       fields: arrayValue(
@@ -148,8 +176,9 @@ const seedTemplate = async (
       tier: stringValue(style.tier),
     },
     idToken,
+    !isNew,
   );
-  console.log(`  templates/${templateId}`);
+  console.log(`  templates/${templateId}${isNew ? " (new)" : ""}`);
 };
 
 const main = async () => {

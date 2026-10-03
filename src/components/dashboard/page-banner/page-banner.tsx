@@ -27,6 +27,8 @@ export type PageBannerProps = {
   onOpenNavigation?: () => void;
   isSidebarCollapsed?: boolean;
   onToggleSidebar?: () => void;
+  /** Rendered beside the settings link, e.g. the notification bell. */
+  actions?: ReactNode;
   showSettingsLink?: boolean;
   title: string;
   tone?: PageBannerTone;
@@ -91,7 +93,8 @@ const toneStyles: Record<PageBannerTone, ToneStyle> = {
       soft: "border border-nox-noir/15 bg-nox-noir/6",
       outline: "border border-nox-noir bg-transparent",
     },
-    title: "text-white group-data-[variant=soft]:text-nox-noir group-data-[variant=outline]:text-nox-noir",
+    title:
+      "text-white group-data-[variant=soft]:text-nox-noir group-data-[variant=outline]:text-nox-noir",
     toggle: "border-white/20 text-white hover:bg-white/10",
   },
   mist: {
@@ -106,6 +109,7 @@ const toneStyles: Record<PageBannerTone, ToneStyle> = {
 };
 
 export const PageBanner = ({
+  actions,
   className,
   footer,
   isSidebarCollapsed = false,
@@ -135,7 +139,13 @@ export const PageBanner = ({
         <ButtonIcon
           aria-label="Open navigation"
           className={cn("bg-transparent lg:hidden", style.toggle)}
-          icon={<ListIcon aria-hidden size={18} weight="bold" />}
+          icon={
+            <ListIcon
+              aria-hidden
+              size={18}
+              weight="bold"
+            />
+          }
           onClick={onOpenNavigation}
           variant="ghost"
         />
@@ -144,36 +154,61 @@ export const PageBanner = ({
       <div className="flex min-w-0 items-center gap-3 lg:col-start-1 lg:row-start-1">
         {onToggleSidebar ? (
           <ButtonIcon
-            aria-label={isSidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"}
-            className={cn("hidden !size-9 !min-h-9 lg:inline-flex", desktopControlClassName)}
-            icon={<ListIcon aria-hidden size={15} weight="bold" />}
+            aria-label={
+              isSidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"
+            }
+            className={cn(
+              "hidden size-9! min-h-9! lg:inline-flex",
+              desktopControlClassName,
+            )}
+            icon={
+              <ListIcon
+                aria-hidden
+                size={15}
+                weight="bold"
+              />
+            }
             onClick={onToggleSidebar}
             size="sm"
             variant="ghost"
           />
         ) : null}
-        <h2 className={cn("font-title text-2xl font-bold", style.title)}>{title}</h2>
+        <h2 className={cn("font-title text-2xl font-bold", style.title)}>
+          {title}
+        </h2>
       </div>
 
-      <div className="hidden min-w-0 lg:col-start-2 lg:row-start-1 lg:block lg:w-full" id="page-header-controls">
+      <div
+        className="hidden min-w-0 lg:col-start-2 lg:row-start-1 lg:block lg:w-full"
+        id="page-header-controls"
+      >
         {footer}
       </div>
 
-      {showSettingsLink ? (
-        <Link
-          aria-label="Open settings"
-          className={cn(
-            "absolute right-8 top-1/2 hidden -translate-y-1/2 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-current lg:static lg:col-start-3 lg:row-start-1 lg:inline-flex lg:justify-self-end lg:translate-y-0",
-            buttonIconClasses({
-              className: cn("!size-9 !min-h-9", desktopControlClassName),
-              size: "sm",
-              variant: "ghost",
-            }),
-          )}
-          href="/settings"
-        >
-          <UserIcon aria-hidden size={15} weight="bold" />
-        </Link>
+      {actions || showSettingsLink ? (
+        <div className="hidden items-center gap-2 lg:col-start-3 lg:row-start-1 lg:flex lg:justify-self-end">
+          {actions}
+          {showSettingsLink ? (
+            <Link
+              aria-label="Open settings"
+              className={cn(
+                "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-current",
+                buttonIconClasses({
+                  className: cn("size-9! min-h-9!", desktopControlClassName),
+                  size: "sm",
+                  variant: "ghost",
+                }),
+              )}
+              href="/settings"
+            >
+              <UserIcon
+                aria-hidden
+                size={15}
+                weight="bold"
+              />
+            </Link>
+          ) : null}
+        </div>
       ) : null}
     </section>
   );
