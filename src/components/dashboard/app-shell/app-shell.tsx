@@ -1,13 +1,12 @@
 "use client";
 
-import { ListIcon } from "@phosphor-icons/react";
 import type { ReactNode } from "react";
 import { useEffect, useState } from "react";
 
 import { AuthGuard } from "@/components/commons/auth-guard/auth-guard";
-import { ButtonIcon } from "@/components/commons/button-icon/button-icon";
 import { ContentContainer } from "@/components/dashboard/content-container/content-container";
 import { MobilePageHeader } from "@/components/dashboard/mobile-page-header/mobile-page-header";
+import { NotificationBell } from "@/components/dashboard/notification-bell/notification-bell";
 import type {
   PageBannerTone,
   PageBannerVariant,
@@ -73,11 +72,14 @@ export const AppShell = ({
       'meta[name="theme-color"]',
     );
     const previousThemeColor = themeColor?.content;
-    const previousHtmlBackground = document.documentElement.style.backgroundColor;
+    const previousHtmlBackground =
+      document.documentElement.style.backgroundColor;
     const previousBodyBackground = document.body.style.backgroundColor;
     const colors = getComputedStyle(document.documentElement);
     const nextColor = colors
-      .getPropertyValue(isMobileSidebarOpen ? "--color-nox-noir" : "--color-app-panel")
+      .getPropertyValue(
+        isMobileSidebarOpen ? "--color-nox-noir" : "--color-app-panel",
+      )
       .trim();
 
     if (themeColor) {
@@ -120,6 +122,11 @@ export const AppShell = ({
             <div className="flex min-h-0 flex-1 flex-col overflow-hidden bg-app-panel lg:mr-4 lg:mb-4 lg:mt-4 lg:rounded-4xl">
               <ContentContainer>
                 <MobilePageHeader
+                  actions={
+                    <NotificationBell
+                      tone={isDashboardHome ? "dark" : "light"}
+                    />
+                  }
                   onOpenNavigation={() => setIsMobileSidebarOpen(true)}
                   showSettingsLink
                   title={title}
@@ -128,6 +135,11 @@ export const AppShell = ({
                 />
                 {showBanner ? (
                   <PageBanner
+                    actions={
+                      <NotificationBell
+                        tone={resolvedTone === "noir" ? "dark" : "light"}
+                      />
+                    }
                     className="hidden lg:flex"
                     footer={headerContent}
                     isSidebarCollapsed={isSidebarCollapsed}
@@ -137,21 +149,7 @@ export const AppShell = ({
                     tone={resolvedTone}
                     variant={resolvedVariant}
                   />
-                ) : (
-                  <ButtonIcon
-                    aria-label="Open navigation"
-                    className="hidden border border-steel-mist text-nox-noir hover:bg-base-200"
-                    icon={
-                      <ListIcon
-                        aria-hidden
-                        size={18}
-                        weight="bold"
-                      />
-                    }
-                    onClick={() => setIsMobileSidebarOpen(true)}
-                    variant="ghost"
-                  />
-                )}
+                ) : null}
                 <PromoStatusBanner />
                 <PublicLaunchBanner />
                 {children}

@@ -44,4 +44,9 @@ export const queryKeys = {
     /** The promo codes the signed-in user has redeemed. There is only ever one list — no filters. */
     all: () => ["promo-redemptions"] as const,
   },
+
+  notifications: {
+    /** Server-produced notifications for the signed-in user. */
+    all: () => ["notifications"] as const,
+  },
 };

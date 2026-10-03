@@ -9,6 +9,7 @@ import {
   readInteger,
   readMap,
   readString,
+  readTimestamp,
   type FirestoreDocument,
 } from "@/lib/firebase/server-firestore";
 import type {
@@ -76,7 +77,10 @@ const parseMarketplaceTemplate = (
 
   if (!style) return null;
 
+  const createdAt = readTimestamp(fields.createdAt);
+
   return {
+    ...(createdAt ? { createdAt: Date.parse(createdAt) } : {}),
     description: readString(fields.description) ?? "",
     documentType: (readString(fields.documentType) ?? "") as DocumentType,
     fields: parseTemplateFields(document),

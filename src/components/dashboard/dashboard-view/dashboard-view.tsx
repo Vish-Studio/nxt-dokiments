@@ -18,6 +18,7 @@ import { FloatingActionButton } from "@/components/commons/floating-action-butto
 import { LoadingStatus } from "@/components/commons/loading-status/loading-status";
 import { TemplateCard } from "@/components/commons/template-card/template-card";
 import { TemplatePreviewDialog } from "@/components/commons/template-preview-dialog/template-preview-dialog";
+import { NotificationBell } from "@/components/dashboard/notification-bell/notification-bell";
 import { useClientsQuery } from "@/hooks/queries/use-clients";
 import { useDocumentsQuery } from "@/hooks/queries/use-documents";
 import { useSavedTemplatesQuery } from "@/hooks/queries/use-saved-templates";
@@ -124,7 +125,11 @@ export const DashboardView = () => {
   return (
     <div className="flex flex-col gap-8">
       <div className="grid gap-4 lg:grid-cols-[1fr_22rem]">
-        <div className="rounded-box bg-golden-harvest p-6 sm:p-8">
+        <div className="relative rounded-box bg-golden-harvest p-6 sm:p-8">
+          {/* The dashboard has no page banner on desktop, so the bell lives in the hero. */}
+          <div className="absolute right-4 top-4 hidden lg:block">
+            <NotificationBell tone="light" />
+          </div>
           <span className="inline-flex items-center gap-2 rounded-full bg-white/65 px-3 py-1 font-title text-xs font-bold uppercase tracking-normal text-nox-noir">
             <SparkleIcon
               aria-hidden
