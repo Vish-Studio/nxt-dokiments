@@ -10,6 +10,10 @@ interface Props {
   onPreview: (client: Client) => void;
 }
 
+/** Card grid, shared with `ClientListSkeleton` so the layout doesn't shift on load. */
+export const clientGridClassName =
+  "grid w-full grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3";
+
 export const ClientList = ({ clients, onDelete, onEdit, onPreview }: Props) => {
   if (clients.length === 0) {
     return (
@@ -33,7 +37,7 @@ export const ClientList = ({ clients, onDelete, onEdit, onPreview }: Props) => {
   }
 
   return (
-    <section className="client-list grid w-full grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
+    <section className={`client-list ${clientGridClassName}`}>
       {clients.map((client) => (
         <ClientListItem
           client={client}

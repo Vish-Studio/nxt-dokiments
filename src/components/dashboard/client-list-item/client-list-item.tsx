@@ -20,6 +20,10 @@ export interface ClientListItemProps {
   onPreview: (client: Client) => void;
 }
 
+/** Card shell, shared with `ClientListSkeleton` so loading cards match loaded ones. */
+export const clientCardClassName =
+  "flex h-44 flex-col rounded-box border border-steel-mist bg-base-100 p-4";
+
 const avatarColorClasses = [
   "bg-play-blue",
   "bg-play-teal",
@@ -47,7 +51,9 @@ export const ClientListItem = ({
   const isPending = isOptimisticClient(client);
 
   return (
-    <article className="client-list-item flex h-44 flex-col rounded-box border border-steel-mist bg-base-100 p-4 transition-colors hover:border-play-blue">
+    <article
+      className={`client-list-item ${clientCardClassName} transition-colors hover:border-play-blue`}
+    >
       <div className="flex min-w-0 items-start justify-between gap-3">
         <div className="flex min-w-0 items-center gap-3">
           <Avatar

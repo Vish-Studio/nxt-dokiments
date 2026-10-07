@@ -2,10 +2,6 @@ import type { Meta, StoryObj } from "@storybook/nextjs-vite";
 import { expect, within } from "storybook/test";
 
 import {
-  clientListColumns,
-  clientSkeletonRow,
-} from "@/components/dashboard/client-list/client-list-skeleton";
-import {
   documentListColumns,
   documentSkeletonRow,
 } from "@/components/dashboard/document-list/document-list";
@@ -24,43 +20,21 @@ const meta = {
     ),
   ],
   args: {
-    columns: clientListColumns,
-    message: "Loading your clients…",
-    row: clientSkeletonRow,
+    columns: documentListColumns,
+    message: "Loading your documents…",
+    ordered: true,
+    row: documentSkeletonRow,
   },
 } satisfies Meta<typeof DashboardListSkeleton>;
 
 export default meta;
 type Story = StoryObj<typeof meta>;
 
-export const Clients: Story = {
+export const Documents: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
 
     // The one thing assistive tech should get — the shimmer itself is aria-hidden.
-    await expect(
-      canvas.getByRole("status", { name: /loading your clients/i }),
-    ).toBeInTheDocument();
-
-    await expect(
-      canvasElement.querySelectorAll(".skeleton").length,
-    ).toBeGreaterThan(0);
-
-    // Same column header as the loaded list, so the layout doesn't shift on arrival.
-    await expect(canvas.getByText("Company")).toBeInTheDocument();
-  },
-};
-
-/** The documents list, proving the same skeleton serves both column sets. */
-export const Documents: Story = {
-  args: {
-    columns: documentListColumns,
-    message: "Loading your documents…",
-    ordered: true,
-    row: documentSkeletonRow,
-  },
-  play: async ({ canvasElement }) => {
-    const canvas = within(canvasElement);
     await expect(
       canvas.getByRole("status", { name: /loading your documents/i }),
     ).toBeInTheDocument();
@@ -75,7 +49,7 @@ export const SingleRow: Story = {
   args: { count: 1 },
 };
 
-/** Narrow viewport: company and contact columns collapse, leaving the mobile sub-line. */
+/** Narrow viewport: secondary columns collapse. */
 export const Mobile: Story = {
   globals: {
     viewport: { value: "mobile1", isRotated: false },
