@@ -20,12 +20,10 @@ export default meta;
 type Story = StoryObj<typeof meta>;
 
 export const Default: Story = {
-  play: async ({ canvas, canvasElement }) => {
+  play: async ({ canvas }) => {
     await expect(
       canvas.getByRole("status", { name: "Loading your clients…" }),
     ).toBeInTheDocument();
-    await expect(
-      canvasElement.querySelectorAll(".skeleton").length,
-    ).toBeGreaterThan(0);
+    await expect(canvas.getByText("Company")).toBeInTheDocument();
   },
 };

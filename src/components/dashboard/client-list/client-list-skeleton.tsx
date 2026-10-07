@@ -1,55 +1,56 @@
-import { LoadingStatus } from "@/components/commons/loading-status/loading-status";
-import { cn } from "@/lib/utils";
+import { DashboardListSkeleton } from "@/components/dashboard/dashboard-list-skeleton/dashboard-list-skeleton";
+import type { DashboardListColumn } from "@/components/dashboard/dashboard-list/dashboard-list";
 
 export interface ClientListSkeletonProps {
-  className?: string;
   count?: number;
 }
 
+export const clientListColumns: DashboardListColumn[] = [
+  { className: "col-span-5", label: "Client" },
+  { className: "col-span-2", label: "Company" },
+  { className: "col-span-3", label: "Contact" },
+  { className: "col-span-2 text-right", label: "Actions" },
+];
+
+export const clientSkeletonRow = (
+  <>
+    <div className="flex min-w-0 items-center gap-3 sm:col-span-5">
+      <div className="skeleton size-8 shrink-0 rounded-full" />
+      <div className="min-w-0 flex-1 space-y-2">
+        <div className="skeleton h-4 w-2/3 rounded-field" />
+        <div className="skeleton h-3 w-1/2 rounded-field sm:hidden" />
+      </div>
+    </div>
+
+    <div className="hidden sm:col-span-2 sm:block">
+      <div className="skeleton h-3 w-4/5 rounded-field" />
+    </div>
+
+    <div className="hidden space-y-2 sm:col-span-3 sm:block">
+      <div className="skeleton h-3 w-full rounded-field" />
+      <div className="skeleton h-3 w-1/2 rounded-field" />
+    </div>
+
+    <div className="flex justify-end sm:col-span-2">
+      <div className="skeleton size-10 rounded-field" />
+    </div>
+  </>
+);
+
 /**
- * Card-grid placeholder for My Clients. Its avatar, contact lines and action
- * affordance follow `ClientListItem`, so loading retains the same rhythm as the
- * resolved collection at every breakpoint.
+ * Table-style loading state for My Clients. It composes the shared dashboard
+ * list surface so the skeleton uses the requested headers, row dividers and
+ * responsive list behavior.
  */
 export const ClientListSkeleton = ({
-  className,
-  count = 6,
+  count = 4,
 }: ClientListSkeletonProps) => (
-  <div className="client-list-skeleton w-full">
-    <LoadingStatus message="Loading your clients…" />
-    <div
-      aria-hidden
-      className={cn(
-        "grid w-full grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3",
-        className,
-      )}
-    >
-      {Array.from({ length: count }, (_, index) => (
-        <article
-          className="flex h-44 flex-col rounded-box border border-steel-mist bg-base-100 p-4"
-          key={index}
-        >
-          <div className="flex items-start justify-between gap-3">
-            <div className="flex min-w-0 items-center gap-3">
-              <div className="skeleton size-10 shrink-0 rounded-full" />
-              <div className="min-w-0 flex-1 space-y-2">
-                <div className="skeleton h-4 w-28 rounded-field" />
-                <div className="skeleton h-3 w-20 rounded-field" />
-              </div>
-            </div>
-            <div className="skeleton size-8 shrink-0 rounded-field" />
-          </div>
-          <div className="mt-4 space-y-2">
-            <div className="skeleton h-3 w-4/5 rounded-field" />
-            <div className="skeleton h-3 w-3/5 rounded-field" />
-          </div>
-          <div className="mt-auto pt-3">
-            <div className="skeleton h-8 w-24 rounded-field" />
-          </div>
-        </article>
-      ))}
-    </div>
-  </div>
+  <DashboardListSkeleton
+    columns={clientListColumns}
+    count={count}
+    message="Loading your clients…"
+    row={clientSkeletonRow}
+  />
 );
 
 export default ClientListSkeleton;
