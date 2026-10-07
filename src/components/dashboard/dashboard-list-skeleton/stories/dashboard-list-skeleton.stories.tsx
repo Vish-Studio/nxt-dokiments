@@ -2,10 +2,6 @@ import type { Meta, StoryObj } from "@storybook/nextjs-vite";
 import { expect, within } from "storybook/test";
 
 import {
-  clientListColumns,
-  clientSkeletonRow,
-} from "@/components/dashboard/client-list/client-list";
-import {
   documentListColumns,
   documentSkeletonRow,
 } from "@/components/dashboard/document-list/document-list";
@@ -24,22 +20,23 @@ const meta = {
     ),
   ],
   args: {
-    columns: clientListColumns,
-    message: "Loading your clients…",
-    row: clientSkeletonRow,
+    columns: documentListColumns,
+    message: "Loading your documents…",
+    ordered: true,
+    row: documentSkeletonRow,
   },
 } satisfies Meta<typeof DashboardListSkeleton>;
 
 export default meta;
 type Story = StoryObj<typeof meta>;
 
-export const Clients: Story = {
+export const Default: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
 
     // The one thing assistive tech should get — the shimmer itself is aria-hidden.
     await expect(
-      canvas.getByRole("status", { name: /loading your clients/i }),
+      canvas.getByRole("status", { name: /loading your documents/i }),
     ).toBeInTheDocument();
 
     await expect(
@@ -47,18 +44,13 @@ export const Clients: Story = {
     ).toBeGreaterThan(0);
 
     // Same column header as the loaded list, so the layout doesn't shift on arrival.
-    await expect(canvas.getByText("Company")).toBeInTheDocument();
+    await expect(canvas.getByText("Date created")).toBeInTheDocument();
   },
 };
 
-/** The documents list, proving the same skeleton serves both column sets. */
-export const Documents: Story = {
-  args: {
-    columns: documentListColumns,
-    message: "Loading your documents…",
-    ordered: true,
-    row: documentSkeletonRow,
-  },
+/** A single row keeps the generic list primitive easy to inspect in isolation. */
+export const SingleRow: Story = {
+  args: { count: 1 },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     await expect(
@@ -66,16 +58,12 @@ export const Documents: Story = {
     ).toBeInTheDocument();
     await expect(canvas.getByText("Date created")).toBeInTheDocument();
 
-    // `ordered` must match the loaded list, which renders an <ol>.
+    // `ordered` must match the loaded document list, which renders an <ol>.
     await expect(canvasElement.querySelector("ol")).toBeInTheDocument();
   },
 };
 
-export const SingleRow: Story = {
-  args: { count: 1 },
-};
-
-/** Narrow viewport: company and contact columns collapse, leaving the mobile sub-line. */
+/** Narrow viewport: the document list collapses down to its essential row content. */
 export const Mobile: Story = {
   globals: {
     viewport: { value: "mobile1", isRotated: false },

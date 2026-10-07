@@ -1,6 +1,10 @@
 "use client";
 
+import { CaretLeftIcon, CaretRightIcon } from "@phosphor-icons/react";
 import { useCallback, useEffect, useState } from "react";
+
+import { ButtonIcon } from "@/components/commons/button-icon/button-icon";
+import { CarouselProgress } from "@/components/commons/carousel-progress/carousel-progress";
 
 import {
   MarketplacePromoSlide,
@@ -21,6 +25,12 @@ export const MarketplacePromoCarousel = ({
     setActiveIndex((currentIndex) => (currentIndex + 1) % slideCount);
   }, [slideCount]);
 
+  const selectPrevious = useCallback(() => {
+    setActiveIndex(
+      (currentIndex) => (currentIndex - 1 + slideCount) % slideCount,
+    );
+  }, [slideCount]);
+
   useEffect(() => {
     if (
       slideCount < 2 ||
@@ -39,7 +49,6 @@ export const MarketplacePromoCarousel = ({
   }
 
   const activeSlide = slides[activeIndex];
-
   return (
     <div
       aria-label="Marketplace updates"
@@ -51,6 +60,35 @@ export const MarketplacePromoCarousel = ({
         key={activeSlide.title}
         {...activeSlide}
       />
+      {slideCount > 1 ? (
+        <div className="absolute bottom-5 left-5 z-20 flex items-center gap-4 sm:bottom-8 sm:left-8 lg:bottom-10 lg:left-10">
+          <CarouselProgress current={activeIndex + 1} total={slideCount} />
+          <div className="flex items-center gap-2">
+            <ButtonIcon
+              aria-label="Previous marketplace update"
+              className="border-nox-noir/25 bg-base-100/70 !text-nox-noir hover:bg-base-100"
+              icon={
+                <CaretLeftIcon aria-hidden size={14} weight="bold" />
+              }
+              onClick={selectPrevious}
+              shape="square"
+              size="sm"
+              variant="outline"
+            />
+            <ButtonIcon
+              aria-label="Next marketplace update"
+              className="border-nox-noir bg-nox-noir !text-base-100 hover:bg-nox-noir/85"
+              icon={
+                <CaretRightIcon aria-hidden size={14} weight="bold" />
+              }
+              onClick={selectNext}
+              shape="square"
+              size="sm"
+              variant="primary"
+            />
+          </div>
+        </div>
+      ) : null}
       <p aria-live="polite" className="sr-only">
         Update {activeIndex + 1} of {slideCount}: {activeSlide.title}
       </p>

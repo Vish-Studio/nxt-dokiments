@@ -10,12 +10,8 @@ import { FloatingActionButton } from "@/components/commons/floating-action-butto
 import { SidePanel } from "@/components/commons/side-panel/side-panel";
 import { ClientDetailPanel } from "@/components/dashboard/client-detail-panel/client-detail-panel";
 import { ClientForm } from "@/components/dashboard/client-form/client-form";
-import {
-  ClientList,
-  clientListColumns,
-  clientSkeletonRow,
-} from "@/components/dashboard/client-list/client-list";
-import { DashboardListSkeleton } from "@/components/dashboard/dashboard-list-skeleton/dashboard-list-skeleton";
+import { ClientList } from "@/components/dashboard/client-list/client-list";
+import { ClientListSkeleton } from "@/components/dashboard/client-list/client-list-skeleton";
 import { ResponsiveHeaderControls } from "@/components/dashboard/responsive-header-controls/responsive-header-controls";
 import {
   useClientsQuery,
@@ -195,11 +191,7 @@ export const MyClientsView = () => {
         {toolbar}
       </ResponsiveHeaderControls>
       {isLoading ? (
-        <DashboardListSkeleton
-          columns={clientListColumns}
-          message="Loading your clients…"
-          row={clientSkeletonRow}
-        />
+        <ClientListSkeleton />
       ) : isError ? (
         // Distinct from the empty state on purpose: showing "No clients yet"
         // after a failed request would tell the user their clients are gone.

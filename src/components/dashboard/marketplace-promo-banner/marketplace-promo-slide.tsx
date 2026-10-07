@@ -58,7 +58,7 @@ export const MarketplacePromoSlide = ({
         />
       </div>
 
-      <div className="relative z-10 flex w-full flex-col justify-center gap-6 p-5 sm:p-8 lg:p-10">
+      <div className="relative z-10 flex w-full flex-col justify-center gap-4 p-5 pb-24 sm:gap-6 sm:p-8 sm:pb-28 lg:p-10 lg:pb-28">
         <div className="max-w-xl">
           <div className="marketplace-promo-title-enter">
             {eyebrow ? (
@@ -71,7 +71,7 @@ export const MarketplacePromoSlide = ({
               {title}
             </h2>
           </div>
-          <p className="marketplace-promo-detail-enter mt-3 max-w-2xl text-base leading-7 text-nox-noir/70">
+          <p className="marketplace-promo-detail-enter mt-3 max-w-2xl text-base leading-6 text-nox-noir/70 sm:leading-7">
             {detail}
           </p>
         </div>

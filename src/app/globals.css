@@ -365,7 +365,7 @@ button:disabled {
 }
 
 .footer-logo {
-  background-color: var(--color-play-teal);
+  background-color: var(--color-app-chrome-content);
   mask: url("/images/svg/logo-white.svg") center / contain no-repeat;
   -webkit-mask: url("/images/svg/logo-white.svg") center / contain no-repeat;
 }
