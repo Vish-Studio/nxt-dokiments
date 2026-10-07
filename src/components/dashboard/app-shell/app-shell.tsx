@@ -39,7 +39,7 @@ const pageThemes: Record<string, PageTheme> = {
   "My Templates": {
     tone: "pink",
   },
-  "My Clients": { tone: "teal" },
+  "My Clients": { tone: "blue" },
   Marketplace: { tone: "teal" },
   Subscription: {
     tone: "purple",

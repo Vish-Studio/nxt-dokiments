@@ -1,9 +1,10 @@
 "use client";
 
-import { ArrowLeftIcon, ArrowRightIcon } from "@phosphor-icons/react";
+import { CaretLeftIcon, CaretRightIcon } from "@phosphor-icons/react";
 import { useCallback, useEffect, useState } from "react";
 
 import { ButtonIcon } from "@/components/commons/button-icon/button-icon";
+import { CarouselProgress } from "@/components/commons/carousel-progress/carousel-progress";
 
 import {
   MarketplacePromoSlide,
@@ -20,14 +21,14 @@ export const MarketplacePromoCarousel = ({
   const [activeIndex, setActiveIndex] = useState(0);
   const slideCount = slides.length;
 
-  const selectPrevious = useCallback(() => {
-    setActiveIndex((currentIndex) =>
-      currentIndex === 0 ? slideCount - 1 : currentIndex - 1,
-    );
-  }, [slideCount]);
-
   const selectNext = useCallback(() => {
     setActiveIndex((currentIndex) => (currentIndex + 1) % slideCount);
+  }, [slideCount]);
+
+  const selectPrevious = useCallback(() => {
+    setActiveIndex(
+      (currentIndex) => (currentIndex - 1 + slideCount) % slideCount,
+    );
   }, [slideCount]);
 
   useEffect(() => {
@@ -48,7 +49,6 @@ export const MarketplacePromoCarousel = ({
   }
 
   const activeSlide = slides[activeIndex];
-
   return (
     <div
       aria-label="Marketplace updates"
@@ -60,46 +60,38 @@ export const MarketplacePromoCarousel = ({
         key={activeSlide.title}
         {...activeSlide}
       />
+      {slideCount > 1 ? (
+        <div className="absolute bottom-5 left-5 z-20 flex items-center gap-4 sm:bottom-8 sm:left-8 lg:bottom-10 lg:left-10">
+          <CarouselProgress current={activeIndex + 1} total={slideCount} />
+          <div className="flex items-center gap-2">
+            <ButtonIcon
+              aria-label="Previous marketplace update"
+              className="border-nox-noir/25 bg-base-100/70 !text-nox-noir hover:bg-base-100"
+              icon={
+                <CaretLeftIcon aria-hidden size={14} weight="bold" />
+              }
+              onClick={selectPrevious}
+              shape="square"
+              size="sm"
+              variant="outline"
+            />
+            <ButtonIcon
+              aria-label="Next marketplace update"
+              className="border-nox-noir bg-nox-noir !text-base-100 hover:bg-nox-noir/85"
+              icon={
+                <CaretRightIcon aria-hidden size={14} weight="bold" />
+              }
+              onClick={selectNext}
+              shape="square"
+              size="sm"
+              variant="primary"
+            />
+          </div>
+        </div>
+      ) : null}
       <p aria-live="polite" className="sr-only">
         Update {activeIndex + 1} of {slideCount}: {activeSlide.title}
       </p>
-
-      {slideCount > 1 ? (
-        <div className="absolute right-5 top-5 z-20 flex items-center gap-2 sm:right-8 sm:top-8 lg:right-10 lg:top-10">
-          <ButtonIcon
-            aria-label="Previous Marketplace update"
-            className="border-base-100/40 bg-nox-noir/70 !text-base-100 hover:bg-nox-noir"
-            icon={
-              <ArrowLeftIcon
-                aria-hidden
-                className="block text-base-100"
-                size={18}
-                weight="bold"
-              />
-            }
-            onClick={selectPrevious}
-            shape="square"
-            size="sm"
-            variant="outline"
-          />
-          <ButtonIcon
-            aria-label="Next Marketplace update"
-            className="border-base-100 bg-base-100 !text-nox-noir hover:bg-base-200"
-            icon={
-              <ArrowRightIcon
-                aria-hidden
-                className="block text-nox-noir"
-                size={18}
-                weight="bold"
-              />
-            }
-            onClick={selectNext}
-            shape="square"
-            size="sm"
-            variant="outline"
-          />
-        </div>
-      ) : null}
     </div>
   );
 };
