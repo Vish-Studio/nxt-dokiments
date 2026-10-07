@@ -16,7 +16,6 @@ const productLinks = [
   { href: "/#overview", label: "Overview" },
   { href: "/#marketplace", label: "Marketplace" },
   { href: "/#workflow", label: "How it works" },
-  { href: "/#pricing", label: "Pricing" },
 ];
 
 const accountLinks = [

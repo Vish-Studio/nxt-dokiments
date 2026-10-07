@@ -17,6 +17,6 @@ type Story = StoryObj<typeof meta>;
 export const Default: Story = {
   play: async ({ canvas }) => {
     await expect(canvas.getByText("Smart templates")).toBeVisible();
-    await expect(canvas.getByText("Team friendly")).toBeVisible();
+    await expect(canvas.getByText("PDF export")).toBeVisible();
   },
 };
