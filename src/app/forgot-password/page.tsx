@@ -4,7 +4,7 @@ import { AuthLayout } from "@/components/commons/auth-layout/auth-layout";
 import { ForgotPasswordForm } from "@/components/commons/forgot-password-form/forgot-password-form";
 
 export const viewport: Viewport = {
-  themeColor: "#141414",
+  themeColor: "#ffffff",
 };
 
 const ForgotPasswordPage = () => {
