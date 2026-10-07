@@ -9,7 +9,7 @@ import { useForm } from "react-hook-form";
 import { Button } from "@/components/commons/button/button";
 import { GoogleSignInButton } from "@/components/commons/google-sign-in-button/google-sign-in-button";
 import { Input } from "@/components/commons/input/input";
-import { PromoCodeCallout } from "@/components/commons/promo-code-callout/promo-code-callout";
+import { PromoCodeDisclosure } from "@/components/commons/promo-code-disclosure/promo-code-disclosure";
 import { useAutofillSubmit } from "@/hooks/use-autofill-submit";
 import { trackEvent } from "@/lib/analytics/track";
 import { syncAutofilledFields } from "@/lib/forms/autofill";
@@ -165,6 +165,20 @@ export const SignInForm = ({ notice, onSubmit }: SignInFormProps) => {
         </div>
       ) : null}
 
+      {/* Google first, as most sign-in screens now lead with it: it is the one-tap
+          path, and the email form below reads as the alternative. */}
+      <GoogleSignInButton
+        className="w-full"
+        next={next}
+        promoCode={promoCode}
+      />
+
+      <div className="flex items-center gap-3 text-xs font-title font-semibold text-nox-noir/50">
+        <span className="h-px flex-1 bg-steel-mist" />
+        or continue with email
+        <span className="h-px flex-1 bg-steel-mist" />
+      </div>
+
       <Input
         autoComplete="email"
         error={errors.email?.message}
@@ -180,44 +194,28 @@ export const SignInForm = ({ notice, onSubmit }: SignInFormProps) => {
           },
         })}
       />
-      {/* Deliberately no `maxLength` on the password, unlike the sign-up form:
-          `SignInSchema` doesn't bound it either. An account may hold a password longer
-          than the ceiling we now apply when one is *set*, and truncating it as its
-          owner typed would leave them staring at "the password is incorrect" with no
-          way to tell why. */}
-      <Input
-        autoComplete="current-password"
-        // Labels the iOS keyboard's return key "Go" instead of "return", so the
-        // optional promo field sitting below doesn't make submitting look like it
-        // needs the button. Pressing it submits the form as Enter always did.
-        enterKeyHint="go"
-        error={errors.password?.message}
-        label="Password"
-        placeholder="Enter your password"
-        type="password"
-        {...register("password", {
-          required: "Password is required.",
-        })}
-      />
-
-      <PromoCodeCallout />
-      <Input
-        autoCapitalize="characters"
-        autoComplete="off"
-        label="Promo code (optional)"
-        // Matches the ceiling `SignInSchema` enforces, so an oversized paste can't
-        // fail the *body* and take the whole sign-in with it.
-        maxLength={MAX_PROMO_CODE}
-        name="promoCode"
-        onChange={(event) => setPromoCode(event.target.value)}
-        placeholder="Enter your promo code"
-        spellCheck={false}
-        value={promoCode}
-      />
-
-      <div className="flex items-center justify-between gap-4 text-sm">
+      <div className="grid gap-2">
+        {/* Deliberately no `maxLength` on the password, unlike the sign-up form:
+            `SignInSchema` doesn't bound it either. An account may hold a password longer
+            than the ceiling we now apply when one is *set*, and truncating it as its
+            owner typed would leave them staring at "the password is incorrect" with no
+            way to tell why. */}
+        <Input
+          autoComplete="current-password"
+          // Labels the iOS keyboard's return key "Go" instead of "return", so the
+          // optional promo field below the button doesn't make submitting look like
+          // it needs the button. Pressing it submits the form as Enter always did.
+          enterKeyHint="go"
+          error={errors.password?.message}
+          label="Password"
+          placeholder="Enter your password"
+          type="password"
+          {...register("password", {
+            required: "Password is required.",
+          })}
+        />
         <Link
-          className="font-title font-bold text-nox-noir hover:text-primary"
+          className="justify-self-end font-title text-sm font-semibold text-nox-noir/70 hover:text-nox-noir"
           href="/forgot-password"
         >
           Forgot password?
@@ -233,17 +231,24 @@ export const SignInForm = ({ notice, onSubmit }: SignInFormProps) => {
         {isSubmitting ? "Signing in..." : "Sign in"}
       </Button>
 
-      <div className="flex items-center gap-3 text-xs font-title uppercase text-nox-noir/40">
-        <span className="h-px flex-1 bg-steel-mist" />
-        or
-        <span className="h-px flex-1 bg-steel-mist" />
-      </div>
-
-      <GoogleSignInButton
-        className="w-full"
-        next={next}
-        promoCode={promoCode}
-      />
+      {/* Optional, so it stays collapsed and out of the way of the credentials.
+          It still applies to both paths: the field stays mounted while closed,
+          and `promoCode` feeds the submit body and the Google link above. */}
+      <PromoCodeDisclosure value={promoCode}>
+        <Input
+          autoCapitalize="characters"
+          autoComplete="off"
+          label="Promo code (optional)"
+          // Matches the ceiling `SignInSchema` enforces, so an oversized paste can't
+          // fail the *body* and take the whole sign-in with it.
+          maxLength={MAX_PROMO_CODE}
+          name="promoCode"
+          onChange={(event) => setPromoCode(event.target.value)}
+          placeholder="Enter your promo code"
+          spellCheck={false}
+          value={promoCode}
+        />
+      </PromoCodeDisclosure>
     </form>
   );
 };

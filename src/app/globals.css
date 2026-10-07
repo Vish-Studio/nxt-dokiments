@@ -184,6 +184,53 @@ button:disabled {
   animation: marketplace-promo-fade-in 0.3s ease-out;
 }
 
+/* Auth showcase: the active step's bar is the autoplay timer — its
+   `animationend` advances the carousel, so the duration here is the slide time. */
+@keyframes auth-showcase-progress {
+  from {
+    width: 0%;
+  }
+
+  to {
+    width: 100%;
+  }
+}
+
+@keyframes auth-showcase-visual-in {
+  from {
+    opacity: 0;
+    transform: translateY(1rem) scale(0.97);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.auth-showcase-progress {
+  animation: auth-showcase-progress 5s linear forwards;
+}
+
+.auth-showcase-progress[data-paused="true"] {
+  animation-play-state: paused;
+}
+
+.auth-showcase-visual-enter {
+  animation: auth-showcase-visual-in 0.7s cubic-bezier(0.2, 0.85, 0.2, 1) both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .auth-showcase-progress {
+    animation: none;
+    width: 100%;
+  }
+
+  .auth-showcase-visual-enter {
+    animation: none;
+  }
+}
+
 .collection-toolbar-clear-search,
 .collection-toolbar-clear-search:hover {
   background-color: transparent !important;

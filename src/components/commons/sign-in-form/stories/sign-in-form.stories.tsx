@@ -214,16 +214,52 @@ export const TypedCredentialsWaitForTheButton: Story = {
   },
 };
 
-/** The launch offer is advertised alongside the credentials, with an optional field for it. */
-export const WithPromoCallout: Story = {
+/** Google leads, with the email form presented as the alternative beneath it. */
+export const GoogleFirst: Story = {
   args: {
     onSubmit: async () => undefined,
   },
   play: async ({ canvas }) => {
-    await expect(canvas.getByText("Launch Promo")).toBeVisible();
-    await expect(canvas.getByText("ViSHDOK2026!")).toBeVisible();
+    const google = canvas.getByRole("link", { name: /continue with google/i });
+    const email = canvas.getByPlaceholderText("you@company.com");
     await expect(
-      canvas.getByLabelText(/promo code \(optional\)/i),
-    ).toBeVisible();
+      google.compareDocumentPosition(email) & Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
+  },
+};
+
+/**
+ * The optional promo field stays collapsed so the credentials and their button
+ * read as one unit; opening the toggle reveals the field and the launch offer,
+ * and a code typed there still reaches the submit body.
+ */
+export const WithPromoCode: Story = {
+  args: {
+    onSubmit: fn(async () => undefined),
+  },
+  play: async ({ args, canvas, userEvent }) => {
+    const promoField = canvas.getByLabelText(/promo code \(optional\)/i);
+    await expect(promoField).not.toBeVisible();
+
+    await userEvent.click(canvas.getByText("Have a promo code?"));
+    await expect(promoField).toBeVisible();
+    await expect(canvas.getByText("ViSHDOK2026!")).toBeVisible();
+
+    await userEvent.type(promoField, "ViSHDOK2026!");
+    await userEvent.type(
+      canvas.getByPlaceholderText("you@company.com"),
+      "promo@example.com",
+    );
+    await userEvent.type(
+      canvas.getByPlaceholderText("Enter your password"),
+      "secret",
+    );
+    await userEvent.click(canvas.getByRole("button", { name: /sign in/i }));
+
+    await expect(args.onSubmit).toHaveBeenCalledWith({
+      email: "promo@example.com",
+      password: "secret",
+      promoCode: "ViSHDOK2026!",
+    });
   },
 };
