@@ -125,6 +125,16 @@ export const OnboardingDialog = ({
         </div>
 
         <div className="relative h-56 shrink-0 overflow-hidden rounded-box md:h-auto md:w-1/2">
+          {/* On every step, above the crossfading visuals so it never fades with
+              them. Desktop only: on mobile the top row already shows it. */}
+          <Image
+            alt=""
+            className="pointer-events-none absolute inset-x-0 top-10 z-10 mx-auto hidden h-6 w-auto select-none md:block"
+            draggable={false}
+            height={24}
+            src="/images/svg/logo-black.svg"
+            width={120}
+          />
           {onboardingSteps.map((visualStep, index) => (
             <OnboardingStepVisual
               imageSrc={visualStep.imageSrc}
