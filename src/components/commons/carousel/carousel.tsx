@@ -137,7 +137,9 @@ export const Carousel = ({
         <div className="flex min-w-0 flex-wrap items-center justify-between gap-x-4 gap-y-2">
           <div className="min-w-0">{header}</div>
           {navigationPlacement === "header" && navigation ? (
-            <div className="flex items-center gap-2">
+            // Below `sm` it takes its own full-width row under the header, with
+            // the stepper left and the arrows right; beside the header from `sm`.
+            <div className="flex w-full items-center justify-between gap-2 sm:w-auto sm:justify-start">
               <StepIndicator
                 current={selectedIndex + 1}
                 label="Slide"

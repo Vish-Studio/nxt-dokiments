@@ -126,6 +126,13 @@ export const Loading: Story = {
     await expect(
       canvas.getByRole("status", { name: /loading marketplace templates/i }),
     ).toBeInTheDocument();
+    // "Browse by category" holds its place with shimmer tiles, not real ones.
+    await expect(
+      canvasElement.querySelector(".marketplace-category-nav-skeleton"),
+    ).toBeInTheDocument();
+    await expect(
+      canvas.queryByRole("button", { name: "All templates" }),
+    ).not.toBeInTheDocument();
   },
 };
 
