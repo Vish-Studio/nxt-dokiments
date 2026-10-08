@@ -39,13 +39,33 @@ type Story = StoryObj<typeof meta>;
 export const Default: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    await expect(canvas.getByRole("tab", { name: /profile/i })).toHaveAttribute(
-      "aria-selected",
-      "true",
-    );
-    await userEvent.click(canvas.getByRole("tab", { name: /password/i }));
     await expect(
-      canvas.getByRole("heading", { name: /password/i }),
+      canvas.getByRole("tab", { name: /my profile/i }),
+    ).toHaveAttribute("aria-selected", "true");
+    await expect(
+      canvas.getByRole("heading", { level: 2, name: "My profile" }),
     ).toBeVisible();
+
+    await userEvent.click(canvas.getByRole("tab", { name: /security/i }));
+    await expect(
+      canvas.getByRole("heading", { name: "Password" }),
+    ).toBeVisible();
+
+    await userEvent.click(canvas.getByRole("tab", { name: /^plan$/i }));
+    await expect(
+      canvas.getByRole("heading", { name: "Your plan" }),
+    ).toBeVisible();
+
+    await userEvent.click(canvas.getByRole("tab", { name: /promotions/i }));
+    await expect(
+      canvas.getByRole("heading", { level: 2, name: "Promotions" }),
+    ).toBeVisible();
+  },
+};
+
+/** Below `lg`: the section menu becomes a horizontal tab bar above the content. */
+export const Mobile: Story = {
+  globals: {
+    viewport: { value: "mobile1", isRotated: false },
   },
 };

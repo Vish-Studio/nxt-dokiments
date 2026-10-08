@@ -21,7 +21,8 @@ import { userRoles } from "@/types/auth";
 
 /**
  * Fields that can be updated on the authenticated user's profile.
- * `address`, `companyName`, `fullName`, `phone`, `tel` are inherited from `AuthProfileDetails`.
+ * `address`, `brn`, `businessEmail`, `companyName`, `fullName`, `phone`, `tel` and
+ * `website` are inherited from `AuthProfileDetails`.
  */
 export type ProfileUpdate = {
   /** New display name shown throughout the app. */
@@ -64,6 +65,8 @@ const parseProfile = (
 
   return {
     address: optionalString(readString(fields.address)),
+    brn: optionalString(readString(fields.brn)),
+    businessEmail: optionalString(readString(fields.businessEmail)),
     companyName: optionalString(readString(fields.companyName)),
     displayName: readString(fields.displayName) ?? fallbackEmail.split("@")[0],
     email: readString(fields.email) ?? fallbackEmail,
@@ -75,6 +78,7 @@ const parseProfile = (
     role: isUserRole(role) ? role : "free",
     tel: optionalString(readString(fields.tel)),
     uid,
+    website: optionalString(readString(fields.website)),
   };
 };
 
@@ -213,12 +217,15 @@ export const patchProfileFields = async (
 ): Promise<void> => {
   const fields: FirestoreFields = {
     address: toStringValue(profile.address ?? ""),
+    brn: toStringValue(profile.brn ?? ""),
+    businessEmail: toStringValue(profile.businessEmail ?? ""),
     companyName: toStringValue(profile.companyName ?? ""),
     displayName: toStringValue(profile.displayName),
     fullName: toStringValue(profile.fullName ?? ""),
     phone: toStringValue(profile.phone ?? ""),
     tel: toStringValue(profile.tel ?? ""),
     updatedAt: toTimestampValue(),
+    website: toStringValue(profile.website ?? ""),
   };
 
   await patchFirestoreDocument(

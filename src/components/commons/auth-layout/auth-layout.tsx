@@ -2,8 +2,8 @@ import Image from "next/image";
 import Link from "next/link";
 import type { ReactNode } from "react";
 
+import { AuthFooter } from "@/components/commons/auth-footer/auth-footer";
 import { AuthShowcase } from "@/components/commons/auth-showcase/auth-showcase";
-import { HeroLegal } from "@/components/website/hero-legal/hero-legal";
 
 export type AuthLayoutProps = {
   children: ReactNode;
@@ -53,7 +53,8 @@ export const AuthLayout = ({ children, description, footer, title }: AuthLayoutP
           </div>
         </div>
 
-        <HeroLegal className="mt-10 justify-center text-xs lg:justify-center" />
+        {/* `mt-auto`: pinned to the bottom of the column, on mobile too. */}
+        <AuthFooter className="mt-auto pt-10 pb-2" />
       </main>
     </div>
   );

@@ -1,160 +1,111 @@
 "use client";
 
-import { useState } from "react";
-import { useForm } from "react-hook-form";
+import { BuildingsIcon, IdentificationCardIcon } from "@phosphor-icons/react";
 
-import { Button } from "@/components/commons/button/button";
-import { Input } from "@/components/commons/input/input";
-import { ProfileFeedbackBanner } from "@/components/dashboard/profile-feedback-banner/profile-feedback-banner";
-import { ProfileSummary } from "@/components/dashboard/profile-summary/profile-summary";
-import { PromoCodeCard } from "@/components/dashboard/promo-code-card/promo-code-card";
-import { useUpdateProfileMutation } from "@/hooks/queries/use-auth";
+import {
+  type ProfileField,
+  ProfileDetailsCard,
+} from "@/components/dashboard/profile-details-card/profile-details-card";
+import { ProfileOverviewCard } from "@/components/dashboard/profile-overview-card/profile-overview-card";
 import { useAuthStore } from "@/stores/auth-store";
-import { profileFieldLimits } from "@/types/auth";
 
-type ProfileValues = {
-  address: string;
-  companyName: string;
-  displayName: string;
-  fullName: string;
-  phone: string;
-  tel: string;
+const personalFields: ProfileField[] = [
+  {
+    autoComplete: "name",
+    label: "Display name",
+    name: "displayName",
+    placeholder: "Shown across your workspace",
+    required: true,
+  },
+  {
+    autoComplete: "name",
+    label: "Full name",
+    name: "fullName",
+    placeholder: "Your legal name",
+  },
+  {
+    autoComplete: "tel",
+    label: "Phone",
+    name: "phone",
+    placeholder: "Mobile number",
+    type: "tel",
+  },
+  {
+    autoComplete: "tel-national",
+    label: "Office phone",
+    name: "tel",
+    placeholder: "Office / landline",
+    type: "tel",
+  },
+];
+
+const emailPattern = {
+  message: "Enter a valid email address.",
+  value: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
 };
 
-type Feedback = {
-  message: string;
-  tone: "error" | "success";
-};
+/** The business side of a document's sender block — the same details kept for a client. */
+const businessFields: ProfileField[] = [
+  {
+    autoComplete: "organization",
+    label: "Company name",
+    name: "companyName",
+    placeholder: "Your company",
+  },
+  {
+    autoComplete: "off",
+    label: "Business registration number (BRN)",
+    name: "brn",
+    placeholder: "e.g. C12345678",
+  },
+  {
+    autoComplete: "email",
+    label: "Business email",
+    name: "businessEmail",
+    pattern: emailPattern,
+    placeholder: "hello@yourcompany.com",
+    type: "email",
+  },
+  {
+    autoComplete: "url",
+    label: "Website",
+    name: "website",
+    placeholder: "yourcompany.com",
+  },
+  {
+    autoComplete: "street-address",
+    label: "Business address",
+    name: "address",
+    placeholder: "Street, city, postal code",
+    wide: true,
+  },
+];
 
+/**
+ * Settings → My profile: who the account is, then the personal and business
+ * details, each in its own card with its own Edit button.
+ */
 export const ProfileSettings = () => {
   const user = useAuthStore((state) => state.user);
-  const { isPending, mutate: updateProfile } = useUpdateProfileMutation();
-
-  const [profileFeedback, setProfileFeedback] = useState<Feedback | null>(null);
-
-  const profileForm = useForm<ProfileValues>({
-    values: {
-      address: user?.address ?? "",
-      companyName: user?.companyName ?? "",
-      displayName: user?.displayName ?? "",
-      fullName: user?.fullName ?? "",
-      phone: user?.phone ?? "",
-      tel: user?.tel ?? "",
-    },
-  });
-
-  const submitProfile = profileForm.handleSubmit((values) => {
-    setProfileFeedback(null);
-
-    updateProfile(
-      {
-        address: values.address.trim(),
-        companyName: values.companyName.trim(),
-        displayName: values.displayName.trim(),
-        fullName: values.fullName.trim(),
-        phone: values.phone.trim(),
-        tel: values.tel.trim(),
-      },
-      {
-        onError: (error) => {
-          setProfileFeedback({
-            message:
-              error instanceof Error
-                ? error.message
-                : "Unable to update profile.",
-            tone: "error",
-          });
-        },
-        onSuccess: () => {
-          setProfileFeedback({ message: "Profile updated.", tone: "success" });
-        },
-      },
-    );
-  });
 
   return (
-    <div className="w-full">
-      <div className="pb-4">
-        <h3 className="font-title text-lg font-bold text-nox-noir">Profile</h3>
-        <p className="mt-1 text-sm leading-6 text-nox-noir/60">
-          Add your contact and business details. This information stays on your
-          account.
-        </p>
-      </div>
-
-      <div className="grid items-start gap-4 lg:grid-cols-2">
-        <form
-          className="grid gap-5 rounded-box border border-steel-mist bg-base-100 p-6"
-          onSubmit={submitProfile}
-        >
-          <ProfileFeedbackBanner feedback={profileFeedback} />
-          {/* `maxLength` on every field mirrors `profileFieldLimits`, which is what
-              ProfileSchema enforces server-side — a hard stop in the browser is
-              friendlier than a rejected save, and nobody reaches these ceilings
-              with a real name or address. */}
-          <Input
-            autoComplete="name"
-            error={profileForm.formState.errors.displayName?.message}
-            label="Display name"
-            maxLength={profileFieldLimits.displayName}
-            placeholder="Shown across your workspace"
-            {...profileForm.register("displayName", {
-              required: "Display name is required.",
-              minLength: { message: "Use at least 2 characters.", value: 2 },
-            })}
-          />
-          <Input
-            autoComplete="name"
-            label="Full name"
-            maxLength={profileFieldLimits.fullName}
-            placeholder="Your legal name"
-            {...profileForm.register("fullName")}
-          />
-          <Input
-            autoComplete="organization"
-            label="Company name"
-            maxLength={profileFieldLimits.companyName}
-            placeholder="Your company"
-            {...profileForm.register("companyName")}
-          />
-          <Input
-            autoComplete="tel"
-            label="Phone"
-            maxLength={profileFieldLimits.phone}
-            placeholder="Mobile number"
-            type="tel"
-            {...profileForm.register("phone")}
-          />
-          <Input
-            autoComplete="tel-national"
-            label="Tel"
-            maxLength={profileFieldLimits.tel}
-            placeholder="Office / landline"
-            type="tel"
-            {...profileForm.register("tel")}
-          />
-          <Input
-            autoComplete="street-address"
-            label="Address"
-            maxLength={profileFieldLimits.address}
-            placeholder="Street, city, postal code"
-            {...profileForm.register("address")}
-          />
-          <div>
-            <Button
-              disabled={isPending}
-              type="submit"
-            >
-              {isPending ? "Saving..." : "Save changes"}
-            </Button>
-          </div>
-        </form>
-
-        <div className="grid gap-4">
-          <ProfileSummary user={user} />
-          <PromoCodeCard />
-        </div>
-      </div>
+    <div className="profile-settings grid gap-4">
+      <ProfileOverviewCard user={user} />
+      <ProfileDetailsCard
+        description="Your name and phone are filled into every new document."
+        fields={personalFields}
+        icon={IdentificationCardIcon}
+        readOnlyDetails={[{ label: "Email address", value: user?.email }]}
+        title="Personal information"
+        tone="blue"
+      />
+      <ProfileDetailsCard
+        description="Kept like a client record. Your company, business email and address are filled into every new document."
+        fields={businessFields}
+        icon={BuildingsIcon}
+        title="Business details"
+        tone="teal"
+      />
     </div>
   );
 };

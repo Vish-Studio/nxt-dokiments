@@ -4,6 +4,7 @@ import type { ReactNode } from "react";
 import { useEffect, useState } from "react";
 
 import { AuthGuard } from "@/components/commons/auth-guard/auth-guard";
+import { Toaster } from "@/components/commons/toaster/toaster";
 import { ContentContainer } from "@/components/dashboard/content-container/content-container";
 import { MobilePageHeader } from "@/components/dashboard/mobile-page-header/mobile-page-header";
 import { NotificationBell } from "@/components/dashboard/notification-bell/notification-bell";
@@ -160,6 +161,7 @@ export const AppShell = ({
           </section>
         </div>
       </main>
+      <Toaster />
     </AuthGuard>
   );
 };

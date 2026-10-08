@@ -135,11 +135,14 @@ export const updateAccountProfile = async (
     user: {
       ...session.user,
       address: profile.address,
+      brn: profile.brn,
+      businessEmail: profile.businessEmail,
       companyName: profile.companyName,
       displayName: profile.displayName,
       fullName: profile.fullName,
       phone: profile.phone,
       tel: profile.tel,
+      website: profile.website,
     },
   };
 };

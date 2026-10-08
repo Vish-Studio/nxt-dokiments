@@ -1,18 +1,21 @@
 "use client";
 
 import type { SubmitEvent } from "react";
+import { LockKeyIcon } from "@phosphor-icons/react";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 
 import { Button } from "@/components/commons/button/button";
 import { Input } from "@/components/commons/input/input";
 import { ReauthDialog } from "@/components/commons/reauth-dialog/reauth-dialog";
+import { SettingsCard } from "@/components/dashboard/settings-card/settings-card";
 import {
   ReauthRequiredError,
   useUpdatePasswordMutation,
 } from "@/hooks/queries/use-auth";
 import { syncAutofilledFields } from "@/lib/forms/autofill";
 import { useAuthStore } from "@/stores/auth-store";
+import { useToastStore } from "@/stores/toast-store";
 import { credentialFieldLimits } from "@/types/auth";
 
 type PasswordValues = {
@@ -28,6 +31,7 @@ type Feedback = {
 export const PasswordSettings = () => {
   const user = useAuthStore((state) => state.user);
   const [feedback, setFeedback] = useState<Feedback | null>(null);
+  const showToast = useToastStore((state) => state.showToast);
   const [isReauthOpen, setIsReauthOpen] = useState(false);
   const { isPending, mutate: updatePassword } = useUpdatePasswordMutation();
 
@@ -59,7 +63,7 @@ export const PasswordSettings = () => {
       },
       onSuccess: () => {
         form.reset({ confirmPassword: "", password: "" });
-        setFeedback({ message: "Password changed.", tone: "success" });
+        showToast({ message: "Password changed.", tone: "success" });
       },
     });
   };
@@ -85,36 +89,37 @@ export const PasswordSettings = () => {
 
   if (user?.provider === "google") {
     return (
-      <section className="max-w-md">
-        <div className="border-b border-steel-mist pb-4">
-          <h3 className="font-title text-lg font-bold text-nox-noir">
-            Password
-          </h3>
-        </div>
-        <p className="mt-6 text-sm leading-6 text-nox-noir/60">
+      <SettingsCard
+        className="password-settings"
+        icon={LockKeyIcon}
+        title="Password"
+        tone="purple"
+      >
+        <p className="text-sm leading-6 text-nox-noir/60">
           You sign in with Google, so there&apos;s no password to manage for
           this account.
         </p>
-      </section>
+      </SettingsCard>
     );
   }
 
   return (
-    <section className="max-w-md">
-      <div className="border-b border-steel-mist pb-4">
-        <h3 className="font-title text-lg font-bold text-nox-noir">Password</h3>
-        <p className="mt-1 text-sm leading-6 text-nox-noir/60">
-          Choose a new password with at least 6 characters.
-        </p>
-        {user?.linkedGoogle ? (
-          <p className="mt-2 text-sm leading-6 text-nox-noir/60">
-            Google is also connected to this account.
-          </p>
-        ) : null}
-      </div>
-
+    <SettingsCard
+      className="password-settings"
+      description={
+        <>
+          <p>Choose a new password with at least 6 characters.</p>
+          {user?.linkedGoogle ? (
+            <p className="mt-1">Google is also connected to this account.</p>
+          ) : null}
+        </>
+      }
+      icon={LockKeyIcon}
+      title="Password"
+      tone="purple"
+    >
       <form
-        className="mt-6 grid gap-5"
+        className="grid max-w-md gap-5"
         onSubmit={handleFormSubmit}
       >
         {feedback ? (
@@ -175,6 +180,6 @@ export const PasswordSettings = () => {
         onReauthenticated={handleReauthenticated}
         open={isReauthOpen}
       />
-    </section>
+    </SettingsCard>
   );
 };

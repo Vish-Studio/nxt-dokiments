@@ -1,7 +1,9 @@
 import type { Preview } from "@storybook/nextjs-vite";
 import { QueryClientProvider } from "@tanstack/react-query";
 
+import { Toaster } from "../src/components/commons/toaster/toaster";
 import { makeStoryQueryClient } from "../src/lib/query/story-query-client";
+import { useToastStore } from "../src/stores/toast-store";
 
 import "../src/app/globals.css";
 
@@ -29,12 +31,19 @@ if (typeof document !== "undefined") {
 
 const preview: Preview = {
   decorators: [
-    (Story) => (
+    (Story, { parameters }) => (
       <QueryClientProvider client={makeStoryQueryClient()}>
         <Story />
+        {/* Components confirm saves through the app shell's toaster; this stands
+            in for it so their stories can assert on the toast. Stories that
+            render their own set `parameters.toaster` to false. */}
+        {parameters.toaster === false ? null : <Toaster />}
       </QueryClientProvider>
     ),
   ],
+  beforeEach: () => {
+    useToastStore.getState().clearToasts();
+  },
   parameters: {
     controls: {
       matchers: {
