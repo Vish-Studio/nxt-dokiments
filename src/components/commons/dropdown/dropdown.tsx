@@ -5,7 +5,7 @@ import type { KeyboardEvent, ReactNode } from "react";
 import { useEffect, useId, useRef, useState } from "react";
 
 import { Button } from "@/components/commons/button/button";
-import { ButtonIcon } from "@/components/commons/button-icon/button-icon";
+import { ButtonIcon, type ButtonIconShape } from "@/components/commons/button-icon/button-icon";
 import type { SelectOption } from "@/components/commons/select/select";
 import { cn } from "@/lib/utils";
 
@@ -29,6 +29,8 @@ export interface DropdownProps {
   children?: ReactNode;
   trigger?: ReactNode;
   iconTrigger?: ReactNode;
+  /** Shape of the `iconTrigger` button. Defaults to `circle`. */
+  iconTriggerShape?: ButtonIconShape;
   groups?: DropdownGroup[];
   closeOnSelect?: boolean;
   align?: "start" | "end";
@@ -39,7 +41,7 @@ export interface DropdownProps {
 
 export const Dropdown = ({
   align = "end", ariaLabel, buttonClassName, children, className,
-  closeOnSelect = true, groups, iconTrigger, menuClassName, trigger,
+  closeOnSelect = true, groups, iconTrigger, iconTriggerShape = "circle", menuClassName, trigger,
 }: DropdownProps) => {
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -119,6 +121,7 @@ export const Dropdown = ({
           onClick={toggleMenu}
           onKeyDown={openWithKeyboard}
           ref={triggerRef}
+          shape={iconTriggerShape}
           size="sm"
           variant="ghost"
         />

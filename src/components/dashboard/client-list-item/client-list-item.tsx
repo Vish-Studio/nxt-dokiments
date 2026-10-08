@@ -76,6 +76,7 @@ export const ClientListItem = ({
             className="size-8 min-h-8"
             disabled
             icon={<DotsThreeIcon aria-hidden size={18} weight="bold" />}
+            shape="square"
             size="sm"
             variant="ghost"
           />
@@ -85,6 +86,7 @@ export const ClientListItem = ({
             buttonClassName="size-8 min-h-8 text-nox-noir hover:bg-base-200"
             className="shrink-0"
             iconTrigger={<DotsThreeIcon aria-hidden size={20} weight="bold" />}
+            iconTriggerShape="square"
             menuClassName="w-36"
           >
             <Button
@@ -105,7 +107,7 @@ export const ClientListItem = ({
               size="sm"
               variant="ghost"
             >
-              Delete client
+              Delete
             </Button>
           </Dropdown>
         )}

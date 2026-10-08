@@ -57,7 +57,7 @@ export const Default: Story = {
     await expect(args.onEdit).toHaveBeenCalledOnce();
 
     await userEvent.click(
-      canvas.getByRole("button", { name: "Delete client" }),
+      canvas.getByRole("button", { name: "Delete" }),
     );
     await expect(args.onDelete).toHaveBeenCalledOnce();
     await expect(args.onPreview).toHaveBeenCalledOnce();
