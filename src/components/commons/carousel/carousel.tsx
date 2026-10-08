@@ -6,7 +6,7 @@ import { useCallback, useEffect, useState } from "react";
 import type { ReactNode } from "react";
 
 import { ButtonIcon } from "@/components/commons/button-icon/button-icon";
-import { CarouselProgress } from "@/components/commons/carousel-progress/carousel-progress";
+import { StepIndicator } from "@/components/commons/step-indicator/step-indicator";
 import { cn } from "@/lib/utils";
 
 export type CarouselProps = {
@@ -138,7 +138,11 @@ export const Carousel = ({
           <div className="min-w-0">{header}</div>
           {navigationPlacement === "header" && navigation ? (
             <div className="flex items-center gap-2">
-              <CarouselProgress current={selectedIndex + 1} total={snapCount} />
+              <StepIndicator
+                current={selectedIndex + 1}
+                label="Slide"
+                total={snapCount}
+              />
               {navigation}
             </div>
           ) : null}
@@ -163,7 +167,11 @@ export const Carousel = ({
 
       {navigation && navigationPlacement === "below" ? (
         <div className="mt-4 flex items-center justify-between gap-4 border-t border-nox-noir/10 pt-4">
-          <CarouselProgress current={selectedIndex + 1} total={snapCount} />
+          <StepIndicator
+            current={selectedIndex + 1}
+            label="Slide"
+            total={snapCount}
+          />
           {navigation}
         </div>
       ) : null}

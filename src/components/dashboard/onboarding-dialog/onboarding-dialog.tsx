@@ -7,9 +7,9 @@ import { createPortal } from "react-dom";
 
 import { Button } from "@/components/commons/button/button";
 import { ButtonIcon } from "@/components/commons/button-icon/button-icon";
+import { StepIndicator } from "@/components/commons/step-indicator/step-indicator";
 
 import { OnboardingStep } from "./onboarding-step";
-import { OnboardingStepIndicator } from "./onboarding-step-indicator";
 import { OnboardingStepVisual } from "./onboarding-step-visual";
 import { onboardingSteps } from "./onboarding-steps";
 
@@ -148,8 +148,8 @@ export const OnboardingDialog = ({
           </div>
 
           <div className="flex shrink-0 items-center justify-between gap-4 border-t border-steel-mist pt-3 md:pb-3">
-            <OnboardingStepIndicator
-              activeIndex={stepIndex}
+            <StepIndicator
+              current={stepIndex + 1}
               total={total}
             />
             <div className="flex gap-2">
