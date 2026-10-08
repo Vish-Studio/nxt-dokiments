@@ -4,7 +4,7 @@ import { CaretLeftIcon, CaretRightIcon } from "@phosphor-icons/react";
 import { useCallback, useEffect, useState } from "react";
 
 import { ButtonIcon } from "@/components/commons/button-icon/button-icon";
-import { CarouselProgress } from "@/components/commons/carousel-progress/carousel-progress";
+import { StepIndicator } from "@/components/commons/step-indicator/step-indicator";
 
 import {
   MarketplacePromoSlide,
@@ -61,8 +61,14 @@ export const MarketplacePromoCarousel = ({
         {...activeSlide}
       />
       {slideCount > 1 ? (
-        <div className="absolute bottom-5 left-5 z-20 flex items-center gap-4 sm:bottom-8 sm:left-8 lg:bottom-10 lg:left-10">
-          <CarouselProgress current={activeIndex + 1} total={slideCount} />
+        // Full width on mobile, so the stepper sits left and the arrows right;
+        // from `sm` up the two sit together in the bottom-left corner.
+        <div className="absolute right-5 bottom-5 left-5 z-20 flex items-center justify-between gap-4 sm:right-auto sm:bottom-8 sm:left-8 sm:justify-start lg:bottom-10 lg:left-10">
+          <StepIndicator
+            current={activeIndex + 1}
+            label="Slide"
+            total={slideCount}
+          />
           <div className="flex items-center gap-2">
             <ButtonIcon
               aria-label="Previous marketplace update"

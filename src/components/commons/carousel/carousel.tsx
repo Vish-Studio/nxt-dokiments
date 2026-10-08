@@ -6,7 +6,7 @@ import { useCallback, useEffect, useState } from "react";
 import type { ReactNode } from "react";
 
 import { ButtonIcon } from "@/components/commons/button-icon/button-icon";
-import { CarouselProgress } from "@/components/commons/carousel-progress/carousel-progress";
+import { StepIndicator } from "@/components/commons/step-indicator/step-indicator";
 import { cn } from "@/lib/utils";
 
 export type CarouselProps = {
@@ -137,8 +137,14 @@ export const Carousel = ({
         <div className="flex min-w-0 flex-wrap items-center justify-between gap-x-4 gap-y-2">
           <div className="min-w-0">{header}</div>
           {navigationPlacement === "header" && navigation ? (
-            <div className="flex items-center gap-2">
-              <CarouselProgress current={selectedIndex + 1} total={snapCount} />
+            // Below `sm` it takes its own full-width row under the header, with
+            // the stepper left and the arrows right; beside the header from `sm`.
+            <div className="flex w-full items-center justify-between gap-2 sm:w-auto sm:justify-start">
+              <StepIndicator
+                current={selectedIndex + 1}
+                label="Slide"
+                total={snapCount}
+              />
               {navigation}
             </div>
           ) : null}
@@ -163,7 +169,11 @@ export const Carousel = ({
 
       {navigation && navigationPlacement === "below" ? (
         <div className="mt-4 flex items-center justify-between gap-4 border-t border-nox-noir/10 pt-4">
-          <CarouselProgress current={selectedIndex + 1} total={snapCount} />
+          <StepIndicator
+            current={selectedIndex + 1}
+            label="Slide"
+            total={snapCount}
+          />
           {navigation}
         </div>
       ) : null}

@@ -493,3 +493,25 @@ button:disabled {
     animation: none;
   }
 }
+
+/* Auth guard: an indeterminate bar — a third-width segment sweeping across. */
+@keyframes auth-guard-progress {
+  from {
+    transform: translateX(-100%);
+  }
+
+  to {
+    transform: translateX(300%);
+  }
+}
+
+.auth-guard-progress {
+  animation: auth-guard-progress 1.2s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .auth-guard-progress {
+    animation: none;
+    transform: translateX(100%);
+  }
+}
