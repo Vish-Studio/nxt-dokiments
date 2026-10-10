@@ -90,7 +90,7 @@ export const ClientListItem = ({
             menuClassName="w-36"
           >
             <Button
-              className="w-full justify-start gap-2 px-3"
+              className="w-full justify-start gap-2 px-3 whitespace-nowrap"
               icon={<PencilSimpleIcon aria-hidden size={16} weight="bold" />}
               iconPosition="left"
               onClick={() => onEdit(client)}
@@ -100,7 +100,7 @@ export const ClientListItem = ({
               Edit client
             </Button>
             <Button
-              className="w-full justify-start gap-2 px-3 text-error hover:bg-error/10"
+              className="w-full justify-start gap-2 px-3 whitespace-nowrap text-error hover:bg-error/10"
               icon={<TrashIcon aria-hidden size={16} weight="bold" />}
               iconPosition="left"
               onClick={() => onDelete(client)}
