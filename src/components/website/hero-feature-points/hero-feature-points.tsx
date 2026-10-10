@@ -1,8 +1,8 @@
 import {
   DeviceMobile,
+  FilePdf,
   ShieldCheck,
   Sparkle,
-  UsersThree,
 } from "@phosphor-icons/react/dist/ssr";
 
 const featurePoints = [
@@ -23,30 +23,36 @@ const featurePoints = [
   },
   {
     accent: "bg-play-pink",
-    icon: UsersThree,
-    label: "Team friendly",
+    icon: FilePdf,
+    label: "PDF export",
   },
 ];
 
 export const HeroFeaturePoints = () => {
   return (
-    <div className="hero-feature-points mt-8">
-      <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
-        {featurePoints.map((feature) => {
-          const Icon = feature.icon;
+    <ul className="hero-feature-points mx-auto mt-8 grid w-fit grid-cols-2 gap-x-8 gap-y-3 lg:mx-0">
+      {featurePoints.map((feature) => {
+        const Icon = feature.icon;
 
-          return (
-            <div className="flex flex-col items-center gap-2 text-center" key={feature.label}>
-              <span className={`flex size-14 items-center justify-center rounded-box ${feature.accent}`}>
-                <Icon aria-hidden size={22} weight="bold" />
-              </span>
-              <span className="font-title text-[10px] font-bold uppercase tracking-wide text-nox-noir">
-                {feature.label}
-              </span>
-            </div>
-          );
-        })}
-      </div>
-    </div>
+        return (
+          <li
+            className="flex items-center gap-2 font-title text-sm font-semibold text-nox-noir/72"
+            key={feature.label}
+          >
+            <span
+              className={`flex size-8 items-center justify-center rounded-field ${feature.accent}`}
+            >
+              <Icon
+                aria-hidden
+                className="text-nox-noir"
+                size={16}
+                weight="bold"
+              />
+            </span>
+            {feature.label}
+          </li>
+        );
+      })}
+    </ul>
   );
 };

@@ -1,6 +1,8 @@
 import type { Meta, StoryObj } from "@storybook/nextjs-vite";
 import { expect } from "storybook/test";
 
+import { tierLocksDisabled } from "@/lib/market-place";
+
 import { PlanAccessCard } from "../plan-access-card";
 
 const meta = {
@@ -15,7 +17,15 @@ type Story = StoryObj<typeof meta>;
 
 export const Free: Story = {
   play: async ({ canvas }) => {
-    await expect(canvas.getAllByLabelText("Locked").length).toBeGreaterThan(0);
+    if (tierLocksDisabled) {
+      await expect(
+        canvas.getByText("8 of 8 features unlocked on your plan."),
+      ).toBeVisible();
+    } else {
+      await expect(
+        canvas.getAllByText(/^(Silver|Gold) plan$/).length,
+      ).toBeGreaterThan(0);
+    }
     await expect(
       canvas.getByRole("link", { name: /upgrade plan/i }),
     ).toHaveAttribute("href", "/subscription");
@@ -30,7 +40,7 @@ export const Silver: Story = {
 export const Superadmin: Story = {
   args: { role: "superadmin" },
   play: async ({ canvas }) => {
-    await expect(canvas.queryByLabelText("Locked")).not.toBeInTheDocument();
+    await expect(canvas.queryAllByText(/^(Silver|Gold) plan$/)).toHaveLength(0);
     await expect(
       canvas.getByText("Every feature is unlocked on your account."),
     ).toBeVisible();
