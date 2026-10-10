@@ -4,7 +4,7 @@ import { AuthLayout } from "@/components/commons/auth-layout/auth-layout";
 import { SignUpForm } from "@/components/commons/sign-up-form/sign-up-form";
 
 export const viewport: Viewport = {
-  themeColor: "#141414",
+  themeColor: "#ffffff",
 };
 
 const SignUpPage = () => {

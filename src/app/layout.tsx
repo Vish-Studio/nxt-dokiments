@@ -81,7 +81,7 @@ export const metadata: Metadata = {
     },
   },
   twitter: {
-    card: "summary",
+    card: "summary_large_image",
     title: "Dokiments | Business Document Templates and Workspace",
     description:
       "Create invoices, contracts, quotations, proposals, and reusable business documents from polished templates.",

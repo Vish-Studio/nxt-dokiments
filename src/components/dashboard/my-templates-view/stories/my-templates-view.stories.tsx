@@ -173,9 +173,11 @@ export const PageToolbar: Story = {
   args: { withShell: true },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    const header = canvas.getByRole("heading", { name: "My Templates", level: 2 }).closest("section")!;
+    // Await both: the shell can render late on a cold run, and the search box is
+    // portalled into the header a frame after mount.
+    const header = (await canvas.findByRole("heading", { name: "My Templates", level: 2 })).closest("section")!;
     await canvas.findByRole("region", { name: "Recently Added" });
-    const search = canvas.getByRole("searchbox", { name: "Search templates" });
+    const search = await canvas.findByRole("searchbox", { name: "Search templates" });
     await expect(header.contains(search)).toBe(true);
     await expect(header).toHaveClass("bg-play-pink");
     await expect(search).toBeVisible();

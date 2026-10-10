@@ -6,6 +6,7 @@ import { useCallback, useEffect, useState } from "react";
 import type { ReactNode } from "react";
 
 import { ButtonIcon } from "@/components/commons/button-icon/button-icon";
+import { StepIndicator } from "@/components/commons/step-indicator/step-indicator";
 import { cn } from "@/lib/utils";
 
 export type CarouselProps = {
@@ -91,9 +92,6 @@ export const Carousel = ({
     return () => window.clearInterval(interval);
   }, [autoPlay, autoPlayInterval, emblaApi]);
 
-  const progress = snapCount > 0 ? ((selectedIndex + 1) / snapCount) * 100 : 0;
-  const currentSlide = String(selectedIndex + 1).padStart(2, "0");
-  const totalSlides = String(snapCount).padStart(2, "0");
   const navigation = snapCount > 1 ? (
     <div className="flex shrink-0 items-center gap-2">
       <ButtonIcon
@@ -136,9 +134,20 @@ export const Carousel = ({
   return (
     <div className={cn("app-carousel min-w-0", className)}>
       {header ? (
-        <div className="flex min-w-0 items-center justify-between gap-4">
+        <div className="flex min-w-0 flex-wrap items-center justify-between gap-x-4 gap-y-2">
           <div className="min-w-0">{header}</div>
-          {navigationPlacement === "header" ? navigation : null}
+          {navigationPlacement === "header" && navigation ? (
+            // Below `sm` it takes its own full-width row under the header, with
+            // the stepper left and the arrows right; beside the header from `sm`.
+            <div className="flex w-full items-center justify-between gap-2 sm:w-auto sm:justify-start">
+              <StepIndicator
+                current={selectedIndex + 1}
+                label="Slide"
+                total={snapCount}
+              />
+              {navigation}
+            </div>
+          ) : null}
         </div>
       ) : null}
 
@@ -159,23 +168,12 @@ export const Carousel = ({
       </div>
 
       {navigation && navigationPlacement === "below" ? (
-        <div className="mt-4 flex items-center gap-4 border-t border-nox-noir/10 pt-4">
-          <p
-            aria-live="polite"
-            className="min-w-14 font-title text-xs font-bold tabular-nums text-nox-noir/50"
-          >
-            <span className="text-nox-noir">{currentSlide}</span>
-            <span aria-hidden className="px-1 text-nox-noir/25">/</span>
-            {totalSlides}
-          </p>
-
-          <div className="h-px flex-1 overflow-hidden bg-nox-noir/10">
-            <div
-              className="h-full bg-nox-noir transition-[width] duration-300 ease-out"
-              style={{ width: `${progress}%` }}
-            />
-          </div>
-
+        <div className="mt-4 flex items-center justify-between gap-4 border-t border-nox-noir/10 pt-4">
+          <StepIndicator
+            current={selectedIndex + 1}
+            label="Slide"
+            total={snapCount}
+          />
           {navigation}
         </div>
       ) : null}

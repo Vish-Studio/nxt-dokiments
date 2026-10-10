@@ -89,9 +89,14 @@ export const WithClients: Story = {
     const canvas = within(canvasElement);
     await expect(await canvas.findByText("Maya Chen")).toBeVisible();
     await expect(canvas.getByText("maya@northline.com")).toBeVisible();
+    // Delete lives in the card's actions menu, not on the card itself.
+    await userEvent.click(
+      canvas.getByRole("button", { name: "More actions for Maya Chen" }),
+    );
+    // `toBeInTheDocument`, not `toBeVisible`: daisyUI fades the menu in from opacity 0.
     await expect(
-      canvas.getByRole("button", { name: "Delete Maya Chen" }),
-    ).toBeVisible();
+      await canvas.findByRole("button", { name: "Delete" }),
+    ).toBeInTheDocument();
   },
 };
 
@@ -198,7 +203,7 @@ export const AddClient: Story = {
     await waitFor(() => {
       expect(canvas.getByText("Ravi Patel")).toBeVisible();
     });
-    await expect(canvas.getAllByText("Blue Harbour Ltd")).toHaveLength(2);
+    await expect(canvas.getByText("Blue Harbour Ltd")).toBeVisible();
   },
 };
 

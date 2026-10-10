@@ -63,6 +63,9 @@
 }
 
 @theme inline {
+  /* Segmented tab bars (`TabMenu`): tighter than `rounded-box` so a full-width
+     bar on mobile doesn't read as a pill. */
+  --radius-tab: 0.625rem;
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-golden-harvest: var(--color-golden-harvest);
@@ -170,6 +173,36 @@ button:disabled {
   animation: side-panel-in 0.25s cubic-bezier(0.2, 0.85, 0.2, 1);
 }
 
+/* Slide only, no fade: the toast is readable from its first frame. */
+@keyframes toast-item-in {
+  from {
+    transform: translateY(0.75rem);
+  }
+
+  to {
+    transform: translateY(0);
+  }
+}
+
+.toast-item-enter {
+  animation: toast-item-in 0.2s cubic-bezier(0.2, 0.85, 0.2, 1);
+}
+
+@keyframes marketplace-promo-color-in {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+.marketplace-promo-color-enter {
+  animation: marketplace-promo-color-in 0.8s ease-in-out both;
+  will-change: opacity;
+}
+
 @keyframes marketplace-promo-fade-in {
   from {
     opacity: 0;
@@ -180,8 +213,87 @@ button:disabled {
   }
 }
 
-.marketplace-promo-slide-enter {
-  animation: marketplace-promo-fade-in 0.3s ease-out;
+.marketplace-promo-title-enter {
+  animation: marketplace-promo-fade-in 0.55s ease-in-out 0.35s both;
+  will-change: opacity;
+}
+
+.marketplace-promo-detail-enter {
+  animation: marketplace-promo-fade-in 0.55s ease-in-out 0.65s both;
+  will-change: opacity;
+}
+
+.marketplace-promo-action-enter {
+  animation: marketplace-promo-fade-in 0.55s ease-in-out 0.85s both;
+  will-change: opacity;
+}
+
+@keyframes marketplace-promo-visual-in {
+  from {
+    opacity: 0;
+    transform: translateX(1.5rem);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.marketplace-promo-visual-enter {
+  animation: marketplace-promo-visual-in 0.85s ease-in-out 0.75s both;
+  will-change: opacity, transform;
+}
+
+.marketplace-promo-mockup {
+  clip-path: inset(1px 0 0);
+}
+
+/* Auth showcase: the active step's bar is the autoplay timer — its
+   `animationend` advances the carousel, so the duration here is the slide time. */
+@keyframes auth-showcase-progress {
+  from {
+    width: 0%;
+  }
+
+  to {
+    width: 100%;
+  }
+}
+
+@keyframes auth-showcase-visual-in {
+  from {
+    opacity: 0;
+    transform: translateY(1rem) scale(0.97);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.auth-showcase-progress {
+  animation: auth-showcase-progress 5s linear forwards;
+}
+
+.auth-showcase-progress[data-paused="true"] {
+  animation-play-state: paused;
+}
+
+.auth-showcase-visual-enter {
+  animation: auth-showcase-visual-in 0.7s cubic-bezier(0.2, 0.85, 0.2, 1) both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .auth-showcase-progress {
+    animation: none;
+    width: 100%;
+  }
+
+  .auth-showcase-visual-enter {
+    animation: none;
+  }
 }
 
 .collection-toolbar-clear-search,
@@ -201,11 +313,16 @@ button:disabled {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .side-panel-enter {
+  .side-panel-enter,
+  .toast-item-enter {
     animation: none;
   }
 
-  .marketplace-promo-slide-enter {
+  .marketplace-promo-color-enter,
+  .marketplace-promo-title-enter,
+  .marketplace-promo-detail-enter,
+  .marketplace-promo-action-enter,
+  .marketplace-promo-visual-enter {
     animation: none;
   }
 }
@@ -314,7 +431,7 @@ button:disabled {
 }
 
 .footer-logo {
-  background-color: var(--color-play-teal);
+  background-color: var(--color-app-chrome-content);
   mask: url("/images/svg/logo-white.svg") center / contain no-repeat;
   -webkit-mask: url("/images/svg/logo-white.svg") center / contain no-repeat;
 }
@@ -393,5 +510,158 @@ button:disabled {
   .website-float-delayed,
   .website-drift {
     animation: none;
+  }
+}
+
+/* Landing page: staggered entrances for grid children. Scroll-driven
+   animations ignore delays, so each child also gets a later animation range. */
+.website-stagger > .website-card-reveal:nth-child(2) {
+  --reveal-delay: 90ms;
+  animation-range: entry 9% cover 34%;
+}
+
+.website-stagger > .website-card-reveal:nth-child(3) {
+  --reveal-delay: 180ms;
+  animation-range: entry 14% cover 38%;
+}
+
+.website-stagger > .website-card-reveal:nth-child(4) {
+  --reveal-delay: 270ms;
+  animation-range: entry 19% cover 42%;
+}
+
+@keyframes feature-tab-details-in {
+  from {
+    opacity: 0;
+    transform: translateY(0.5rem);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.feature-tab-details-enter {
+  animation: feature-tab-details-in 0.45s cubic-bezier(0.2, 0.85, 0.2, 1) both;
+}
+
+/* The active testimonial's bar is the autoplay timer: its animationend
+   advances the quote, so change the duration here, not in JS. Hovering or
+   focusing anywhere in the region pauses it. */
+@keyframes autoplay-progress {
+  from {
+    transform: scaleX(0);
+  }
+
+  to {
+    transform: scaleX(1);
+  }
+}
+
+.testimonial-progress {
+  animation: autoplay-progress 7s linear forwards;
+  transform-origin: left;
+}
+
+.testimonials-region:hover .testimonial-progress,
+.testimonials-region:focus-within .testimonial-progress {
+  animation-play-state: paused;
+}
+
+/* Same pattern for the style switcher: the active style's bar is the timer. */
+.style-switcher-progress {
+  animation: autoplay-progress 5s linear forwards;
+  transform-origin: left;
+}
+
+.style-switcher-region:hover .style-switcher-progress,
+.style-switcher-region:focus-within .style-switcher-progress {
+  animation-play-state: paused;
+}
+
+/* Animate native <details> open/close where the browser supports it; other
+   browsers simply open instantly. */
+.faq-item {
+  interpolate-size: allow-keywords;
+}
+
+.faq-item::details-content {
+  height: 0;
+  overflow: clip;
+  transition:
+    height 0.35s cubic-bezier(0.2, 0.85, 0.2, 1),
+    content-visibility 0.35s allow-discrete;
+}
+
+.faq-item[open]::details-content {
+  height: auto;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .feature-tab-details-enter {
+    animation: none;
+  }
+
+  .testimonial-progress,
+  .style-switcher-progress {
+    animation: none;
+    transform: none;
+  }
+
+  .faq-item::details-content {
+    transition: none;
+  }
+}
+
+/* Template strip: the track holds two identical copies, so shifting by half its
+   width loops seamlessly. Hover pauses; reduced motion becomes a plain swipe row. */
+@keyframes template-strip-scroll {
+  from {
+    transform: translateX(0);
+  }
+
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+.template-strip-track {
+  animation: template-strip-scroll 70s linear infinite;
+}
+
+.template-strip:hover .template-strip-track {
+  animation-play-state: paused;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .template-strip-track {
+    animation: none;
+  }
+
+  .template-strip-viewport {
+    overflow-x: auto;
+  }
+}
+
+/* Auth guard: an indeterminate bar — a third-width segment sweeping across. */
+@keyframes auth-guard-progress {
+  from {
+    transform: translateX(-100%);
+  }
+
+  to {
+    transform: translateX(300%);
+  }
+}
+
+.auth-guard-progress {
+  animation: auth-guard-progress 1.2s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .auth-guard-progress {
+    animation: none;
+    transform: translateX(100%);
   }
 }

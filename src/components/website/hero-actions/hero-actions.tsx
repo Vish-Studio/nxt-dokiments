@@ -24,36 +24,55 @@ export const HeroActions = ({ className }: HeroActionsProps) => {
     >
       {isAuthenticated ? (
         <LinkButton
-          className="w-full"
+          className="w-full sm:w-auto"
           href="/dashboard"
-          icon={<ArrowRight aria-hidden size={18} weight="bold" />}
+          icon={
+            <ArrowRight
+              aria-hidden
+              size={18}
+              weight="bold"
+            />
+          }
           iconMotion="right"
           size="lg"
-          variant="accent"
+          variant="primary"
         >
           Go to my dashboard
         </LinkButton>
       ) : (
         <>
           <LinkButton
-            className="w-full"
-            variant="accent"
-            href="/sign-in"
-            icon={<ArrowRight aria-hidden size={18} weight="bold" />}
+            className="w-full sm:w-auto"
+            href="/sign-up"
+            icon={
+              <ArrowRight
+                aria-hidden
+                size={18}
+                weight="bold"
+              />
+            }
             iconMotion="right"
             size="lg"
+            variant="primary"
           >
-            Sign In
+            Create a free account
           </LinkButton>
 
           <LinkButton
-            className="w-full"
-            href="/sign-up"
-            icon={<ArrowRight aria-hidden size={18} weight="bold" />}
+            className="w-full sm:w-auto"
+            href="/sign-in"
+            icon={
+              <ArrowRight
+                aria-hidden
+                size={18}
+                weight="bold"
+              />
+            }
             iconMotion="right"
             size="lg"
+            variant="outline"
           >
-            Create a free account
+            Sign In
           </LinkButton>
         </>
       )}

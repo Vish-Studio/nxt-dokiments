@@ -12,6 +12,7 @@ import { LinkButton } from "@/components/commons/link-button/link-button";
 import { PromoCodeCallout } from "@/components/commons/promo-code-callout/promo-code-callout";
 import { trackEvent } from "@/lib/analytics/track";
 import { syncAutofilledFields } from "@/lib/forms/autofill";
+import { withOnboarding } from "@/lib/onboarding/onboarding";
 import { withPromoStatus } from "@/lib/promo/promo-status";
 import { queryKeys } from "@/lib/query/keys";
 import { useAuthStore } from "@/stores/auth-store";
@@ -96,8 +97,12 @@ export const SignUpForm = ({ onSubmit }: SignUpFormProps) => {
       const params = new URLSearchParams(window.location.search);
       // Reported via the URL rather than inline: this navigates away immediately.
       // `PromoStatusBanner` renders the outcome on the destination page.
+      // `withOnboarding` flags the brand-new account so the app shell opens the
+      // onboarding tour on arrival.
       window.location.assign(
-        withPromoStatus(params.get("next") || "/dashboard", data.promo),
+        withOnboarding(
+          withPromoStatus(params.get("next") || "/dashboard", data.promo),
+        ),
       );
     } catch (error) {
       setFormError(
@@ -209,7 +214,9 @@ export const SignUpForm = ({ onSubmit }: SignUpFormProps) => {
       <GoogleSignInButton
         className="w-full"
         label="Sign up with Google"
-        next={next}
+        // Flagged like the email path in `submitForm`, so a Google sign-up also opens the
+        // onboarding tour. The callback redirects to `next` with its query intact.
+        next={withOnboarding(next)}
         promoCode={promoCode}
       />
 
