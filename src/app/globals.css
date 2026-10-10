@@ -63,6 +63,9 @@
 }
 
 @theme inline {
+  /* Segmented tab bars (`TabMenu`): tighter than `rounded-box` so a full-width
+     bar on mobile doesn't read as a pill. */
+  --radius-tab: 0.625rem;
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-golden-harvest: var(--color-golden-harvest);
@@ -170,6 +173,36 @@ button:disabled {
   animation: side-panel-in 0.25s cubic-bezier(0.2, 0.85, 0.2, 1);
 }
 
+/* Slide only, no fade: the toast is readable from its first frame. */
+@keyframes toast-item-in {
+  from {
+    transform: translateY(0.75rem);
+  }
+
+  to {
+    transform: translateY(0);
+  }
+}
+
+.toast-item-enter {
+  animation: toast-item-in 0.2s cubic-bezier(0.2, 0.85, 0.2, 1);
+}
+
+@keyframes marketplace-promo-color-in {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+.marketplace-promo-color-enter {
+  animation: marketplace-promo-color-in 0.8s ease-in-out both;
+  will-change: opacity;
+}
+
 @keyframes marketplace-promo-fade-in {
   from {
     opacity: 0;
@@ -180,8 +213,40 @@ button:disabled {
   }
 }
 
-.marketplace-promo-slide-enter {
-  animation: marketplace-promo-fade-in 0.3s ease-out;
+.marketplace-promo-title-enter {
+  animation: marketplace-promo-fade-in 0.55s ease-in-out 0.35s both;
+  will-change: opacity;
+}
+
+.marketplace-promo-detail-enter {
+  animation: marketplace-promo-fade-in 0.55s ease-in-out 0.65s both;
+  will-change: opacity;
+}
+
+.marketplace-promo-action-enter {
+  animation: marketplace-promo-fade-in 0.55s ease-in-out 0.85s both;
+  will-change: opacity;
+}
+
+@keyframes marketplace-promo-visual-in {
+  from {
+    opacity: 0;
+    transform: translateX(1.5rem);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.marketplace-promo-visual-enter {
+  animation: marketplace-promo-visual-in 0.85s ease-in-out 0.75s both;
+  will-change: opacity, transform;
+}
+
+.marketplace-promo-mockup {
+  clip-path: inset(1px 0 0);
 }
 
 /* Auth showcase: the active step's bar is the autoplay timer — its
@@ -248,11 +313,16 @@ button:disabled {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .side-panel-enter {
+  .side-panel-enter,
+  .toast-item-enter {
     animation: none;
   }
 
-  .marketplace-promo-slide-enter {
+  .marketplace-promo-color-enter,
+  .marketplace-promo-title-enter,
+  .marketplace-promo-detail-enter,
+  .marketplace-promo-action-enter,
+  .marketplace-promo-visual-enter {
     animation: none;
   }
 }
@@ -361,7 +431,7 @@ button:disabled {
 }
 
 .footer-logo {
-  background-color: var(--color-play-teal);
+  background-color: var(--color-app-chrome-content);
   mask: url("/images/svg/logo-white.svg") center / contain no-repeat;
   -webkit-mask: url("/images/svg/logo-white.svg") center / contain no-repeat;
 }
@@ -571,5 +641,27 @@ button:disabled {
 
   .template-strip-viewport {
     overflow-x: auto;
+  }
+}
+
+/* Auth guard: an indeterminate bar — a third-width segment sweeping across. */
+@keyframes auth-guard-progress {
+  from {
+    transform: translateX(-100%);
+  }
+
+  to {
+    transform: translateX(300%);
+  }
+}
+
+.auth-guard-progress {
+  animation: auth-guard-progress 1.2s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .auth-guard-progress {
+    animation: none;
+    transform: translateX(100%);
   }
 }

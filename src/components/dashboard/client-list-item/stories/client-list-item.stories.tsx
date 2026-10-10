@@ -23,14 +23,15 @@ const meta = {
   component: ClientListItem,
   decorators: [
     (Story) => (
-      <ul className="overflow-hidden rounded-box border border-steel-mist bg-base-100">
+      <div className="max-w-sm">
         <Story />
-      </ul>
+      </div>
     ),
   ],
   args: {
     client: mayaChen,
     onDelete: fn(),
+    onEdit: fn(),
     onPreview: fn(),
   },
 } satisfies Meta<typeof ClientListItem>;
@@ -49,9 +50,14 @@ export const Default: Story = {
     );
     await expect(args.onPreview).toHaveBeenCalledOnce();
 
-    // Delete sits above the row overlay, so it must fire without also previewing.
     await userEvent.click(
-      canvas.getByRole("button", { name: "Delete Maya Chen" }),
+      canvas.getByRole("button", { name: "More actions for Maya Chen" }),
+    );
+    await userEvent.click(canvas.getByRole("button", { name: "Edit client" }));
+    await expect(args.onEdit).toHaveBeenCalledOnce();
+
+    await userEvent.click(
+      canvas.getByRole("button", { name: "Delete" }),
     );
     await expect(args.onDelete).toHaveBeenCalledOnce();
     await expect(args.onPreview).toHaveBeenCalledOnce();
@@ -91,7 +97,7 @@ export const Optimistic: Story = {
       canvas.queryByRole("button", { name: "View details for Maya Chen" }),
     ).not.toBeInTheDocument();
     await expect(
-      canvas.getByRole("button", { name: "Delete Maya Chen" }),
+      canvas.getByRole("button", { name: "More actions for Maya Chen" }),
     ).toBeDisabled();
   },
 };
