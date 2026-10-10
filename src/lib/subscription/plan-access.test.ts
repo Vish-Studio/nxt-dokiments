@@ -1,6 +1,12 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
 import { canUpgrade, getPlanFeatures } from "./plan-access";
+
+// `.env.local` may lift the tier locks for the public launch; these tests cover
+// the locked behavior, so pin the flag before the module reads it.
+vi.hoisted(() => {
+  process.env.NEXT_PUBLIC_DISABLE_TIER_LOCKS = "false";
+});
 
 const labels = (role: Parameters<typeof getPlanFeatures>[0]) =>
   Object.fromEntries(
