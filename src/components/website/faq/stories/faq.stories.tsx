@@ -20,10 +20,10 @@ export const Default: Story = {
       canvas.getByRole("heading", { name: /questions, answered/i }),
     ).toBeVisible();
     await expect(
-      canvas.getByText(/free accounts can browse templates/i),
+      canvas.getByText(/workspace for creating professional business documents/i),
     ).toBeVisible();
     await expect(
-      canvas.getByText(/difference between an invoice and a quotation/i),
+      canvas.getByText(/difference between a template and a document/i),
     ).toBeVisible();
   },
 };
