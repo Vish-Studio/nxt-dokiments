@@ -9,16 +9,26 @@ import {
 import { useEffect, useRef, useState } from "react";
 
 import { Button } from "@/components/commons/button/button";
-import { TemplateDocument } from "@/components/commons/template-document/template-document";
+import {
+  TemplateDocument,
+  templateInsetClassName,
+} from "@/components/commons/template-document/template-document";
+import { PdfWatermark } from "@/components/dashboard/pdf-watermark/pdf-watermark";
 import { trackEvent } from "@/lib/analytics/track";
-import { generateDocumentPdf } from "@/lib/pdf/generate-document-pdf";
+import {
+  generateDocumentPdf,
+  type GenerateDocumentPdfOptions,
+} from "@/lib/pdf/generate-document-pdf";
 import type { MarketplaceTemplate } from "@/types/template";
 
 type ExportStatus = "error" | "generating" | "ready";
 
 export interface DocumentExportDialogProps {
   documentName: string;
-  generatePdf?: (element: HTMLElement) => Promise<Blob>;
+  generatePdf?: (
+    element: HTMLElement,
+    options?: GenerateDocumentPdfOptions,
+  ) => Promise<Blob>;
   onClose: () => void;
   open: boolean;
   template: MarketplaceTemplate | null;
@@ -44,6 +54,7 @@ export const DocumentExportDialog = ({
   values,
 }: DocumentExportDialogProps) => {
   const exportRef = useRef<HTMLDivElement>(null);
+  const watermarkRef = useRef<HTMLElement>(null);
   const [pdfBlob, setPdfBlob] = useState<Blob | null>(null);
   const [retryCount, setRetryCount] = useState(0);
   const [status, setStatus] = useState<ExportStatus>("generating");
@@ -71,7 +82,7 @@ export const DocumentExportDialog = ({
       setPdfBlob(null);
       setStatus("generating");
 
-      generatePdf(exportElement)
+      generatePdf(exportElement, { footer: watermarkRef.current })
         .then((blob) => {
           if (!cancelled) {
             setPdfBlob(blob);
@@ -257,6 +268,10 @@ export const DocumentExportDialog = ({
           layout="print"
           template={template}
           values={values}
+        />
+        <PdfWatermark
+          insetClassName={templateInsetClassName[template.style.id]}
+          ref={watermarkRef}
         />
       </div>
     </div>

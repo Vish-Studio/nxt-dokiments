@@ -60,6 +60,14 @@ const styleConfig: Record<TemplateStyleId, StyleConfig> = {
   },
 };
 
+// Horizontal inset of each style's body, so attached chrome (e.g. the PDF footer) lines up with the content.
+export const templateInsetClassName: Record<TemplateStyleId, string> = {
+  brutalist: "px-6",
+  classic: "px-8",
+  minimalist: "px-10",
+  modern: "px-6",
+};
+
 export const TemplateDocument = ({
   className,
   density = "default",
