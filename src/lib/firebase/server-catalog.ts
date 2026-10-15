@@ -2,7 +2,6 @@ import "server-only";
 
 import {
   getDocumentId,
-  getFirestoreDocument,
   listFirestoreCollection,
   readArray,
   readBoolean,
@@ -91,100 +90,99 @@ const parseMarketplaceTemplate = (
   };
 };
 
-/**
- * Lists every active marketplace template, joined with its style.
- *
- * Templates whose `styleId` does not resolve to an active style are silently
- * excluded — this can only happen if the catalog data itself is inconsistent
- * (e.g. a style was deactivated without deactivating its templates).
- *
- * @param idToken - Firebase ID token used to authorise the Firestore reads.
- * @returns All active templates, each joined with its resolved style.
- * @throws When either Firestore request fails.
- */
-export const listActiveTemplates = async (
-  idToken: string,
-): Promise<MarketplaceTemplate[]> => {
+interface Catalog {
+  styles: TemplateStyle[];
+  templates: MarketplaceTemplate[];
+}
+
+/** How long the shared catalog is reused before it is re-read from Firestore. */
+const CATALOG_TTL_MS = 5 * 60_000;
+
+let catalogCache: { expiresAt: number; value: Promise<Catalog> } | null = null;
+
+/** Reads the whole catalog from Firestore (2 list reads) and joins templates with styles. */
+const fetchCatalog = async (idToken: string): Promise<Catalog> => {
   const [templateDocs, styleDocs] = await Promise.all([
     listFirestoreCollection(TEMPLATES_COLLECTION, idToken),
     listFirestoreCollection(TEMPLATE_STYLES_COLLECTION, idToken),
   ]);
 
-  const stylesById = new Map(
-    styleDocs
-      .filter((document) => readBoolean(document.fields?.isActive) ?? false)
-      .map((document) => [
-        getDocumentId(document),
-        parseTemplateStyle(document),
-      ]),
-  );
+  const activeStyleDocs = styleDocs
+    .filter((document) => readBoolean(document.fields?.isActive) ?? false)
+    .sort(bySortOrder);
+  const styles = activeStyleDocs.map(parseTemplateStyle);
+  const stylesById = new Map(styles.map((style) => [style.id, style]));
 
-  return templateDocs
+  const templates = templateDocs
     .filter((document) => readBoolean(document.fields?.isActive) ?? false)
     .sort(bySortOrder)
     .map((document) => parseMarketplaceTemplate(document, stylesById))
     .filter((template): template is MarketplaceTemplate => template !== null);
+
+  return { styles, templates };
 };
 
 /**
- * Lists every active template style, e.g. for the Marketplace tab bar.
- * Ordering matters here — styles are meant to appear in a stable, intentional
- * sequence (Classic, Modern, Brutalist, Minimalist), not whatever order
- * Firestore happens to return, so this sorts by the seeded `sortOrder` field.
+ * Returns the marketplace catalog, shared by every user of this server instance.
  *
- * @param idToken - Firebase ID token used to authorise the Firestore read.
+ * The catalog is the same for all signed-in users (Firestore rules allow any
+ * signed-in user to read it) and changes only when it is re-seeded, so it is
+ * reused for `CATALOG_TTL_MS` instead of re-read on every request. Concurrent
+ * callers share one in-flight load, and a failed load is not cached.
+ */
+const getCatalog = (idToken: string): Promise<Catalog> => {
+  const now = Date.now();
+  if (catalogCache && catalogCache.expiresAt > now) return catalogCache.value;
+
+  const value = fetchCatalog(idToken);
+  const entry = { expiresAt: now + CATALOG_TTL_MS, value };
+  catalogCache = entry;
+  value.catch(() => {
+    if (catalogCache === entry) catalogCache = null;
+  });
+  return value;
+};
+
+/**
+ * Lists every active marketplace template, joined with its style.
+ *
+ * Templates whose `styleId` does not resolve to an active style are silently
+ * excluded. Served from the shared catalog cache.
+ *
+ * @param idToken - Firebase ID token used to authorise the Firestore reads on a cache miss.
+ * @returns All active templates, each joined with its resolved style.
+ * @throws When a Firestore request fails on a cache miss.
+ */
+export const listActiveTemplates = async (
+  idToken: string,
+): Promise<MarketplaceTemplate[]> => (await getCatalog(idToken)).templates;
+
+/**
+ * Lists every active template style, sorted by the seeded `sortOrder` field.
+ * Served from the shared catalog cache.
+ *
+ * @param idToken - Firebase ID token used to authorise the Firestore reads on a cache miss.
  * @returns All active styles, sorted by `sortOrder`.
- * @throws When the Firestore request fails.
+ * @throws When a Firestore request fails on a cache miss.
  */
 export const listActiveStyles = async (
   idToken: string,
-): Promise<TemplateStyle[]> => {
-  const styleDocs = await listFirestoreCollection(
-    TEMPLATE_STYLES_COLLECTION,
-    idToken,
-  );
-
-  return styleDocs
-    .filter((document) => readBoolean(document.fields?.isActive) ?? false)
-    .sort(bySortOrder)
-    .map(parseTemplateStyle);
-};
+): Promise<TemplateStyle[]> => (await getCatalog(idToken)).styles;
 
 /**
  * Fetches a single marketplace template by ID, joined with its style.
+ * Served from the shared catalog cache, so it costs no Firestore reads when warm.
  *
  * @param templateId - ID of the template to fetch.
- * @param idToken - Firebase ID token used to authorise the Firestore reads.
+ * @param idToken - Firebase ID token used to authorise the Firestore reads on a cache miss.
  * @returns The `MarketplaceTemplate`, or `null` when it does not exist, is inactive,
  *   or its style does not exist or is inactive.
- * @throws When either Firestore request fails for a reason other than a 404.
+ * @throws When a Firestore request fails on a cache miss.
  */
 export const getTemplateById = async (
   templateId: string,
   idToken: string,
-): Promise<MarketplaceTemplate | null> => {
-  const document = await getFirestoreDocument(
-    `${TEMPLATES_COLLECTION}/${templateId}`,
-    idToken,
-  );
-
-  if (!document || !(readBoolean(document.fields?.isActive) ?? false)) {
-    return null;
-  }
-
-  const styleId = readString(document.fields?.styleId) ?? "";
-  const styleDocument = await getFirestoreDocument(
-    `${TEMPLATE_STYLES_COLLECTION}/${styleId}`,
-    idToken,
-  );
-
-  if (
-    !styleDocument ||
-    !(readBoolean(styleDocument.fields?.isActive) ?? false)
-  ) {
-    return null;
-  }
-
-  const stylesById = new Map([[styleId, parseTemplateStyle(styleDocument)]]);
-  return parseMarketplaceTemplate(document, stylesById);
-};
+): Promise<MarketplaceTemplate | null> =>
+  (await getCatalog(idToken)).templates.find(
+    (template) => template.id === templateId,
+  ) ?? null;
