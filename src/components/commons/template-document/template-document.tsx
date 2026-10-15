@@ -129,7 +129,12 @@ export const TemplateDocument = ({
           if (field.key === "items" && ["invoice", "quotation"].includes(template.documentType)) return <DocumentItems key={field.key} value={text} />;
 
           return (
-            <section className={cn("mt-6 break-words", totals.has(field.key) && "ml-auto max-w-xs border-t border-steel-mist pt-3")} key={field.key}>
+            <section
+              className={cn("mt-6 break-words", totals.has(field.key) && "ml-auto max-w-xs border-t border-steel-mist pt-3")}
+              // Totals stay together on one PDF page.
+              data-pdf-keep={totals.has(field.key) ? "totals" : undefined}
+              key={field.key}
+            >
               <h3 className={cn(config.sectionTitle, isCompact && "text-xs", isLetter && ["salutation", "body", "closing", "senderSignature"].includes(field.key) && "sr-only")}>{field.label}</h3>
               <p
                 className={cn(
