@@ -19,7 +19,7 @@ export const Default: Story = {
       canvas.getByRole("heading", { name: /templates, and counting/i }),
     ).toBeVisible();
     await expect(
-      canvas.getAllByText("Standard Invoice").length,
+      canvas.getAllByText("Invoice").length,
     ).toBeGreaterThan(0);
   },
 };

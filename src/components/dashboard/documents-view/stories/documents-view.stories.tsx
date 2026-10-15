@@ -243,7 +243,7 @@ export const WithDocuments: Story = {
       }),
     );
     await expect(
-      canvas.getByRole("dialog", { name: "Standard Invoice preview" }),
+      canvas.getByRole("dialog", { name: "Invoice preview" }),
     ).toBeVisible();
   },
 };
@@ -413,7 +413,7 @@ export const PrefillFromClient: Story = {
     );
     await userEvent.click(
       await canvas.findByRole("button", {
-        name: "Preview Standard Invoice, saved",
+        name: "Preview Invoice, saved",
       }),
     );
     await userEvent.click(
@@ -503,7 +503,7 @@ export const PrefillWithNoClients: Story = {
     );
     await userEvent.click(
       await canvas.findByRole("button", {
-        name: "Preview Standard Invoice, saved",
+        name: "Preview Invoice, saved",
       }),
     );
     await userEvent.click(

@@ -33,6 +33,7 @@ import {
   snapshotToMarketplaceTemplate,
   type MarketplaceTemplate,
 } from "@/types/template";
+import { getTemplateDisplayName } from "@/lib/market-place/document-labels";
 
 const roleLabels: Record<UserRole, string> = {
   free: "Free",
@@ -303,7 +304,9 @@ export const DashboardView = () => {
                   {latestDocument.name}
                 </h3>
                 <p className="mt-1 truncate text-sm text-nox-noir/60">
-                  {latestDocument.templateSnapshot?.name ?? "Document template"}
+                  {latestDocument.templateSnapshot
+                    ? getTemplateDisplayName(latestDocument.templateSnapshot)
+                    : "Document template"}
                 </p>
                 <Link
                   className="group btn btn-primary mt-5 min-h-11 h-11 font-title font-semibold tracking-normal"
@@ -442,7 +445,9 @@ export const DashboardView = () => {
                     {document.name}
                   </h4>
                   <p className="truncate text-xs text-nox-noir/55">
-                    {document.templateSnapshot?.name ?? "Document template"}
+                    {document.templateSnapshot
+                      ? getTemplateDisplayName(document.templateSnapshot)
+                      : "Document template"}
                   </p>
                 </div>
                 <ArrowRightIcon

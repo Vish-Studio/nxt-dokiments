@@ -2,6 +2,7 @@ import { cn } from "@/lib/utils";
 import type { MarketplaceTemplate, TemplateStyleId } from "@/types/template";
 import { partyFieldKeys, TemplateParties } from "./template-parties";
 import { DocumentItems } from "@/components/commons/document-items/document-items";
+import { getTemplateDisplayName } from "@/lib/market-place/document-labels";
 
 export type TemplateDocumentProps = {
   className?: string;
@@ -77,7 +78,7 @@ export const TemplateDocument = ({
 }: TemplateDocumentProps) => {
   const isCompact = density === "compact";
   const config = styleConfig[template.style.id];
-  const title = values.title?.trim() || template.name;
+  const title = values.title?.trim() || getTemplateDisplayName(template);
   const isLetter = template.documentType === "formal-business-letter";
   const billing = ["invoice", "quotation", "receipt", "purchase-order"].includes(template.documentType);
   const totals = new Set(billing ? ["subtotal", "tax", "total", "amountPaid"] : []);
@@ -100,7 +101,7 @@ export const TemplateDocument = ({
   return (
     <article className={cn("flex flex-col bg-white text-nox-noir", config.paper, className)}>
       <header className={cn(config.header, isCompact && "px-5! py-4!")}>
-        <p className={cn(config.eyebrow, isCompact && "text-[11px]!")}>{template.name}</p>
+        <p className={cn(config.eyebrow, isCompact && "text-[11px]!")}>{getTemplateDisplayName(template)}</p>
         <h2 className={cn(config.title, isCompact && "text-xl!")}>{title}</h2>
       </header>
 

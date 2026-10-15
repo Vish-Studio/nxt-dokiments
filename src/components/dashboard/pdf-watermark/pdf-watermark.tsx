@@ -1,5 +1,6 @@
 import { forwardRef } from "react";
 
+import { DokimentsMark } from "@/components/commons/dokiments-mark/dokiments-mark";
 import { cn } from "@/lib/utils";
 
 export interface PdfWatermarkProps {
@@ -21,13 +22,8 @@ export const PdfWatermark = forwardRef<HTMLElement, PdfWatermarkProps>(
       ref={ref}
     >
       <div className="flex items-center gap-2">
-        {/* eslint-disable-next-line @next/next/no-img-element -- html-to-image needs a plain img to inline. */}
-        <img
-          alt=""
-          // The SVG has padding around the glyph; pull it back onto the content edge.
-          className="-ml-0.5 size-5"
-          src="/images/svg/icon-black.svg"
-        />
+        {/* Inline mark: an <img> would be fetched during capture and fail the whole PDF if the request fails. */}
+        <DokimentsMark className="h-5 w-4.5" />
         <p className="font-title text-xs leading-none text-nox-noir/60">
           Made with{" "}
           <span className="font-logo font-black text-nox-noir">Dokiments</span>
