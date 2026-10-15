@@ -9,6 +9,7 @@ import {
   ButtonIcon,
   buttonIconClasses,
 } from "@/components/commons/button-icon/button-icon";
+import { SidebarToggleButton } from "@/components/dashboard/sidebar-toggle-button/sidebar-toggle-button";
 import { cn } from "@/lib/utils";
 
 export type PageBannerTone =
@@ -153,24 +154,10 @@ export const PageBanner = ({
 
       <div className="flex min-w-0 items-center gap-3 lg:col-start-1 lg:row-start-1">
         {onToggleSidebar ? (
-          <ButtonIcon
-            aria-label={
-              isSidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"
-            }
-            className={cn(
-              "hidden size-9! min-h-9! lg:inline-flex",
-              desktopControlClassName,
-            )}
-            icon={
-              <ListIcon
-                aria-hidden
-                size={15}
-                weight="bold"
-              />
-            }
-            onClick={onToggleSidebar}
-            size="sm"
-            variant="ghost"
+          <SidebarToggleButton
+            className={desktopControlClassName}
+            isCollapsed={isSidebarCollapsed}
+            onToggle={onToggleSidebar}
           />
         ) : null}
         <h2 className={cn("font-title text-2xl font-bold", style.title)}>

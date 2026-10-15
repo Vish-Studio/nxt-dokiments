@@ -18,16 +18,15 @@ import { FloatingActionButton } from "@/components/commons/floating-action-butto
 import { LoadingStatus } from "@/components/commons/loading-status/loading-status";
 import { TemplateCard } from "@/components/commons/template-card/template-card";
 import { TemplatePreviewDialog } from "@/components/commons/template-preview-dialog/template-preview-dialog";
+import { SidebarToggleButton } from "@/components/dashboard/sidebar-toggle-button/sidebar-toggle-button";
 import { NotificationBell } from "@/components/dashboard/notification-bell/notification-bell";
 import { TemplateThumbnail } from "@/components/commons/template-thumbnail/template-thumbnail";
 import { useClientsQuery } from "@/hooks/queries/use-clients";
 import { useDocumentsQuery } from "@/hooks/queries/use-documents";
 import { useSavedTemplatesQuery } from "@/hooks/queries/use-saved-templates";
-import {
-  getSavedTemplateLimit,
-  getTemplateById,
-} from "@/lib/market-place";
+import { getSavedTemplateLimit, getTemplateById } from "@/lib/market-place";
 import { useAuthStore } from "@/stores/auth-store";
+import { useUiStore } from "@/stores/ui-store";
 import type { UserRole } from "@/types/auth";
 import {
   snapshotToMarketplaceTemplate,
@@ -67,6 +66,8 @@ export const DashboardView = () => {
     useState<MarketplaceTemplate | null>(null);
 
   const isFree = !user || user.role === "free";
+  const isSidebarCollapsed = useUiStore((state) => state.isSidebarCollapsed);
+  const toggleSidebar = useUiStore((state) => state.toggleSidebar);
   const firstName = (user?.displayName ?? "there").split(" ")[0];
   const roleLabel = user ? roleLabels[user.role] : "Free";
   const remainingTemplateSlots = isFree
@@ -127,15 +128,14 @@ export const DashboardView = () => {
   const recentDocuments = [...documents]
     .sort((a, b) => b.updatedAt - a.updatedAt)
     .slice(0, 4);
-  const latestDocument = [...documents].sort(
-    (a, b) => b.createdAt - a.createdAt,
-  )[0] ?? null;
+  const latestDocument =
+    [...documents].sort((a, b) => b.createdAt - a.createdAt)[0] ?? null;
   const latestDocumentTemplate = latestDocument
     ? latestDocument.templateSnapshot
       ? snapshotToMarketplaceTemplate(
-        latestDocument.templateSnapshot,
-        latestDocument.templateId,
-      )
+          latestDocument.templateSnapshot,
+          latestDocument.templateId,
+        )
       : getTemplateById(latestDocument.templateId)
     : null;
   const latestTemplate = saved.at(-1)?.template ?? null;
@@ -143,8 +143,13 @@ export const DashboardView = () => {
   return (
     <div className="flex flex-col gap-8">
       <div className="grid gap-4 lg:grid-cols-[1fr_22rem]">
-        <div className="relative rounded-box bg-golden-harvest p-6 sm:p-8">
+        <div className="relative rounded-box bg-golden-harvest p-6 sm:p-8 lg:pt-16">
           {/* The dashboard has no page banner on desktop, so the bell lives in the hero. */}
+          <SidebarToggleButton
+            className="absolute left-4 top-4 border-none bg-white/45 text-nox-noir hover:bg-white/65"
+            isCollapsed={isSidebarCollapsed}
+            onToggle={toggleSidebar}
+          />
           <div className="absolute right-4 top-4 hidden lg:block">
             <NotificationBell tone="light" />
           </div>
