@@ -25,10 +25,12 @@ export type ClientPickerProps = {
  * added in one place is immediately pickable here without a refetch.
  */
 export const ClientPicker = ({ fields, onSelect }: ClientPickerProps) => {
-  const { data: clients = [] } = useClientsQuery();
+  const canPrefill = supportsClientPrefill(fields);
+  // Skip the fetch entirely for templates that have no recipient block to fill.
+  const { data: clients = [] } = useClientsQuery({ enabled: canPrefill });
   const [selectedClientId, setSelectedClientId] = useState("");
 
-  if (!supportsClientPrefill(fields)) {
+  if (!canPrefill) {
     return null;
   }
 
@@ -36,7 +38,10 @@ export const ClientPicker = ({ fields, onSelect }: ClientPickerProps) => {
     return (
       <p className="client-picker text-xs leading-5 text-nox-noir/55">
         Save a client under{" "}
-        <Link className="link font-semibold text-nox-noir" href="/my-clients">
+        <Link
+          className="link font-semibold text-nox-noir"
+          href="/my-clients"
+        >
           My clients
         </Link>{" "}
         to fill recipient details in one step.
@@ -44,7 +49,9 @@ export const ClientPicker = ({ fields, onSelect }: ClientPickerProps) => {
     );
   }
 
-  const selectedClient = clients.find((client) => client.id === selectedClientId);
+  const selectedClient = clients.find(
+    (client) => client.id === selectedClientId,
+  );
   const selectedLabel = selectedClient
     ? selectedClient.companyName || selectedClient.name
     : "Choose a client";
@@ -62,7 +69,9 @@ export const ClientPicker = ({ fields, onSelect }: ClientPickerProps) => {
           {
             label: "Saved clients",
             onChange: (value) => {
-              const client = clients.find((candidate) => candidate.id === value);
+              const client = clients.find(
+                (candidate) => candidate.id === value,
+              );
               if (client) {
                 setSelectedClientId(value);
                 onSelect(client);
@@ -79,7 +88,11 @@ export const ClientPicker = ({ fields, onSelect }: ClientPickerProps) => {
         trigger={
           <>
             <span className="min-w-0 truncate text-left">{selectedLabel}</span>
-            <CaretDownIcon aria-hidden className="shrink-0" size={14} />
+            <CaretDownIcon
+              aria-hidden
+              className="shrink-0"
+              size={14}
+            />
           </>
         }
       />

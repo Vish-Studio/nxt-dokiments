@@ -20,7 +20,7 @@ type Story = StoryObj<typeof meta>;
 export const Invoices: Story = {
   play: async ({ canvasElement, args }) => {
     const canvas = within(canvasElement);
-    await expect(canvas.getByRole("heading", { name: "Standard Invoice" })).toBeVisible();
+    await expect(canvas.getByRole("heading", { name: "Invoice" })).toBeVisible();
     const cards = canvas.getAllByRole("button", { name: /preview/i });
     await expect(cards).toHaveLength(args.templates.length);
     await userEvent.click(cards[0]);

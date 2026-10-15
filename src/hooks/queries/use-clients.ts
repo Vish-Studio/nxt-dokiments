@@ -2,10 +2,15 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { trackEvent } from "@/lib/analytics/track";
 import { queryKeys } from "@/lib/query/keys";
+import { UnauthorizedError } from "@/lib/query/unauthorized-error";
 import type { Client, ClientInput } from "@/types/client";
 
 const fetchClients = async (): Promise<Client[]> => {
   const response = await fetch("/api/clients");
+
+  if (response.status === 401) {
+    throw new UnauthorizedError();
+  }
 
   if (!response.ok) {
     throw new Error("Unable to load your clients.");
@@ -23,10 +28,15 @@ const fetchClients = async (): Promise<Client[]> => {
  * cache entry, so adding or removing a client in one place is reflected in the
  * others without any explicit cross-component wiring.
  */
-export const useClientsQuery = () =>
+export const useClientsQuery = ({
+  enabled = true,
+}: { enabled?: boolean } = {}) =>
   useQuery({
+    enabled,
     queryKey: queryKeys.clients.all(),
     queryFn: fetchClients,
+    // Changed only by this user's own mutations, which refresh the cache; skip focus refetches to save Firestore reads.
+    refetchOnWindowFocus: false,
     staleTime: 60_000,
   });
 

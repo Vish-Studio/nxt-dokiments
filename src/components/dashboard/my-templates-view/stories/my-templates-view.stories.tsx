@@ -106,7 +106,7 @@ export const WithTemplates: Story = {
     const canvas = within(canvasElement);
     await expect(
       (await canvas.findAllByRole("button", {
-        name: /preview client service agreement/i,
+        name: /^preview contract\b(?! update)/i,
       }))[0],
     ).toBeVisible();
   },
@@ -128,8 +128,8 @@ export const GroupedGallery: Story = {
   ],
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    const invoices = await canvas.findByRole("region", { name: "Standard Invoice" });
-    const quotations = await canvas.findByRole("region", { name: "Price Quotation" });
+    const invoices = await canvas.findByRole("region", { name: "Invoice" });
+    const quotations = await canvas.findByRole("region", { name: "Quotation" });
     await expect(within(invoices).getAllByRole("button")).toHaveLength(3);
     await expect(within(quotations).getAllByRole("button")).toHaveLength(2);
   },
@@ -143,14 +143,14 @@ export const FilterSortAndRecent: Story = {
     const recentCards = within(recent).getAllByRole("button");
     await expect(recentCards).toHaveLength(4);
     await expect(recentCards[0]).toHaveTextContent("Modern");
-    await expect(recentCards[0]).toHaveAccessibleName(/Price Quotation/);
+    await expect(recentCards[0]).toHaveAccessibleName(/Quotation/);
     await expect(recentCards[3]).toHaveTextContent("Modern");
-    await expect(recentCards[3]).toHaveAccessibleName(/Standard Invoice/);
+    await expect(recentCards[3]).toHaveAccessibleName(/Invoice/);
     await userEvent.click(canvas.getByRole("button", { name: "Filters" }));
-    await userEvent.click(canvas.getByRole("menuitemradio", { name: "Standard Invoice" }));
-    await expect(canvas.queryByRole("region", { name: "Price Quotation" })).not.toBeInTheDocument();
-    await expect(within(canvas.getByRole("region", { name: "Standard Invoice" })).getByText("3 Templates")).toBeVisible();
-    const invoices = canvas.getByRole("region", { name: "Standard Invoice" });
+    await userEvent.click(canvas.getByRole("menuitemradio", { name: "Invoice" }));
+    await expect(canvas.queryByRole("region", { name: "Quotation" })).not.toBeInTheDocument();
+    await expect(within(canvas.getByRole("region", { name: "Invoice" })).getByText("3 Templates")).toBeVisible();
+    const invoices = canvas.getByRole("region", { name: "Invoice" });
     await userEvent.click(canvas.getByRole("button", { name: "Sort" }));
     await userEvent.click(canvas.getByRole("menuitemradio", { name: "Oldest added" }));
     await expect(within(invoices).getAllByRole("button")[0]).toHaveTextContent("Classic designs");

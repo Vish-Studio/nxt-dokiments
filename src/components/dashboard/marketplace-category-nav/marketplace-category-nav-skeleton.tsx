@@ -7,7 +7,7 @@ interface Props {
  * Shimmer stand-in for `MarketplaceCategoryNav` while the catalog loads.
  *
  * Same frame, heading and tile sizes as the loaded nav (a bordered card on
- * mobile, bare from `lg`; `size-24` tiles growing to `size-28`), so the page does
+ * mobile, bare from `lg`; content-width chips, `h-10` growing to `h-12`), so the page does
  * not shift when the real categories arrive. The heading is static copy, so it is
  * shown as is; only the tiles and the carousel controls shimmer.
  *
@@ -38,11 +38,12 @@ export const MarketplaceCategoryNavSkeleton = ({ count = 10 }: Props) => (
     <div className="mt-4 flex gap-3 overflow-hidden py-2">
       {Array.from({ length: count }, (_, index) => (
         <div
-          className="flex size-24 shrink-0 flex-col items-center justify-center gap-2 rounded-box border border-steel-mist bg-base-100 lg:size-28"
+          className="flex h-10 shrink-0 items-center gap-2 rounded-box border border-steel-mist bg-base-100 px-4 lg:h-12"
           key={index}
         >
-          <div className="skeleton size-6 rounded-field" />
-          <div className="skeleton h-3 w-14 rounded-field" />
+          <div className="skeleton size-5 rounded-field" />
+          {/* Varied widths, like real labels of different lengths. */}
+          <div className={index % 3 === 0 ? "skeleton h-3 w-20 rounded-field" : index % 3 === 1 ? "skeleton h-3 w-14 rounded-field" : "skeleton h-3 w-24 rounded-field"} />
         </div>
       ))}
     </div>

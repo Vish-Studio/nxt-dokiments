@@ -2,9 +2,11 @@ import "server-only";
 
 import { getIronSession } from "iron-session";
 
-import { handleApiError } from "@/lib/api/errors";
+import { ApiError, handleApiError } from "@/lib/api/errors";
 import { destroySession } from "@/lib/api/session-cookie";
 import {
+  DEV_SESSION,
+  isDevAuthBypass,
   isSessionExpired,
   sessionOptions,
   type SessionData,
@@ -89,13 +91,39 @@ export const withSession = <TContext = unknown>(
         sessionOptions,
       );
 
-      if (!session.user || isSessionExpired(session)) {
+      // A bypass cookie is only usable while the bypass is on; otherwise its
+      // placeholder token would be sent to Firestore and rejected.
+      const isStaleBypass =
+        session.idToken === DEV_SESSION.idToken && !isDevAuthBypass();
+
+      if (!session.user || isSessionExpired(session) || isStaleBypass) {
+        if (process.env.NODE_ENV === "development") {
+          const reason = !session.user
+            ? "no session cookie/user"
+            : isStaleBypass
+              ? "stale dev-bypass cookie"
+              : "session past its 1-day deadline";
+          console.warn(
+            `[withSession] 401 ${request.method} ${new URL(request.url).pathname}: ${reason}`,
+          );
+        }
+
         await destroySession(request, unauthorised);
         return unauthorised;
       }
 
       return await handler(request, context, session as AuthenticatedSession);
     } catch (error) {
+      // The provider rejected the session's token: clear it so the client re-authenticates.
+      if (error instanceof ApiError && error.status === 401) {
+        const unauthorised = Response.json(
+          { error: error.message },
+          { status: 401 },
+        );
+        await destroySession(request, unauthorised);
+        return unauthorised;
+      }
+
       return handleApiError(error);
     }
   };

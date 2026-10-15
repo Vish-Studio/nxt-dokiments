@@ -25,13 +25,13 @@ import {
   canUseTier,
   getSavedTemplateLimit,
 } from "@/lib/market-place";
-import { documentBlueprints } from "@/lib/market-place/documents";
 import { useAuthStore } from "@/stores/auth-store";
 import type {
   DocumentType,
   MarketplaceTemplate,
   TemplateStyle,
 } from "@/types/template";
+import { getDocumentTypeLabel, getTemplateDisplayName } from "@/lib/market-place/document-labels";
 
 const NO_STYLES: TemplateStyle[] = [];
 const NO_TEMPLATES: MarketplaceTemplate[] = [];
@@ -69,7 +69,7 @@ export const MarketplaceBrowser = () => {
       (template) =>
         (documentType === "all" || template.documentType === documentType) &&
         (style === "all" || template.style.id === style) &&
-        `${template.name} ${template.style.name} ${documentBlueprints[template.documentType].name}`
+        `${getTemplateDisplayName(template)} ${template.name} ${template.style.name} ${getDocumentTypeLabel(template.documentType)}`
           .toLocaleLowerCase()
           .includes(query),
     );
@@ -87,7 +87,7 @@ export const MarketplaceBrowser = () => {
   const typeOptions = useMemo(
     () =>
       [...new Set(allTemplates.map((template) => template.documentType))]
-        .map((value) => ({ value, label: documentBlueprints[value].name }))
+        .map((value) => ({ value, label: getDocumentTypeLabel(value) }))
         .sort((first, second) => first.label.localeCompare(second.label)),
     [allTemplates],
   );
