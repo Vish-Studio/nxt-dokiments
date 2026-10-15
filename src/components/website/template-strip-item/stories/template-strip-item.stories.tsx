@@ -32,7 +32,7 @@ export const Default: Story = {
   play: async ({ canvas }) => {
     // The thumbnail renders the template name too, so match every occurrence.
     await expect(
-      canvas.getAllByText("Standard Invoice").length,
+      canvas.getAllByText("Invoice").length,
     ).toBeGreaterThan(1);
     await expect(canvas.getByText("Modern")).toBeVisible();
   },

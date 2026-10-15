@@ -9,11 +9,11 @@ import { TemplateCardSkeletonGrid } from "@/components/commons/template-card-ske
 import TemplateLibraryToolbar, { type TemplateSort } from "@/components/dashboard/template-library-toolbar/template-library-toolbar";
 import { ResponsiveHeaderControls } from "@/components/dashboard/responsive-header-controls/responsive-header-controls";
 import TemplateTypeGroup from "@/components/dashboard/template-type-group/template-type-group";
-import { documentBlueprints } from "@/lib/market-place/documents";
 import { TemplatePreviewDialog } from "@/components/commons/template-preview-dialog/template-preview-dialog";
 import { useSavedTemplatesQuery } from "@/hooks/queries/use-saved-templates";
 import { useScrollContentToTopOnMobile } from "@/hooks/use-scroll-content-to-top-on-mobile";
 import type { DocumentType, MarketplaceTemplate } from "@/types/template";
+import { getDocumentTypeLabel, getTemplateDisplayName } from "@/lib/market-place/document-labels";
 
 interface Props {
   withShell?: boolean;
@@ -32,12 +32,12 @@ export const MyTemplatesView = ({ withShell = false }: Props) => {
   const filtered = saved.filter(({ template }) =>
     (documentType === "all" || template.documentType === documentType) &&
     (style === "all" || template.style.id === style) &&
-    `${template.name} ${template.style.name} ${documentBlueprints[template.documentType].name}`.toLocaleLowerCase().includes(query),
+    `${getTemplateDisplayName(template)} ${template.name} ${template.style.name} ${getDocumentTypeLabel(template.documentType)}`.toLocaleLowerCase().includes(query),
   );
   const sorted = [...filtered].sort((first, second) => {
     if (sort === "oldest") return first.savedAt - second.savedAt;
-    if (sort === "name") return first.template.name.localeCompare(second.template.name) || first.template.style.name.localeCompare(second.template.style.name);
-    if (sort === "style") return first.template.style.name.localeCompare(second.template.style.name) || first.template.name.localeCompare(second.template.name);
+    if (sort === "name") return getTemplateDisplayName(first.template).localeCompare(getTemplateDisplayName(second.template)) || first.template.style.name.localeCompare(second.template.style.name);
+    if (sort === "style") return first.template.style.name.localeCompare(second.template.style.name) || getTemplateDisplayName(first.template).localeCompare(getTemplateDisplayName(second.template));
     return second.savedAt - first.savedAt;
   });
   const recent = [...filtered].sort((first, second) => second.savedAt - first.savedAt).slice(0, 4);
@@ -49,7 +49,7 @@ export const MyTemplatesView = ({ withShell = false }: Props) => {
   }
   const sortedGroups = [...groups];
   const typeOptions = [...new Set(saved.map(({ template }) => template.documentType))]
-    .map((value) => ({ value, label: documentBlueprints[value].name }))
+    .map((value) => ({ value, label: getDocumentTypeLabel(value) }))
     .sort((first, second) => first.label.localeCompare(second.label));
   const styleOptions = [...new Map(saved.map(({ template }) => [template.style.id, template.style])).values()]
     .map(({ id, name }) => ({ value: id, label: name }))

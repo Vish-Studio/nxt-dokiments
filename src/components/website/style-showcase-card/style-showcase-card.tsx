@@ -4,6 +4,7 @@ import { TemplateThumbnail } from "@/components/commons/template-thumbnail/templ
 import { cn } from "@/lib/utils";
 import type { MarketplaceTemplate } from "@/types/template";
 import { ArrowRight } from "@phosphor-icons/react/dist/ssr";
+import { getTemplateDisplayName } from "@/lib/market-place/document-labels";
 
 export interface StyleShowcaseCardProps {
   /** Background token for the stage behind the document, e.g. `bg-play-teal`. */
@@ -29,7 +30,7 @@ export const StyleShowcaseCard = ({
 }: StyleShowcaseCardProps) => {
   return (
     <button
-      aria-label={`Preview the ${name} style: ${template.name}`}
+      aria-label={`Preview the ${name} style: ${getTemplateDisplayName(template)}`}
       className={cn(
         "style-showcase-card website-card-reveal group flex w-full flex-col rounded-box border border-steel-mist bg-white p-3 text-left transition-[translate,border-color] duration-300 hover:-translate-y-1 hover:border-nox-noir focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-nox-noir motion-reduce:transition-none motion-reduce:hover:translate-y-0",
         className,

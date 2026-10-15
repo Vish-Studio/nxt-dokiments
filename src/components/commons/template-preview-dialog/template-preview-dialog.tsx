@@ -14,6 +14,7 @@ import { SidePanel } from "@/components/commons/side-panel/side-panel";
 import { TemplateDocument } from "@/components/commons/template-document/template-document";
 import { getSampleValues, tierLabels } from "@/lib/market-place";
 import type { MarketplaceTemplate } from "@/types/template";
+import { getTemplateDisplayName } from "@/lib/market-place/document-labels";
 
 export type TemplatePreviewDialogProps = {
   documentName?: string;
@@ -55,7 +56,7 @@ export const TemplatePreviewDialog = ({
 
   return (
     <SidePanel
-      ariaLabel={template ? `${template.name} preview` : "Template preview"}
+      ariaLabel={template ? `${getTemplateDisplayName(template)} preview` : "Template preview"}
       footer={
         template ? (
           mode === "document" ? (

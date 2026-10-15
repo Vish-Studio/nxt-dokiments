@@ -148,12 +148,12 @@ export const PreviewHidesActionButton: Story = {
 
     await userEvent.click(
       await canvas.findByRole("button", {
-        name: "Preview Client Service Agreement, saved",
+        name: "Preview Contract, saved",
       }),
     );
 
     await expect(
-      canvas.getByRole("dialog", { name: "Client Service Agreement preview" }),
+      canvas.getByRole("dialog", { name: "Contract preview" }),
     ).toBeVisible();
     await expect(
       canvas.queryByRole("link", { name: "New document" }),
