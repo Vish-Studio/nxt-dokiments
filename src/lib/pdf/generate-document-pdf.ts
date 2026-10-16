@@ -54,6 +54,12 @@ const measureKeepRanges = (element: HTMLElement, scale: number) => {
     }
   });
   element.querySelectorAll(keepWithNextSelector).forEach((node) => {
+    // Headings inside a keep group (e.g. the inline totals labels) are already protected; extending them
+    // would bridge into the next block and push the whole group to the next page.
+    if (node.closest("[data-pdf-keep]")) {
+      return;
+    }
+
     ranges.push(toRange(node, keepWithNextPx));
   });
 

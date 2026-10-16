@@ -129,13 +129,33 @@ export const TemplateDocument = ({
           const { isEmpty, text } = valueFor(field.key, field.placeholder);
           if (field.key === "items" && ["invoice", "quotation"].includes(template.documentType)) return <DocumentItems key={field.key} value={text} />;
 
+          if (totals.has(field.key)) {
+            return (
+              <section
+                className={cn(
+                  "ml-auto flex w-full max-w-sm items-baseline justify-between gap-6 border-t border-steel-mist py-2.5 wrap-break-word",
+                  field.key === totalFields[0]?.key && "mt-6",
+                )}
+                // Totals stay together on one PDF page.
+                data-pdf-keep="totals"
+                key={field.key}
+              >
+                <h3 className={cn(config.sectionTitle, isCompact && "text-xs")}>{field.label}</h3>
+                <p
+                  className={cn(
+                    "text-right tabular-nums",
+                    isCompact ? "text-xs" : "text-sm",
+                    isEmpty ? "italic text-nox-noir/35" : "text-nox-noir/80",
+                  )}
+                >
+                  {text}
+                </p>
+              </section>
+            );
+          }
+
           return (
-            <section
-              className={cn("mt-6 break-words", totals.has(field.key) && "ml-auto max-w-xs border-t border-steel-mist pt-3")}
-              // Totals stay together on one PDF page.
-              data-pdf-keep={totals.has(field.key) ? "totals" : undefined}
-              key={field.key}
-            >
+            <section className="mt-6 break-words" key={field.key}>
               <h3 className={cn(config.sectionTitle, isCompact && "text-xs", isLetter && ["salutation", "body", "closing", "senderSignature"].includes(field.key) && "sr-only")}>{field.label}</h3>
               <p
                 className={cn(
