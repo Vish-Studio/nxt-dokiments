@@ -479,6 +479,7 @@ export const DocumentsView = () => {
                 disabled={!activeDocumentId && isCreatePending}
                 onClick={handleSave}
                 type="button"
+                variant="accent"
               >
                 {activeDocumentId
                   ? "Save changes"
