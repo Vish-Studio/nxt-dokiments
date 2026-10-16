@@ -1,3 +1,4 @@
+import { ClientsShowcase } from "@/components/website/clients-showcase/clients-showcase";
 import { Confidence } from "@/components/website/confidence/confidence";
 import { ConversionCta } from "@/components/website/conversion-cta/conversion-cta";
 import { Faq } from "@/components/website/faq/faq";
@@ -18,25 +19,27 @@ export const Landing = () => {
     <main className="min-h-screen bg-white text-nox-noir">
       <Header />
       <Hero />
-      <FeatureTabs />
-      <StyleSwitcher />
-      <MarketplaceShowcase />
-      <UseCases />
+      <Workflow />
       <TemplateStrip />
+      <FeatureTabs />
+      <Confidence />
+      <UseCases />
       <ConversionCta
+        // className="bg-base-200!"
         description="Your saved templates, account role, and document drafts live behind sign-in, so you can pick up exactly where you left off."
         placement="mid"
         title="Already know which template you need? Sign in and keep moving."
       />
+      <ClientsShowcase />
+      <MarketplaceShowcase />
+      <StyleSwitcher />
       <Testimonials />
-      <Workflow />
-      <Confidence />
-      <ConversionCta
+      {/* <ConversionCta
         description="Start with your existing account or create one in seconds. Either path takes you to the same focused document workspace."
         eyebrow="Final step"
         placement="final"
         title="Get into Dokiments and create the document."
-      />
+      /> */}
       <Faq />
       <Footer />
       <NewsletterModal />

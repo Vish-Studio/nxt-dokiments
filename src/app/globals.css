@@ -580,6 +580,24 @@ button:disabled {
   animation-play-state: paused;
 }
 
+/* Same pattern for the workspace feature tabs: the active tab's vertical bar
+   (under its number) is the timer. Unlike the others it keeps running on
+   hover and focus. */
+@keyframes autoplay-progress-vertical {
+  from {
+    transform: scaleY(0);
+  }
+
+  to {
+    transform: scaleY(1);
+  }
+}
+
+.feature-tab-progress {
+  animation: autoplay-progress-vertical 5s linear forwards;
+  transform-origin: top;
+}
+
 /* Animate native <details> open/close where the browser supports it; other
    browsers simply open instantly. */
 .faq-item {
@@ -604,7 +622,8 @@ button:disabled {
   }
 
   .testimonial-progress,
-  .style-switcher-progress {
+  .style-switcher-progress,
+  .feature-tab-progress {
     animation: none;
     transform: none;
   }
