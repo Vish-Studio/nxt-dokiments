@@ -443,20 +443,17 @@ export const PrefillFromClient: Story = {
       canvas.getByRole("menuitemradio", { name: "Northline Studio" }),
     );
 
-    // companyName wins over the contact name for `toName`. Asserted via the "To"
-    // label rather than `findByDisplayValue`, so this remains specific to the
-    // recipient field rather than the picker trigger.
-    await expect(await canvas.findByLabelText("To")).toHaveValue(
-      "Northline Studio",
-    );
+    // A saved client is shown read-only instead of the recipient inputs…
+    const summary = canvas.getByRole("region", {
+      name: "Client: Northline Studio",
+    });
+    await expect(summary).toHaveTextContent("24 Market Street, Ebene");
+    await expect(summary).toHaveTextContent("accounts@northline.com");
+    await expect(canvas.queryByLabelText("To")).not.toBeInTheDocument();
+    // …while its details still fill the document preview, BRN included.
     await expect(
-      canvas.getByDisplayValue("24 Market Street, Ebene"),
-    ).toBeVisible();
-    await expect(
-      canvas.getByDisplayValue("accounts@northline.com"),
-    ).toBeVisible();
-    await expect(canvas.getByDisplayValue("+230 5 987 6543")).toBeVisible();
-    await expect(canvas.getByDisplayValue("C09876543")).toBeVisible();
+      (await canvas.findAllByText("C09876543")).length,
+    ).toBeGreaterThan(0);
   },
 };
 
@@ -494,7 +491,7 @@ export const NewDocumentDeepLink: Story = {
   },
 };
 
-/** With no saved clients the picker offers a link to My Clients instead of an empty dropdown. */
+/** With no saved clients the section shows the inputs and offers to save a typed client. */
 export const PrefillWithNoClients: Story = {
   decorators: [
     (Story) => {
@@ -522,11 +519,17 @@ export const PrefillWithNoClients: Story = {
       await canvas.findByRole("button", { name: /^Client details/ }),
     );
 
-    await expect(
-      await canvas.findByRole("link", { name: "My clients" }),
-    ).toBeVisible();
+    // No saved clients: the section starts on a new client, inputs and all.
+    const toInput = await canvas.findByLabelText("To");
+    await expect(toInput).toBeVisible();
     await expect(
       canvas.queryByLabelText("Prefill from client (optional)"),
     ).not.toBeInTheDocument();
+
+    // Typing a recipient offers to save them for next time.
+    await userEvent.type(toInput, "Acme Co.");
+    await expect(
+      await canvas.findByText("Save Acme Co. for next time?"),
+    ).toBeVisible();
   },
 };

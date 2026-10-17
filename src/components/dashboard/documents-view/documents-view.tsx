@@ -42,6 +42,7 @@ import { useScrollContentToTopOnMobile } from "@/hooks/use-scroll-content-to-top
 import { trackEvent } from "@/lib/analytics/track";
 import { documentBlueprints } from "@/lib/market-place/documents";
 import {
+  clientFieldKeys,
   clientPrefillValues,
   senderPrefillValues,
   sharedContentPrefillValue,
@@ -452,9 +453,17 @@ export const DocumentsView = () => {
                 value={draftName}
               />
                 }
-                recipientPicker={
+                renderRecipientFields={(recipientFields) => (
               <ClientPicker
                 fields={editorTemplate.fields}
+                onClear={() => {
+                  setDraftValues((previous) => ({
+                    ...previous,
+                    ...Object.fromEntries(
+                      clientFieldKeys(editorTemplate.fields).map((key) => [key, ""]),
+                    ),
+                  }));
+                }}
                 onSelect={(client) => {
                   setDraftValues((previous) => ({
                     ...previous,
@@ -464,8 +473,11 @@ export const DocumentsView = () => {
                     document_type: editorTemplate.documentType,
                   });
                 }}
-              />
-                }
+                values={draftValues}
+              >
+                {recipientFields}
+              </ClientPicker>
+                )}
                 fields={editorTemplate.fields}
                 onChange={(key, value) => {
                   setDraftValues((previous) => ({ ...previous, [key]: value }));
