@@ -420,7 +420,12 @@ export const PrefillFromClient: Story = {
       await canvas.findByRole("button", { name: "Use document" }),
     );
 
-    // Sender block seeded from the signed-in user's profile, no interaction needed.
+    // The form is an accordion that opens on Document details; open the sections under test.
+    await userEvent.click(
+      await canvas.findByRole("button", { name: /^Your details/ }),
+    );
+
+    // Sender block seeded from the signed-in user's profile, no typing needed.
     await expect(
       await canvas.findByDisplayValue("Dokiments Studio"),
     ).toBeVisible();
@@ -428,6 +433,9 @@ export const PrefillFromClient: Story = {
       canvas.getByDisplayValue("12 Studio Lane, Port Louis"),
     ).toBeVisible();
 
+    await userEvent.click(
+      canvas.getByRole("button", { name: /^Client details/ }),
+    );
     await userEvent.click(
       canvas.getByRole("button", { name: "Prefill from client (optional)" }),
     );
@@ -508,6 +516,10 @@ export const PrefillWithNoClients: Story = {
     );
     await userEvent.click(
       await canvas.findByRole("button", { name: "Use document" }),
+    );
+    // The client picker lives in the collapsed Client details accordion section.
+    await userEvent.click(
+      await canvas.findByRole("button", { name: /^Client details/ }),
     );
 
     await expect(
