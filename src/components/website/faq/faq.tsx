@@ -26,7 +26,9 @@ export const Faq = () => {
         dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }}
       />
       <div className="mx-auto grid max-w-7xl gap-12 lg:grid-cols-[0.72fr_1.28fr]">
+        {/* Pinned below the fixed h-20 header while the questions scroll; self-start stops the grid stretching it. */}
         <SectionHeading
+          className="lg:sticky lg:top-28 lg:self-start"
           description="Dokiments is built for repeat document work. Sign in once, save the templates that fit, and come back to the same workspace when the next document is due."
           eyebrow="FAQ"
           highlight="answered."
