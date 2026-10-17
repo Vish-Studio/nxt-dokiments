@@ -195,6 +195,7 @@ are named after their tracking ticket, e.g. `DOK-64-short-description`.
 - Every PR into `dev`, `staging`, or `prod` runs **[PR Checks](./.github/workflows/pr-checks.yml)**: lint, type check, `vitest run`, and a production build.
 - Pushing to `prod` runs **[Release](./.github/workflows/release.yml)**, which tags `vX.Y.Z` (from `package.json`'s version) and publishes a GitHub Release with auto-generated notes. The version is bumped by hand on `dev` (`npm version <major|minor|patch> --no-git-tag-version`) before promotion — CI only tags, it never decides the number.
 - Hosting is [Vercel](https://vercel.com), wired to the Git integration (`NEXT_PUBLIC_SITE_URL` defaults to the production URL).
+- Jira deployment types are mapped in [`.jira/config.yml`](./.jira/config.yml): Vercel `Preview` maps to `testing`, and `Production` maps to `production`. Feature branches, `dev`, and `staging` share the `Preview` environment and therefore the same Jira type.
 
 ## Contributing
 

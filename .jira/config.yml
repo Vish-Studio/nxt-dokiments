@@ -1,0 +1,6 @@
+deployments:
+  environmentMapping:
+    testing:
+      - "Preview"
+    production:
+      - "Production"
