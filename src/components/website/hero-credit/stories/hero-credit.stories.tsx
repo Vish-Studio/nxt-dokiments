@@ -22,7 +22,7 @@ type Story = StoryObj<typeof meta>;
 export const Default: Story = {
   play: async ({ canvas }) => {
     await expect(
-      canvas.getByRole("link", { name: /a product of vish studio/i }),
+      canvas.getByRole("link", { name: /digital product of vish\.studio/i }),
     ).toHaveAttribute("href", "https://www.vish.studio");
   },
 };
