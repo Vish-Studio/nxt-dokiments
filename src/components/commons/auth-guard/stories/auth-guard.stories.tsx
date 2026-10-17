@@ -13,6 +13,7 @@ const meta = {
     children: <p>Protected content</p>,
   },
   parameters: {
+    layout: "fullscreen",
     nextjs: {
       appDirectory: true,
     },
@@ -45,6 +46,11 @@ export const Loading: Story = {
     useAuthStore.setState({ status: "loading", user: null });
   },
   play: async ({ canvas }) => {
-    await expect(canvas.getByText("Checking account access")).toBeVisible();
+    await expect(
+      canvas.getByRole("heading", { name: "Checking your account" }),
+    ).toBeVisible();
+    // Announced while it waits, and nothing protected leaks through.
+    await expect(canvas.getByRole("status")).toHaveAttribute("aria-busy", "true");
+    await expect(canvas.queryByText("Protected content")).not.toBeInTheDocument();
   },
 };

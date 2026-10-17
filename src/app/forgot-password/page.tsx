@@ -1,10 +1,13 @@
-import type { Viewport } from "next";
+import type { Metadata, Viewport } from "next";
 
 import { AuthLayout } from "@/components/commons/auth-layout/auth-layout";
 import { ForgotPasswordForm } from "@/components/commons/forgot-password-form/forgot-password-form";
+import { privatePageMetadata } from "@/lib/seo/site";
+
+export const metadata: Metadata = privatePageMetadata("Reset your password");
 
 export const viewport: Viewport = {
-  themeColor: "#141414",
+  themeColor: "#ffffff",
 };
 
 const ForgotPasswordPage = () => {

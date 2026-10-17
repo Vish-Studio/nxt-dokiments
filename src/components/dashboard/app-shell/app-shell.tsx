@@ -4,9 +4,11 @@ import type { ReactNode } from "react";
 import { useEffect, useState } from "react";
 
 import { AuthGuard } from "@/components/commons/auth-guard/auth-guard";
+import { Toaster } from "@/components/commons/toaster/toaster";
 import { ContentContainer } from "@/components/dashboard/content-container/content-container";
 import { MobilePageHeader } from "@/components/dashboard/mobile-page-header/mobile-page-header";
 import { NotificationBell } from "@/components/dashboard/notification-bell/notification-bell";
+import { OnboardingLauncher } from "@/components/dashboard/onboarding-launcher/onboarding-launcher";
 import type {
   PageBannerTone,
   PageBannerVariant,
@@ -39,7 +41,7 @@ const pageThemes: Record<string, PageTheme> = {
   "My Templates": {
     tone: "pink",
   },
-  "My Clients": { tone: "teal" },
+  "My Clients": { tone: "blue" },
   Marketplace: { tone: "teal" },
   Subscription: {
     tone: "purple",
@@ -154,10 +156,12 @@ export const AppShell = ({
                 <PublicLaunchBanner />
                 {children}
               </ContentContainer>
+              <OnboardingLauncher />
             </div>
           </section>
         </div>
       </main>
+      <Toaster />
     </AuthGuard>
   );
 };

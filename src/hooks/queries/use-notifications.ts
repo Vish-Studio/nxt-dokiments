@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { queryKeys } from "@/lib/query/keys";
+import { UnauthorizedError } from "@/lib/query/unauthorized-error";
 import type {
   AppNotification,
   NotificationsResponse,
@@ -8,6 +9,10 @@ import type {
 
 const fetchNotifications = async (): Promise<AppNotification[]> => {
   const response = await fetch("/api/notifications");
+
+  if (response.status === 401) {
+    throw new UnauthorizedError();
+  }
 
   if (!response.ok) {
     throw new Error("Unable to load notifications.");
@@ -17,14 +22,14 @@ const fetchNotifications = async (): Promise<AppNotification[]> => {
 };
 
 /**
- * Server-produced notifications, refreshed every minute and when the tab regains
+ * Server-produced notifications, refreshed every five minutes and when the tab regains
  * focus. Polling is paused in background tabs (TanStack's default).
  */
 export const useServerNotificationsQuery = () =>
   useQuery({
     queryFn: fetchNotifications,
     queryKey: queryKeys.notifications.all(),
-    refetchInterval: 60_000,
+    refetchInterval: 5 * 60_000,
     refetchOnWindowFocus: true,
     staleTime: 30_000,
   });

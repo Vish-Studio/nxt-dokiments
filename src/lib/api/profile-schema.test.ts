@@ -7,11 +7,14 @@ import { ProfileSchema } from "./profile-schema";
 /** A complete, valid body — the shape `ProfileSettings` always submits. */
 const validBody = {
   address: "1 Royal Road, Port Louis",
+  brn: "C12345678",
+  businessEmail: "hello@vish.studio",
   companyName: "Vish Studio",
   displayName: "Divesh",
   fullName: "Divesh Heeramun",
   phone: "+230 5123 4567",
   tel: "+230 212 0000",
+  website: "https://vish.studio",
 };
 
 /** A string of exactly `length` characters. */
@@ -80,16 +83,19 @@ describe("ProfileSchema", () => {
 
   describe("the optional fields", () => {
     it("defaults every one of them to an empty string when absent", () => {
-      // Worth pinning down: `patchProfileFields` writes all six fields on every
-      // call, so these defaults are what makes an omitted field *clear* the stored
-      // value rather than write `undefined`. Pre-existing behaviour, preserved.
+      // Worth pinning down: `patchProfileFields` writes every profile field on
+      // every call, so these defaults are what makes an omitted field *clear* the
+      // stored value rather than write `undefined`. Pre-existing behaviour, preserved.
       expect(ProfileSchema.parse({ displayName: "Divesh" })).toEqual({
         address: "",
+        brn: "",
+        businessEmail: "",
         companyName: "",
         displayName: "Divesh",
         fullName: "",
         phone: "",
         tel: "",
+        website: "",
       });
     });
 
@@ -99,6 +105,8 @@ describe("ProfileSchema", () => {
       ["fullName", profileFieldLimits.fullName],
       ["phone", profileFieldLimits.phone],
       ["tel", profileFieldLimits.tel],
+      ["brn", profileFieldLimits.brn],
+      ["website", profileFieldLimits.website],
     ] as const)(
       "accepts %s at its ceiling and rejects one past it",
       (field, max) => {
@@ -121,5 +129,20 @@ describe("ProfileSchema", () => {
     const parsed = ProfileSchema.parse({ ...validBody, role: "superadmin" });
 
     expect(parsed).not.toHaveProperty("role");
+  });
+
+  describe("businessEmail", () => {
+    it("accepts an empty value, since the field is optional", () => {
+      expect(
+        ProfileSchema.safeParse({ ...validBody, businessEmail: "" }).success,
+      ).toBe(true);
+    });
+
+    it("rejects something that is not an email, because it is printed on documents", () => {
+      expect(
+        ProfileSchema.safeParse({ ...validBody, businessEmail: "not-an-email" })
+          .success,
+      ).toBe(false);
+    });
   });
 });

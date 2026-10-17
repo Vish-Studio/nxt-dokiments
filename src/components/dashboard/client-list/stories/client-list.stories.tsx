@@ -6,7 +6,7 @@ import { ClientList } from "../client-list";
 const meta = {
   title: "Dashboard/Client List",
   component: ClientList,
-  args: { onDelete: fn(), onPreview: fn() },
+  args: { onDelete: fn(), onEdit: fn(), onPreview: fn() },
 } satisfies Meta<typeof ClientList>;
 
 export default meta;
@@ -36,8 +36,8 @@ export const WithClients: Story = {
   play: async ({ canvas }) => {
     await expect(canvas.getByText("Maya Chen")).toBeVisible();
     await expect(
-      canvas.getByRole("button", { name: "Delete Maya Chen" }),
-    ).toHaveClass("btn-error");
+      canvas.getByRole("button", { name: "More actions for Maya Chen" }),
+    ).toBeVisible();
 
     // The row itself opens the detail panel — the reason this list is clickable.
     await userEvent.click(

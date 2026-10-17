@@ -14,7 +14,6 @@ const navItems = [
   { href: "/#marketplace", label: "Marketplace" },
   { href: "/#use-cases", label: "Use cases" },
   { href: "/#workflow", label: "Workflow" },
-  { href: "/#pricing", label: "Pricing" },
 ];
 
 export interface HeaderProps {
@@ -90,15 +89,15 @@ export const Header = ({ showAuthActions = true }: HeaderProps) => {
                   <LinkButton
                     analytics={{
                       event: "cta_click",
-                      params: { placement: "header_mobile" },
+                      params: { placement: "header_mobile_sign_up" },
                     }}
                     className="lg:hidden!"
-                    href="/sign-in"
+                    href="/sign-up"
                     icon={null}
                     size="sm"
                     variant="accent"
                   >
-                    Sign in
+                    Sign up
                   </LinkButton>
                   <LinkButton
                     analytics={{
@@ -109,7 +108,7 @@ export const Header = ({ showAuthActions = true }: HeaderProps) => {
                     href="/sign-in"
                     icon={null}
                     size="sm"
-                    variant="accent"
+                    variant="outlineDark"
                   >
                     Sign in
                   </LinkButton>
@@ -122,7 +121,7 @@ export const Header = ({ showAuthActions = true }: HeaderProps) => {
                     href="/sign-up"
                     icon={null}
                     size="sm"
-                    variant="outlineDark"
+                    variant="accent"
                   >
                     Sign up
                   </LinkButton>

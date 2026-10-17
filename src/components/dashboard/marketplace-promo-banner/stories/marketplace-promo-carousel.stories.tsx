@@ -4,25 +4,21 @@ import { MarketplacePromoCarousel } from "../marketplace-promo-carousel";
 
 const slides = [
   {
-    actionHref: "/settings",
-    actionLabel: "Apply offer",
-    detail: "Use the launch offer on a polished business document.",
-    eyebrow: "Launch promo",
-    icon: "offer" as const,
-    imageSrc:
-      "https://images.unsplash.com/photo-1455390582262-044cdead277a?auto=format&fit=crop&fm=webp&q=84&w=1800",
-    promoCode: "VISHOK2026!",
-    title: "A sharper start for every document.",
+    actionHref: "/my-documents",
+    actionLabel: "Explore Dokiments",
+    backgroundClassName: "bg-golden-harvest",
+    detail: "Create professional quotations, invoices, contracts and more with ready-to-go templates.",
+    eyebrow: "Dokiments",
+    imageSrc: "/images/mockups/marketplace/home-mockup.svg",
+    title: "Business documents, without the blank page.",
   },
   {
     actionHref: "/my-clients",
-    actionLabel: "Manage clients",
-    detail: "Keep client details close to the documents you create for them.",
-    eyebrow: "New workspace tool",
-    icon: "clients" as const,
-    imageSrc:
-      "https://images.unsplash.com/photo-1516321318423-f06f85e504b3?auto=format&fit=crop&fm=webp&q=84&w=1800",
-    title: "Your clients, right where your work happens.",
+    actionLabel: "Explore client portal",
+    backgroundClassName: "bg-play-blue",
+    detail: "Manage client details in one place and keep them connected to the documents you create.",
+    imageSrc: "/images/marketplace/marketplace-promo-placeholder.png",
+    title: "Keep your clients organized.",
   },
 ];
 

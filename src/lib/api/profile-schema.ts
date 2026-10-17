@@ -47,9 +47,16 @@ const optionalText = (max: number) => z.string().trim().max(max).default("");
  */
 export const ProfileSchema = z.object({
   address: optionalText(profileFieldLimits.address),
+  brn: optionalText(profileFieldLimits.brn),
+  // Optional, but when given it has to be an email: it is printed on documents.
+  businessEmail: z.union([
+    z.literal(""),
+    z.email().max(profileFieldLimits.businessEmail),
+  ]).default(""),
   companyName: optionalText(profileFieldLimits.companyName),
   displayName: z.string().trim().min(1).max(profileFieldLimits.displayName),
   fullName: optionalText(profileFieldLimits.fullName),
   phone: optionalText(profileFieldLimits.phone),
   tel: optionalText(profileFieldLimits.tel),
+  website: optionalText(profileFieldLimits.website),
 });

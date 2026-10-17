@@ -1,7 +1,9 @@
 import "server-only";
 
 import { serverFirebaseConfig } from "@/lib/firebase/server-config";
+import { ApiError } from "@/lib/api/errors";
 import { fetchUpstream } from "@/lib/http/fetch-upstream";
+import { DEV_SESSION } from "@/lib/session";
 
 /** Recursive Firestore REST value union used when reading and writing document fields. */
 export type FirestoreValue =
@@ -62,6 +64,50 @@ const FIRESTORE_BASE_URL = "https://firestore.googleapis.com/v1";
 const documentUrl = (path: string) =>
   `${FIRESTORE_BASE_URL}/projects/${serverFirebaseConfig.projectId}/databases/(default)/documents/${path}`;
 
+/** Summarises a JWT's non-secret claims (audience, expiry) for diagnosing rejected tokens. */
+const describeToken = (idToken: string): string => {
+  try {
+    const { aud, exp } = JSON.parse(
+      Buffer.from(idToken.split(".")[1] ?? "", "base64url").toString(),
+    ) as { aud?: string; exp?: number };
+
+    return `aud=${aud}, exp=${exp ? new Date(exp * 1000).toISOString() : "unknown"}`;
+  } catch {
+    return "not a decodable JWT";
+  }
+};
+
+/**
+ * Builds the error for a failed Firestore call made with a caller's ID token.
+ *
+ * A 401 means the token itself was rejected, so it becomes an `ApiError(401)`
+ * that `withSession` turns into a cleared session, rather than an opaque 500.
+ * The dev-bypass placeholder token gets an explicit explanation, since it can
+ * never authenticate against Firestore.
+ */
+const toFirestoreError = (
+  response: Response,
+  message: string | undefined,
+  fallback: string,
+  idToken?: string,
+): Error => {
+  if (response.status === 401 && idToken) {
+    if (idToken === DEV_SESSION.idToken) {
+      console.error(
+        "Firestore rejected the DEV_AUTH_BYPASS placeholder token. The bypass cannot reach Firestore: set DEV_AUTH_BYPASS=false, restart the server and sign in with real credentials.",
+      );
+    } else {
+      console.error(
+        `Firestore rejected the ID token (${message ?? "no message"}). Token claims: ${describeToken(idToken)}; expected project: ${serverFirebaseConfig.projectId}`,
+      );
+    }
+
+    return new ApiError(401, "Unauthorised.");
+  }
+
+  return new Error(message || fallback);
+};
+
 /** Shape of a Firestore REST `documents:list` response page. */
 type FirestoreListResponse = {
   /** Documents on this page. Absent (not `[]`) when the collection is empty. */
@@ -109,8 +155,11 @@ export const listFirestoreCollection = async (
       | null;
 
     if (!response.ok) {
-      throw new Error(
-        page?.error?.message || "Unable to list the requested collection.",
+      throw toFirestoreError(
+        response,
+        page?.error?.message,
+        "Unable to list the requested collection.",
+        idToken,
       );
     }
 
@@ -145,8 +194,11 @@ export const getFirestoreDocument = async (
     | null;
 
   if (!response.ok) {
-    throw new Error(
-      document?.error?.message || "Unable to read the requested document.",
+    throw toFirestoreError(
+      response,
+      document?.error?.message,
+      "Unable to read the requested document.",
+      idToken,
     );
   }
 
@@ -219,8 +271,11 @@ export const patchFirestoreDocument = async (
   );
 
   if (!response.ok) {
-    throw new Error(
-      body?.error?.message || "Unable to write the requested document.",
+    throw toFirestoreError(
+      response,
+      body?.error?.message,
+      "Unable to write the requested document.",
+      idToken,
     );
   }
 
@@ -284,8 +339,11 @@ export const createFirestoreDocument = async (
       return null;
     }
 
-    throw new Error(
-      body?.error?.message || "Unable to create the requested document.",
+    throw toFirestoreError(
+      response,
+      body?.error?.message,
+      "Unable to create the requested document.",
+      idToken,
     );
   }
 
@@ -313,8 +371,11 @@ export const deleteFirestoreDocument = async (
     const document = (await response
       .json()
       .catch(() => null)) as FirestoreErrorBody | null;
-    throw new Error(
-      document?.error?.message || "Unable to delete the requested document.",
+    throw toFirestoreError(
+      response,
+      document?.error?.message,
+      "Unable to delete the requested document.",
+      idToken,
     );
   }
 };

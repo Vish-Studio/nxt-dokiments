@@ -5,6 +5,7 @@ import { ButtonIcon } from "@/components/commons/button-icon/button-icon";
 import SidebarAccount from "@/components/dashboard/sidebar-account/sidebar-account";
 import SidebarFeedback from "@/components/dashboard/sidebar-feedback/sidebar-feedback";
 import SidebarItem from "@/components/dashboard/sidebar-item/sidebar-item";
+import SidebarOnboarding from "@/components/dashboard/sidebar-onboarding/sidebar-onboarding";
 import { sidebarItems, settingsNavigationItem } from "@/lib/dashboard-navigation";
 import { cn } from "@/lib/utils";
 import Image from "next/image";
@@ -100,6 +101,10 @@ const Sidebar: FunctionComponent<Props> = ({
       </nav>
 
       <div className="mt-auto grid gap-3 pt-8">
+        <SidebarOnboarding
+          isCollapsed={isCollapsed}
+          onCloseMobile={onCloseMobile}
+        />
         <SidebarFeedback
           isCollapsed={isCollapsed}
           onCloseMobile={onCloseMobile}

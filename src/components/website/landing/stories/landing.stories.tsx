@@ -23,7 +23,7 @@ export const Default: Story = {
       ).toBeVisible();
     });
     await expect(
-      canvas.getByRole("heading", { name: /questions people ask/i }),
+      canvas.getByRole("heading", { name: /questions, answered/i }),
     ).toBeInTheDocument();
   },
 };

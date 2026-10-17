@@ -116,23 +116,23 @@ export const MobileNav = ({
             <>
               <LinkButton
                 className="w-full"
-                href="/sign-in"
+                href="/sign-up"
                 icon={null}
                 onClick={onClose}
                 size="lg"
                 variant="accent"
               >
-                Sign in
+                Create a free account
               </LinkButton>
               <LinkButton
                 className="w-full"
-                href="/sign-up"
+                href="/sign-in"
                 icon={null}
                 onClick={onClose}
                 size="lg"
                 variant="outlineDark"
               >
-                Create a free account
+                Sign in
               </LinkButton>
             </>
           )}

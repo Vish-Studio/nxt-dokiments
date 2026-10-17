@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { trackEvent } from "@/lib/analytics/track";
 import { queryKeys } from "@/lib/query/keys";
+import { UnauthorizedError } from "@/lib/query/unauthorized-error";
 import type { UserDocument } from "@/types/template";
 
 const fetchDocuments = async (templateId?: string): Promise<UserDocument[]> => {
@@ -9,6 +10,10 @@ const fetchDocuments = async (templateId?: string): Promise<UserDocument[]> => {
     ? `?templateId=${encodeURIComponent(templateId)}`
     : "";
   const response = await fetch(`/api/documents${query}`);
+
+  if (response.status === 401) {
+    throw new UnauthorizedError();
+  }
 
   if (!response.ok) {
     throw new Error("Unable to load your documents.");
@@ -23,6 +28,8 @@ export const useDocumentsQuery = (templateId?: string) =>
   useQuery({
     queryKey: queryKeys.documents.list(templateId),
     queryFn: () => fetchDocuments(templateId),
+    // Changed only by this user's own mutations, which refresh the cache; skip focus refetches to save Firestore reads.
+    refetchOnWindowFocus: false,
   });
 
 const fetchDocument = async (documentId: string): Promise<UserDocument> => {

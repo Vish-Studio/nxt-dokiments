@@ -34,11 +34,14 @@ export type AuthProviderId = (typeof authProviders)[number];
  */
 export const profileFieldLimits = {
   address: 500,
+  brn: 50,
+  businessEmail: 254,
   companyName: 200,
   displayName: 200,
   fullName: 200,
   phone: 50,
   tel: 50,
+  website: 200,
 } as const;
 
 /**
@@ -69,6 +72,10 @@ export const credentialFieldLimits = {
 export type AuthProfileDetails = {
   /** Mailing/street address. */
   address?: string;
+  /** Business registration number, as on a client record. */
+  brn?: string;
+  /** Email for business correspondence; documents fall back to the sign-in email. */
+  businessEmail?: string;
   /** Employer or business name. */
   companyName?: string;
   /** Legal/full name, as distinct from the shorter `displayName`. */
@@ -77,6 +84,8 @@ export type AuthProfileDetails = {
   phone?: string;
   /** Secondary/national-format telephone number. */
   tel?: string;
+  /** Business website. */
+  website?: string;
 };
 
 export type AuthUser = {

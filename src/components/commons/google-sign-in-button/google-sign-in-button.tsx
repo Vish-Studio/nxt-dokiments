@@ -67,7 +67,7 @@ export const GoogleSignInButton = ({
   return (
     <a
       className={cn(
-        "link-button inline-flex min-h-11 items-center justify-center gap-2 rounded-box border border-steel-mist bg-transparent px-5 py-3 text-sm font-title font-bold text-nox-noir transition hover:bg-base-200",
+        "link-button inline-flex min-h-11 items-center justify-center gap-2 rounded-field border border-steel-mist bg-transparent px-5 py-3 text-sm font-title font-semibold text-nox-noir transition hover:bg-base-200",
         className,
       )}
       href={href}

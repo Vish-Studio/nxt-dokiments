@@ -9,6 +9,7 @@ import { TemplatePreviewDialog } from "@/components/commons/template-preview-dia
 import { UpgradeDialog } from "@/components/commons/upgrade-dialog/upgrade-dialog";
 import { MarketplacePromoBanner } from "@/components/dashboard/marketplace-promo-banner/marketplace-promo-banner";
 import { MarketplaceCategoryNav } from "@/components/dashboard/marketplace-category-nav/marketplace-category-nav";
+import { MarketplaceCategoryNavSkeleton } from "@/components/dashboard/marketplace-category-nav/marketplace-category-nav-skeleton";
 import { ResponsiveHeaderControls } from "@/components/dashboard/responsive-header-controls/responsive-header-controls";
 import TemplateLibraryToolbar, {
   type TemplateSort,
@@ -24,13 +25,13 @@ import {
   canUseTier,
   getSavedTemplateLimit,
 } from "@/lib/market-place";
-import { documentBlueprints } from "@/lib/market-place/documents";
 import { useAuthStore } from "@/stores/auth-store";
 import type {
   DocumentType,
   MarketplaceTemplate,
   TemplateStyle,
 } from "@/types/template";
+import { getDocumentTypeLabel, getTemplateDisplayName } from "@/lib/market-place/document-labels";
 
 const NO_STYLES: TemplateStyle[] = [];
 const NO_TEMPLATES: MarketplaceTemplate[] = [];
@@ -68,7 +69,7 @@ export const MarketplaceBrowser = () => {
       (template) =>
         (documentType === "all" || template.documentType === documentType) &&
         (style === "all" || template.style.id === style) &&
-        `${template.name} ${template.style.name} ${documentBlueprints[template.documentType].name}`
+        `${getTemplateDisplayName(template)} ${template.name} ${template.style.name} ${getDocumentTypeLabel(template.documentType)}`
           .toLocaleLowerCase()
           .includes(query),
     );
@@ -86,7 +87,7 @@ export const MarketplaceBrowser = () => {
   const typeOptions = useMemo(
     () =>
       [...new Set(allTemplates.map((template) => template.documentType))]
-        .map((value) => ({ value, label: documentBlueprints[value].name }))
+        .map((value) => ({ value, label: getDocumentTypeLabel(value) }))
         .sort((first, second) => first.label.localeCompare(second.label)),
     [allTemplates],
   );
@@ -247,6 +248,7 @@ export const MarketplaceBrowser = () => {
       <div className="marketplace-browser flex min-h-0 w-full flex-1 flex-col gap-6 pt-6">
         <MarketplacePromoBanner />
         <LoadingStatus message="Loading marketplace templates…" />
+        <MarketplaceCategoryNavSkeleton />
         <div className="w-full flex-1 rounded-box border border-steel-mist bg-base-100 p-4 sm:p-6">
           <TemplateCardSkeletonGrid className="grid-cols-2 gap-x-6 gap-y-8 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6" />
         </div>

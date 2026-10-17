@@ -1,7 +1,7 @@
 import { Badge } from "@/components/commons/badge/badge";
 import { TemplateCard } from "@/components/commons/template-card/template-card";
-import { documentBlueprints } from "@/lib/market-place/documents";
 import type { DocumentType, MarketplaceTemplate } from "@/types/template";
+import { getDocumentTypeLabel } from "@/lib/market-place/document-labels";
 
 interface Props {
   documentType?: DocumentType;
@@ -34,7 +34,7 @@ const TemplateTypeGroup = ({
           className="font-title text-xl font-bold text-nox-noir"
           id={`template-group-${id}`}
         >
-          {title ?? (documentType ? documentBlueprints[documentType].name : "Recently Added")}
+          {title ?? (documentType ? getDocumentTypeLabel(documentType) : "Recently Added")}
         </h2>
         <Badge className="ml-auto" variant="neutral">
           {templates.length} Templates

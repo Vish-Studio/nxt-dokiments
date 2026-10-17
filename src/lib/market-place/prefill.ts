@@ -48,7 +48,7 @@ const CLIENT_RULES: PrefillRule<Client>[] = [
  */
 const SENDER_RULES: PrefillRule<AuthUser>[] = [
   { keys: ["fromPhone"], value: (user) => user.phone || user.tel || "" },
-  { keys: ["fromEmail"], value: (user) => user.email },
+  { keys: ["fromEmail"], value: (user) => user.businessEmail || user.email },
   {
     keys: ["fromName", "partyOne"],
     value: (user) => user.companyName || user.fullName || user.displayName,

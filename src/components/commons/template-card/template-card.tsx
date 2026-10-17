@@ -1,6 +1,7 @@
 import { TemplateThumbnail } from "@/components/commons/template-thumbnail/template-thumbnail";
 import { cn } from "@/lib/utils";
 import type { MarketplaceTemplate } from "@/types/template";
+import { getTemplateDisplayName } from "@/lib/market-place/document-labels";
 
 export interface TemplateCardProps {
   className?: string;
@@ -23,7 +24,7 @@ export const TemplateCard = ({
 }: TemplateCardProps) => {
   return (
     <button
-      aria-label={`Preview ${template.name}${saved ? ", saved" : ""}${locked ? ", locked" : ""}`}
+      aria-label={`Preview ${getTemplateDisplayName(template)}${saved ? ", saved" : ""}${locked ? ", locked" : ""}`}
       className={cn(
         "template-card group block overflow-visible rounded-box bg-transparent p-2 text-left transition-colors duration-200 hover:bg-base-200 focus:outline-none focus-visible:bg-base-200 focus-visible:ring-2 focus-visible:ring-nox-noir/20",
         variant === "gallery" ? "w-full min-w-0" : "mx-auto w-64 sm:w-72",
@@ -42,7 +43,7 @@ export const TemplateCard = ({
       {variant === "gallery" ? (
         <span className="mt-3 block text-center">
           <span className="block font-title text-sm font-semibold leading-5 text-nox-noir">
-            {template.name}
+            {getTemplateDisplayName(template)}
           </span>
           <span className="mt-1 block text-xs leading-5 text-nox-noir/60">
             {template.style.name}

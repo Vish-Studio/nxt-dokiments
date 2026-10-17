@@ -74,10 +74,14 @@ export const Default: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     await expect(
-      canvas.getByRole("heading", { name: /profile/i }),
+      canvas.getByRole("heading", { name: "Personal information" }),
     ).toBeVisible();
-    await expect(canvas.getByDisplayValue("Anthony Alverizko")).toBeVisible();
-    await expect(canvas.getByText("anthony@dokiments.com")).toBeVisible();
+    await expect(
+      canvas.getByRole("heading", { name: "Business details" }),
+    ).toBeVisible();
+    // Read-only by default, with the email shown but never editable here.
+    await expect(canvas.getAllByText("anthony@dokiments.com").length).toBeGreaterThan(0);
+    await expect(canvas.queryByRole("textbox")).not.toBeInTheDocument();
   },
 };
 
@@ -85,8 +89,54 @@ export const SaveProfile: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     await userEvent.click(
+      canvas.getByRole("button", { name: "Edit personal information" }),
+    );
+    await expect(canvas.getByDisplayValue("Anthony Alverizko")).toBeVisible();
+
+    await userEvent.click(
       canvas.getByRole("button", { name: /save changes/i }),
     );
-    await expect(await canvas.findByText("Profile updated.")).toBeVisible();
+    // Confirmed by a toast at the bottom of the screen.
+    await expect(await canvas.findByRole("status")).toHaveTextContent(
+      "Personal information updated.",
+    );
+    // Back to the read-only view once saved.
+    await expect(
+      canvas.queryByRole("button", { name: /save changes/i }),
+    ).not.toBeInTheDocument();
+  },
+};
+
+/** The business card validates its email before saving. */
+export const RejectsInvalidBusinessEmail: Story = {
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await userEvent.click(
+      canvas.getByRole("button", { name: "Edit business details" }),
+    );
+    await userEvent.type(canvas.getByLabelText("Business email"), "not-an-email");
+    await userEvent.click(canvas.getByRole("button", { name: /save changes/i }));
+
+    // Still editing: the browser or the form stopped the save.
+    await expect(canvas.getByLabelText("Business email")).toBeVisible();
+    await expect(
+      canvas.queryByText("Business details updated."),
+    ).not.toBeInTheDocument();
+  },
+};
+
+export const CancelEditing: Story = {
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await userEvent.click(
+      canvas.getByRole("button", { name: "Edit business details" }),
+    );
+    await userEvent.type(canvas.getByLabelText("Company name"), "Northline");
+    await userEvent.click(canvas.getByRole("button", { name: "Cancel" }));
+
+    await expect(canvas.queryByText("Northline")).not.toBeInTheDocument();
+    await expect(
+      canvas.getByRole("button", { name: "Edit business details" }),
+    ).toBeVisible();
   },
 };

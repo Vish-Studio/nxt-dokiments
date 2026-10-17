@@ -1,12 +1,14 @@
 import type { Metadata } from "next";
 
 import { LegalPage } from "@/components/website/legal-page/legal-page";
+import { pageMetadata } from "@/lib/seo/site";
 
-export const metadata: Metadata = {
-  title: "Cookie Policy | Dokiments",
+export const metadata: Metadata = pageMetadata({
   description:
     "How Dokiments uses cookies and browser storage, and how to manage your choices.",
-};
+  path: "/cookies",
+  title: "Cookie Policy",
+});
 
 const sections = [
   {

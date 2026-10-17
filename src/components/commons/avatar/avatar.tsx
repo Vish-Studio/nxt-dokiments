@@ -3,7 +3,7 @@ import Image from "next/image";
 
 import { cn, getInitials } from "@/lib/utils";
 
-export type AvatarSize = "sm" | "lg";
+export type AvatarSize = "sm" | "md" | "lg";
 
 export type AvatarProps = {
   className?: string;
@@ -16,11 +16,13 @@ export type AvatarProps = {
 
 const sizeClasses: Record<AvatarSize, string> = {
   sm: "size-8 text-xs",
+  md: "size-10 text-sm",
   lg: "size-14 text-lg",
 };
 
 const iconSizes: Record<AvatarSize, number> = {
   sm: 16,
+  md: 20,
   lg: 24,
 };
 

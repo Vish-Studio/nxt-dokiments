@@ -22,7 +22,7 @@ export const TabMenu = ({ ariaLabel, className, items, onChange, value }: TabMen
     <div className={cn("tab-menu min-w-0", className)}>
       <div
         aria-label={ariaLabel}
-        className="flex gap-1 overflow-x-auto overflow-y-hidden rounded-box bg-base-200 p-1"
+        className="flex gap-1 overflow-x-auto overflow-y-hidden rounded-tab bg-base-200 p-1"
         role="tablist"
       >
         {items.map((item) => {
@@ -33,7 +33,7 @@ export const TabMenu = ({ ariaLabel, className, items, onChange, value }: TabMen
             <button
               aria-selected={isActive}
               className={cn(
-                "inline-flex shrink-0 items-center gap-2 rounded-box px-3 py-2 font-title text-sm font-semibold transition-colors sm:px-4 sm:text-sm",
+                "inline-flex shrink-0 items-center gap-2 rounded-md px-3 py-2 font-title text-sm font-semibold transition-colors sm:px-4 sm:text-sm",
                 isActive
                   ? "bg-nox-noir text-white"
                   : "text-nox-noir/55 hover:bg-base-100/55 hover:text-nox-noir",

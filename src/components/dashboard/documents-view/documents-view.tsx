@@ -49,6 +49,7 @@ import {
 import { useAuthStore } from "@/stores/auth-store";
 import type { MarketplaceTemplate, UserDocument } from "@/types/template";
 import { snapshotToMarketplaceTemplate } from "@/types/template";
+import { getDocumentTypeLabel, getTemplateDisplayName } from "@/lib/market-place/document-labels";
 
 type Mode = "list" | "picker" | "editor";
 
@@ -120,7 +121,7 @@ export const DocumentsView = () => {
             ),
         ),
       ]
-        .map((value) => ({ value, label: documentBlueprints[value].name }))
+        .map((value) => ({ value, label: getDocumentTypeLabel(value) }))
         .sort((first, second) => first.label.localeCompare(second.label)),
     [documents],
   );
@@ -230,7 +231,7 @@ export const DocumentsView = () => {
     (template: MarketplaceTemplate) => {
       setActiveTemplate(template);
       setActiveDocumentId(null);
-      setDraftName(template.name);
+      setDraftName(getTemplateDisplayName(template));
       // Seeds the sender block from the user's own profile — identical on every
       // document they create, so there's nothing to pick. Only on a new document:
       // `openDocument` must keep the saved values untouched.
@@ -478,6 +479,7 @@ export const DocumentsView = () => {
                 disabled={!activeDocumentId && isCreatePending}
                 onClick={handleSave}
                 type="button"
+                variant="accent"
               >
                 {activeDocumentId
                   ? "Save changes"

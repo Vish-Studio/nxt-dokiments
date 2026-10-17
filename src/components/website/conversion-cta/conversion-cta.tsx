@@ -29,19 +29,19 @@ export const ConversionCta = ({
   return (
     <section
       className={cn(
-        "conversion-cta bg-nox-noir px-5 py-14 text-white sm:px-8 lg:px-10",
+        "conversion-cta bg-white px-5 py-12 text-nox-noir sm:px-8 lg:px-10",
         className,
       )}
     >
-      <div className="mx-auto grid max-w-7xl gap-8 py-10 lg:grid-cols-[1fr_auto] lg:items-center">
+      <div className="mx-auto grid max-w-7xl gap-8 rounded-box bg-golden-harvest p-8 sm:p-12 lg:grid-cols-[1fr_auto] lg:items-center lg:p-16">
         <div>
-          <p className="font-title text-sm font-bold uppercase tracking-wide text-golden-harvest">
+          <p className="font-title text-sm font-bold uppercase tracking-wide text-nox-noir/60">
             {eyebrow}
           </p>
-          <h2 className="mt-3 max-w-3xl font-title text-3xl font-bold leading-tight text-white sm:text-4xl">
+          <h2 className="mt-3 max-w-3xl font-title text-3xl font-bold leading-tight tracking-tight text-nox-noir sm:text-4xl lg:text-5xl">
             {title}
           </h2>
-          <p className="mt-4 max-w-2xl text-base leading-7 text-white/64">
+          <p className="mt-4 max-w-2xl text-base leading-7 text-nox-noir/72">
             {description}
           </p>
         </div>
@@ -52,10 +52,16 @@ export const ConversionCta = ({
               analytics={{ event: "cta_click", params: { placement } }}
               className="w-full"
               href="/dashboard"
-              icon={<ArrowRight aria-hidden size={18} weight="bold" />}
+              icon={
+                <ArrowRight
+                  aria-hidden
+                  size={18}
+                  weight="bold"
+                />
+              }
               iconMotion="right"
               size="lg"
-              variant="accent"
+              variant="primary"
             >
               Go to my dashboard
             </LinkButton>
@@ -64,9 +70,15 @@ export const ConversionCta = ({
               analytics={{ event: "cta_click", params: { placement } }}
               className="w-full"
               href="/sign-in"
-              icon={<SignIn aria-hidden size={18} weight="bold" />}
+              icon={
+                <SignIn
+                  aria-hidden
+                  size={18}
+                  weight="bold"
+                />
+              }
               size="lg"
-              variant="accent"
+              variant="primary"
             >
               Sign in
             </LinkButton>

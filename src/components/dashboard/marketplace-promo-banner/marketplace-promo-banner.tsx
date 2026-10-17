@@ -1,5 +1,3 @@
-import { activePromoCode } from "@/lib/promo/promo-codes";
-
 import {
   type MarketplacePromoSlideProps,
 } from "./marketplace-promo-slide";
@@ -7,37 +5,41 @@ import { MarketplacePromoCarousel } from "./marketplace-promo-carousel";
 
 const marketplacePromoSlides: MarketplacePromoSlideProps[] = [
   {
-    actionHref: "/settings",
-    actionLabel: "Apply offer",
-    detail: `Use code ${activePromoCode.code} to unlock the launch offer, then choose a polished business document that fits your work.`,
-    eyebrow: activePromoCode.label,
-    icon: "offer",
-    imageSrc:
-      "https://images.unsplash.com/photo-1455390582262-044cdead277a?auto=format&fit=crop&fm=webp&q=84&w=1800",
-    promoCode: activePromoCode.code,
-    title: "A sharper start for every document.",
+    actionHref: "/my-documents",
+    actionLabel: "Explore Dokiments",
+    backgroundClassName: "bg-golden-harvest",
+    detail:
+      "Create professional quotations, invoices, contracts and more with ready-to-go templates.",
+    // eyebrow: "Dokiments",
+    imageSrc: "/images/mockups/marketplace/home-mockup.svg",
+    title: "Business documents, without the blank page.",
   },
   {
     actionHref: "/my-clients",
-    actionLabel: "Manage clients",
+    actionLabel: "Explore client portal",
+    backgroundClassName: "bg-play-blue",
     detail:
-      "Keep client details close to the proposals, contracts, and documents you create for them.",
-    eyebrow: "New workspace tool",
-    icon: "clients",
-    imageSrc:
-      "https://images.unsplash.com/photo-1516321318423-f06f85e504b3?auto=format&fit=crop&fm=webp&q=84&w=1800",
-    title: "Your clients, right where your work happens.",
+      "Manage client details in one place and keep them connected to the documents you create.",
+    imageSrc: "/images/mockups/marketplace/home-mockup.svg",
+    title: "Keep your clients organized.",
+  },
+  {
+    actionHref: "/settings",
+    actionLabel: "Redeem promo code",
+    backgroundClassName: "bg-play-purple",
+    detail:
+      "Use the launch promo code in Settings to unlock our offer and get access to more templates.",
+    imageSrc: "/images/marketplace/marketplace-promo-placeholder.png",
+    title: "More templates. More possibilities.",
   },
   {
     actionHref: "/marketplace#marketplace-template-sections",
-    actionLabel: "Browse templates",
+    actionLabel: "Get my templates",
+    backgroundClassName: "bg-play-pink",
     detail:
-      "More polished templates are on the way. Explore the growing library and find a dependable starting point today.",
-    eyebrow: "Growing library",
-    icon: "templates",
-    imageSrc:
-      "https://images.unsplash.com/photo-1752137666154-34d38ba92dd7?auto=format&fit=crop&fm=webp&q=84&w=1800",
-    title: "More ways to make your work feel considered.",
+      "Browse professionally designed templates and customise them to fit your business.",
+    imageSrc: "/images/marketplace/marketplace-promo-placeholder.png",
+    title: "Template made for your business.",
   },
 ];
 

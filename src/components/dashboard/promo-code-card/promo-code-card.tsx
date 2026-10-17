@@ -14,6 +14,7 @@ import {
   useRedeemPromoCodeMutation,
 } from "@/hooks/queries/use-promo-redemptions";
 import { activePromoCode, promoMessages } from "@/lib/promo/promo-codes";
+import { useToastStore } from "@/stores/toast-store";
 
 type PromoValues = {
   promoCode: string;
@@ -52,6 +53,7 @@ export const PromoCodeCard = () => {
   const { data: redemptions, isLoading } = usePromoRedemptionsQuery();
   const { isPending, mutate: redeemPromoCode } = useRedeemPromoCodeMutation();
   const [feedback, setFeedback] = useState<Feedback | null>(null);
+  const showToast = useToastStore((state) => state.showToast);
 
   const form = useForm<PromoValues>({
     defaultValues: { promoCode: "" },
@@ -76,12 +78,10 @@ export const PromoCodeCard = () => {
       },
       onSuccess: () => {
         form.reset({ promoCode: "" });
-        // Not usually seen: the mutation writes the new record into the cache, so
-        // this component re-renders into its redeemed branch and the form holding
-        // this banner unmounts — the redeemed state *is* the confirmation. It
-        // still matters once a second campaign exists, where redeeming a
-        // different campaign's code from here leaves this card on its form.
-        setFeedback({ message: promoMessages.applied, tone: "success" });
+        // A toast rather than an inline banner: the mutation writes the new record
+        // into the cache, so this card re-renders into its redeemed branch and the
+        // form unmounts — an inline message would vanish with it.
+        showToast({ message: promoMessages.applied, tone: "success" });
       },
     });
   });

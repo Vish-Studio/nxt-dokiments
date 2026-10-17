@@ -1,49 +1,55 @@
 "use client";
 
-import type { CSSProperties } from "react";
 import { useState } from "react";
 
 import { Carousel } from "@/components/commons/carousel/carousel";
 import { LinkButton } from "@/components/commons/link-button/link-button";
-import { TemplateCard } from "@/components/commons/template-card/template-card";
 import { TemplatePreviewDialog } from "@/components/commons/template-preview-dialog/template-preview-dialog";
-import { getTemplateById } from "@/lib/market-place";
-import { cn } from "@/lib/utils";
-import type { MarketplaceTemplate } from "@/types/template";
+import { SectionHeading } from "@/components/website/section-heading/section-heading";
+import {
+  getStyleAccent,
+  getStyleLabel,
+} from "@/components/website/style-display/style-display";
+import { StyleShowcaseCard } from "@/components/website/style-showcase-card/style-showcase-card";
+import {
+  getTemplateById,
+  templateStyles,
+  tierLabels,
+} from "@/lib/market-place";
+import type {
+  DocumentType,
+  MarketplaceTemplate,
+  TemplateStyle,
+  TemplateStyleId,
+} from "@/types/template";
 
-const showcaseItems = [
-  {
-    className: "xl:translate-y-10 xl:rotate-[-3deg]",
-    id: "classic-proposal",
-    label: "Classic",
-  },
-  {
-    className: "xl:-translate-y-2 xl:rotate-[2deg]",
-    id: "modern-contract",
-    label: "Modern",
-  },
-  {
-    className: "xl:translate-y-16 xl:rotate-[3deg]",
-    id: "brutalist-change-order",
-    label: "Brutalist",
-  },
-  {
-    className: "xl:translate-y-5 xl:rotate-[-2deg]",
-    id: "minimalist-invoice",
-    label: "Minimalist",
-  },
-]
-  .map((item) => {
-    const template = getTemplateById(item.id);
+const DEFAULT_SHOWCASE_DOCUMENT: DocumentType = "invoice";
 
-    return template ? { ...item, template } : null;
+// Each style leads with a different document so the row shows range.
+const showcaseDocuments: Partial<Record<TemplateStyleId, DocumentType>> = {
+  brutalist: "change-order",
+  classic: "proposal",
+  minimalist: "invoice",
+  modern: "contract",
+};
+
+const showcaseStyles = templateStyles
+  .map((style, index) => {
+    const documentType =
+      showcaseDocuments[style.id] ?? DEFAULT_SHOWCASE_DOCUMENT;
+    const template = getTemplateById(`${style.id}-${documentType}`);
+
+    return template ? { accent: getStyleAccent(index), style, template } : null;
   })
-  .filter((item): item is {
-    className: string;
-    id: string;
-    label: string;
-    template: MarketplaceTemplate;
-  } => Boolean(item));
+  .filter(
+    (
+      item,
+    ): item is {
+      accent: string;
+      style: TemplateStyle;
+      template: MarketplaceTemplate;
+    } => Boolean(item),
+  );
 
 const getAuthUrl = (templateId: string) => {
   const next = `/marketplace?template=${encodeURIComponent(templateId)}`;
@@ -55,19 +61,17 @@ export const MarketplaceShowcase = () => {
   const [preview, setPreview] = useState<MarketplaceTemplate | null>(null);
 
   return (
-    <section className="bg-golden-harvest px-5 py-24 sm:px-8 lg:px-10" id="marketplace">
+    <section
+      className="marketplace-showcase bg-base-200 px-5 py-24 sm:px-8 lg:px-10"
+      id="marketplace"
+    >
       <div className="mx-auto max-w-7xl">
-        <div className="grid gap-6 lg:grid-cols-[0.72fr_1.28fr] lg:items-end">
-          <div className="website-reveal">
-            <h2 className="font-title text-4xl font-bold leading-tight text-nox-noir sm:text-5xl">
-              Start from real templates already in the marketplace.
-            </h2>
-            <p className="mt-5 max-w-xl text-base leading-7 text-nox-noir/62">
-              Preview the same invoices, contracts, quotations, and proposals
-              available inside the dashboard. Save one after signing in, or browse
-              the full marketplace first.
-            </p>
-          </div>
+        <div className="grid gap-6 lg:grid-cols-[1fr_auto] lg:items-end">
+          <SectionHeading
+            description="Preview the same invoices, contracts, quotations, and proposals available inside the dashboard. Save one after signing in, or browse the full marketplace first."
+            highlight="real templates,"
+            title="Start from real templates, not a blank page."
+          />
 
           <div className="website-reveal flex justify-start lg:justify-end">
             <LinkButton
@@ -80,27 +84,29 @@ export const MarketplaceShowcase = () => {
         </div>
 
         <Carousel
-          ariaLabel="Featured marketplace templates"
+          ariaLabel="Featured template styles"
           className="mt-14"
-          viewportClassName="xl:py-20"
+          header={
+            <h3 className="font-title text-3xl font-bold text-nox-noir">
+              Choose your style
+            </h3>
+          }
+          navigationPlacement="header"
         >
-          {showcaseItems.map((item, index) => (
+          {showcaseStyles.map(({ accent, style, template }) => (
             <div
-              className={cn(
-                "website-card-reveal group relative flex min-w-0 shrink-0 basis-[82%] flex-col items-center sm:basis-[46%] xl:basis-0 xl:flex-1",
-                item.className,
-              )}
-              key={item.template.id}
-              style={{ "--reveal-delay": `${160 + index * 135}ms` } as CSSProperties}
+              className="min-w-0 shrink-0 basis-[82%] sm:basis-[46%] lg:basis-[31%] xl:basis-[24%]"
+              key={style.id}
             >
-              <TemplateCard
-                className="w-full max-w-72"
-                onPreview={() => setPreview(item.template)}
-                template={item.template}
+              <StyleShowcaseCard
+                accent={accent}
+                description={style.description}
+                name={getStyleLabel(style.id)}
+                onPreview={() => setPreview(template)}
+                template={template}
+                tierLabel={tierLabels[style.tier]}
+                tierVariant={style.tier}
               />
-              <span className="mt-5 inline-flex rounded-full bg-nox-noir px-4 py-2 font-title text-xs font-bold uppercase tracking-normal text-golden-harvest transition group-hover:-translate-y-0.5">
-                {item.label}
-              </span>
             </div>
           ))}
         </Carousel>

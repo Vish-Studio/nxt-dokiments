@@ -18,14 +18,21 @@ import { FloatingActionButton } from "@/components/commons/floating-action-butto
 import { LoadingStatus } from "@/components/commons/loading-status/loading-status";
 import { TemplateCard } from "@/components/commons/template-card/template-card";
 import { TemplatePreviewDialog } from "@/components/commons/template-preview-dialog/template-preview-dialog";
+import { SidebarToggleButton } from "@/components/dashboard/sidebar-toggle-button/sidebar-toggle-button";
 import { NotificationBell } from "@/components/dashboard/notification-bell/notification-bell";
+import { TemplateThumbnail } from "@/components/commons/template-thumbnail/template-thumbnail";
 import { useClientsQuery } from "@/hooks/queries/use-clients";
 import { useDocumentsQuery } from "@/hooks/queries/use-documents";
 import { useSavedTemplatesQuery } from "@/hooks/queries/use-saved-templates";
-import { getSavedTemplateLimit } from "@/lib/market-place";
+import { getSavedTemplateLimit, getTemplateById } from "@/lib/market-place";
 import { useAuthStore } from "@/stores/auth-store";
+import { useUiStore } from "@/stores/ui-store";
 import type { UserRole } from "@/types/auth";
-import type { MarketplaceTemplate } from "@/types/template";
+import {
+  snapshotToMarketplaceTemplate,
+  type MarketplaceTemplate,
+} from "@/types/template";
+import { getTemplateDisplayName } from "@/lib/market-place/document-labels";
 
 const roleLabels: Record<UserRole, string> = {
   free: "Free",
@@ -59,6 +66,8 @@ export const DashboardView = () => {
     useState<MarketplaceTemplate | null>(null);
 
   const isFree = !user || user.role === "free";
+  const isSidebarCollapsed = useUiStore((state) => state.isSidebarCollapsed);
+  const toggleSidebar = useUiStore((state) => state.toggleSidebar);
   const firstName = (user?.displayName ?? "there").split(" ")[0];
   const roleLabel = user ? roleLabels[user.role] : "Free";
   const remainingTemplateSlots = isFree
@@ -119,14 +128,28 @@ export const DashboardView = () => {
   const recentDocuments = [...documents]
     .sort((a, b) => b.updatedAt - a.updatedAt)
     .slice(0, 4);
-  const latestDocument = recentDocuments[0] ?? null;
+  const latestDocument =
+    [...documents].sort((a, b) => b.createdAt - a.createdAt)[0] ?? null;
+  const latestDocumentTemplate = latestDocument
+    ? latestDocument.templateSnapshot
+      ? snapshotToMarketplaceTemplate(
+          latestDocument.templateSnapshot,
+          latestDocument.templateId,
+        )
+      : getTemplateById(latestDocument.templateId)
+    : null;
   const latestTemplate = saved.at(-1)?.template ?? null;
 
   return (
     <div className="flex flex-col gap-8">
       <div className="grid gap-4 lg:grid-cols-[1fr_22rem]">
-        <div className="relative rounded-box bg-golden-harvest p-6 sm:p-8">
+        <div className="relative rounded-box bg-golden-harvest p-6 sm:p-8 lg:pt-16">
           {/* The dashboard has no page banner on desktop, so the bell lives in the hero. */}
+          <SidebarToggleButton
+            className="absolute left-4 top-4 border-none bg-white/45 text-nox-noir hover:bg-white/65"
+            isCollapsed={isSidebarCollapsed}
+            onToggle={toggleSidebar}
+          />
           <div className="absolute right-4 top-4 hidden lg:block">
             <NotificationBell tone="light" />
           </div>
@@ -249,7 +272,7 @@ export const DashboardView = () => {
           ) : null}
         </div>
 
-        <div className="rounded-box border border-steel-mist bg-base-100 p-5 sm:p-6">
+        <div className="flex min-h-0 flex-col rounded-box border border-steel-mist bg-base-100 p-5 sm:p-6">
           <div className="flex flex-wrap items-start justify-between gap-4">
             <div>
               <h2 className="font-title text-xl font-bold text-nox-noir">
@@ -277,28 +300,40 @@ export const DashboardView = () => {
               </div>
             </div>
           ) : latestDocument ? (
-            <div className="mt-5 rounded-box bg-play-blue/35 p-4">
-              <p className="font-title text-xs font-bold uppercase tracking-normal text-nox-noir/50">
-                Latest document
-              </p>
-              <h3 className="mt-2 font-title text-2xl font-bold text-nox-noir">
-                {latestDocument.name}
-              </h3>
-              <p className="mt-1 text-sm text-nox-noir/60">
-                {latestDocument.templateSnapshot?.name ?? "Document template"}
-              </p>
-              <Link
-                className="group btn btn-primary mt-5 min-h-11 h-11 font-title font-semibold tracking-normal"
-                href="/my-documents"
-              >
-                Open document
-                <ArrowRightIcon
-                  aria-hidden
-                  className="arrow-cta-icon"
-                  size={18}
-                  weight="bold"
+            <div className="mt-5 grid min-h-0 flex-1 gap-4 rounded-box bg-play-blue/35 p-4 sm:grid-cols-3 sm:items-center">
+              <div className="min-w-0 sm:col-span-2">
+                <p className="font-title text-xs font-bold uppercase tracking-normal text-nox-noir/50">
+                  Latest created document
+                </p>
+                <h3 className="mt-2 truncate font-title text-2xl font-bold text-nox-noir">
+                  {latestDocument.name}
+                </h3>
+                <p className="mt-1 truncate text-sm text-nox-noir/60">
+                  {latestDocument.templateSnapshot
+                    ? getTemplateDisplayName(latestDocument.templateSnapshot)
+                    : "Document template"}
+                </p>
+                <Link
+                  className="group btn btn-primary mt-5 min-h-11 h-11 font-title font-semibold tracking-normal"
+                  href="/my-documents"
+                >
+                  Open document
+                  <ArrowRightIcon
+                    aria-hidden
+                    className="arrow-cta-icon"
+                    size={18}
+                    weight="bold"
+                  />
+                </Link>
+              </div>
+              {latestDocumentTemplate ? (
+                <TemplateThumbnail
+                  compact
+                  className="mx-auto hidden md:flex w-28 rounded-box bg-base-100 shadow-soft sm:justify-self-end"
+                  template={latestDocumentTemplate}
+                  values={latestDocument.values}
                 />
-              </Link>
+              ) : null}
             </div>
           ) : latestTemplate ? (
             <div className="mt-5 flex flex-col gap-5 rounded-box bg-play-pink/45 p-4 sm:flex-row sm:items-center">
@@ -415,7 +450,9 @@ export const DashboardView = () => {
                     {document.name}
                   </h4>
                   <p className="truncate text-xs text-nox-noir/55">
-                    {document.templateSnapshot?.name ?? "Document template"}
+                    {document.templateSnapshot
+                      ? getTemplateDisplayName(document.templateSnapshot)
+                      : "Document template"}
                   </p>
                 </div>
                 <ArrowRightIcon

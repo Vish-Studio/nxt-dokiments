@@ -1,25 +1,29 @@
 import type { MetadataRoute } from "next";
 
-const baseUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://dokiments.com";
+import { siteUrl } from "@/lib/seo/site";
 
-const routes = [
-  { path: "/", priority: 1 },
-  { path: "/sign-in", priority: 0.9 },
-  { path: "/sign-up", priority: 0.85 },
-  { path: "/marketplace", priority: 0.8 },
-  { path: "/subscription", priority: 0.7 },
-  { path: "/privacy", priority: 0.35 },
-  { path: "/cookies", priority: 0.3 },
-  { path: "/terms", priority: 0.3 },
+// Only public, indexable pages. Signed-in routes (marketplace, subscription, dashboard…) redirect
+// crawlers to /sign-in, so listing them would only feed search engines redirects.
+const routes: Array<{
+  changeFrequency: MetadataRoute.Sitemap[number]["changeFrequency"];
+  path: string;
+  priority: number;
+}> = [
+  { changeFrequency: "weekly", path: "/", priority: 1 },
+  { changeFrequency: "monthly", path: "/sign-up", priority: 0.8 },
+  { changeFrequency: "monthly", path: "/sign-in", priority: 0.5 },
+  { changeFrequency: "yearly", path: "/privacy", priority: 0.3 },
+  { changeFrequency: "yearly", path: "/terms", priority: 0.3 },
+  { changeFrequency: "yearly", path: "/cookies", priority: 0.2 },
 ];
 
 export default function sitemap(): MetadataRoute.Sitemap {
   const lastModified = new Date();
 
   return routes.map((route) => ({
-    url: new URL(route.path, baseUrl).toString(),
+    url: `${siteUrl}${route.path === "/" ? "" : route.path}`,
     lastModified,
-    changeFrequency: route.path === "/" ? "weekly" : "monthly",
+    changeFrequency: route.changeFrequency,
     priority: route.priority,
   }));
 }
