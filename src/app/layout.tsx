@@ -10,6 +10,12 @@ import { CookieConsent } from "@/components/website/cookie-consent/cookie-consen
 import { analyticsConfig, hasAnalyticsConfig } from "@/lib/analytics/config";
 import { COOKIE_CONSENT_STORAGE_KEY } from "@/lib/cookie-consent";
 import { QueryProvider } from "@/lib/query/query-provider";
+import {
+  defaultDescription,
+  defaultTitle,
+  siteName,
+  siteUrl,
+} from "@/lib/seo/site";
 
 import "./globals.css";
 
@@ -24,32 +30,35 @@ const raleway = Raleway({
   subsets: ["latin"],
 });
 
+// Defaults for every route. Canonical URLs and og:url are deliberately NOT set here: a page that
+// inherited them would tell search engines it is a copy of the home page. Public pages set their
+// own through `pageMetadata` (src/lib/seo/site.ts); private ones use `privatePageMetadata`.
 export const metadata: Metadata = {
-  metadataBase: new URL(
-    process.env.NEXT_PUBLIC_SITE_URL ?? "https://nxt-dokiments.vercel.app",
-  ),
+  metadataBase: new URL(siteUrl),
   title: {
-    default: "Dokiments | Business Document Templates and Workspace",
-    template: "%s | Dokiments",
+    default: `${defaultTitle} | ${siteName}`,
+    template: `%s | ${siteName}`,
   },
-  description:
-    "Create invoices, contracts, quotations, proposals, and reusable business documents from polished templates in one focused workspace.",
-  applicationName: "Dokiments",
+  description: defaultDescription,
+  applicationName: siteName,
+  category: "business",
   keywords: [
+    "invoice template",
+    "free invoice maker",
+    "quotation template",
+    "quote template",
+    "contract template",
+    "NDA template",
+    "receipt template",
+    "purchase order template",
     "business document templates",
-    "invoice templates",
-    "contract templates",
-    "quotation templates",
-    "proposal templates",
-    "document workspace",
-    "document generator",
+    "small business documents",
+    "freelancer invoice",
+    "PDF invoice generator",
   ],
-  authors: [{ name: "Dokiments" }],
-  creator: "Dokiments",
-  publisher: "Dokiments",
-  alternates: {
-    canonical: "/",
-  },
+  authors: [{ name: "VISH studio", url: "https://www.vish.studio" }],
+  creator: "VISH studio",
+  publisher: siteName,
   icons: {
     icon: [{ url: "/icon.svg", type: "image/svg+xml" }],
     shortcut: "/icon.svg",
@@ -58,14 +67,12 @@ export const metadata: Metadata = {
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",
-    title: "Dokiments",
+    title: siteName,
   },
   openGraph: {
-    title: "Dokiments | Business Document Templates and Workspace",
-    description:
-      "Browse business-ready templates, save the ones that fit, and turn them into polished documents from one workspace.",
-    url: "/",
-    siteName: "Dokiments",
+    title: `${defaultTitle} | ${siteName}`,
+    description: defaultDescription,
+    siteName,
     locale: "en_US",
     type: "website",
   },
@@ -82,9 +89,8 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "Dokiments | Business Document Templates and Workspace",
-    description:
-      "Create invoices, contracts, quotations, proposals, and reusable business documents from polished templates.",
+    title: `${defaultTitle} | ${siteName}`,
+    description: defaultDescription,
   },
 };
 

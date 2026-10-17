@@ -1,6 +1,7 @@
 import { FaqItem } from "@/components/website/faq-item/faq-item";
 import { SectionHeading } from "@/components/website/section-heading/section-heading";
 import { faqItems } from "@/components/website/faq/faq-items";
+import { toJsonLd } from "@/lib/seo/site";
 
 const faqSchema = {
   "@context": "https://schema.org",
@@ -23,7 +24,7 @@ export const Faq = () => {
     >
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }}
+        dangerouslySetInnerHTML={{ __html: toJsonLd(faqSchema) }}
       />
       <div className="mx-auto grid max-w-7xl gap-12 lg:grid-cols-[0.72fr_1.28fr]">
         {/* Pinned below the fixed h-20 header while the questions scroll; self-start stops the grid stretching it. */}

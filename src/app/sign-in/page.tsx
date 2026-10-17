@@ -1,8 +1,16 @@
-import type { Viewport } from "next";
+import type { Metadata, Viewport } from "next";
 import Link from "next/link";
 
 import { AuthLayout } from "@/components/commons/auth-layout/auth-layout";
 import { SignInForm } from "@/components/commons/sign-in-form/sign-in-form";
+import { pageMetadata } from "@/lib/seo/site";
+
+export const metadata: Metadata = pageMetadata({
+  description:
+    "Sign in to Dokiments to open your invoices, quotations, contracts, saved templates, and clients.",
+  path: "/sign-in",
+  title: "Sign in",
+});
 
 export const viewport: Viewport = {
   themeColor: "#ffffff",

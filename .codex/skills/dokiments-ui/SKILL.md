@@ -89,6 +89,15 @@ All UI components must reside exactly within one of these four subdirectories un
 - **Persistence & flow:** Owned templates live in `templates-store` (ownership only — no values), created documents in `documents-store`; both are per-`uid` and persisted with zustand `persist`. Flow: Marketplace saves a template → **My Templates** is a read-only gallery of owned templates (thumbnails, no editing) → **Documents** creates/edits a concrete document from an owned template (name + `TemplateForm` on the left, live `TemplateDocument` render on the right).
 - **Reusable building blocks:** Prefer `PlanCard` (used by subscription + website pricing), `TemplateDocument` (style-aware renderer), `TemplateThumbnail`, `Carousel`, and `SidePanel` over re-implementing these patterns.
 
+## 6b. SEO
+
+- **One origin:** every absolute URL (metadata, sitemap, robots, JSON-LD) comes from `siteUrl` in `src/lib/seo/site.ts` (`NEXT_PUBLIC_SITE_URL`, fallback `https://dokiments.com`). Never hard-code a domain elsewhere.
+- **No inherited canonicals:** the root layout sets defaults only (search-focused `defaultTitle`/`defaultDescription`, keywords, robots, icons) and must never set `alternates.canonical` or `openGraph.url` — every child page would inherit them and claim to be the home page. Next.js merges metadata shallowly, so public pages export `pageMetadata({ title, description, path })`, which sets their own canonical, Open Graph and Twitter objects. Titles go through the `%s | Dokiments` template — never write "| Dokiments" into a page title.
+- **Private routes:** signed-in and utility pages (dashboard, my-*, marketplace, subscription, settings, forgot-password, offline) export `privatePageMetadata(title)` (`noindex, nofollow`). Client-component pages get it from a sibling `layout.tsx` (see `src/app/offline/layout.tsx`). They are also disallowed in `robots.ts`; keep that list in sync with `PROTECTED_PREFIXES` in `src/proxy.ts`.
+- **Sitemap:** list only public, indexable pages. Routes behind `proxy.ts` redirect crawlers to `/sign-in`, so they never belong in `sitemap.ts`.
+- **Structured data:** the home page renders `homeStructuredData` (`src/lib/seo/home-structured-data.ts`: Organization with VISH studio as parent and its social `sameAs`, WebSite, SoftwareApplication with a free `Offer`); `Faq` renders the FAQPage schema from `faq-items.ts`, so FAQ copy changes update it automatically. Always serialise JSON-LD with `toJsonLd` (escapes `<`, per the Next.js JSON-LD guide).
+- **Copy:** lead public titles and descriptions with what people search for — invoice, quotation/quote, contract, receipt templates for small businesses and freelancers — plus the differentiators (client prefill, PDF export, free to start). Keep exactly one `h1` per page (the hero's typed headline on the home page).
+
 ## 7. Shared Dashboard Patterns
 
 - **Dashboard lists:** Use `DashboardList` for the responsive 12-column header, surface, and borders. Keep entity-specific row data and actions in components such as `DocumentListItem` and `ClientList`.
