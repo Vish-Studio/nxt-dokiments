@@ -146,6 +146,10 @@ export const Dropdown = ({
           aria-label={ariaLabel}
           className={cn("dropdown-content z-50 mt-2 max-h-80 overflow-y-auto rounded-box border border-steel-mist bg-base-100 p-2 text-nox-noir shadow-sm", menuClassName)}
           id={menuId}
+          // Custom action menus (children) close once one of their buttons is used.
+          onClick={(event) => {
+            if (!groups && closeOnSelect && (event.target as Element).closest("button")) setIsOpen(false);
+          }}
           onKeyDown={handleMenuKeyDown}
           ref={menuRef}
           role={groups ? "menu" : undefined}
