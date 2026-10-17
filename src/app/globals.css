@@ -580,6 +580,99 @@ button:disabled {
   animation-play-state: paused;
 }
 
+/* Same pattern for the workspace feature tabs: the active tab's vertical bar
+   (under its number) is the timer. Unlike the others it keeps running on
+   hover and focus. */
+@keyframes autoplay-progress-vertical {
+  from {
+    transform: scaleY(0);
+  }
+
+  to {
+    transform: scaleY(1);
+  }
+}
+
+.feature-tab-progress {
+  animation: autoplay-progress-vertical 5s linear forwards;
+  transform-origin: top;
+}
+
+/* Same pattern for the hero's "how it works" steps: the active step tile's bar is the timer.
+   Longer than the other carousels: each step's headline types in (~2s) and still needs reading. */
+.hero-step-progress {
+  animation: autoplay-progress 9s linear forwards;
+  transform-origin: left;
+}
+
+/* The first run waits a few seconds after page load before the walkthrough starts moving. */
+.hero-step-progress-delayed {
+  /* Starts once the load reveal (HeroIntro, ~5.5s) has settled. */
+  animation-delay: 6s;
+  /* "both" holds the empty bar during the delay instead of flashing it full. */
+  animation-fill-mode: both;
+}
+
+/* Hero load reveal (HeroIntro): the headline types in character by character, then each block
+   fades up in turn. Delays come from inline styles (`animation-delay`, `--reveal-delay`) computed
+   in HeroIntro from the headline length; `both` keeps every piece hidden until its turn. */
+@keyframes hero-reveal-up {
+  from {
+    opacity: 0;
+    transform: translateY(0.75rem);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes hero-fade-in {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes hero-caret-blink {
+  0%,
+  49% {
+    opacity: 1;
+  }
+
+  50%,
+  100% {
+    opacity: 0;
+  }
+}
+
+/* Slow, symmetric ease-in-out so nothing snaps in. */
+.hero-reveal {
+  animation: hero-reveal-up 1.1s cubic-bezier(0.45, 0, 0.55, 1) var(--reveal-delay, 0s) both;
+}
+
+.hero-reveal-fade,
+.hero-type-char {
+  animation: hero-fade-in 0.4s cubic-bezier(0.45, 0, 0.55, 1) both;
+}
+
+/* A blinking caret that lands after the last typed character, then fades away. */
+.hero-type-caret {
+  display: inline-block;
+  width: 0.08em;
+  height: 0.9em;
+  margin-left: 0.08em;
+  vertical-align: -0.05em;
+  background: currentColor;
+  opacity: 0;
+  /* Hidden at rest; blinks four times once typing ends, then stays hidden. */
+  animation: hero-caret-blink 0.9s step-end 3;
+}
+
 /* Animate native <details> open/close where the browser supports it; other
    browsers simply open instantly. */
 .faq-item {
@@ -604,9 +697,18 @@ button:disabled {
   }
 
   .testimonial-progress,
-  .style-switcher-progress {
+  .style-switcher-progress,
+  .feature-tab-progress,
+  .hero-step-progress,
+  .hero-reveal,
+  .hero-reveal-fade,
+  .hero-type-char {
     animation: none;
     transform: none;
+  }
+
+  .hero-type-caret {
+    display: none;
   }
 
   .faq-item::details-content {

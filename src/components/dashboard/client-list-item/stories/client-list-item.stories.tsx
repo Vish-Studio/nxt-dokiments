@@ -56,9 +56,11 @@ export const Default: Story = {
     await userEvent.click(canvas.getByRole("button", { name: "Edit client" }));
     await expect(args.onEdit).toHaveBeenCalledOnce();
 
+    // The menu closes after each action, so reopen it for the next one.
     await userEvent.click(
-      canvas.getByRole("button", { name: "Delete" }),
+      canvas.getByRole("button", { name: "More actions for Maya Chen" }),
     );
+    await userEvent.click(canvas.getByRole("button", { name: "Delete" }));
     await expect(args.onDelete).toHaveBeenCalledOnce();
     await expect(args.onPreview).toHaveBeenCalledOnce();
   },

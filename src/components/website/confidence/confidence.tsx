@@ -20,12 +20,14 @@ const workflowChips = [
 
 export const Confidence = () => {
   return (
-    <section className="confidence bg-base-200 px-5 py-24 text-nox-noir sm:px-8 lg:px-10">
+    <section className="confidence bg-nox-noir px-5 py-24 text-nox-noir sm:px-8 lg:px-10">
       <div className="mx-auto max-w-7xl">
         <SectionHeading
+          className="max-w-4xl"
           align="center"
           highlight="Keep everything."
           title="Sign in once. Keep everything."
+          tone="dark"
         />
 
         <div className="website-stagger mt-14 grid gap-4 md:grid-cols-2 lg:grid-cols-3">
