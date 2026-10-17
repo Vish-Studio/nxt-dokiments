@@ -31,22 +31,25 @@ const workflowSteps = [
 export const Workflow = () => {
   return (
     <section
-      className="workflow bg-white px-5 py-24 text-nox-noir sm:px-8 lg:px-10"
+      className="workflow bg-nox-noir px-5 py-24 text-nox-noir sm:px-8 lg:px-10"
       id="workflow"
     >
       <div className="mx-auto max-w-7xl">
         <SectionHeading
+          className="max-w-4xl"
           align="center"
           description="The website introduces the product. The signed-in app does the real work, on desktop, tablet, and mobile."
           highlight="four steps."
           title="From sign-up to sent in four steps."
+          tone="dark"
         />
 
-        <ol className="website-stagger mt-16 grid gap-12 md:grid-cols-2 xl:grid-cols-4 xl:gap-8">
+        <ol className="website-stagger my-16 grid gap-12 md:grid-cols-2 xl:grid-cols-4 xl:gap-8">
           {workflowSteps.map((step, index) => (
             <WorkflowStep
               accent={step.accent}
               description={step.description}
+              isFirst={index === 0}
               isLast={index === workflowSteps.length - 1}
               key={step.title}
               step={index + 1}

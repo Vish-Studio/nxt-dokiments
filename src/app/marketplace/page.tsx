@@ -1,5 +1,10 @@
+import type { Metadata } from "next";
+
 import { AppShell } from "@/components/dashboard/app-shell/app-shell";
 import { MarketplaceBrowser } from "@/components/dashboard/marketplace-browser/marketplace-browser";
+import { privatePageMetadata } from "@/lib/seo/site";
+
+export const metadata: Metadata = privatePageMetadata("Marketplace");
 
 const MarketplacePage = () => {
   return (

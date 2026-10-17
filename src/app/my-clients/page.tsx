@@ -1,5 +1,10 @@
+import type { Metadata } from "next";
+
 import { AppShell } from "@/components/dashboard/app-shell/app-shell";
 import { MyClientsView } from "@/components/dashboard/my-clients-view/my-clients-view";
+import { privatePageMetadata } from "@/lib/seo/site";
+
+export const metadata: Metadata = privatePageMetadata("My Clients");
 
 const MyClientsPage = () => {
   return (

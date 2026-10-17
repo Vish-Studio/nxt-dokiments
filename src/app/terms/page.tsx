@@ -1,11 +1,14 @@
 import type { Metadata } from "next";
 
 import { LegalPage } from "@/components/website/legal-page/legal-page";
+import { pageMetadata } from "@/lib/seo/site";
 
-export const metadata: Metadata = {
-  title: "Terms of Use | Dokiments",
-  description: "Terms governing access to and use of the Dokiments website and document workspace.",
-};
+export const metadata: Metadata = pageMetadata({
+  description:
+    "Terms governing access to and use of the Dokiments website and document workspace.",
+  path: "/terms",
+  title: "Terms of Use",
+});
 
 const sections = [
   {

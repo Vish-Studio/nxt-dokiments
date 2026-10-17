@@ -6,7 +6,8 @@ export interface FeatureTabContent {
   href: string;
   id: string;
   imageAlt: string;
-  imageSrc: string;
+  /** Omitted when the tab renders a coded mockup instead of an image. */
+  imageSrc?: string;
   linkLabel: string;
   title: string;
 }
@@ -49,9 +50,20 @@ export const featureTabs: FeatureTabContent[] = [
     title: "Keep the ones you reuse.",
   },
   {
+    accent: "bg-play-blue",
+    description:
+      "Save each client's name, phone, email, address, and BRN once. Pick them while creating a document and their details fill in for you.",
+    fit: "contain",
+    href: "/sign-up",
+    id: "clients",
+    imageAlt: "A saved client card prefilling an invoice's recipient details",
+    linkLabel: "Add your clients",
+    title: "Prefill your clients in one click.",
+  },
+  {
     accent: "bg-play-purple",
     description:
-      "Fill the guided fields and watch the finished document take shape beside the form, then export it as a PDF. No formatting, no blank page.",
+      "Fill the guided fields, with your client already prefilled, and watch the finished document take shape beside the form. Export it as a PDF. No formatting, no blank page.",
     fit: "cover",
     href: "/sign-up",
     id: "documents",

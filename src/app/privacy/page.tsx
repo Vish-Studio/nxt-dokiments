@@ -1,12 +1,14 @@
 import type { Metadata } from "next";
 
 import { LegalPage } from "@/components/website/legal-page/legal-page";
+import { pageMetadata } from "@/lib/seo/site";
 
-export const metadata: Metadata = {
-  title: "Privacy Policy | Dokiments",
+export const metadata: Metadata = pageMetadata({
   description:
     "How Dokiments collects, uses, stores, and protects personal information.",
-};
+  path: "/privacy",
+  title: "Privacy Policy",
+});
 
 const sections = [
   {

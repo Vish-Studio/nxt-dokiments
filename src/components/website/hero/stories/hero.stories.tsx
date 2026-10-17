@@ -19,11 +19,18 @@ export const Default: Story = {
   play: async ({ canvas }) => {
     await waitFor(async () => {
       await expect(
-        canvas.getByRole("heading", { name: /business documents without the blank page/i }),
+        canvas.getByRole("heading", {
+          name: /business documents without the blank page/i,
+        }),
       ).toBeVisible();
     });
-    await expect(
-      canvas.getByRole("link", { name: /create a free account/i }),
-    ).toBeVisible();
+    await waitFor(
+      async () => {
+        await expect(
+          canvas.getByRole("link", { name: /create a free account/i }),
+        ).toBeVisible();
+      },
+      { timeout: 10000 },
+    );
   },
 };

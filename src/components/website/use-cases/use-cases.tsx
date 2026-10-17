@@ -51,6 +51,7 @@ export const UseCases = () => {
     >
       <div className="mx-auto max-w-7xl">
         <SectionHeading
+          align="center"
           description="Dokiments is strongest when a document gets created more than once: save the best template, fill the right fields, and keep the finished work with your account."
           highlight="sends paperwork."
           title="Built for everyone who sends paperwork."
