@@ -1,7 +1,7 @@
 # Seeding the Template Catalog
 
 `scripts/seed-templates.ts` is a one-time (or run-whenever-you-want) script that writes the
-app's marketplace catalog — 4 styles × 14 document types, 56 templates total — into Firestore's
+app's marketplace catalog — 4 styles × 15 document types, 60 templates total — into Firestore's
 `templates` and `templateStyles` collections. It replaces what used to be a hardcoded array
 compiled into the JS bundle (`src/lib/market-place/documents.ts` × `styles.ts`) with real
 Firestore documents that `GET /api/templates` reads from.
@@ -66,7 +66,7 @@ doesn't need any React/icon dependency to run.
 The `npm run seed:templates` script wires the two steps together:
 
 ```json
-"seed:templates": "tsc -p tsconfig.seed.json && node .scratch-seed/scripts/seed-templates.js"
+"seed:templates": "tsc -p tsconfig.seed.json && node --env-file=.env.local .scratch-seed/scripts/seed-templates.js"
 ```
 
 ## Required environment variables
@@ -84,17 +84,16 @@ these are absent — it will not partially run.
 ## Running it
 
 Add `SEED_ADMIN_EMAIL` and `SEED_ADMIN_PASSWORD` to your `.env.local` alongside the existing
-Firebase vars, then run the compile and run steps explicitly so you can pass `--env-file` to the
-second one (npm doesn't forward flags like that through a chained script):
+Firebase vars, then run:
 
 ```bash
-npx tsc -p tsconfig.seed.json
-node --env-file=.env.local .scratch-seed/scripts/seed-templates.js
+npm run seed:templates
 ```
 
-`--env-file` is a native Node flag (Node 20.6+) that loads `.env.local` into `process.env` for
-that one command — no extra dependency needed, and it correctly ignores comment lines and handles
-quoted values the same way `.env.local` already writes them.
+The script passes `--env-file=.env.local` to Node (a native flag, Node 20.6+), which loads
+`.env.local` into `process.env` for that one command — no extra dependency needed, and it
+correctly ignores comment lines and handles quoted values the same way `.env.local` already
+writes them.
 
 ### What you'll see on success
 
@@ -110,7 +109,7 @@ Seeding templates...
   templates/classic-proposal
   ...
   templates/minimalist-purchase-order
-Done. Seeded 4 styles and 56 templates.
+Done. Seeded 4 styles and 60 templates.
 ```
 
 ## What it writes
