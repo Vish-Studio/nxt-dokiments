@@ -1,15 +1,25 @@
 import {
+  BriefcaseIcon,
+  CertificateIcon,
   CurrencyDollarIcon,
   FileTextIcon,
+  GraduationCapIcon,
   IdentificationCardIcon,
   ListBulletsIcon,
   SignatureIcon,
+  SlidersHorizontalIcon,
+  SquaresFourIcon,
+  TranslateIcon,
   UserIcon,
+  UserRectangleIcon,
 } from "@phosphor-icons/react";
 import type { Icon } from "@phosphor-icons/react";
 import { FormAccordionSection } from "@/components/commons/form-accordion-section/form-accordion-section";
 import { Input } from "@/components/commons/input/input";
+import { CvSkillsDisplayField } from "@/components/commons/cv-list-editor/cv-skills-display-field";
+import { CvListEditor } from "@/components/commons/cv-list-editor/cv-list-editor";
 import { LineItemsEditor } from "@/components/commons/line-items-editor/line-items-editor";
+import { isCvListKey } from "@/lib/market-place/cv-lists";
 import { computeTotal, sumLineItems } from "@/lib/market-place/line-items";
 import type { TemplateField } from "@/types/template";
 import { getFormSections } from "@/lib/market-place/form-sections";
@@ -23,6 +33,14 @@ const sectionIcons: Record<string, Icon> = {
   content: ListBulletsIcon,
   payment: CurrencyDollarIcon,
   signatures: SignatureIcon,
+  personal: UserRectangleIcon,
+  about: UserIcon,
+  experience: BriefcaseIcon,
+  education: GraduationCapIcon,
+  skills: SlidersHorizontalIcon,
+  languages: TranslateIcon,
+  certificates: CertificateIcon,
+  additional: SquaresFourIcon,
 };
 
 export type TemplateFormProps = {
@@ -98,6 +116,25 @@ export const TemplateForm = ({
             {section.id === "details" ? documentNameField : null}
             {section.id === "to" ? recipientPicker : null}
             {section.fields.map((field) => {
+              if (field.key === "skillsDisplay") {
+                return (
+                  <CvSkillsDisplayField
+                    key={field.key}
+                    onChange={(value) => change({ [field.key]: value })}
+                    value={values[field.key] ?? ""}
+                  />
+                );
+              }
+              if (isCvListKey(field.key)) {
+                return (
+                  <CvListEditor
+                    key={field.key}
+                    listKey={field.key}
+                    onChange={(value) => change({ [field.key]: value })}
+                    value={values[field.key] ?? ""}
+                  />
+                );
+              }
               if (isBilling && field.key === "items") {
                 return (
                   <LineItemsEditor
