@@ -711,6 +711,105 @@ export const purchaseOrder: DocumentMeta = {
   type: "purchase-order",
 };
 
+export const cv: DocumentMeta = {
+  description:
+    "A one-page curriculum vitae with a short bio, experience, education, skills, languages, and certificates.",
+  fields: [
+    {
+      key: "fullName",
+      label: "Full name",
+      placeholder: "Your full name",
+      type: "text",
+    },
+    {
+      key: "jobTitle",
+      label: "Job title",
+      placeholder: "e.g. Senior Accountant",
+      type: "text",
+    },
+    {
+      key: "email",
+      label: "Email",
+      placeholder: "you@email.com",
+      type: "text",
+    },
+    {
+      key: "phone",
+      label: "Phone",
+      placeholder: "e.g. +230 5 123 4567",
+      type: "text",
+    },
+    {
+      key: "location",
+      label: "Location",
+      placeholder: "City, country",
+      type: "text",
+    },
+    {
+      key: "website",
+      label: "Website",
+      placeholder: "yourwebsite.com",
+      type: "text",
+    },
+    {
+      key: "about",
+      label: "About",
+      placeholder: "A short biography about you...",
+      type: "textarea",
+    },
+    {
+      key: "experience",
+      label: "Experience",
+      placeholder: "Roles you have held",
+      type: "textarea",
+    },
+    {
+      key: "education",
+      label: "Education",
+      placeholder: "Degrees and courses",
+      type: "textarea",
+    },
+    {
+      key: "skillsDisplay",
+      label: "Skills display",
+      placeholder: "Bars",
+      type: "text",
+    },
+    {
+      key: "skills",
+      label: "Skills",
+      placeholder: "What you are good at",
+      type: "textarea",
+    },
+    {
+      key: "languages",
+      label: "Languages",
+      placeholder: "Languages you speak",
+      type: "textarea",
+    },
+    {
+      key: "certificates",
+      label: "Certificates",
+      placeholder: "Certifications you hold",
+      type: "textarea",
+    },
+    {
+      key: "additionalTitle",
+      label: "Custom section title",
+      placeholder: "e.g. Projects, Publications, Volunteering",
+      type: "text",
+    },
+    {
+      key: "additional",
+      label: "Custom section",
+      placeholder: "Anything else worth sharing",
+      type: "textarea",
+    },
+  ],
+  name: "Curriculum Vitae",
+  type: "cv",
+};
+
 export const documentBlueprints: Record<DocumentType, DocumentMeta> = {
   "change-order": changeOrder,
   "contract-addendum": contractAddendum,
@@ -721,6 +820,7 @@ export const documentBlueprints: Record<DocumentType, DocumentMeta> = {
   "purchase-order": purchaseOrder,
   "statement-of-work": statementOfWork,
   contract,
+  cv,
   invoice,
   nda,
   proposal,

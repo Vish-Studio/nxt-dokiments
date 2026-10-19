@@ -13,6 +13,7 @@ import { documentBlueprints } from "./documents";
 export const documentTypeLabels: Record<DocumentType, string> = {
   "change-order": "Change Request",
   contract: "Contract",
+  cv: "CV",
   "contract-addendum": "Contract Update",
   "formal-business-letter": "Business Letter",
   invoice: "Invoice",
@@ -28,7 +29,9 @@ export const documentTypeLabels: Record<DocumentType, string> = {
 };
 
 export const getDocumentTypeLabel = (documentType: DocumentType) =>
-  documentTypeLabels[documentType] ?? documentBlueprints[documentType]?.name ?? documentType;
+  documentTypeLabels[documentType] ??
+  documentBlueprints[documentType]?.name ??
+  documentType;
 
 /**
  * The name to show for a template or snapshot. Templates still carrying their

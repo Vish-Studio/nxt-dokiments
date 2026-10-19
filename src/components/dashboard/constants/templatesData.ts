@@ -1,4 +1,8 @@
-export type TemplateStyleCategory = "classic" | "modern" | "brutalist" | "minimalist";
+export type TemplateStyleCategory =
+  | "classic"
+  | "modern"
+  | "brutalist"
+  | "minimalist";
 
 export type TemplateDocumentType =
   | "contract"
@@ -14,9 +18,15 @@ export type TemplateDocumentType =
   | "project-status-report"
   | "meeting-minutes-action-brief"
   | "formal-business-letter"
-  | "purchase-order";
+  | "purchase-order"
+  | "cv";
 
-export type TemplateAccessTier = "free" | "silver" | "gold" | "special" | "superadmin";
+export type TemplateAccessTier =
+  | "free"
+  | "silver"
+  | "gold"
+  | "special"
+  | "superadmin";
 
 export interface TemplateLayoutConfig {
   accentClassName: string;
@@ -69,6 +79,7 @@ export const commonBusinessTemplateTypes: TemplateDocumentType[] = [
   "meeting-minutes-action-brief",
   "formal-business-letter",
   "purchase-order",
+  "cv",
 ];
 
 export const existingMarketplaceTemplateKeys = [
@@ -89,7 +100,10 @@ export const existingMarketplaceTemplateKeys = [
   "minimalist:quotation",
 ] as const;
 
-export const templateLayoutConfigs: Record<TemplateStyleCategory, TemplateLayoutConfig> = {
+export const templateLayoutConfigs: Record<
+  TemplateStyleCategory,
+  TemplateLayoutConfig
+> = {
   brutalist: {
     accentClassName: "bg-play-pink text-nox-noir",
     bannerTreatment: "stamp",
@@ -141,7 +155,8 @@ export const templateLayoutConfigs: Record<TemplateStyleCategory, TemplateLayout
     bannerTreatment: "top-band",
     borderClassName: "border border-nox-noir/15",
     cardClassName: "bg-base-100 text-nox-noir shadow-soft",
-    controlClassName: "bg-golden-harvest text-nox-noir border border-golden-harvest",
+    controlClassName:
+      "bg-golden-harvest text-nox-noir border border-golden-harvest",
     fontPairing: {
       body: "font-body",
       heading: "font-title",
@@ -155,28 +170,32 @@ export const templateLayoutConfigs: Record<TemplateStyleCategory, TemplateLayout
 
 export const templateStyleCategories: TemplateStyleCategoryMeta[] = [
   {
-    description: "Traditional business layouts with structured sections and conservative hierarchy.",
+    description:
+      "Traditional business layouts with structured sections and conservative hierarchy.",
     id: "classic",
     layoutConfig: templateLayoutConfigs.classic,
     name: "Classic",
     tier: "free",
   },
   {
-    description: "Confident layouts with accent bands, stronger cards, and product-led rhythm.",
+    description:
+      "Confident layouts with accent bands, stronger cards, and product-led rhythm.",
     id: "modern",
     layoutConfig: templateLayoutConfigs.modern,
     name: "Modern",
     tier: "silver",
   },
   {
-    description: "High-contrast, editorial layouts with assertive borders and bold blocks.",
+    description:
+      "High-contrast, editorial layouts with assertive borders and bold blocks.",
     id: "brutalist",
     layoutConfig: templateLayoutConfigs.brutalist,
     name: "Brutalist",
     tier: "gold",
   },
   {
-    description: "Spacious, restrained layouts for premium documentation and executive review.",
+    description:
+      "Spacious, restrained layouts for premium documentation and executive review.",
     id: "minimalist",
     layoutConfig: templateLayoutConfigs.minimalist,
     name: "Minimalist",
