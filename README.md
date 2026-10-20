@@ -34,7 +34,7 @@ by Firebase Auth/Firestore, installable to a home screen, and usable offline.
 
 ## How it works
 
-- **Marketplace** — a read-only catalog of templates (4 styles × 14 document
+- **Marketplace** — a read-only catalog of templates (4 styles × 15 document
   types), seeded into Firestore and served from `/api/templates`.
 - **Save & customize** — a user saves a template to their own library
   (`/api/saved-templates`), then creates a document from it

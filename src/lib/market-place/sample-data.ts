@@ -20,7 +20,72 @@ const recipientContactValues = {
 };
 
 /** Realistic dummy content so previews show how a filled document looks. */
+const cvList = (rows: Record<string, string>[]) =>
+  `dokiments-cv-list-v1:${JSON.stringify(rows)}`;
+
 export const sampleValues: Record<DocumentType, Record<string, string>> = {
+  cv: {
+    about:
+      "Financial analyst with 6+ years of experience in budgeting, forecasting and month-end reporting. I turn complex numbers into clear recommendations that help leadership make confident decisions.",
+    additional: cvList([
+      {
+        description:
+          "Prepared tax returns for low-income households as part of a community programme.",
+        period: "2021 - Present",
+        subtitle: "Community Finance Network",
+        title: "Volunteer Tax Advisor",
+      },
+    ]),
+    additionalTitle: "Volunteering",
+    certificates: cvList([
+      { issuer: "CFA Institute", name: "CFA Level II Candidate", year: "2023" },
+      {
+        issuer: "ACCA",
+        name: "Diploma in International Financial Reporting",
+        year: "2021",
+      },
+    ]),
+    education: cvList([
+      {
+        institution: "University of Mauritius",
+        period: "2014 - 2018",
+        title: "BSc Accounting and Finance",
+      },
+    ]),
+    email: "alex.morgan@email.com",
+    experience: cvList([
+      {
+        company: "Deloitte",
+        description:
+          "Led quarterly forecasting for a portfolio of corporate clients and cut month-end close time by 20%.",
+        period: "2022 - 2023",
+        title: "Senior Financial Analyst",
+      },
+      {
+        company: "Standard Bank",
+        description:
+          "Prepared monthly management accounts, variance analysis and IFRS-compliant reporting.",
+        period: "2018 - 2022",
+        title: "Financial Analyst",
+      },
+    ]),
+    fullName: "Alex Morgan",
+    jobTitle: "Financial Analyst",
+    languages: cvList([
+      { level: "100", name: "English" },
+      { level: "90", name: "French" },
+      { level: "60", name: "Spanish" },
+    ]),
+    location: "Port Louis, Mauritius",
+    phone: "+230 5 123 4567",
+    skills: cvList([
+      { level: "90", name: "Financial Modelling" },
+      { level: "85", name: "Microsoft Excel" },
+      { level: "80", name: "IFRS Reporting" },
+      { level: "70", name: "Budgeting & Forecasting" },
+    ]),
+    website: "linkedin.com/in/alexmorgan",
+  },
   "change-order": {
     ...defaultPartyValues,
     additionalFee: "$1,450",

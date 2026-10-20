@@ -13,6 +13,7 @@ export const documentTypes = [
   "meeting-minutes-action-brief",
   "formal-business-letter",
   "purchase-order",
+  "cv",
 ] as const;
 
 export type DocumentType = (typeof documentTypes)[number];
