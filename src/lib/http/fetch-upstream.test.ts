@@ -39,13 +39,19 @@ type FetchStub = (url: string | URL, init?: RequestInit) => Promise<Response>;
 const stubFetch = (outcomes: Array<Response | Error>) => {
   const spy = vi.fn<FetchStub>(async () => {
     const outcome = outcomes.shift();
-    if (outcome === undefined) throw new Error("fetch called more times than stubbed");
+    if (outcome === undefined)
+      throw new Error("fetch called more times than stubbed");
     if (outcome instanceof Error) throw outcome;
     return outcome;
   });
   vi.stubGlobal("fetch", spy);
   return spy;
 };
+
+const timeoutError = () =>
+  Object.assign(new Error("The operation was aborted due to timeout"), {
+    name: "TimeoutError",
+  });
 
 afterEach(() => {
   vi.unstubAllGlobals();
@@ -64,7 +70,10 @@ describe("fetchUpstream", () => {
   it("retries an ETIMEDOUT connect race, then returns the successful response", async () => {
     const response = okResponse();
     const spy = stubFetch([
-      connectRaceFailure({ aggregateCode: "ETIMEDOUT", childCodes: ["ETIMEDOUT", "ETIMEDOUT"] }),
+      connectRaceFailure({
+        aggregateCode: "ETIMEDOUT",
+        childCodes: ["ETIMEDOUT", "ETIMEDOUT"],
+      }),
       response,
     ]);
 
@@ -89,7 +98,9 @@ describe("fetchUpstream", () => {
       const response = okResponse();
       const spy = stubFetch([connectFailure(codedError(code)), response]);
 
-      await expect(fetchUpstream("https://example.test")).resolves.toBe(response);
+      await expect(fetchUpstream("https://example.test")).resolves.toBe(
+        response,
+      );
       expect(spy).toHaveBeenCalledTimes(2);
     },
   );
@@ -102,7 +113,9 @@ describe("fetchUpstream", () => {
       finalFailure,
     ]);
 
-    const error = await fetchUpstream("https://example.test").catch((caught) => caught);
+    const error = await fetchUpstream("https://example.test").catch(
+      (caught) => caught,
+    );
 
     expect(error).toBeInstanceOf(UpstreamUnavailableError);
     expect((error as UpstreamUnavailableError).cause).toBe(finalFailure);
@@ -111,53 +124,105 @@ describe("fetchUpstream", () => {
 
   it("retries a POST on a connect failure — safe because nothing was delivered", async () => {
     const response = okResponse();
-    const spy = stubFetch([connectFailure(codedError("ECONNREFUSED")), response]);
+    const spy = stubFetch([
+      connectFailure(codedError("ECONNREFUSED")),
+      response,
+    ]);
 
     await expect(
-      fetchUpstream("https://example.test", { method: "POST", body: "code=abc" }),
+      fetchUpstream("https://example.test", {
+        method: "POST",
+        body: "code=abc",
+      }),
     ).resolves.toBe(response);
     expect(spy).toHaveBeenCalledTimes(2);
     // The retry must resend the caller's init verbatim, minus our own signal.
-    expect(spy.mock.calls[1]?.[1]).toMatchObject({ method: "POST", body: "code=abc" });
+    expect(spy.mock.calls[1]?.[1]).toMatchObject({
+      method: "POST",
+      body: "code=abc",
+    });
   });
 
   describe("does not retry, because the request may already have been delivered", () => {
-    it.each([500, 502, 429])("returns a %i response untouched", async (status) => {
-      const response = new Response("{}", { status });
-      const spy = stubFetch([response]);
+    it.each([500, 502, 429])(
+      "returns a %i response untouched",
+      async (status) => {
+        const response = new Response("{}", { status });
+        const spy = stubFetch([response]);
 
-      await expect(fetchUpstream("https://example.test")).resolves.toBe(response);
-      expect(spy).toHaveBeenCalledTimes(1);
-    });
+        await expect(fetchUpstream("https://example.test")).resolves.toBe(
+          response,
+        );
+        expect(spy).toHaveBeenCalledTimes(1);
+      },
+    );
 
     it("does not retry ECONNRESET — the socket can drop after the request was sent", async () => {
       const spy = stubFetch([connectFailure(codedError("ECONNRESET"))]);
 
-      await expect(fetchUpstream("https://example.test")).rejects.toBeInstanceOf(
-        UpstreamUnavailableError,
-      );
+      await expect(
+        fetchUpstream("https://example.test"),
+      ).rejects.toBeInstanceOf(UpstreamUnavailableError);
       expect(spy).toHaveBeenCalledTimes(1);
     });
 
-    it("does not retry our own attempt timeout — delivery is ambiguous", async () => {
-      const abort = Object.assign(new Error("The operation was aborted"), {
-        name: "TimeoutError",
-      });
-      const spy = stubFetch([abort]);
+    it("does not retry our own attempt timeout on a write — delivery is ambiguous", async () => {
+      const spy = stubFetch([timeoutError()]);
 
-      await expect(fetchUpstream("https://example.test")).rejects.toBeInstanceOf(
-        UpstreamUnavailableError,
-      );
+      await expect(
+        fetchUpstream("https://example.test", { method: "POST", body: "{}" }),
+      ).rejects.toBeInstanceOf(UpstreamUnavailableError);
       expect(spy).toHaveBeenCalledTimes(1);
     });
 
     it("does not retry a failure with no recognisable code", async () => {
       const spy = stubFetch([connectFailure(new Error("something else"))]);
 
-      await expect(fetchUpstream("https://example.test")).rejects.toBeInstanceOf(
-        UpstreamUnavailableError,
-      );
+      await expect(
+        fetchUpstream("https://example.test"),
+      ).rejects.toBeInstanceOf(UpstreamUnavailableError);
       expect(spy).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  describe("timeouts on idempotent reads", () => {
+    it("retries a timed-out GET once and returns the successful response", async () => {
+      const response = okResponse();
+      const spy = stubFetch([timeoutError(), response]);
+
+      await expect(fetchUpstream("https://example.test")).resolves.toBe(
+        response,
+      );
+      expect(spy).toHaveBeenCalledTimes(2);
+    });
+
+    it("gives up after a single timeout retry", async () => {
+      const spy = stubFetch([timeoutError(), timeoutError(), okResponse()]);
+
+      await expect(
+        fetchUpstream("https://example.test"),
+      ).rejects.toBeInstanceOf(UpstreamUnavailableError);
+      expect(spy).toHaveBeenCalledTimes(2);
+    });
+
+    it("never retries a timed-out PATCH", async () => {
+      const spy = stubFetch([timeoutError(), okResponse()]);
+
+      await expect(
+        fetchUpstream("https://example.test", { method: "PATCH", body: "{}" }),
+      ).rejects.toBeInstanceOf(UpstreamUnavailableError);
+      expect(spy).toHaveBeenCalledTimes(1);
+    });
+
+    it("uses the shorter timeout for reads and the standard one for writes", async () => {
+      const timeoutSpy = vi.spyOn(AbortSignal, "timeout");
+      stubFetch([okResponse(), okResponse()]);
+
+      await fetchUpstream("https://example.test");
+      await fetchUpstream("https://example.test", { method: "POST" });
+
+      expect(timeoutSpy.mock.calls.map(([ms]) => ms)).toEqual([3_000, 5_000]);
+      timeoutSpy.mockRestore();
     });
   });
 
@@ -201,10 +266,10 @@ describe("fetchUpstream", () => {
 
     await fetchUpstream("https://example.test").catch(() => undefined);
 
-    // First attempt gets the standard per-attempt ceiling; the second only the ~1s
+    // First attempt gets the read per-attempt ceiling; the second only the ~1s
     // of budget left, so a stuck connection can't push the total past the ceiling.
     const [first, second] = timeoutSpy.mock.calls.map(([ms]) => ms as number);
-    expect(first).toBe(5_000);
+    expect(first).toBe(3_000);
     expect(second).toBeLessThanOrEqual(1_000);
     timeoutSpy.mockRestore();
   });
