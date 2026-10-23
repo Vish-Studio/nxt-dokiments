@@ -11,6 +11,13 @@ type UiState = {
   isOnboardingOpen: boolean;
   openOnboarding: () => void;
   closeOnboarding: () => void;
+  /**
+   * Epoch ms until which the header refresh button stays disabled. Global so the
+   * cooldown survives page navigation and is shared by the desktop and mobile
+   * buttons. `Infinity` means a refresh is in flight.
+   */
+  refreshCooldownUntil: number;
+  setRefreshCooldownUntil: (until: number) => void;
 };
 
 export const useUiStore = create<UiState>((set) => ({
@@ -20,4 +27,6 @@ export const useUiStore = create<UiState>((set) => ({
   isOnboardingOpen: false,
   openOnboarding: () => set({ isOnboardingOpen: true }),
   closeOnboarding: () => set({ isOnboardingOpen: false }),
+  refreshCooldownUntil: 0,
+  setRefreshCooldownUntil: (until) => set({ refreshCooldownUntil: until }),
 }));
