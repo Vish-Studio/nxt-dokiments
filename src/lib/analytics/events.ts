@@ -72,6 +72,7 @@ export type AnalyticsEventMap = {
   cta_click: {
     placement: string;
   };
+  data_refreshed: EmptyAnalyticsParams;
   document_client_prefilled: {
     document_type: string;
   };

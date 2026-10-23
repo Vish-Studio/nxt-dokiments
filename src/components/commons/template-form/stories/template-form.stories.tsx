@@ -36,3 +36,22 @@ export const Default: Story = {
     await expect(canvas.getByDisplayValue("INV-0001")).toBeVisible();
   },
 };
+
+const cvTemplate = getTemplateById("classic-cv") as MarketplaceTemplate;
+
+export const Cv: Story = {
+  args: {
+    fields: cvTemplate.fields,
+    values: { fullName: "Alex Morgan", jobTitle: "Financial Analyst" },
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await expect(canvas.getByDisplayValue("Alex Morgan")).toBeVisible();
+    await expect(
+      canvas.getByRole("button", { name: /^Experience/ }),
+    ).toBeVisible();
+    await expect(
+      canvas.getByRole("button", { name: /^Education \(optional\)/ }),
+    ).toBeVisible();
+  },
+};

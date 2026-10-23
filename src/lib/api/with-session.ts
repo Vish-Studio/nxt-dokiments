@@ -3,11 +3,14 @@ import "server-only";
 import { getIronSession } from "iron-session";
 
 import { ApiError, handleApiError } from "@/lib/api/errors";
-import { destroySession } from "@/lib/api/session-cookie";
+import { destroySession, saveSession } from "@/lib/api/session-cookie";
+import { refreshFirebaseSession } from "@/lib/firebase/server-auth";
+import { UpstreamUnavailableError } from "@/lib/http/fetch-upstream";
 import {
   DEV_SESSION,
   isDevAuthBypass,
   isSessionExpired,
+  REFRESH_SKEW_MS,
   sessionOptions,
   type SessionData,
 } from "@/lib/session";
@@ -26,6 +29,44 @@ type RouteHandler<TContext> = (
   request: Request,
   context: TContext,
 ) => Promise<Response>;
+
+/**
+ * Refreshes currently in progress, keyed by the refresh token being exchanged.
+ * Per server process only; it is not shared across instances.
+ */
+const inFlightRefreshes = new Map<
+  string,
+  ReturnType<typeof refreshFirebaseSession>
+>();
+
+/**
+ * Exchanges the session's Firebase refresh token for fresh tokens, making sure
+ * concurrent requests carrying the same refresh token share a single exchange.
+ *
+ * A dashboard load fires several API calls at once; without this each one would
+ * hit Firebase's token endpoint, and if Firebase ever rotated the refresh token
+ * the losers would be signed out with a token that was just replaced.
+ *
+ * @param session - Session whose `idToken` has expired or is about to.
+ * @returns The refreshed tokens and profile. The entry is dropped once the
+ *   exchange settles, so a failed refresh is retried on the next request.
+ * @throws `UpstreamUnavailableError` if Firebase can't be reached, or another
+ *   error if Firebase rejects the refresh token.
+ */
+const refreshOnce = (session: SessionData) => {
+  const existing = inFlightRefreshes.get(session.refreshToken);
+
+  if (existing) {
+    return existing;
+  }
+
+  const pending = refreshFirebaseSession(session).finally(() =>
+    inFlightRefreshes.delete(session.refreshToken),
+  );
+  inFlightRefreshes.set(session.refreshToken, pending);
+
+  return pending;
+};
 
 /**
  * Wraps a Route Handler so it only runs for signed-in users, and gives it a
@@ -110,6 +151,45 @@ export const withSession = <TContext = unknown>(
 
         await destroySession(request, unauthorised);
         return unauthorised;
+      }
+
+      // The idToken lasts ~1h but the session lasts a day, so renew it here
+      // instead of letting Firestore reject it and signing the user out.
+      if (!isStaleBypass && session.expiresAt <= Date.now() + REFRESH_SKEW_MS) {
+        let refreshed: Awaited<ReturnType<typeof refreshFirebaseSession>>;
+
+        try {
+          refreshed = await refreshOnce(session);
+        } catch (error) {
+          // Firebase unreachable: keep the session; the client can retry the 503.
+          // Any other failure means the refresh token was rejected, so sign out.
+          if (error instanceof UpstreamUnavailableError) {
+            throw error;
+          }
+
+          throw new ApiError(401, "Unauthorised.");
+        }
+
+        // Carry the deadline over explicitly: a refresh must never extend the 1-day cap.
+        const rotated: SessionData = {
+          ...refreshed,
+          absoluteExpiresAt: session.absoluteExpiresAt,
+        };
+        // The handler builds its own Response, so the rewritten cookie is
+        // sealed on a stand-in and its Set-Cookie headers copied across below.
+        const cookieCarrier = new Response(null);
+        await saveSession(request, cookieCarrier, rotated);
+
+        // The handler must see the new idToken, not the expired one from the cookie.
+        const result = await handler(request, context, {
+          ...rotated,
+        } as AuthenticatedSession);
+
+        for (const cookie of cookieCarrier.headers.getSetCookie()) {
+          result.headers.append("Set-Cookie", cookie);
+        }
+
+        return result;
       }
 
       return await handler(request, context, session as AuthenticatedSession);

@@ -8,6 +8,7 @@ import { Toaster } from "@/components/commons/toaster/toaster";
 import { ContentContainer } from "@/components/dashboard/content-container/content-container";
 import { MobilePageHeader } from "@/components/dashboard/mobile-page-header/mobile-page-header";
 import { NotificationBell } from "@/components/dashboard/notification-bell/notification-bell";
+import { RefreshButton } from "@/components/dashboard/refresh-button/refresh-button";
 import { OnboardingLauncher } from "@/components/dashboard/onboarding-launcher/onboarding-launcher";
 import type {
   PageBannerTone,
@@ -125,9 +126,14 @@ export const AppShell = ({
               <ContentContainer>
                 <MobilePageHeader
                   actions={
-                    <NotificationBell
-                      tone={isDashboardHome ? "dark" : "light"}
-                    />
+                    <div className="flex items-center gap-2">
+                      <RefreshButton
+                        tone={isDashboardHome ? "dark" : "light"}
+                      />
+                      <NotificationBell
+                        tone={isDashboardHome ? "dark" : "light"}
+                      />
+                    </div>
                   }
                   onOpenNavigation={() => setIsMobileSidebarOpen(true)}
                   showSettingsLink
@@ -138,9 +144,14 @@ export const AppShell = ({
                 {showBanner ? (
                   <PageBanner
                     actions={
-                      <NotificationBell
-                        tone={resolvedTone === "noir" ? "dark" : "light"}
-                      />
+                      <div className="flex items-center gap-2">
+                        <RefreshButton
+                          tone={resolvedTone === "noir" ? "dark" : "light"}
+                        />
+                        <NotificationBell
+                          tone={resolvedTone === "noir" ? "dark" : "light"}
+                        />
+                      </div>
                     }
                     className="hidden lg:flex"
                     footer={headerContent}
