@@ -20,6 +20,7 @@ import { TemplateCard } from "@/components/commons/template-card/template-card";
 import { TemplatePreviewDialog } from "@/components/commons/template-preview-dialog/template-preview-dialog";
 import { SidebarToggleButton } from "@/components/dashboard/sidebar-toggle-button/sidebar-toggle-button";
 import { NotificationBell } from "@/components/dashboard/notification-bell/notification-bell";
+import { RefreshButton } from "@/components/dashboard/refresh-button/refresh-button";
 import { TemplateThumbnail } from "@/components/commons/template-thumbnail/template-thumbnail";
 import { useClientsQuery } from "@/hooks/queries/use-clients";
 import { useDocumentsQuery } from "@/hooks/queries/use-documents";
@@ -150,7 +151,8 @@ export const DashboardView = () => {
             isCollapsed={isSidebarCollapsed}
             onToggle={toggleSidebar}
           />
-          <div className="absolute right-4 top-4 hidden lg:block">
+          <div className="absolute right-4 top-4 hidden items-center gap-2 lg:flex">
+            <RefreshButton tone="light" />
             <NotificationBell tone="light" />
           </div>
           <span className="inline-flex items-center gap-2 rounded-full bg-white/65 px-3 py-1 font-title text-xs font-bold uppercase tracking-normal text-nox-noir">
