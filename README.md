@@ -182,6 +182,9 @@ scripts/           # One-off scripts (e.g. seed-templates.ts)
 
 - **Unit/DOM tests** live alongside their source files (`*.test.ts(x)`) and run via Vitest.
 - **Storybook** stories double as browser tests through `@storybook/addon-vitest` (Playwright-driven).
+- Marketplace browser stories keep the full catalog in `FreeUser`, checking
+  every style's card count. Saved-state and confirmation stories use one
+  invoice per style to avoid repeatedly rendering the entire catalog.
 - Run Node tests separately with `npx vitest run --project=node`, or browser
   tests with `npx vitest run --project=storybook`.
 - Run everything CI runs locally with:

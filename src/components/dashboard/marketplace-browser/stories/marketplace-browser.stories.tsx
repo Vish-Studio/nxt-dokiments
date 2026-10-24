@@ -9,8 +9,14 @@ import {
 } from "@/lib/market-place";
 import { makeStoryQueryClient } from "@/lib/query/story-query-client";
 import { useAuthStore } from "@/stores/auth-store";
+import type { MarketplaceTemplate } from "@/types/template";
 
 import { MarketplaceBrowser } from "../marketplace-browser";
+
+// Focused stories need one real template per style, not the entire catalog.
+const invoiceTemplates = marketplaceTemplates.filter(
+  (template) => template.documentType === "invoice",
+);
 
 /**
  * Mocks both `GET /api/templates` (the catalog `useTemplatesQuery` reads) and
@@ -20,6 +26,7 @@ import { MarketplaceBrowser } from "../marketplace-browser";
  */
 const mockCatalog = (
   savedTemplates: Array<{ savedAt: number; templateId: string }>,
+  templates: MarketplaceTemplate[] = invoiceTemplates,
 ) => {
   window.fetch = (async (url: string, init?: RequestInit) => {
     if (url.includes("/api/saved-templates")) {
@@ -43,7 +50,7 @@ const mockCatalog = (
     return new Response(
       JSON.stringify({
         styles: templateStyles,
-        templates: marketplaceTemplates,
+        templates,
       }),
       { status: 200 },
     );
@@ -84,16 +91,24 @@ type Story = StoryObj<typeof meta>;
 export const FreeUser: Story = {
   beforeEach: () => {
     window.history.replaceState(null, "", "/");
-    mockCatalog([]);
+    mockCatalog([], marketplaceTemplates);
   },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     await expect(
       await canvas.findByRole("heading", { name: "Classic designs" }),
     ).toBeVisible();
-    await expect(
-      canvas.getAllByRole("button", { name: /preview/i }).length,
-    ).toBeGreaterThan(0);
+    for (const style of templateStyles) {
+      const section = within(
+        canvas.getByRole("region", { name: style.name }),
+      );
+      await expect(
+        section.getAllByRole("button", { name: /^preview /i }),
+      ).toHaveLength(
+        marketplaceTemplates.filter((template) => template.style.id === style.id)
+          .length,
+      );
+    }
   },
 };
 
@@ -105,8 +120,14 @@ export const SavedTemplatesFirst: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     await expect(
-      await canvas.findByRole("button", { name: /saved/i }),
+      await canvas.findByRole("button", { name: "Preview Invoice, saved" }),
     ).toBeVisible();
+    await expect(
+      canvas.getAllByRole("button", { name: /^preview /i }),
+    ).toHaveLength(invoiceTemplates.length);
+    await expect(
+      canvas.getAllByRole("button", { name: /, saved/ }),
+    ).toHaveLength(1);
   },
 };
 
