@@ -25,6 +25,10 @@
 *.pem
 
 # debug
+# Firebase emulator logs (npm run test:rules)
+firebase-debug.log
+firestore-debug.log
+ui-debug.log
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
