@@ -182,11 +182,25 @@ scripts/           # One-off scripts (e.g. seed-templates.ts)
 
 - **Unit/DOM tests** live alongside their source files (`*.test.ts(x)`) and run via Vitest.
 - **Storybook** stories double as browser tests through `@storybook/addon-vitest` (Playwright-driven).
+- Marketplace browser stories keep the full catalog in `FreeUser`, checking
+  every style's card count. Saved-state and confirmation stories use one
+  invoice per style to avoid repeatedly rendering the entire catalog.
+- Run Node tests separately with `npx vitest run --project=node`, or browser
+  tests with `npx vitest run --project=storybook`.
 - Run everything CI runs locally with:
 
   ```bash
   npm run lint && npx tsc --noEmit && npx vitest run && npm run build
   ```
+
+PR Checks runs lint, type checking, Node tests, and the build in parallel
+with two Storybook shards (`--project=storybook --shard=1/2` and
+`--project=storybook --shard=2/2`). The browser jobs use the official
+Playwright container, with browsers and Linux dependencies preinstalled.
+When upgrading Playwright, update the `playwright` matrix version in
+`.github/workflows/pr-checks.yml` to match `package-lock.json`; CI checks
+that they agree. The final `Lint, typecheck, test, build` check requires
+both the quality job and every browser shard to pass.
 
 ## Git workflow & deployment
 
