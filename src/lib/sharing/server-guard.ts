@@ -1,0 +1,44 @@
+import "server-only";
+
+import { ApiError } from "@/lib/api/errors";
+import { documentSharingEnabled } from "@/lib/sharing/feature-flag";
+import type { ShareErrorCode } from "@/types/sharing";
+
+/** HTTP status and user-safe message for each sharing error code. */
+export const shareErrorDefinitions: Record<
+  ShareErrorCode,
+  { message: string; status: number }
+> = {
+  DOCUMENT_LOCKED: {
+    message: "This document has been signed and can no longer be changed.",
+    status: 409,
+  },
+  NOT_A_RECIPIENT: {
+    message: "You do not have access to this shared document.",
+    status: 404,
+  },
+  SHARE_LIMIT_REACHED: {
+    message: "You have reached the sharing limit for your plan.",
+    status: 403,
+  },
+  SHARE_SELF_NOT_ALLOWED: {
+    message: "You cannot share a document with yourself.",
+    status: 400,
+  },
+};
+
+/** Builds the `ApiError` a route should throw for a sharing refusal. */
+export const shareApiError = (code: ShareErrorCode): ApiError => {
+  const { message, status } = shareErrorDefinitions[code];
+  return new ApiError(status, message);
+};
+
+/**
+ * Call first in every sharing route. While the feature flag is off the routes
+ * answer 404, exactly as if they did not exist.
+ */
+export const assertDocumentSharingEnabled = (): void => {
+  if (!documentSharingEnabled) {
+    throw new ApiError(404, "Not found.");
+  }
+};
