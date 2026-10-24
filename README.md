@@ -141,6 +141,7 @@ Open [http://localhost:3000](http://localhost:3000).
 | `npm run start` | Serve a production build |
 | `npm run lint` | ESLint |
 | `npm run pre-pr-check` | Lint + build + `vitest run` — run before opening a PR |
+| `npm run test:rules` | Firestore security-rules tests against the emulator (needs Java 21+); not part of `pre-pr-check` |
 | `npm run seed:templates` | Seed/refresh the Firestore template catalog |
 | `npm run storybook` | Component workbench at `http://localhost:6006` |
 | `npm run build-storybook` | Static Storybook build |

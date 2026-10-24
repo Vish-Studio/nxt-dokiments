@@ -40,6 +40,15 @@ jobs:
       - name: Test
         run: npx vitest run
 
+      - name: Setup Java (Firestore emulator)
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: "21"
+
+      - name: Firestore rules tests
+        run: npm run test:rules
+
       - name: Build
         run: npm run build
         env:
