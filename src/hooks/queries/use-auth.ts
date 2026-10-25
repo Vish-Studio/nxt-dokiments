@@ -164,3 +164,67 @@ export const useReauthenticateMutation = () =>
   useMutation({
     mutationFn: postReauthenticate,
   });
+
+const postSendVerification = async (): Promise<void> => {
+  const response = await fetch("/api/auth/send-verification", {
+    method: "POST",
+  });
+
+  if (!response.ok) {
+    const data = (await response
+      .json()
+      .catch(() => ({}))) as Partial<AuthApiError>;
+    throw new Error(data.error ?? "Unable to send the verification email.");
+  }
+};
+
+/**
+ * Sends (or re-sends) the verification email to the signed-in user.
+ *
+ * Touches nothing the client caches: verification is only reflected once the
+ * user clicks the link and `useRefreshVerificationMutation` re-reads it.
+ */
+export const useSendVerificationMutation = () =>
+  useMutation({
+    mutationFn: postSendVerification,
+    onSuccess: () => {
+      trackEvent("email_verification_resent", {});
+    },
+  });
+
+const postRefreshVerification = async (): Promise<AuthUser> => {
+  const response = await fetch("/api/auth/refresh-verification", {
+    method: "POST",
+  });
+
+  const data = (await response.json().catch(() => ({}))) as {
+    user?: AuthUser;
+  } & Partial<AuthApiError>;
+
+  if (!response.ok || !data.user) {
+    throw new Error(data.error ?? "Unable to check your email status.");
+  }
+
+  return data.user;
+};
+
+/**
+ * Forces a fresh read of whether the user's email is verified.
+ *
+ * Writes the refreshed user straight into `queryKeys.session()` — the session
+ * query has `staleTime: Infinity`, so without this the notice would keep showing
+ * until the next full reload.
+ */
+export const useRefreshVerificationMutation = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: postRefreshVerification,
+    onSuccess: (user) => {
+      queryClient.setQueryData(queryKeys.session(), user);
+      trackEvent("email_verification_checked", {
+        verified: user.emailVerified === true,
+      });
+    },
+  });
+};

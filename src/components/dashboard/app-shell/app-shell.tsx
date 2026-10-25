@@ -18,6 +18,8 @@ import { PageBanner } from "@/components/dashboard/page-banner/page-banner";
 import { PromoStatusBanner } from "@/components/dashboard/promo-status-banner/promo-status-banner";
 import { PublicLaunchBanner } from "@/components/dashboard/public-launch-banner/public-launch-banner";
 import Sidebar from "@/components/dashboard/sidebar/sidebar";
+import { VerifyEmailNotice } from "@/components/dashboard/verify-email-notice/verify-email-notice";
+import { documentSharingEnabled } from "@/lib/sharing/feature-flag";
 import { useUiStore } from "@/stores/ui-store";
 
 export type AppShellProps = {
@@ -165,6 +167,7 @@ export const AppShell = ({
                 ) : null}
                 <PromoStatusBanner />
                 <PublicLaunchBanner />
+                {documentSharingEnabled ? <VerifyEmailNotice /> : null}
                 {children}
               </ContentContainer>
               <OnboardingLauncher />

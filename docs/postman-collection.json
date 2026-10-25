@@ -143,6 +143,32 @@
           }
         },
         {
+          "name": "Send verification email",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/send-verification",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "auth", "send-verification"]
+            },
+            "description": "Sends (or re-sends) Firebase's address-verification email to the signed-in user. Returns 204 with no body, including when the address is already verified (nothing is sent). 429 when Firebase is throttling the account; 503 when Firebase is unreachable. New password sign-ups get this email automatically; this route backs the dashboard's \"Resend\" button."
+          }
+        },
+        {
+          "name": "Refresh verification status",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/refresh-verification",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "auth", "refresh-verification"]
+            },
+            "description": "Forces a token refresh so the ID token's email_verified claim is re-read after the user clicks the emailed link, rewrites the session cookie (keeping the original 1-day deadline), and returns { user: AuthUser } with the current emailVerified. 401 if the session is missing or Firebase rejects the refresh token (the session is cleared); 503 if Firebase is unreachable (the session is kept)."
+          }
+        },
+        {
           "name": "Forgot password",
           "request": {
             "method": "POST",

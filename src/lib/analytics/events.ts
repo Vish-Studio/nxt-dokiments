@@ -90,6 +90,11 @@ export type AnalyticsEventMap = {
     name_changed: boolean;
     values_changed: boolean;
   };
+  /** The user asked whether their email is verified yet; `verified` is the answer. */
+  email_verification_checked: {
+    verified: boolean;
+  };
+  email_verification_resent: EmptyAnalyticsParams;
   /**
    * A user sent feedback or reported a problem.
    *

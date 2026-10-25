@@ -55,9 +55,11 @@ limit is switched on, existing usage is already known.
 
 A recipient is matched by uid in `recipientUids`, or by an address in
 `recipientEmails` that Firebase reports as **verified**. An unverified address is
-never enough: this app does not verify email at sign-up, so anyone could register
-under an address a document was shared with. A signature must carry the signer's
-own token address, so nobody can sign as someone else.
+never enough: anyone could register under an address a document was shared with.
+Password sign-ups are sent a verification email automatically and the dashboard
+nudges unverified users to confirm it — see
+[`firebase-auth.md`](./firebase-auth.md#email-verification). A signature must
+carry the signer's own token address, so nobody can sign as someone else.
 
 **Open point for the invite story:** with no admin SDK, the server cannot look up
 a uid from an email, and cannot write another user's profile. Linking a
