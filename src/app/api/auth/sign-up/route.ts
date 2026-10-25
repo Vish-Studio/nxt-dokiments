@@ -2,7 +2,10 @@ import { SignUpSchema } from "@/lib/api/auth-schema";
 import { ApiError, handleApiError } from "@/lib/api/errors";
 import { startSession } from "@/lib/api/session-cookie";
 import { parseBody } from "@/lib/api/validate";
-import { signUpWithFirebase } from "@/lib/firebase/server-auth";
+import {
+  sendAccountVerificationEmail,
+  signUpWithFirebase,
+} from "@/lib/firebase/server-auth";
 import { UpstreamUnavailableError } from "@/lib/http/fetch-upstream";
 import { redeemPromoCodeAtAuth } from "@/lib/promo/server-auth-promo";
 import { DEV_SESSION, isDevAuthBypass } from "@/lib/session";
@@ -13,6 +16,9 @@ import type { AuthSession } from "@/types/auth";
  *
  * Creates a new Firebase account, seeds a Firestore user profile with
  * `role: "free"`, then writes the session payload into an encrypted HttpOnly cookie.
+ *
+ * Also sends the Firebase verification email, whether or not document sharing is
+ * enabled. A failure to send is logged and ignored.
  *
  * Accepts an optional `promoCode`, redeemed once the account exists. Its outcome is
  * reported as `promo` alongside the user and never affects whether the sign-up
@@ -48,6 +54,12 @@ export const POST = async (request: Request): Promise<Response> => {
       sessionData = DEV_SESSION;
     } else {
       sessionData = await signUpWithFirebase({ displayName, email, password });
+
+      // Best-effort: the account already exists, so a failed email must never fail
+      // the sign-up. The user can ask for another from the verification notice.
+      await sendAccountVerificationEmail(sessionData.idToken).catch((error) =>
+        console.error("[sign-up] verification email failed", error),
+      );
     }
 
     // Only now that the account and its profile document exist can a redemption be
