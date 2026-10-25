@@ -98,6 +98,47 @@ authorisation decision reads the sealed cookie instead. Its name and reader live
 - Sign-out still only drops cookies; it does **not** revoke the Firebase refresh
   token, which would need an Admin SDK call.
 
+## Email verification
+
+Password accounts are unverified until the user clicks the link Firebase emails
+them. Verification only gates **receiving** shared documents (the Firestore rules
+trust a recipient address only when the token's `email_verified` is `true`); an
+unverified user can still sign in, create documents and share them.
+
+- **Source of truth.** `AuthUser.emailVerified` is read from the Firebase ID
+  token's `email_verified` claim (`readEmailVerified`, `src/lib/firebase/id-token.ts`)
+  whenever the session is built or refreshed. It lives in the sealed session only,
+  never in the Firestore profile. The token comes straight from Firebase, and the
+  rules re-check the claim themselves, so the signature is not verified here.
+  Google accounts arrive verified.
+- **Sending.** `POST /api/auth/sign-up` always sends the verification email
+  (regardless of the sharing flag); a failure is logged and never fails the
+  sign-up. `POST /api/auth/send-verification` re-sends it. There is no server-side
+  cooldown: Firebase's own throttle surfaces as `429`, and the dashboard notice
+  adds a 60 s client-side cooldown.
+- **Refreshing.** The claim only changes when a new token is minted, so
+  `POST /api/auth/refresh-verification` forces a refresh, rewrites the cookie
+  (keeping `absoluteExpiresAt`) and returns the updated user. The dashboard's
+  "I've verified" button calls it.
+- **Notice.** `VerifyEmailNotice` appears in the app shell only when
+  `NEXT_PUBLIC_DOCUMENT_SHARING_ENABLED` is on and `emailVerified === false`. It is
+  dismissible for the browser session (`sessionStorage`).
+- **Existing sessions and users.** Sessions sealed before this change have
+  `emailVerified === undefined`, which is treated as unknown (no notice) until the
+  next sign-in or refresh — at most one day. Existing unverified users see the
+  notice on their next sign-in.
+- **Links.** Firebase's standard action page handles both verification and
+  password-reset links; the verification email's `continueUrl` is
+  `${NEXT_PUBLIC_SITE_URL}/dashboard`.
+
+### Firebase console (manual, per project)
+
+1. Authentication > Templates > Email address verification: review the sender and
+   message.
+2. Authentication > Settings > Authorized domains: add the domain of
+   `NEXT_PUBLIC_SITE_URL`. Without it `accounts:sendOobCode` rejects the
+   `continueUrl` and the Resend button reports an error.
+
 ## Promo codes at sign-in
 
 The sign-in and sign-up forms carry an optional promo code, redeemed by the route
