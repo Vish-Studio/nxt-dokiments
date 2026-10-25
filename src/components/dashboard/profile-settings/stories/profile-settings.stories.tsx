@@ -79,8 +79,13 @@ export const Default: Story = {
     await expect(
       canvas.getByRole("heading", { name: "Business details" }),
     ).toBeVisible();
+    await expect(
+      canvas.getByRole("heading", { name: "Email verification" }),
+    ).toBeVisible();
     // Read-only by default, with the email shown but never editable here.
-    await expect(canvas.getAllByText("anthony@dokiments.com").length).toBeGreaterThan(0);
+    await expect(
+      canvas.getAllByText("anthony@dokiments.com").length,
+    ).toBeGreaterThan(0);
     await expect(canvas.queryByRole("textbox")).not.toBeInTheDocument();
   },
 };
@@ -114,8 +119,13 @@ export const RejectsInvalidBusinessEmail: Story = {
     await userEvent.click(
       canvas.getByRole("button", { name: "Edit business details" }),
     );
-    await userEvent.type(canvas.getByLabelText("Business email"), "not-an-email");
-    await userEvent.click(canvas.getByRole("button", { name: /save changes/i }));
+    await userEvent.type(
+      canvas.getByLabelText("Business email"),
+      "not-an-email",
+    );
+    await userEvent.click(
+      canvas.getByRole("button", { name: /save changes/i }),
+    );
 
     // Still editing: the browser or the form stopped the save.
     await expect(canvas.getByLabelText("Business email")).toBeVisible();

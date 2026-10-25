@@ -7,6 +7,7 @@ import {
   ProfileDetailsCard,
 } from "@/components/dashboard/profile-details-card/profile-details-card";
 import { ProfileOverviewCard } from "@/components/dashboard/profile-overview-card/profile-overview-card";
+import { ProfileEmailVerification } from "@/components/dashboard/profile-email-verification/profile-email-verification";
 import { useAuthStore } from "@/stores/auth-store";
 
 const personalFields: ProfileField[] = [
@@ -91,6 +92,7 @@ export const ProfileSettings = () => {
   return (
     <div className="profile-settings grid gap-4">
       <ProfileOverviewCard user={user} />
+      <ProfileEmailVerification />
       <ProfileDetailsCard
         description="Your name and phone are filled into every new document."
         fields={personalFields}

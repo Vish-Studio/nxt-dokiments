@@ -123,6 +123,12 @@ unverified user can still sign in, create documents and share them.
 - **Notice.** `VerifyEmailNotice` appears in the app shell only when
   `NEXT_PUBLIC_DOCUMENT_SHARING_ENABLED` is on and `emailVerified === false`. It is
   dismissible for the browser session (`sessionStorage`).
+- **Profile.** Settings > My profile always provides an Email verification card,
+  independently of the sharing flag and notice dismissal. Known statuses show a
+  Verified or Not verified badge beside the sign-in email. Unverified and older
+  sessions with unknown status can resend the email or check verification here;
+  unknown status shows no badge until checked. These actions reuse the dashboard
+  notice's feedback and 60 s client-side resend cooldown.
 - **Existing sessions and users.** Sessions sealed before this change have
   `emailVerified === undefined`, which is treated as unknown (no notice) until the
   next sign-in or refresh — at most one day. Existing unverified users see the
