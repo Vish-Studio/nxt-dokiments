@@ -11,6 +11,8 @@
     { "key": "newPassword", "value": "yournewpassword" },
     { "key": "templateId", "value": "classic-contract" },
     { "key": "documentId", "value": "" },
+    { "key": "sharedDocumentId", "value": "" },
+    { "key": "recipientEmail", "value": "recipient@example.com" },
     { "key": "clientId", "value": "" },
     { "key": "promoCode", "value": "ViSHDOK2026!" }
   ],
@@ -386,6 +388,47 @@
               "path": ["api", "documents", "{{documentId}}"]
             },
             "description": "DELETE /api/documents/:id. Returns 204 with an empty body whether or not the document existed (idempotent delete)."
+          }
+        },
+        {
+          "name": "Share a document",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{recipientEmail}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/documents/{{documentId}}/share",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "documents", "{{documentId}}", "share"]
+            },
+            "description": "POST /api/documents/:id/share — shares your document with an email address. Needs NEXT_PUBLIC_DOCUMENT_SHARING_ENABLED=true (404 while off). 201 { sharedDocumentId, recipient: { email, status } } the first time, 200 when you share again with the same address (the shared copy is refreshed while unlocked). Copy sharedDocumentId into the sharedDocumentId variable. Try: your own email -> 400; a second, different email on the same document -> 409 (one recipient per document for now); a document id you don't own -> 404; a malformed email -> 400."
+          }
+        },
+        {
+          "name": "List documents shared with me",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/documents/shared",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "documents", "shared"]
+            },
+            "description": "GET /api/documents/shared — documents shared with the signed-in user, newest first. Sign in as the recipient (their email must be verified, otherwise the list is empty). 404 while the sharing flag is off."
+          }
+        },
+        {
+          "name": "Get one shared document",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/documents/shared/{{sharedDocumentId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "documents", "shared", "{{sharedDocumentId}}"]
+            },
+            "description": "GET /api/documents/shared/:id — one shared document, for its owner or a recipient. Anyone else (or a missing id) gets 404 { error: \"You do not have access to this shared document.\" }."
           }
         },
         {

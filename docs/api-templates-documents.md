@@ -70,6 +70,20 @@ User-created documents — filled-in instances of a saved template, stored in Fi
 | `PATCH` | `/api/documents/:id` | Update a document's `name` and/or `values` (editing an existing document). | Session required; must own the document. | `{ name?, values? }` — partial, at least one required. | `200 { document: UserDocument }` / `400` if the body is empty/malformed/oversized / `404` if not found or not owned. | `PATCH` rather than `PUT` because updates are partial (the editor only sends changed fields) and the `templateSnapshot` is immutable after creation — this route never touches it. |
 | `DELETE` | `/api/documents/:id` | Delete a document. | Session required; must own the document. | — | `204` on success, including when the document wasn't found (idempotent delete, matching the same choice made for `saved-templates`). | Standard resource deletion, single-document write. |
 
+### Sharing a document
+
+Behind `NEXT_PUBLIC_DOCUMENT_SHARING_ENABLED`; every route below answers `404` while it is off. The data model, rules and error codes are in [`document-sharing.md`](./document-sharing.md).
+
+| Method | Route | Purpose | Auth | Request | Response |
+|---|---|---|---|---|---|
+| `POST` | `/api/documents/:id/share` | Share one of your documents with an email address for signature. | Session required; must own the document. | `{ email }` | `201 { sharedDocumentId, recipient: { email, status } }` on the first share, `200` when re-sharing the same address / `400` malformed body or your own address / `403` plan limit reached / `404` not found or not owned / `409` locked, or already shared with someone else. |
+| `GET` | `/api/documents/shared` | List documents shared with the signed-in user, newest first. | Session required. | — | `200 { documents: SharedDocument[] }` (empty for an unverified address). |
+| `GET` | `/api/documents/shared/:id` | One shared document, for its owner or a recipient. | Session required. | — | `200 { document: SharedDocument }` / `404` not found or not accessible. |
+
+Sharing is idempotent: the shared copy's ID is `{ownerUid}_{sourceDocumentId}`, so sharing the same document again finds the existing share and, while it is unlocked, refreshes the copy from the source. The share and the owner's ledger entry are written in one atomic `documents:commit`, so a share can never exist without its ledger entry. The server never looks up the recipient's account (it has no admin access to other users), so the response carries no "existing user" flag; a recipient sees the share once their verified address matches.
+
+See [`server-shared-documents.ts`](../src/lib/firebase/server-shared-documents.ts), [`share/route.ts`](../src/app/api/documents/[id]/share/route.ts), [`shared/route.ts`](../src/app/api/documents/shared/route.ts) and [`shared/[id]/route.ts`](../src/app/api/documents/shared/[id]/route.ts).
+
 **Why a subcollection (`users/{uid}/documents/{docId}`) instead of a `documents` array field or a top-level collection:** each document can be edited independently without a read-modify-write of every other document, avoids the 1 MiB per-document Firestore size ceiling as a user accumulates documents, and keeps ownership checks trivial (`request.auth.uid` must equal the parent path segment) without needing a `uid` field + composite index the way a top-level collection would.
 
 **`TemplateSnapshot` shape** — `{ description: string, documentType: DocumentType, fields: TemplateField[], name: string, style: TemplateStyle }`, stored on `UserDocument` as an optional `templateSnapshot` field so `TemplatePreviewDialog`/`DocumentExportDialog` can render a document without ever falling back to a live catalog lookup — see `snapshotToMarketplaceTemplate` in `src/types/template.ts`. The field stays optional because a handful of pre-migration fixtures predate it; every document created through this API always has one.
