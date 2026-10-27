@@ -420,6 +420,18 @@
           }
         },
         {
+          "name": "List people I have shared with",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/documents/share-recipients",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "documents", "share-recipients"]
+            },
+            "description": "GET /api/documents/share-recipients — the signed-in user's sharing ledger, most recently shared first. Powers the share dialog's suggestions. 404 while the sharing flag is off."
+          }
+        },
+        {
           "name": "Get one shared document",
           "request": {
             "method": "GET",
