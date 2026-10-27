@@ -17,6 +17,11 @@ export const shareErrorDefinitions: Record<
     message: "You do not have access to this shared document.",
     status: 404,
   },
+  SHARE_ALREADY_WITH_ANOTHER: {
+    message:
+      "This document is already shared with someone else. Sharing with more than one person is not available yet.",
+    status: 409,
+  },
   SHARE_LIMIT_REACHED: {
     message: "You have reached the sharing limit for your plan.",
     status: 403,

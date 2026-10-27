@@ -1,8 +1,13 @@
 import "server-only";
 
+import { ApiError } from "@/lib/api/errors";
 import {
+  commitFirestoreWrites,
+  FirestorePermissionDeniedError,
   getDocumentId,
+  getFirestoreDocument,
   listFirestoreCollection,
+  runFirestoreQuery,
   readArray,
   readBoolean,
   readMap,
@@ -17,7 +22,14 @@ import {
   type FirestoreFields,
   type FirestoreValue,
 } from "@/lib/firebase/server-firestore";
+import {
+  getDocument,
+  parseTemplateSnapshot,
+  toTemplateSnapshotValue,
+} from "@/lib/firebase/server-documents";
 import { normaliseEmail } from "@/lib/sharing/email";
+import { canShareWith } from "@/lib/sharing/policy";
+import { shareApiError } from "@/lib/sharing/server-guard";
 import type { AuthSession } from "@/types/auth";
 import {
   shareRecipientStatuses,
@@ -236,4 +248,211 @@ export const listShareRecipientEmails = async (
     session.idToken,
   );
   return entries.map((entry) => normaliseEmail(getDocumentId(entry)));
+};
+
+/**
+ * ID of the shared document made from one of an owner's documents. Deterministic,
+ * so sharing the same document again finds the existing share instead of
+ * creating a second one.
+ */
+export const sharedDocumentIdFor = (
+  ownerUid: string,
+  sourceDocumentId: string,
+) => `${ownerUid}_${sourceDocumentId}`;
+
+/** Parses a `sharedDocuments/{id}` document including its template snapshot. */
+export const readSharedDocument = (
+  document: FirestoreDocument,
+  knownId?: string,
+): SharedDocument => ({
+  ...parseSharedDocument(document, knownId),
+  templateSnapshot: parseTemplateSnapshot(document),
+});
+
+/** The outcome of `shareDocument`. */
+export type ShareDocumentResult = {
+  /** `true` on the first share of this document, `false` when re-sharing. */
+  created: boolean;
+  recipient: ShareRecipient;
+  sharedDocumentId: string;
+};
+
+/**
+ * Shares one of the signed-in user's documents with `rawEmail`.
+ *
+ * Copies the document (name, values, template snapshot) into `sharedDocuments`
+ * and records the address in the owner's ledger, in one atomic commit. Sharing
+ * again with the same address is idempotent and refreshes the copy while the
+ * document is unlocked. The first share is limited to one recipient per document.
+ *
+ * The recipient's account is not looked up: the server cannot read another
+ * user's profile, and the rules recognise a recipient by verified address.
+ *
+ * @param session - Active session of the owner.
+ * @param sourceDocumentId - ID of the owner's document to share.
+ * @param rawEmail - Recipient address, in any casing.
+ * @throws `ApiError` 404 for an unknown document; the sharing errors in
+ *   `shareApiError` for self-share, locked, second recipient and plan limit.
+ */
+export const shareDocument = async (
+  session: AuthSession,
+  sourceDocumentId: string,
+  rawEmail: string,
+): Promise<ShareDocumentResult> => {
+  const { uid } = session.user;
+  const email = normaliseEmail(rawEmail);
+
+  const source = await getDocument(session, sourceDocumentId);
+  if (!source) {
+    throw new ApiError(404, "Document not found.");
+  }
+
+  const sharedDocumentId = sharedDocumentIdFor(uid, sourceDocumentId);
+  const [existing, ledger] = await Promise.all([
+    getSharedDocument(session, sharedDocumentId),
+    listFirestoreCollection(shareLedgerPath(uid), session.idToken),
+  ]);
+
+  if (existing?.locked) {
+    throw shareApiError("DOCUMENT_LOCKED");
+  }
+
+  const otherRecipient = existing?.recipients.find(
+    (recipient) => recipient.email !== email,
+  );
+  if (otherRecipient) {
+    throw shareApiError("SHARE_ALREADY_WITH_ANOTHER");
+  }
+
+  const ledgerEmails = ledger.map((entry) =>
+    normaliseEmail(getDocumentId(entry)),
+  );
+  const decision = canShareWith({
+    email,
+    ownerEmail: session.user.email,
+    ownerRole: session.user.role,
+    sharedWith: ledgerEmails,
+  });
+  if (!decision.allowed) {
+    throw shareApiError(decision.reason);
+  }
+
+  const now = Date.now();
+  const recipient: ShareRecipient = existing?.recipients[0] ?? {
+    email,
+    invitedAt: now,
+    status: "pending",
+  };
+  const ledgerEntry = ledger.find(
+    (entry) => normaliseEmail(getDocumentId(entry)) === email,
+  );
+
+  const committed = await commitFirestoreWrites(
+    [
+      {
+        fields: toSharedDocumentFields(
+          {
+            createdAt: existing?.createdAt ?? now,
+            locked: false,
+            name: source.name,
+            ownerEmail: session.user.email,
+            ownerId: uid,
+            ownerName: session.user.displayName,
+            recipients: [recipient],
+            signatures: existing?.signatures ?? {},
+            sourceDocumentId,
+            templateId: source.templateId,
+            updatedAt: now,
+            values: source.values,
+          },
+          source.templateSnapshot
+            ? toTemplateSnapshotValue(source.templateSnapshot)
+            : undefined,
+        ),
+        mustExist: existing !== null,
+        path: sharedDocumentPath(sharedDocumentId),
+      },
+      {
+        fields: toShareLedgerFields({
+          email,
+          firstSharedAt: ledgerEntry
+            ? toMillis(ledgerEntry.fields?.firstSharedAt)
+            : now,
+          lastSharedAt: now,
+        }),
+        mustExist: ledgerEntry !== undefined,
+        path: shareLedgerEntryPath(uid, email),
+      },
+    ],
+    session.idToken,
+  );
+
+  if (!committed) {
+    throw new ApiError(
+      409,
+      "This document was just shared by another request. Please try again.",
+    );
+  }
+
+  return { created: existing === null, recipient, sharedDocumentId };
+};
+
+/**
+ * Fetches one shared document the signed-in user owns or has received.
+ *
+ * @returns The document, or `null` when it does not exist or the user may not
+ *   see it. The rules refuse a read of an absent or foreign document, so a
+ *   refusal is reported as `null` — the caller cannot tell the two apart, by design.
+ * @throws When the Firestore request fails for any other reason.
+ */
+export const getSharedDocument = async (
+  session: AuthSession,
+  id: string,
+): Promise<SharedDocument | null> => {
+  try {
+    const document = await getFirestoreDocument(
+      sharedDocumentPath(id),
+      session.idToken,
+    );
+    return document ? readSharedDocument(document, id) : null;
+  } catch (error) {
+    if (error instanceof FirestorePermissionDeniedError) return null;
+    throw error;
+  }
+};
+
+/**
+ * Lists the documents shared with the signed-in user, newest first.
+ *
+ * Matches on the verified address in the token, so an unverified account
+ * receives an empty list rather than an error.
+ *
+ * @throws When the Firestore query fails for any other reason.
+ */
+export const listSharedWithMe = async (
+  session: AuthSession,
+): Promise<SharedDocument[]> => {
+  try {
+    const documents = await runFirestoreQuery(
+      sharedDocumentsPath,
+      {
+        field: "recipientEmails",
+        op: "ARRAY_CONTAINS",
+        value: toStringValue(normaliseEmail(session.user.email)),
+      },
+      session.idToken,
+    );
+
+    return documents
+      .map((document) => readSharedDocument(document))
+      .sort((a, b) => b.updatedAt - a.updatedAt);
+  } catch (error) {
+    if (
+      error instanceof FirestorePermissionDeniedError &&
+      session.user.emailVerified !== true
+    ) {
+      return [];
+    }
+    throw error;
+  }
 };

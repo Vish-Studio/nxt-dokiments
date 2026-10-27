@@ -20,6 +20,7 @@ export const shareErrorCodes = [
   "SHARE_SELF_NOT_ALLOWED",
   "DOCUMENT_LOCKED",
   "NOT_A_RECIPIENT",
+  "SHARE_ALREADY_WITH_ANOTHER",
 ] as const;
 
 export type ShareErrorCode = (typeof shareErrorCodes)[number];

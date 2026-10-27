@@ -83,8 +83,28 @@ in the server route only, not in the rules, so changing it needs no rules deploy
 ## Error codes
 
 `SHARE_LIMIT_REACHED` (403), `SHARE_SELF_NOT_ALLOWED` (400), `DOCUMENT_LOCKED` (409),
-`NOT_A_RECIPIENT` (404) — statuses and user-safe messages in
+`NOT_A_RECIPIENT` (404), `SHARE_ALREADY_WITH_ANOTHER` (409) — statuses and user-safe messages in
 `src/lib/sharing/server-guard.ts`.
+
+## Share API
+
+`POST /api/documents/:id/share`, `GET /api/documents/shared` and
+`GET /api/documents/shared/:id` — see
+[`api-templates-documents.md`](./api-templates-documents.md#sharing-a-document).
+
+- One shared document per source document (`{ownerUid}_{sourceDocumentId}`), so
+  re-sharing is idempotent and refreshes the copy while it is unlocked.
+- A document has **one recipient** for now: sharing it with a second, different
+  address is a `409 SHARE_ALREADY_WITH_ANOTHER`. Lift this when multiple
+  recipients are built.
+- The shared document and the ledger entry are committed atomically.
+- No account lookup: recipients are matched by verified address, so `uid` stays
+  unset until the invite story links accounts. An unverified recipient is not
+  detectable at share time — they simply see nothing until they verify.
+- Reads of an absent or foreign document are refused by the rules (403), which
+  the API reports as `404` so existence is not leaked. The list query matches
+  `recipientEmails` on the token's address; for an unverified account the rules
+  refuse it and the API returns an empty list.
 
 ## Monthly document quota
 

@@ -51,7 +51,7 @@ const toFieldsValue = (fields: TemplateField[]) =>
   );
 
 /** Serialises a `TemplateSnapshot` into a Firestore `mapValue`. */
-const toTemplateSnapshotValue = (snapshot: TemplateSnapshot) =>
+export const toTemplateSnapshotValue = (snapshot: TemplateSnapshot) =>
   toMapValue({
     description: toStringValue(snapshot.description),
     documentType: toStringValue(snapshot.documentType),
@@ -97,7 +97,7 @@ const parseStyle = (fields: FirestoreFields | undefined): TemplateStyle => {
 };
 
 /** Deserialises a `templateSnapshot` map field into a `TemplateSnapshot`, or `undefined` if absent. */
-const parseTemplateSnapshot = (
+export const parseTemplateSnapshot = (
   document: FirestoreDocument,
 ): TemplateSnapshot | undefined => {
   const snapshotFields = document.fields?.templateSnapshot;
