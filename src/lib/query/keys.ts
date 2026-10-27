@@ -40,6 +40,11 @@ export const queryKeys = {
     detail: (id: string) => ["documents", "detail", id] as const,
   },
 
+  shareRecipients: {
+    /** People the signed-in user has shared documents with. There is only ever one list — no filters. */
+    all: () => ["share-recipients"] as const,
+  },
+
   promoRedemptions: {
     /** The promo codes the signed-in user has redeemed. There is only ever one list — no filters. */
     all: () => ["promo-redemptions"] as const,
