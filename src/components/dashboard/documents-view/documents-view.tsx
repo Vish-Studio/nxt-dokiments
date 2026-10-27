@@ -43,6 +43,14 @@ import { useSavedTemplatesQuery } from "@/hooks/queries/use-saved-templates";
 import { useScrollContentToTopOnMobile } from "@/hooks/use-scroll-content-to-top-on-mobile";
 import { trackEvent } from "@/lib/analytics/track";
 import { documentSharingEnabled } from "@/lib/sharing/feature-flag";
+import { useSharedDocumentsQuery } from "@/hooks/queries/use-shared-documents";
+import {
+  SharedDocumentList,
+  sharedDocumentListColumns,
+  sharedDocumentSkeletonRow,
+} from "@/components/dashboard/shared-document-list/shared-document-list";
+import { TabMenu } from "@/components/commons/tab-menu/tab-menu";
+import type { SharedDocument } from "@/types/sharing";
 import { isSignableDocument } from "@/lib/sharing/signable";
 import { documentBlueprints } from "@/lib/market-place/documents";
 import {
@@ -61,6 +69,7 @@ import {
 type Mode = "list" | "picker" | "editor";
 
 const EMPTY_DOCUMENTS: UserDocument[] = [];
+const EMPTY_SHARED_DOCUMENTS: SharedDocument[] = [];
 
 /** Resolves a document's own template, using its `templateSnapshot` — never a live
  * catalog lookup — so a later template edit/deactivation can't affect an existing document. */
@@ -82,6 +91,10 @@ export const DocumentsView = () => {
     useDocumentsQuery();
   const { isPending: isCreatePending, mutate: createDocument } =
     useCreateDocumentMutation();
+  const {
+    data: sharedDocuments = EMPTY_SHARED_DOCUMENTS,
+    isLoading: isSharedLoading,
+  } = useSharedDocumentsQuery({ enabled: documentSharingEnabled });
   const { mutate: updateDocument } = useUpdateDocumentMutation();
   const { mutate: deleteDocument } = useDeleteDocumentMutation();
 
@@ -112,6 +125,10 @@ export const DocumentsView = () => {
     name: string;
     recipientEmail?: string;
   } | null>(null);
+  const [listTab, setListTab] = useState<"mine" | "shared">("mine");
+  const [previewShared, setPreviewShared] = useState<SharedDocument | null>(
+    null,
+  );
   const [search, setSearch] = useState("");
   const [documentType, setDocumentType] = useState("all");
   const [sort, setSort] = useState("newest");
@@ -689,15 +706,55 @@ export const DocumentsView = () => {
   }
 
   // --- Document list --------------------------------------------------------
+  const showSharedTab = documentSharingEnabled && listTab === "shared";
+
   return (
     <div className="flex min-h-0 w-full flex-1 flex-col gap-2 pt-6">
-      <ResponsiveHeaderControls
-        desktopContent={toolbar}
-        desktopHeader={headerSearch}
-      >
-        {toolbar}
-      </ResponsiveHeaderControls>
-      {isDocumentsLoading ? (
+      {documentSharingEnabled ? (
+        <TabMenu
+          ariaLabel="Document lists"
+          className="mb-1"
+          items={[
+            { id: "mine", label: "My documents" },
+            {
+              badge:
+                sharedDocuments.length > 0 ? (
+                  <span className="text-xs opacity-70">
+                    {sharedDocuments.length}
+                  </span>
+                ) : undefined,
+              id: "shared",
+              label: "Shared with me",
+            },
+          ]}
+          onChange={(id) => setListTab(id === "shared" ? "shared" : "mine")}
+          value={listTab}
+        />
+      ) : null}
+      {showSharedTab ? null : (
+        <ResponsiveHeaderControls
+          desktopContent={toolbar}
+          desktopHeader={headerSearch}
+        >
+          {toolbar}
+        </ResponsiveHeaderControls>
+      )}
+      {showSharedTab ? (
+        isSharedLoading ? (
+          <DashboardListSkeleton
+            columns={sharedDocumentListColumns}
+            message="Loading documents shared with you…"
+            ordered
+            row={sharedDocumentSkeletonRow}
+          />
+        ) : (
+          <SharedDocumentList
+            documents={sharedDocuments}
+            onOpen={setPreviewShared}
+            userEmail={user?.email}
+          />
+        )
+      ) : isDocumentsLoading ? (
         <DashboardListSkeleton
           columns={documentListColumns}
           message="Loading your documents…"
@@ -755,6 +812,24 @@ export const DocumentsView = () => {
         values={previewDocument?.values}
       />
 
+      <TemplatePreviewDialog
+        documentName={
+          previewShared?.values.title?.trim() || previewShared?.name
+        }
+        mode="shared"
+        onClose={() => setPreviewShared(null)}
+        template={
+          previewShared?.templateSnapshot
+            ? snapshotToMarketplaceTemplate(
+                previewShared.templateSnapshot,
+                previewShared.templateId,
+              )
+            : null
+        }
+        tone="purple"
+        values={previewShared?.values}
+      />
+
       <ShareDialog
         document={shareTarget ?? { id: "", name: "" }}
         onClose={() => setShareTarget(null)}
@@ -773,7 +848,7 @@ export const DocumentsView = () => {
         values={exportDocument?.values}
       />
 
-      {previewDocument || exportDocument ? null : (
+      {previewDocument || previewShared || exportDocument ? null : (
         <FloatingActionButton
           className="lg:hidden"
           icon={
