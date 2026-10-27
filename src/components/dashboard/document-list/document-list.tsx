@@ -10,6 +10,7 @@ export interface DocumentListProps {
   onEdit: (document: UserDocument) => void;
   onPreview: (document: UserDocument) => void;
   onPrint: (document: UserDocument) => void;
+  onShare?: (document: UserDocument) => void;
 }
 
 /** Exported so the loading skeleton renders the same header and column widths. */
@@ -54,6 +55,7 @@ export const DocumentList = ({
   onEdit,
   onPreview,
   onPrint,
+  onShare,
 }: DocumentListProps) => {
   return (
     <DashboardList
@@ -67,6 +69,7 @@ export const DocumentList = ({
           onEdit={onEdit}
           onPreview={onPreview}
           onPrint={onPrint}
+          onShare={onShare}
         />
       ))}
     </DashboardList>

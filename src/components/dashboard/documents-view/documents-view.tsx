@@ -4,6 +4,7 @@ import {
   ArrowLeftIcon,
   EyeIcon,
   PlusIcon,
+  ShareNetworkIcon,
   TrashIcon,
 } from "@phosphor-icons/react";
 import Link from "next/link";
@@ -30,6 +31,7 @@ import {
   documentListColumns,
   documentSkeletonRow,
 } from "@/components/dashboard/document-list/document-list";
+import { ShareDialog } from "@/components/dashboard/share-dialog/share-dialog";
 import { ResponsiveHeaderControls } from "@/components/dashboard/responsive-header-controls/responsive-header-controls";
 import {
   useCreateDocumentMutation,
@@ -40,6 +42,8 @@ import {
 import { useSavedTemplatesQuery } from "@/hooks/queries/use-saved-templates";
 import { useScrollContentToTopOnMobile } from "@/hooks/use-scroll-content-to-top-on-mobile";
 import { trackEvent } from "@/lib/analytics/track";
+import { documentSharingEnabled } from "@/lib/sharing/feature-flag";
+import { isSignableDocument } from "@/lib/sharing/signable";
 import { documentBlueprints } from "@/lib/market-place/documents";
 import {
   clientPrefillValues,
@@ -49,7 +53,10 @@ import {
 import { useAuthStore } from "@/stores/auth-store";
 import type { MarketplaceTemplate, UserDocument } from "@/types/template";
 import { snapshotToMarketplaceTemplate } from "@/types/template";
-import { getDocumentTypeLabel, getTemplateDisplayName } from "@/lib/market-place/document-labels";
+import {
+  getDocumentTypeLabel,
+  getTemplateDisplayName,
+} from "@/lib/market-place/document-labels";
 
 type Mode = "list" | "picker" | "editor";
 
@@ -100,6 +107,11 @@ export const DocumentsView = () => {
     null,
   );
   const [isEditorPreviewOpen, setIsEditorPreviewOpen] = useState(false);
+  const [shareTarget, setShareTarget] = useState<{
+    id: string;
+    name: string;
+    recipientEmail?: string;
+  } | null>(null);
   const [search, setSearch] = useState("");
   const [documentType, setDocumentType] = useState("all");
   const [sort, setSort] = useState("newest");
@@ -443,28 +455,28 @@ export const DocumentsView = () => {
             <div className="mt-6 grid gap-5">
               <TemplateForm
                 documentNameField={
-              <Input
-                label="Document name"
-                onChange={(event) => {
-                  setDraftName(event.target.value);
-                }}
-                placeholder="e.g. Acme service contract"
-                value={draftName}
-              />
+                  <Input
+                    label="Document name"
+                    onChange={(event) => {
+                      setDraftName(event.target.value);
+                    }}
+                    placeholder="e.g. Acme service contract"
+                    value={draftName}
+                  />
                 }
                 recipientPicker={
-              <ClientPicker
-                fields={editorTemplate.fields}
-                onSelect={(client) => {
-                  setDraftValues((previous) => ({
-                    ...previous,
-                    ...clientPrefillValues(client, editorTemplate.fields),
-                  }));
-                  trackEvent("document_client_prefilled", {
-                    document_type: editorTemplate.documentType,
-                  });
-                }}
-              />
+                  <ClientPicker
+                    fields={editorTemplate.fields}
+                    onSelect={(client) => {
+                      setDraftValues((previous) => ({
+                        ...previous,
+                        ...clientPrefillValues(client, editorTemplate.fields),
+                      }));
+                      trackEvent("document_client_prefilled", {
+                        document_type: editorTemplate.documentType,
+                      });
+                    }}
+                  />
                 }
                 fields={editorTemplate.fields}
                 onChange={(key, value) => {
@@ -487,6 +499,30 @@ export const DocumentsView = () => {
                     ? "Creating…"
                     : "Create document"}
               </Button>
+              {activeDocumentId &&
+              documentSharingEnabled &&
+              isSignableDocument(editorTemplate) ? (
+                <Button
+                  icon={
+                    <ShareNetworkIcon
+                      aria-hidden
+                      size={16}
+                      weight="bold"
+                    />
+                  }
+                  iconPosition="left"
+                  onClick={() =>
+                    setShareTarget({
+                      id: activeDocumentId,
+                      name: draftValues.title?.trim() || draftName,
+                      recipientEmail: draftValues.toEmail,
+                    })
+                  }
+                  variant="outline"
+                >
+                  Share
+                </Button>
+              ) : null}
               {activeDocumentId ? (
                 <Button
                   icon={
@@ -514,6 +550,12 @@ export const DocumentsView = () => {
             />
           </div>
         </div>
+
+        <ShareDialog
+          document={shareTarget ?? { id: "", name: "" }}
+          onClose={() => setShareTarget(null)}
+          open={Boolean(shareTarget)}
+        />
 
         <SidePanel
           ariaLabel="Document preview"
@@ -677,6 +719,16 @@ export const DocumentsView = () => {
           onEdit={openDocument}
           onPreview={setPreviewDocument}
           onPrint={handlePrintDocument}
+          onShare={
+            documentSharingEnabled
+              ? (document) =>
+                  setShareTarget({
+                    id: document.id,
+                    name: document.values.title?.trim() || document.name,
+                    recipientEmail: document.values.toEmail,
+                  })
+              : undefined
+          }
         />
       )}
 
@@ -701,6 +753,12 @@ export const DocumentsView = () => {
         template={previewDocument ? templateOf(previewDocument) : null}
         tone="purple"
         values={previewDocument?.values}
+      />
+
+      <ShareDialog
+        document={shareTarget ?? { id: "", name: "" }}
+        onClose={() => setShareTarget(null)}
+        open={Boolean(shareTarget)}
       />
 
       <DocumentExportDialog
