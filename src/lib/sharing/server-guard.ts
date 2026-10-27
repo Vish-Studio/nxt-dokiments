@@ -26,6 +26,11 @@ export const shareErrorDefinitions: Record<
     message: "You have reached the sharing limit for your plan.",
     status: 403,
   },
+  SHARE_NOT_SIGNABLE: {
+    message:
+      "This type of document has no recipient signature, so it cannot be shared for signing.",
+    status: 400,
+  },
   SHARE_SELF_NOT_ALLOWED: {
     message: "You cannot share a document with yourself.",
     status: 400,

@@ -3,12 +3,13 @@ import { z } from "zod";
 import { parseBody } from "@/lib/api/validate";
 import { withSession } from "@/lib/api/with-session";
 import { shareDocument } from "@/lib/firebase/server-shared-documents";
+import { shareEmailSchema } from "@/lib/sharing/email-schema";
 import { assertDocumentSharingEnabled } from "@/lib/sharing/server-guard";
 
 type Context = { params: Promise<{ id: string }> };
 
 const ShareDocumentSchema = z.object({
-  email: z.string().trim().max(254).pipe(z.email()),
+  email: shareEmailSchema,
 });
 
 /**

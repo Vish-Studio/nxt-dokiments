@@ -29,6 +29,7 @@ import {
 } from "@/lib/firebase/server-documents";
 import { normaliseEmail } from "@/lib/sharing/email";
 import { canShareWith } from "@/lib/sharing/policy";
+import { isSignableDocument } from "@/lib/sharing/signable";
 import { shareApiError } from "@/lib/sharing/server-guard";
 import type { AuthSession } from "@/types/auth";
 import {
@@ -235,19 +236,26 @@ export const toShareLedgerFields = (
 });
 
 /**
- * Everyone the signed-in user has ever shared a document with, as normalised
- * addresses — the `sharedWith` input of `canShareWith`.
+ * Everyone the signed-in user has ever shared a document with, most recently
+ * shared first. Backs the share dialog's suggestions.
  *
  * @throws When the Firestore request fails.
  */
-export const listShareRecipientEmails = async (
+export const listShareRecipients = async (
   session: AuthSession,
-): Promise<string[]> => {
+): Promise<ShareLedgerEntry[]> => {
   const entries = await listFirestoreCollection(
     shareLedgerPath(session.user.uid),
     session.idToken,
   );
-  return entries.map((entry) => normaliseEmail(getDocumentId(entry)));
+
+  return entries
+    .map((entry) => ({
+      email: normaliseEmail(getDocumentId(entry)),
+      firstSharedAt: toMillis(entry.fields?.firstSharedAt),
+      lastSharedAt: toMillis(entry.fields?.lastSharedAt),
+    }))
+    .sort((a, b) => b.lastSharedAt - a.lastSharedAt);
 };
 
 /**
@@ -305,6 +313,10 @@ export const shareDocument = async (
   const source = await getDocument(session, sourceDocumentId);
   if (!source) {
     throw new ApiError(404, "Document not found.");
+  }
+
+  if (!isSignableDocument(source.templateSnapshot)) {
+    throw shareApiError("SHARE_NOT_SIGNABLE");
   }
 
   const sharedDocumentId = sharedDocumentIdFor(uid, sourceDocumentId);
