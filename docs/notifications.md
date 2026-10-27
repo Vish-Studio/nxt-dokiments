@@ -9,7 +9,13 @@ comes from, so new kinds plug in without touching the UI.
 | Kind | Where it runs | Read state |
 | --- | --- | --- |
 | `template` | Server (`serverNotificationSources`) — derived from `templates/{id}.createdAt` | `users/{uid}/notificationMeta/state.lastSeenAt`, set by "Mark all as read" |
+| `document-shared` | Server (`serverNotificationSources`) — derived from the recipient's `sharedDocuments` query (`sharedDocumentNotifications`); only while document sharing is enabled | Same `lastSeenAt` as `template` |
 | `app-update` | Client (`useAppUpdateNotifications`) — fed by `useAppUpdate` through `app-update-store` | Persistent: shown until the update is applied |
+
+A `document-shared` notification is stamped with the recipient's `invitedAt`, which
+a re-share keeps, so refreshing a share does not notify again. Revoked shares are
+skipped. It links to `/my-documents?tab=shared`, which opens the **Shared with me**
+tab. Notifications are not pushed: they appear on the next poll or window focus.
 
 Templates added within 10 minutes of each other are announced as one notification.
 Items older than 14 days drop off. **A template only notifies if it has a

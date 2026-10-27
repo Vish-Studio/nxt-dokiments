@@ -137,6 +137,11 @@ address). Opening a row shows a read-only `TemplatePreviewDialog` in `shared`
 mode, built from the share's own template snapshot; DS-5 replaces it with the
 signing view. A recipient whose address is unverified sees an empty list.
 
+Each share also appears in the notification bell (kind `document-shared`, see
+`docs/notifications.md`). Its link, `/my-documents?tab=shared`, opens the Shared
+with me tab. The active tab is mirrored in the URL (`?tab=shared`, absent for My
+documents), so the page survives a remount.
+
 ## Monthly document quota
 
 The app currently has no monthly document quota (the plan list says "Create
