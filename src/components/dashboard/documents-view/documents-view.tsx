@@ -8,8 +8,8 @@ import {
   TrashIcon,
 } from "@phosphor-icons/react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { Suspense, useCallback, useEffect, useMemo, useState } from "react";
 
 import { Button } from "@/components/commons/button/button";
 import CollectionToolbar from "@/components/commons/collection-toolbar/collection-toolbar";
@@ -80,6 +80,23 @@ const templateOf = (document: UserDocument): MarketplaceTemplate | null =>
         document.templateId,
       )
     : null;
+
+/**
+ * Switches to the "Shared with me" tab while the URL says `?tab=shared` (the bell's
+ * link). Reads the router's search params rather than `window.location` so
+ * following the link while already on this page still triggers it. Renders nothing.
+ */
+const SharedTabLink = ({ onOpen }: { onOpen: () => void }) => {
+  const isSharedLink = useSearchParams().get("tab") === "shared";
+
+  useEffect(() => {
+    if (isSharedLink) {
+      onOpen();
+    }
+  }, [isSharedLink, onOpen]);
+
+  return null;
+};
 
 export const DocumentsView = () => {
   const router = useRouter();
@@ -352,6 +369,26 @@ export const DocumentsView = () => {
     );
     window.setTimeout(() => startNewDocument(template), 0);
   }, [authStatus, ownedTemplates, startNewDocument]);
+
+  const openSharedTab = useCallback(() => setListTab("shared"), []);
+
+  // Mirrors the tab into the URL so the page can remount (e.g. once auth settles)
+  // without losing it, and so the bell's link changes the URL again after a manual switch.
+  const selectListTab = (tab: "mine" | "shared") => {
+    setListTab(tab);
+
+    const nextUrl = new URL(window.location.href);
+    if (tab === "shared") {
+      nextUrl.searchParams.set("tab", "shared");
+    } else {
+      nextUrl.searchParams.delete("tab");
+    }
+    window.history.replaceState(
+      null,
+      "",
+      `${nextUrl.pathname}${nextUrl.search}`,
+    );
+  };
 
   const openDocument = (document: UserDocument) => {
     setActiveTemplate(templateOf(document));
@@ -711,6 +748,11 @@ export const DocumentsView = () => {
   return (
     <div className="flex min-h-0 w-full flex-1 flex-col gap-2 pt-6">
       {documentSharingEnabled ? (
+        <Suspense fallback={null}>
+          <SharedTabLink onOpen={openSharedTab} />
+        </Suspense>
+      ) : null}
+      {documentSharingEnabled ? (
         <TabMenu
           ariaLabel="Document lists"
           className="mb-1"
@@ -727,7 +769,7 @@ export const DocumentsView = () => {
               label: "Shared with me",
             },
           ]}
-          onChange={(id) => setListTab(id === "shared" ? "shared" : "mine")}
+          onChange={(id) => selectListTab(id === "shared" ? "shared" : "mine")}
           value={listTab}
         />
       ) : null}
