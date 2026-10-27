@@ -125,6 +125,18 @@ hidden while `NEXT_PUBLIC_DOCUMENT_SHARING_ENABLED` is off.
 - A document that is already shared shows the API's `409` message; showing the
   current recipient and status is left to DS-4/DS-6.
 
+## Shared with me (UI)
+
+With the flag on, the Documents page has two tabs: **My documents** and **Shared
+with me**, the latter with a count of everything shared with the user. The list
+(`SharedDocumentList`) reads `GET /api/documents/shared` through
+`useSharedDocumentsQuery` (refetched on window focus, so a new share shows up
+without a reload) and shows each document's title, sender, shared date and the
+signed-in user's own status (`recipientStatusFor`, matched on the normalised
+address). Opening a row shows a read-only `TemplatePreviewDialog` in `shared`
+mode, built from the share's own template snapshot; DS-5 replaces it with the
+signing view. A recipient whose address is unverified sees an empty list.
+
 ## Monthly document quota
 
 The app currently has no monthly document quota (the plan list says "Create
