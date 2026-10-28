@@ -113,6 +113,7 @@ export const DEV_SESSION: SessionData = {
   user: {
     displayName: "Dev User",
     email: "dev@dokiments.local",
+    emailVerified: true,
     provider: "password",
     role: "special",
     uid: "dev-auth-bypass-user",

@@ -30,6 +30,18 @@ const meta = {
         title: "Update available",
       },
       {
+        action: {
+          href: "/my-documents?tab=shared",
+          label: "View shared documents",
+        },
+        body: "Website redesign NDA",
+        createdAt: now - 2 * 60 * 60_000,
+        id: "document-shared:share-1",
+        kind: "document-shared",
+        read: false,
+        title: "Alex Morgan shared a document",
+      },
+      {
         createdAt: now - 3 * 24 * 60 * 60_000,
         id: "template:classic-nda",
         kind: "template",

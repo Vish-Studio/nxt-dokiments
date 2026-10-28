@@ -1,8 +1,10 @@
 import "server-only";
 
+import { readEmailVerified } from "@/lib/firebase/id-token";
 import {
   getExpiry,
   refreshFirebaseToken,
+  sendEmailVerification,
   signInWithFirebase as signInWithFirebaseIdentity,
   signInWithGoogleIdToken,
   signUpWithFirebase as signUpWithFirebaseIdentity,
@@ -20,6 +22,21 @@ import type { AuthProviderId, AuthSession } from "@/types/auth";
 
 export { sendPasswordResetEmail } from "@/lib/firebase/server-identity";
 export type { ProfileUpdate } from "@/lib/firebase/server-user-profile";
+
+/** Where Firebase's verification page sends the user once the address is confirmed. */
+const verificationContinueUrl = () =>
+  `${process.env.NEXT_PUBLIC_SITE_URL}/dashboard`;
+
+/**
+ * Sends the account's verification email, pointing its Continue button back at
+ * the dashboard.
+ *
+ * @param idToken - ID token of the account to verify.
+ * @throws When Firebase rejects the request; `FirebaseRateLimitedError` when it is
+ *   throttling this account.
+ */
+export const sendAccountVerificationEmail = (idToken: string) =>
+  sendEmailVerification(idToken, verificationContinueUrl());
 
 /**
  * Assembles a complete `AuthSession` from a Firebase Auth response.
@@ -44,7 +61,7 @@ const buildSession = async (
     expiresAt: getExpiry(response.expiresIn),
     idToken: response.idToken,
     refreshToken: response.refreshToken,
-    user,
+    user: { ...user, emailVerified: readEmailVerified(response.idToken) },
   };
 };
 
@@ -134,6 +151,7 @@ export const updateAccountProfile = async (
     refreshToken: response.refreshToken ?? session.refreshToken,
     user: {
       ...session.user,
+      emailVerified: readEmailVerified(idToken),
       address: profile.address,
       brn: profile.brn,
       businessEmail: profile.businessEmail,
@@ -161,14 +179,15 @@ export const updateAccountPassword = async (
   password: string,
 ): Promise<AuthSession> => {
   const response = await updateFirebasePassword(session.idToken, password);
+  const idToken = response.idToken ?? session.idToken;
 
   return {
     expiresAt: response.expiresIn
       ? getExpiry(response.expiresIn)
       : session.expiresAt,
-    idToken: response.idToken ?? session.idToken,
+    idToken,
     refreshToken: response.refreshToken ?? session.refreshToken,
-    user: session.user,
+    user: { ...session.user, emailVerified: readEmailVerified(idToken) },
   };
 };
 
@@ -197,6 +216,6 @@ export const refreshFirebaseSession = async (
     expiresAt: getExpiry(response.expires_in),
     idToken: response.id_token,
     refreshToken: response.refresh_token,
-    user,
+    user: { ...user, emailVerified: readEmailVerified(response.id_token) },
   };
 };

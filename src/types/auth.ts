@@ -92,6 +92,16 @@ export type AuthUser = {
   /** Name shown throughout the app; defaults to the email's local part when unset. */
   displayName: string;
   email: string;
+  /**
+   * Whether Firebase has confirmed the sign-in email, read from the ID token's
+   * `email_verified` claim when the session is built or refreshed. Never persisted
+   * to Firestore — Firebase Auth is the source of truth.
+   *
+   * Optional so a session cookie sealed before this field existed still unseals;
+   * `undefined` means "not known yet" and resolves at the next token refresh, so
+   * UI should only treat an explicit `false` as unverified.
+   */
+  emailVerified?: boolean;
   /** How this account was originally created; set once at creation and never overwritten. */
   provider: AuthProviderId;
   role: UserRole;

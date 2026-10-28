@@ -6,6 +6,7 @@ import {
   BellIcon,
   FilePlusIcon,
   InfoIcon,
+  ShareNetworkIcon,
 } from "@phosphor-icons/react";
 import Link from "next/link";
 
@@ -18,6 +19,7 @@ import type { AppNotification } from "@/types/notification";
 /** Icon per notification `kind`; unknown kinds fall back to a generic one. */
 const kindIcons: Record<string, Icon> = {
   "app-update": ArrowsClockwiseIcon,
+  "document-shared": ShareNetworkIcon,
   template: FilePlusIcon,
 };
 

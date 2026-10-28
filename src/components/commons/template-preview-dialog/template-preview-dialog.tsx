@@ -19,7 +19,8 @@ import { getTemplateDisplayName } from "@/lib/market-place/document-labels";
 export type TemplatePreviewDialogProps = {
   documentName?: string;
   locked?: boolean;
-  mode?: "document" | "marketplace" | "library";
+  /** `shared` is read-only: a document someone else shared, with only a Close action. */
+  mode?: "document" | "marketplace" | "library" | "shared";
   onClose: () => void;
   onDelete?: () => void;
   onEdit?: () => void;
@@ -56,7 +57,11 @@ export const TemplatePreviewDialog = ({
 
   return (
     <SidePanel
-      ariaLabel={template ? `${getTemplateDisplayName(template)} preview` : "Template preview"}
+      ariaLabel={
+        template
+          ? `${getTemplateDisplayName(template)} preview`
+          : "Template preview"
+      }
       footer={
         template ? (
           mode === "document" ? (
@@ -77,6 +82,15 @@ export const TemplatePreviewDialog = ({
                 Edit document
               </Button>
             </div>
+          ) : mode === "shared" ? (
+            <Button
+              className="w-full"
+              onClick={onClose}
+              size="sm"
+              variant="outline"
+            >
+              Close
+            </Button>
           ) : mode === "library" ? (
             <div className="grid w-full grid-cols-2 gap-2">
               {onPrint ? (
