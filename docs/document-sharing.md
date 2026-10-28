@@ -106,6 +106,42 @@ in the server route only, not in the rules, so changing it needs no rules deploy
   `recipientEmails` on the token's address; for an unverified account the rules
   refuse it and the API returns an empty list.
 
+## Share dialog (UI)
+
+`ShareDialog` (`components/dashboard/share-dialog`) shares a document by email.
+It is reachable from the three-dot menu on each My Documents row and from a
+**Share** button in the document editor (saved documents only), and both are
+hidden while `NEXT_PUBLIC_DOCUMENT_SHARING_ENABLED` is off.
+
+- The address is validated with `shareEmailSchema` (`lib/sharing/email-schema.ts`),
+  the same schema the route uses, so the dialog and the API agree.
+- Suggestions (`ShareRecipientSuggestions`, at most 5, each address shown once) come
+  from three sections in order: the document's own `toEmail` value (also pre-filled
+  when the dialog opens), the user's saved clients' emails, and
+  `GET /api/documents/share-recipients` (the owner's ledger, newest first).
+- A `403` (plan limit) opens `UpgradeDialog` with the `share_limit` reason. Every
+  other error is shown inline and keeps the typed address.
+- Sharing from the editor shares the **saved** document, not unsaved edits.
+- A document that is already shared shows the API's `409` message; showing the
+  current recipient and status is left to DS-4/DS-6.
+
+## Shared with me (UI)
+
+With the flag on, the Documents page has two tabs: **My documents** and **Shared
+with me**, the latter with a count of everything shared with the user. The list
+(`SharedDocumentList`) reads `GET /api/documents/shared` through
+`useSharedDocumentsQuery` (refetched on window focus, so a new share shows up
+without a reload) and shows each document's title, sender, shared date and the
+signed-in user's own status (`recipientStatusFor`, matched on the normalised
+address). Opening a row shows a read-only `TemplatePreviewDialog` in `shared`
+mode, built from the share's own template snapshot; DS-5 replaces it with the
+signing view. A recipient whose address is unverified sees an empty list.
+
+Each share also appears in the notification bell (kind `document-shared`, see
+`docs/notifications.md`). Its link, `/my-documents?tab=shared`, opens the Shared
+with me tab. The active tab is mirrored in the URL (`?tab=shared`, absent for My
+documents), so the page survives a remount.
+
 ## Monthly document quota
 
 The app currently has no monthly document quota (the plan list says "Create

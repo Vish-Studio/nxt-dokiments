@@ -2,6 +2,9 @@ import "server-only";
 
 import type { AuthenticatedSession } from "@/lib/api/with-session";
 import { listActiveTemplates } from "@/lib/firebase/server-catalog";
+import { listSharedWithMe } from "@/lib/firebase/server-shared-documents";
+import { sharedDocumentNotifications } from "@/lib/notifications/shared-document-notifications";
+import { documentSharingEnabled } from "@/lib/sharing/feature-flag";
 import type { AppNotification } from "@/types/notification";
 
 /** What a server source returns: everything except `read`, which the aggregator decides. */
@@ -85,7 +88,27 @@ const templateSource: ServerNotificationSource = {
   },
 };
 
+/**
+ * "Someone shared a document with you", derived from the recipient's
+ * `sharedDocuments` query — no per-user records are written. Silent while
+ * sharing is off; an unverified account simply has no shares to list.
+ */
+const sharedDocumentSource: ServerNotificationSource = {
+  kind: "document-shared",
+  list: async ({ session }) => {
+    if (!documentSharingEnabled) {
+      return [];
+    }
+
+    return sharedDocumentNotifications(
+      await listSharedWithMe(session),
+      session.user.email,
+    );
+  },
+};
+
 /** Register new server-side notification sources here. */
 export const serverNotificationSources: ServerNotificationSource[] = [
   templateSource,
+  sharedDocumentSource,
 ];

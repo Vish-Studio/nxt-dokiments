@@ -23,6 +23,7 @@ const OWNER_EMAIL = "owner@example.com";
 type FirestoreStub = {
   ledger: string[];
   sharedDocument: "absent" | "denied" | Record<string, unknown>;
+  signable: boolean;
   sourceDocument: boolean;
 };
 
@@ -33,16 +34,41 @@ let commitStatus: number;
 const string = (value: string) => ({ stringValue: value });
 const timestamp = (value: string) => ({ timestampValue: value });
 
-const userDocument = {
+const buildUserDocument = (signable: boolean) => ({
   fields: {
     createdAt: timestamp("2026-10-01T00:00:00.000Z"),
     name: string("NDA"),
     templateId: string("nda"),
+    templateSnapshot: {
+      mapValue: {
+        fields: {
+          description: string(""),
+          documentType: string("nda"),
+          fields: {
+            arrayValue: {
+              values: [
+                {
+                  mapValue: {
+                    fields: {
+                      key: string(signable ? "recipientSignature" : "notes"),
+                      label: string("Recipient signature"),
+                      type: string("text"),
+                    },
+                  },
+                },
+              ],
+            },
+          },
+          name: string("NDA"),
+          style: { mapValue: { fields: { id: string("classic") } } },
+        },
+      },
+    },
     updatedAt: timestamp("2026-10-01T00:00:00.000Z"),
     values: { mapValue: { fields: { party: string("Acme") } } },
   },
   name: "projects/p/databases/(default)/documents/users/owner-uid/documents/doc_1",
-};
+});
 
 const json = (body: unknown, status = 200) =>
   new Response(JSON.stringify(body), { status });
@@ -60,7 +86,9 @@ const installFetch = () =>
           : json({ error: { status: "FAILED_PRECONDITION" } }, commitStatus);
       }
       if (url.includes("/users/owner-uid/documents/doc_1")) {
-        return stub.sourceDocument ? json(userDocument) : json({}, 404);
+        return stub.sourceDocument
+          ? json(buildUserDocument(stub.signable))
+          : json({}, 404);
       }
       if (url.includes("/users/owner-uid/shareRecipients")) {
         return json({
@@ -159,7 +187,12 @@ beforeEach(() => {
   flag.enabled = true;
   commits = [];
   commitStatus = 200;
-  stub = { ledger: [], sharedDocument: "denied", sourceDocument: true };
+  stub = {
+    ledger: [],
+    sharedDocument: "denied",
+    signable: true,
+    sourceDocument: true,
+  };
   installFetch();
 });
 
@@ -216,6 +249,13 @@ describe("POST /api/documents/:id/share", () => {
     stub.sourceDocument = false;
 
     expect((await post({ email: "bob@example.com" })).status).toBe(404);
+    expect(commits).toHaveLength(0);
+  });
+
+  it("returns 400 when the document type has no recipient signature", async () => {
+    stub.signable = false;
+
+    expect((await post({ email: "bob@example.com" })).status).toBe(400);
     expect(commits).toHaveLength(0);
   });
 

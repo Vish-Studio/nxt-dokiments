@@ -176,7 +176,7 @@ export type AnalyticsEventMap = {
     tier: string;
   };
   upgrade_dialog_opened: {
-    reason: "saved_template_limit" | "tier_locked";
+    reason: "saved_template_limit" | "share_limit" | "tier_locked";
   };
 };
 
