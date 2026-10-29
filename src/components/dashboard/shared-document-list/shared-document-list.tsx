@@ -8,7 +8,7 @@ import type { SharedDocument } from "@/types/sharing";
 
 export interface SharedDocumentListProps {
   documents: SharedDocument[];
-  /** Called when a row is activated, to open the read-only preview. */
+  /** Called when a row is activated, to open the signing page. */
   onOpen: (document: SharedDocument) => void;
   /** The signed-in user's address, used to pick their own status from each share. */
   userEmail: string | undefined;

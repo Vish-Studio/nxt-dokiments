@@ -1,6 +1,7 @@
 import {
   DotsThreeIcon,
   FileTextIcon,
+  ArrowSquareOutIcon,
   PencilSimpleIcon,
   PrinterIcon,
   ShareNetworkIcon,
@@ -21,6 +22,8 @@ export interface DocumentListItemProps {
   onPrint: (document: UserDocument) => void;
   /** Adds a "Share" action in the row menu. Omit it while sharing is off. */
   onShare?: (document: UserDocument) => void;
+  /** Adds a "View shared copy" action. Pass it only for a document that has been shared. */
+  onViewShared?: (document: UserDocument) => void;
 }
 
 const dateFormatter = new Intl.DateTimeFormat("en-GB", {
@@ -41,6 +44,7 @@ export const DocumentListItem = ({
   onPreview,
   onPrint,
   onShare,
+  onViewShared,
 }: DocumentListItemProps) => {
   const snapshot = document.templateSnapshot;
   const documentType = snapshot
@@ -137,7 +141,7 @@ export const DocumentListItem = ({
                   />
                 }
                 iconTriggerShape="square"
-                menuClassName="w-36"
+                menuClassName="w-48"
               >
                 <Button
                   className="w-full justify-start gap-2 px-3 whitespace-nowrap"
@@ -155,6 +159,24 @@ export const DocumentListItem = ({
                 >
                   Share
                 </Button>
+                {onViewShared ? (
+                  <Button
+                    className="w-full justify-start gap-2 px-3 whitespace-nowrap"
+                    icon={
+                      <ArrowSquareOutIcon
+                        aria-hidden
+                        size={16}
+                        weight="bold"
+                      />
+                    }
+                    iconPosition="left"
+                    onClick={() => onViewShared(document)}
+                    size="sm"
+                    variant="ghost"
+                  >
+                    View shared copy
+                  </Button>
+                ) : null}
               </Dropdown>
             ) : null}
           </div>

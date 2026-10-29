@@ -43,6 +43,10 @@ export const queryKeys = {
   sharedDocuments: {
     /** Documents shared with the signed-in user. There is only ever one list — no filters. */
     all: () => ["shared-documents"] as const,
+    /** Documents the signed-in user has shared with others. */
+    byMe: () => ["shared-documents", "by-me"] as const,
+    /** One shared document by ID. */
+    detail: (id: string) => ["shared-documents", "detail", id] as const,
   },
 
   shareRecipients: {

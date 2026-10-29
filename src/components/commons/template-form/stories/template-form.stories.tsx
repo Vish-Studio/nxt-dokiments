@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from "@storybook/nextjs-vite";
-import { expect, within } from "storybook/test";
+import { expect, userEvent, within } from "storybook/test";
 
 import { getTemplateById } from "@/lib/market-place";
 import type { MarketplaceTemplate } from "@/types/template";
@@ -53,5 +53,28 @@ export const Cv: Story = {
     await expect(
       canvas.getByRole("button", { name: /^Education \(optional\)/ }),
     ).toBeVisible();
+  },
+};
+
+const ndaTemplate = getTemplateById("classic-nda") as MarketplaceTemplate;
+
+/** `fieldSlots` swaps a field's input out, e.g. the recipient signature once the document is shared. */
+export const WithFieldSlot: Story = {
+  args: {
+    fields: ndaTemplate.fields,
+    fieldSlots: {
+      recipientSignature: <p>Waiting for sam@example.com to sign</p>,
+    },
+    values: {},
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await userEvent.click(canvas.getByRole("button", { name: /^Signatures/ }));
+    await expect(
+      canvas.getByText("Waiting for sam@example.com to sign"),
+    ).toBeVisible();
+    await expect(
+      canvas.queryByRole("textbox", { name: /recipient signature/i }),
+    ).toBeNull();
   },
 };

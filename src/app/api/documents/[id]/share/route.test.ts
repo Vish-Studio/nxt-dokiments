@@ -28,7 +28,12 @@ type FirestoreStub = {
 };
 
 let stub: FirestoreStub;
-let commits: { writes: { currentDocument?: { exists: boolean } }[] }[];
+let commits: {
+  writes: {
+    currentDocument?: { exists: boolean };
+    update?: { fields?: { values?: { mapValue?: { fields?: object } } } };
+  }[];
+}[];
 let commitStatus: number;
 
 const string = (value: string) => ({ stringValue: value });
@@ -65,7 +70,14 @@ const buildUserDocument = (signable: boolean) => ({
       },
     },
     updatedAt: timestamp("2026-10-01T00:00:00.000Z"),
-    values: { mapValue: { fields: { party: string("Acme") } } },
+    values: {
+      mapValue: {
+        fields: {
+          party: string("Acme"),
+          recipientSignature: string("Typed by the owner"),
+        },
+      },
+    },
   },
   name: "projects/p/databases/(default)/documents/users/owner-uid/documents/doc_1",
 });
@@ -217,6 +229,15 @@ describe("POST /api/documents/:id/share", () => {
       { exists: false },
       { exists: false },
     ]);
+  });
+
+  it("never copies the owner's typed recipient signature into the shared copy", async () => {
+    await post({ email: "bob@example.com" });
+
+    const copied =
+      commits[0].writes[0].update?.fields?.values?.mapValue?.fields;
+    expect(copied).toHaveProperty("party");
+    expect(copied).not.toHaveProperty("recipientSignature");
   });
 
   it("treats an absent shared document the same as a refused read", async () => {

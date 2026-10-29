@@ -49,6 +49,8 @@ export type TemplateFormProps = {
   values: Record<string, string>;
   documentNameField?: ReactNode;
   recipientPicker?: ReactNode;
+  /** Replaces a field's input, by key — e.g. a read-only status once a recipient has been sent the document. */
+  fieldSlots?: Partial<Record<string, ReactNode>>;
 };
 
 export const TemplateForm = ({
@@ -57,6 +59,7 @@ export const TemplateForm = ({
   values,
   documentNameField,
   recipientPicker,
+  fieldSlots,
 }: TemplateFormProps) => {
   const isBilling =
     fields.some((entry) => entry.key === "subtotal") &&
@@ -116,6 +119,10 @@ export const TemplateForm = ({
             {section.id === "details" ? documentNameField : null}
             {section.id === "to" ? recipientPicker : null}
             {section.fields.map((field) => {
+              const slot = fieldSlots?.[field.key];
+              if (slot) {
+                return <div key={field.key}>{slot}</div>;
+              }
               if (field.key === "skillsDisplay") {
                 return (
                   <CvSkillsDisplayField

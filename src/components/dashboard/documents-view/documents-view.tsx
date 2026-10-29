@@ -32,6 +32,7 @@ import {
   documentSkeletonRow,
 } from "@/components/dashboard/document-list/document-list";
 import { ShareDialog } from "@/components/dashboard/share-dialog/share-dialog";
+import { SharedCopyStatus } from "@/components/dashboard/shared-copy-status/shared-copy-status";
 import { ResponsiveHeaderControls } from "@/components/dashboard/responsive-header-controls/responsive-header-controls";
 import {
   useCreateDocumentMutation,
@@ -43,7 +44,10 @@ import { useSavedTemplatesQuery } from "@/hooks/queries/use-saved-templates";
 import { useScrollContentToTopOnMobile } from "@/hooks/use-scroll-content-to-top-on-mobile";
 import { trackEvent } from "@/lib/analytics/track";
 import { documentSharingEnabled } from "@/lib/sharing/feature-flag";
-import { useSharedDocumentsQuery } from "@/hooks/queries/use-shared-documents";
+import {
+  useSharedByMeQuery,
+  useSharedDocumentsQuery,
+} from "@/hooks/queries/use-shared-documents";
 import {
   SharedDocumentList,
   sharedDocumentListColumns,
@@ -51,7 +55,10 @@ import {
 } from "@/components/dashboard/shared-document-list/shared-document-list";
 import { TabMenu } from "@/components/commons/tab-menu/tab-menu";
 import type { SharedDocument } from "@/types/sharing";
-import { isSignableDocument } from "@/lib/sharing/signable";
+import {
+  isSignableDocument,
+  RECIPIENT_SIGNATURE_KEY,
+} from "@/lib/sharing/signable";
 import { documentBlueprints } from "@/lib/market-place/documents";
 import {
   clientPrefillValues,
@@ -112,6 +119,9 @@ export const DocumentsView = () => {
     data: sharedDocuments = EMPTY_SHARED_DOCUMENTS,
     isLoading: isSharedLoading,
   } = useSharedDocumentsQuery({ enabled: documentSharingEnabled });
+  const { data: sharedByMe = EMPTY_SHARED_DOCUMENTS } = useSharedByMeQuery({
+    enabled: documentSharingEnabled,
+  });
   const { mutate: updateDocument } = useUpdateDocumentMutation();
   const { mutate: deleteDocument } = useDeleteDocumentMutation();
 
@@ -143,9 +153,6 @@ export const DocumentsView = () => {
     recipientEmail?: string;
   } | null>(null);
   const [listTab, setListTab] = useState<"mine" | "shared">("mine");
-  const [previewShared, setPreviewShared] = useState<SharedDocument | null>(
-    null,
-  );
   const [search, setSearch] = useState("");
   const [documentType, setDocumentType] = useState("all");
   const [sort, setSort] = useState("newest");
@@ -155,6 +162,18 @@ export const DocumentsView = () => {
     () => saved.map((item) => item.template),
     [saved],
   );
+
+  const sharedCopyIds = useMemo(
+    () =>
+      Object.fromEntries(
+        sharedByMe.map((shared) => [shared.sourceDocumentId, shared.id]),
+      ),
+    [sharedByMe],
+  );
+
+  const activeSharedCopy = activeDocumentId
+    ? sharedByMe.find((shared) => shared.sourceDocumentId === activeDocumentId)
+    : undefined;
 
   const documentTypeOptions = useMemo(
     () =>
@@ -532,6 +551,28 @@ export const DocumentsView = () => {
                     }}
                   />
                 }
+                fieldSlots={
+                  activeSharedCopy
+                    ? {
+                        [RECIPIENT_SIGNATURE_KEY]: (
+                          <SharedCopyStatus
+                            document={activeSharedCopy}
+                            label={
+                              editorTemplate.fields.find(
+                                (field) =>
+                                  field.key === RECIPIENT_SIGNATURE_KEY,
+                              )?.label ?? "Recipient signature"
+                            }
+                            onView={() =>
+                              router.push(
+                                `/my-documents/shared/${activeSharedCopy.id}`,
+                              )
+                            }
+                          />
+                        ),
+                      }
+                    : undefined
+                }
                 fields={editorTemplate.fields}
                 onChange={(key, value) => {
                   setDraftValues((previous) => ({ ...previous, [key]: value }));
@@ -792,7 +833,9 @@ export const DocumentsView = () => {
         ) : (
           <SharedDocumentList
             documents={sharedDocuments}
-            onOpen={setPreviewShared}
+            onOpen={(shared) =>
+              router.push(`/my-documents/shared/${shared.id}`)
+            }
             userEmail={user?.email}
           />
         )
@@ -818,6 +861,10 @@ export const DocumentsView = () => {
           onEdit={openDocument}
           onPreview={setPreviewDocument}
           onPrint={handlePrintDocument}
+          onViewShared={(sharedId) =>
+            router.push(`/my-documents/shared/${sharedId}`)
+          }
+          sharedCopyIds={sharedCopyIds}
           onShare={
             documentSharingEnabled
               ? (document) =>
@@ -854,24 +901,6 @@ export const DocumentsView = () => {
         values={previewDocument?.values}
       />
 
-      <TemplatePreviewDialog
-        documentName={
-          previewShared?.values.title?.trim() || previewShared?.name
-        }
-        mode="shared"
-        onClose={() => setPreviewShared(null)}
-        template={
-          previewShared?.templateSnapshot
-            ? snapshotToMarketplaceTemplate(
-                previewShared.templateSnapshot,
-                previewShared.templateId,
-              )
-            : null
-        }
-        tone="purple"
-        values={previewShared?.values}
-      />
-
       <ShareDialog
         document={shareTarget ?? { id: "", name: "" }}
         onClose={() => setShareTarget(null)}
@@ -890,7 +919,7 @@ export const DocumentsView = () => {
         values={exportDocument?.values}
       />
 
-      {previewDocument || previewShared || exportDocument ? null : (
+      {previewDocument || exportDocument ? null : (
         <FloatingActionButton
           className="lg:hidden"
           icon={

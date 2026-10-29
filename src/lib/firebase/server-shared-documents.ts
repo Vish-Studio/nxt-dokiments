@@ -7,6 +7,7 @@ import {
   getDocumentId,
   getFirestoreDocument,
   listFirestoreCollection,
+  patchFirestoreDocument,
   runFirestoreQuery,
   readArray,
   readBoolean,
@@ -29,7 +30,10 @@ import {
 } from "@/lib/firebase/server-documents";
 import { normaliseEmail } from "@/lib/sharing/email";
 import { canShareWith } from "@/lib/sharing/policy";
-import { isSignableDocument } from "@/lib/sharing/signable";
+import {
+  isSignableDocument,
+  RECIPIENT_SIGNATURE_KEY,
+} from "@/lib/sharing/signable";
 import { shareApiError } from "@/lib/sharing/server-guard";
 import type { AuthSession } from "@/types/auth";
 import {
@@ -103,6 +107,17 @@ const serialiseSignature = (signature: ShareSignature) =>
     value: toStringValue(signature.value),
   });
 
+/** Serialises the `signatures` map, keyed by the signer's uid. */
+const serialiseSignatures = (signatures: Record<string, ShareSignature>) =>
+  toMapValue(
+    Object.fromEntries(
+      Object.entries(signatures).map(([uid, signature]) => [
+        uid,
+        serialiseSignature(signature),
+      ]),
+    ),
+  );
+
 /** Deserialises a signature. */
 const parseSignature = (value: FirestoreValue): ShareSignature => {
   const fields = readMap(value);
@@ -144,14 +159,7 @@ export const toSharedDocumentFields = (
     ),
   ),
   recipients: toArrayValue(document.recipients.map(serialiseRecipient)),
-  signatures: toMapValue(
-    Object.fromEntries(
-      Object.entries(document.signatures).map(([uid, signature]) => [
-        uid,
-        serialiseSignature(signature),
-      ]),
-    ),
-  ),
+  signatures: serialiseSignatures(document.signatures),
   sourceDocumentId: toStringValue(document.sourceDocumentId),
   templateId: toStringValue(document.templateId),
   updatedAt: toTimestampValue(new Date(document.updatedAt)),
@@ -375,7 +383,12 @@ export const shareDocument = async (
             sourceDocumentId,
             templateId: source.templateId,
             updatedAt: now,
-            values: source.values,
+            // Only the recipient signs that field, so whatever the owner typed there never travels.
+            values: Object.fromEntries(
+              Object.entries(source.values).filter(
+                ([key]) => key !== RECIPIENT_SIGNATURE_KEY,
+              ),
+            ),
           },
           source.templateSnapshot
             ? toTemplateSnapshotValue(source.templateSnapshot)
@@ -464,6 +477,90 @@ export const listSharedWithMe = async (
       session.user.emailVerified !== true
     ) {
       return [];
+    }
+    throw error;
+  }
+};
+
+/**
+ * Lists the documents the signed-in user has shared with others, newest first.
+ * Backs the "View shared copy" row action.
+ *
+ * @throws When the Firestore query fails.
+ */
+export const listSharedByMe = async (
+  session: AuthSession,
+): Promise<SharedDocument[]> => {
+  const documents = await runFirestoreQuery(
+    sharedDocumentsPath,
+    {
+      field: "ownerId",
+      op: "EQUAL",
+      value: toStringValue(session.user.uid),
+    },
+    session.idToken,
+  );
+
+  return documents
+    .map((document) => readSharedDocument(document))
+    .sort((a, b) => b.updatedAt - a.updatedAt);
+};
+
+/**
+ * Signs a document shared with the signed-in user and locks it, in one write.
+ * Only a recipient can sign (not the owner), and only while the document is
+ * unlocked. With one recipient per document, their signature completes it.
+ *
+ * The rules re-check every condition on the write itself, so a request that
+ * races a lock or a second signature is refused there too.
+ *
+ * @param session - Active session of the recipient.
+ * @param id - ID of the shared document.
+ * @param value - The typed signature, already validated.
+ * @returns The signed, locked document.
+ * @throws `NOT_A_RECIPIENT` (404) when the document is unknown or not shared
+ *   with the caller; `DOCUMENT_LOCKED` (409) when it is already signed.
+ */
+export const signSharedDocument = async (
+  session: AuthSession,
+  id: string,
+  value: string,
+): Promise<SharedDocument> => {
+  const { uid } = session.user;
+  const email = normaliseEmail(session.user.email);
+
+  const document = await getSharedDocument(session, id);
+  const isRecipient = document?.recipients.some(
+    (recipient) => recipient.uid === uid || recipient.email === email,
+  );
+  if (!document || !isRecipient) {
+    throw shareApiError("NOT_A_RECIPIENT");
+  }
+  if (document.locked) {
+    throw shareApiError("DOCUMENT_LOCKED");
+  }
+
+  const now = Date.now();
+  const signatures: Record<string, ShareSignature> = {
+    ...document.signatures,
+    [uid]: { email, signedAt: now, type: "typed", value },
+  };
+
+  try {
+    const written = await patchFirestoreDocument(
+      sharedDocumentPath(id),
+      {
+        locked: toBooleanValue(true),
+        signatures: serialiseSignatures(signatures),
+        updatedAt: toTimestampValue(new Date(now)),
+      },
+      session.idToken,
+      ["locked", "signatures", "updatedAt"],
+    );
+    return readSharedDocument(written, id);
+  } catch (error) {
+    if (error instanceof FirestorePermissionDeniedError) {
+      throw shareApiError("DOCUMENT_LOCKED");
     }
     throw error;
   }

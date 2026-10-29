@@ -41,6 +41,7 @@
   --font-title: var(--font-urbanist), "Urbanist", Arial, Helvetica, sans-serif;
   --font-body: var(--font-urbanist), "Urbanist", Arial, Helvetica, sans-serif;
   --font-logo: var(--font-raleway), "Raleway", Arial, Helvetica, sans-serif;
+  --font-signature: var(--font-dancing-script), "Dancing Script", cursive;
   --color-golden-harvest: #ffd066;
   --color-nox-noir: #141414;
   --color-steel-mist: #cfcfcf;
@@ -90,6 +91,7 @@
   --font-title: var(--font-title);
   --font-body: var(--font-body);
   --font-logo: var(--font-logo);
+  --font-signature: var(--font-signature);
   --shadow-soft: var(--shadow-soft);
 }
 
@@ -652,7 +654,8 @@ button:disabled {
 
 /* Slow, symmetric ease-in-out so nothing snaps in. */
 .hero-reveal {
-  animation: hero-reveal-up 1.1s cubic-bezier(0.45, 0, 0.55, 1) var(--reveal-delay, 0s) both;
+  animation: hero-reveal-up 1.1s cubic-bezier(0.45, 0, 0.55, 1)
+    var(--reveal-delay, 0s) both;
 }
 
 .hero-reveal-fade,
