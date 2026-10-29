@@ -49,8 +49,8 @@ limit is switched on, existing usage is already known.
 | Actor | May |
 |---|---|
 | Owner | Read. Create (unlocked, no signatures). Edit and delete while unlocked. Never write `signatures` or `locked`; cannot change `ownerId`. |
-| Recipient | Read. Add exactly one signature — their own uid key — while unlocked. Nothing else. |
-| Anyone, once `locked` | Read only (owner and recipients). No update, no delete. |
+| Recipient | Read. Sign while unlocked: add exactly one signature (their own uid key) **and set `locked` to true in the same write**. Nothing else. |
+| Anyone, once `locked` | Read only (owner and recipients). No update, no delete. An owner re-share is refused too, so a signed copy cannot be replaced. |
 | Anyone else | Nothing. |
 
 A recipient is matched by uid in `recipientUids`, or by an address in
@@ -101,6 +101,8 @@ in the server route only, not in the rules, so changing it needs no rules deploy
 - No account lookup: recipients are matched by verified address, so `uid` stays
   unset until the invite story links accounts. An unverified recipient is not
   detectable at share time — they simply see nothing until they verify.
+- `GET /api/documents/shared?by=me` lists what the caller has shared (a query on
+  `ownerId`), which is how the owner's row finds its shared copy.
 - Reads of an absent or foreign document are refused by the rules (403), which
   the API reports as `404` so existence is not leaked. The list query matches
   `recipientEmails` on the token's address; for an unverified account the rules
@@ -133,14 +135,48 @@ with me**, the latter with a count of everything shared with the user. The list
 `useSharedDocumentsQuery` (refetched on window focus, so a new share shows up
 without a reload) and shows each document's title, sender, shared date and the
 signed-in user's own status (`recipientStatusFor`, matched on the normalised
-address). Opening a row shows a read-only `TemplatePreviewDialog` in `shared`
-mode, built from the share's own template snapshot; DS-5 replaces it with the
-signing view. A recipient whose address is unverified sees an empty list.
+address). Opening a row navigates to the signing page (below). A recipient
+whose address is unverified sees an empty list.
 
 Each share also appears in the notification bell (kind `document-shared`, see
 `docs/notifications.md`). Its link, `/my-documents?tab=shared`, opens the Shared
 with me tab. The active tab is mirrored in the URL (`?tab=shared`, absent for My
 documents), so the page survives a remount.
+
+## Signing (DS-5)
+
+**The owner never signs.** `recipientSignature` is the recipient's field, so
+`shareDocument` leaves it out of the values it copies into the shared copy, and
+once a document has been shared the owner's editor replaces that input with
+`SharedCopyStatus` ("Waiting for … to sign" / "Signed by … on …" plus a
+**View shared copy** button). The signature is never merged into the owner's
+original, which stays editable; the shared copy is the single signed record.
+
+`POST /api/documents/shared/:id/sign` with `{ signature }` — a typed name, 1–200
+characters (`typedSignatureSchema`), free text and not checked against the
+account name. One masked write sets `signatures.{uid}`, `locked = true` and
+`updatedAt`, so the signature and the lock land together and the rules can
+require both. Errors: `404 NOT_A_RECIPIENT` (owners, strangers and absent
+documents alike), `409 DOCUMENT_LOCKED` (already signed, or refused by the
+rules), `400` for a bad signature, `401` without a session.
+
+Only the **shared copy** locks; the owner's original in
+`users/{uid}/documents` stays editable.
+
+`/my-documents/shared/[id]` (`SharedDocumentView` → `SharedDocumentSheet`) is the
+same page for both parties and is flag-gated (`notFound()` when off):
+
+- **Recipient, unlocked** — the document's `recipientSignature` field is replaced
+  (through `TemplateDocument`'s `fieldSlots`) by `SignatureField`, which renders
+  what they type live in the signature font. "Sign document" opens a confirm
+  dialog ("This can't be undone"), then signs.
+- **Signed** — both parties see a locked banner and `SignedSignature` (the
+  signature, signer address and time).
+- **Owner** — read-only. The owner reaches it from the **View shared copy** row
+  action, shown only for documents in their `?by=me` list.
+
+The signature script font is `--font-signature` (Dancing Script via
+`next/font`, utility `font-signature`). It is reserved for typed signatures.
 
 ## Monthly document quota
 
