@@ -8,9 +8,11 @@ import { privatePageMetadata } from "@/lib/seo/site";
 
 export const metadata: Metadata = privatePageMetadata("Shared document");
 
-const SharedDocumentPage = async ({
-  params,
-}: PageProps<"/my-documents/shared/[id]">) => {
+interface SharedDocumentPageProps {
+  params: Promise<{ id: string }>;
+}
+
+const SharedDocumentPage = async ({ params }: SharedDocumentPageProps) => {
   if (!documentSharingEnabled) {
     notFound();
   }
