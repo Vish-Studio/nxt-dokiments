@@ -1,6 +1,6 @@
 import { SerwistProvider } from "@serwist/turbopack/react";
 import type { Metadata, Viewport } from "next";
-import { Raleway, Urbanist } from "next/font/google";
+import { Raleway, Urbanist, Dancing_Script } from "next/font/google";
 import Script from "next/script";
 
 import { AnalyticsProvider } from "@/components/commons/analytics-provider/analytics-provider";
@@ -27,6 +27,12 @@ const urbanist = Urbanist({
 const raleway = Raleway({
   variable: "--font-raleway",
   weight: "900",
+  subsets: ["latin"],
+});
+
+// Reserved for typed signatures (`font-signature`); not a general-purpose UI font.
+const dancingScript = Dancing_Script({
+  variable: "--font-dancing-script",
   subsets: ["latin"],
 });
 
@@ -107,7 +113,7 @@ const RootLayout = ({
     <html
       lang="en"
       data-theme="dokiments"
-      className={`${urbanist.variable} ${raleway.variable} h-full bg-background antialiased`}
+      className={`${urbanist.variable} ${raleway.variable} ${dancingScript.variable} h-full bg-background antialiased`}
     >
       <body className="min-h-full flex flex-col">
         <SerwistProvider swUrl="/serwist/sw.js">

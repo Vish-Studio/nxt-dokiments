@@ -1,3 +1,5 @@
+import type { ReactNode } from "react";
+
 import { cn } from "@/lib/utils";
 import type { MarketplaceTemplate, TemplateStyleId } from "@/types/template";
 import { partyFieldKeys, TemplateParties } from "./template-parties";
@@ -8,6 +10,8 @@ import { getTemplateDisplayName } from "@/lib/market-place/document-labels";
 export type TemplateDocumentProps = {
   className?: string;
   density?: "default" | "compact";
+  /** Replaces the rendered value of a field, by key — e.g. an input where the recipient signs. */
+  fieldSlots?: Partial<Record<string, ReactNode>>;
   layout?: "print" | "responsive";
   template: MarketplaceTemplate;
   values?: Record<string, string>;
@@ -88,6 +92,7 @@ export const TemplateDocument = (props: TemplateDocumentProps) =>
 const StandardDocument = ({
   className,
   density = "default",
+  fieldSlots,
   layout = "responsive",
   template,
   values = {},
@@ -258,15 +263,17 @@ const StandardDocument = ({
               >
                 {field.label}
               </h3>
-              <p
-                className={cn(
-                  "mt-2 whitespace-pre-line",
-                  isCompact ? "text-xs leading-5" : "text-sm leading-6",
-                  isEmpty ? "italic text-nox-noir/35" : "text-nox-noir/80",
-                )}
-              >
-                {text}
-              </p>
+              {fieldSlots?.[field.key] ?? (
+                <p
+                  className={cn(
+                    "mt-2 whitespace-pre-line",
+                    isCompact ? "text-xs leading-5" : "text-sm leading-6",
+                    isEmpty ? "italic text-nox-noir/35" : "text-nox-noir/80",
+                  )}
+                >
+                  {text}
+                </p>
+              )}
             </section>
           );
         })}
