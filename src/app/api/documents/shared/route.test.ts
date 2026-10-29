@@ -61,8 +61,12 @@ const sessionCookie = async (emailVerified: boolean) => {
   return `${sessionOptions.cookieName}=${sealed}`;
 };
 
-const request = async (emailVerified = true, signedIn = true) =>
-  new Request("http://localhost/api/documents/shared", {
+const request = async (
+  emailVerified = true,
+  signedIn = true,
+  url = "http://localhost/api/documents/shared",
+) =>
+  new Request(url, {
     headers: signedIn ? { cookie: await sessionCookie(emailVerified) } : {},
   });
 
@@ -110,6 +114,37 @@ describe("GET /api/documents/shared", () => {
             field: { fieldPath: "recipientEmails" },
             op: "ARRAY_CONTAINS",
             value: { stringValue: "bob@example.com" },
+          },
+        },
+      },
+    });
+  });
+
+  it("lists the caller's own shares with ?by=me, matched on the owner", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (_url: string | URL, init?: RequestInit) => {
+        queries.push(JSON.parse(String(init?.body)));
+        return respond([
+          { document: sharedDocument("mine", "2026-10-02T00:00:00.000Z") },
+        ]);
+      }),
+    );
+
+    const response = await getList(
+      await request(true, true, "http://localhost/api/documents/shared?by=me"),
+      undefined,
+    );
+
+    expect(response.status).toBe(200);
+    expect((await response.json()).documents).toHaveLength(1);
+    expect(queries[0]).toMatchObject({
+      structuredQuery: {
+        where: {
+          fieldFilter: {
+            field: { fieldPath: "ownerId" },
+            op: "EQUAL",
+            value: { stringValue: "bob-uid" },
           },
         },
       },
