@@ -87,6 +87,21 @@ export const WithShare: Story = {
   },
 };
 
+/** A shared document also offers its shared copy, for watching the signature. */
+export const WithViewShared: Story = {
+  args: { onShare: fn(), onViewShared: fn() },
+  play: async ({ args, canvasElement }) => {
+    const canvas = within(canvasElement);
+    await userEvent.click(
+      canvas.getByRole("button", { name: `More actions for ${documentTitle}` }),
+    );
+    await userEvent.click(
+      canvas.getByRole("button", { name: "View shared copy" }),
+    );
+    await expect(args.onViewShared).toHaveBeenCalledWith(document);
+  },
+};
+
 export const WithoutShare: Story = {
   play: async ({ canvasElement }) => {
     await expect(

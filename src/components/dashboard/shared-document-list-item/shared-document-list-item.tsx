@@ -7,7 +7,7 @@ import type { ShareRecipientStatus, SharedDocument } from "@/types/sharing";
 export interface SharedDocumentListItemProps {
   /** The shared copy; its owner and share date fill the row. */
   document: SharedDocument;
-  /** Called when the row is activated, to open the read-only preview. */
+  /** Called when the row is activated, to open the signing page. */
   onOpen: (document: SharedDocument) => void;
   /** The signed-in user's own progress on this document. */
   status: ShareRecipientStatus;

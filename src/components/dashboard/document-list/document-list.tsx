@@ -11,6 +11,10 @@ export interface DocumentListProps {
   onPreview: (document: UserDocument) => void;
   onPrint: (document: UserDocument) => void;
   onShare?: (document: UserDocument) => void;
+  /** Opens a document's shared copy, by its shared-document ID. Needs `sharedCopyIds`. */
+  onViewShared?: (sharedDocumentId: string) => void;
+  /** Shared-document ID of each document that has been shared, keyed by the document's ID. */
+  sharedCopyIds?: Readonly<Record<string, string>>;
 }
 
 /** Exported so the loading skeleton renders the same header and column widths. */
@@ -56,22 +60,33 @@ export const DocumentList = ({
   onPreview,
   onPrint,
   onShare,
+  onViewShared,
+  sharedCopyIds,
 }: DocumentListProps) => {
   return (
     <DashboardList
       columns={documentListColumns}
       ordered
     >
-      {documents.map((document) => (
-        <DocumentListItem
-          document={document}
-          key={document.id}
-          onEdit={onEdit}
-          onPreview={onPreview}
-          onPrint={onPrint}
-          onShare={onShare}
-        />
-      ))}
+      {documents.map((document) => {
+        const sharedCopyId = sharedCopyIds?.[document.id];
+
+        return (
+          <DocumentListItem
+            document={document}
+            key={document.id}
+            onEdit={onEdit}
+            onPreview={onPreview}
+            onPrint={onPrint}
+            onShare={onShare}
+            onViewShared={
+              onViewShared && sharedCopyId
+                ? () => onViewShared(sharedCopyId)
+                : undefined
+            }
+          />
+        );
+      })}
     </DashboardList>
   );
 };

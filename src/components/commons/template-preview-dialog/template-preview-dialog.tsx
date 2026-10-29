@@ -19,8 +19,7 @@ import { getTemplateDisplayName } from "@/lib/market-place/document-labels";
 export type TemplatePreviewDialogProps = {
   documentName?: string;
   locked?: boolean;
-  /** `shared` is read-only: a document someone else shared, with only a Close action. */
-  mode?: "document" | "marketplace" | "library" | "shared";
+  mode?: "document" | "marketplace" | "library";
   onClose: () => void;
   onDelete?: () => void;
   onEdit?: () => void;
@@ -82,15 +81,6 @@ export const TemplatePreviewDialog = ({
                 Edit document
               </Button>
             </div>
-          ) : mode === "shared" ? (
-            <Button
-              className="w-full"
-              onClick={onClose}
-              size="sm"
-              variant="outline"
-            >
-              Close
-            </Button>
           ) : mode === "library" ? (
             <div className="grid w-full grid-cols-2 gap-2">
               {onPrint ? (
