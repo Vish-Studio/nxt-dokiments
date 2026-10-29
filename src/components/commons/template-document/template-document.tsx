@@ -204,6 +204,7 @@ const StandardDocument = ({
 
         {contentFields.map((field) => {
           const { isEmpty, text } = valueFor(field.key, field.placeholder);
+          const isSenderSignature = field.key === "senderSignature";
           if (
             field.key === "items" &&
             ["invoice", "quotation"].includes(template.documentType)
@@ -267,8 +268,19 @@ const StandardDocument = ({
                 <p
                   className={cn(
                     "mt-2 whitespace-pre-line",
-                    isCompact ? "text-xs leading-5" : "text-sm leading-6",
-                    isEmpty ? "italic text-nox-noir/35" : "text-nox-noir/80",
+                    isSenderSignature && !isEmpty
+                      ? cn(
+                          "font-signature text-nox-noir",
+                          isCompact
+                            ? "text-xl leading-6"
+                            : "text-3xl leading-9",
+                        )
+                      : cn(
+                          isCompact ? "text-xs leading-5" : "text-sm leading-6",
+                          isEmpty
+                            ? "italic text-nox-noir/35"
+                            : "text-nox-noir/80",
+                        ),
                   )}
                 >
                   {text}
