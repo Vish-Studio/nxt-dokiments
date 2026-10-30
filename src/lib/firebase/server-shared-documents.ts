@@ -76,6 +76,13 @@ const serialiseRecipient = (recipient: ShareRecipient) =>
     email: toStringValue(recipient.email),
     invitedAt: toTimestampValue(new Date(recipient.invitedAt)),
     status: toStringValue(recipient.status),
+    ...(recipient.emailedAt?.length
+      ? {
+          emailedAt: toArrayValue(
+            recipient.emailedAt.map((at) => toTimestampValue(new Date(at))),
+          ),
+        }
+      : {}),
     ...(recipient.signedAt === undefined
       ? {}
       : { signedAt: toTimestampValue(new Date(recipient.signedAt)) }),
@@ -87,8 +94,11 @@ const parseRecipient = (value: FirestoreValue): ShareRecipient => {
   const fields = readMap(value);
   const status = readString(fields.status);
 
+  const emailedAt = readArray(fields.emailedAt).map(toMillis);
+
   return {
     email: readString(fields.email) ?? "",
+    emailedAt: emailedAt.length ? emailedAt : undefined,
     invitedAt: toMillis(fields.invitedAt),
     signedAt: fields.signedAt ? toMillis(fields.signedAt) : undefined,
     status: shareRecipientStatuses.includes(status as ShareRecipientStatus)
@@ -289,7 +299,11 @@ export const readSharedDocument = (
 export type ShareDocumentResult = {
   /** `true` on the first share of this document, `false` when re-sharing. */
   created: boolean;
+  /** Title of the shared copy, for the notification email. */
+  documentName: string;
   recipient: ShareRecipient;
+  /** Epoch milliseconds of this share; unique per explicit share or re-share. */
+  sharedAt: number;
   sharedDocumentId: string;
 };
 
@@ -419,7 +433,13 @@ export const shareDocument = async (
     );
   }
 
-  return { created: existing === null, recipient, sharedDocumentId };
+  return {
+    created: existing === null,
+    documentName: source.name,
+    recipient,
+    sharedAt: now,
+    sharedDocumentId,
+  };
 };
 
 /**
@@ -561,6 +581,65 @@ export const signSharedDocument = async (
   } catch (error) {
     if (error instanceof FirestorePermissionDeniedError) {
       throw shareApiError("DOCUMENT_LOCKED");
+    }
+    throw error;
+  }
+};
+
+/**
+ * Records that a share email went to the recipient of `id`, keeping only the
+ * sends from the last 24 hours. Writes just the `recipients` field, so a
+ * concurrent edit to anything else is not overwritten.
+ *
+ * @param session - Active session of the owner.
+ * @param id - ID of the shared document.
+ * @param email - The recipient that was emailed.
+ * @param emailedAt - Epoch milliseconds of the send.
+ * @param windowMs - How far back sends are kept.
+ * @returns `false` when the share no longer exists, is locked, or has no such recipient.
+ * @throws When the Firestore request fails for a reason other than a refused write.
+ */
+export const recordShareEmail = async (
+  session: AuthSession,
+  id: string,
+  email: string,
+  emailedAt: number,
+  windowMs: number,
+): Promise<boolean> => {
+  const document = await getSharedDocument(session, id);
+  const target = normaliseEmail(email);
+  if (!document || document.locked) {
+    return false;
+  }
+  if (!document.recipients.some((recipient) => recipient.email === target)) {
+    return false;
+  }
+
+  const recipients = document.recipients.map((recipient) =>
+    recipient.email === target
+      ? {
+          ...recipient,
+          emailedAt: [
+            ...(recipient.emailedAt ?? []).filter(
+              (at) => at > emailedAt - windowMs,
+            ),
+            emailedAt,
+          ],
+        }
+      : recipient,
+  );
+
+  try {
+    await patchFirestoreDocument(
+      sharedDocumentPath(id),
+      { recipients: toArrayValue(recipients.map(serialiseRecipient)) },
+      session.idToken,
+      ["recipients"],
+    );
+    return true;
+  } catch (error) {
+    if (error instanceof FirestorePermissionDeniedError) {
+      return false;
     }
     throw error;
   }
