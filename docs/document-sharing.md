@@ -2,7 +2,8 @@
 
 Foundation for sharing a document with another person for signature (epic:
 document sharing & e-sign). Nothing here is user-visible yet; everything is
-behind `NEXT_PUBLIC_DOCUMENT_SHARING_ENABLED` (see below).
+behind `NEXT_PUBLIC_DOCUMENT_SHARING_ENABLED` (see below). Email delivery is set up
+in [`email.md`](./email.md).
 
 ## Feature flag
 
