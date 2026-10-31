@@ -182,6 +182,8 @@ same page for both parties and is flag-gated (`notFound()` when off):
 The signature script font is `--font-signature` (Dancing Script via
 `next/font`, utility `font-signature`). It is reserved for typed signatures.
 
+When a recipient signs, the owner gets a `document-signed` notification in the
+bell, linking to the shared copy (see `docs/notifications.md`).
 ## Monthly document quota
 
 The app currently has no monthly document quota (the plan list says "Create
