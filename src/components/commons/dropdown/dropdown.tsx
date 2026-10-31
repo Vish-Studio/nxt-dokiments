@@ -17,10 +17,15 @@ import { cn } from "@/lib/utils";
 export const dropdownControlClassName =
   "gap-2 whitespace-nowrap rounded-field border border-steel-mist/70 bg-base-200 text-nox-noir hover:border-steel-mist hover:bg-base-200 aria-expanded:bg-base-200";
 
+type DropdownOption = SelectOption & {
+  /** Secondary text shown below the option label. */
+  description?: string;
+};
+
 export interface DropdownGroup {
   label: string;
   value: string;
-  options: SelectOption[];
+  options: DropdownOption[];
   onChange: (value: string) => void;
 }
 
@@ -172,7 +177,14 @@ export const Dropdown = ({
                   size="sm"
                   variant="ghost"
                 >
-                  <span className="flex-1">{option.label}</span>
+                  <span className="min-w-0 flex-1">
+                    <span className="block truncate">{option.label}</span>
+                    {option.description ? (
+                      <span className="block truncate text-xs font-normal text-nox-noir/55">
+                        {option.description}
+                      </span>
+                    ) : null}
+                  </span>
                   <CheckIcon aria-hidden className={group.value === option.value ? "opacity-100" : "opacity-0"} size={16} weight="bold" />
                 </Button>
               ))}

@@ -30,6 +30,18 @@ const clients: Client[] = [
     updatedAt: 1_755_000_000_000,
   },
   {
+    address: "19 Market Street, Ebene",
+    brn: "C09876544",
+    companyName: "Northline Studio",
+    createdAt: 1_755_100_000_000,
+    email: "maya@northline.com",
+    id: "client_northline_02",
+    name: "Maya Chen",
+    nationalId: "",
+    phone: "+230 5 987 6544",
+    updatedAt: 1_755_100_000_000,
+  },
+  {
     // No companyName — the option label falls back to the contact name.
     address: "",
     brn: "",
@@ -86,17 +98,31 @@ export const WithClients: Story = {
 
     await userEvent.click(trigger);
     await expect(
-      canvas.getByRole("menuitemradio", { name: "Northline Studio" }),
+      canvas.getByRole("menuitemradio", {
+        name: "Northline Studio accounts@northline.com",
+      }),
+    ).toBeInTheDocument();
+    await expect(
+      canvas.getByRole("menuitemradio", {
+        name: "Northline Studio maya@northline.com",
+      }),
     ).toBeInTheDocument();
     // Falls back to the contact name when the client has no company.
     await expect(
-      canvas.getByRole("menuitemradio", { name: "Ravi Patel" }),
+      canvas.getByRole("menuitemradio", {
+        name: "Ravi Patel ravi@blueharbour.mu",
+      }),
     ).toBeInTheDocument();
 
     await userEvent.click(
-      canvas.getByRole("menuitemradio", { name: "Northline Studio" }),
+      canvas.getByRole("menuitemradio", {
+        name: "Northline Studio accounts@northline.com",
+      }),
     );
     await expect(args.onSelect).toHaveBeenCalledWith(clients[0]);
+    await expect(trigger).toHaveTextContent(
+      "Northline Studio · accounts@northline.com",
+    );
   },
 };
 
