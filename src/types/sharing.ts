@@ -30,6 +30,12 @@ export type ShareErrorCode = (typeof shareErrorCodes)[number];
 export type ShareRecipient = {
   /** Normalised (trimmed, lower-cased) address — see `normaliseEmail`. */
   email: string;
+  /**
+   * Epoch milliseconds of each share email sent to this recipient in the last
+   * 24 hours, oldest first. Drives the cooldown and the sender's daily cap, and
+   * is pruned whenever a send is recorded.
+   */
+  emailedAt?: number[];
   /** Epoch milliseconds. */
   invitedAt: number;
   status: ShareRecipientStatus;

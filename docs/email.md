@@ -172,7 +172,19 @@ Resend's `delivered@resend.dev`, `bounced@resend.dev` and `complained@resend.dev
 
 ## Limits
 
-The Resend free plan allows 100 emails per day and 3,000 per month. Callers that send on user actions need their own rate limiting; that is part of the share email story.
+The Resend free plan allows 100 emails per day and 3,000 per month. Callers that send on user actions need their own rate limiting. The share email has its own (see below).
+
+## Document shared email
+
+When a document is shared, the share route schedules `notifyDocumentShared` (`src/lib/sharing/notify-document-shared.ts`) with `after()`, so the response never waits on the email and a failure never affects the share. The notifier never throws.
+
+- **Template:** `SharedDocumentEmail` (`src/lib/email/templates/shared-document-email.tsx`) on `EmailLayout`. The `shared` variant is sent on the first share, `updated` on every explicit re-share. It links to `/my-documents?tab=shared` and tells people without an account to sign up with the address the email was sent to.
+- **Labels:** the sender name and document name go through `cleanEmailLabel` (`clean-label.ts`), which strips control characters, collapses whitespace and truncates, so they can't break the subject or spoof the body.
+- **Idempotency key:** `share-<sha256 of "sharedDocumentId|email|sharedAt">`. Hashed to stay under Resend's 256-character limit.
+- **Limits** (`share-email-limits.ts`): one email per recipient per document every 10 minutes, and 20 share emails per sender per 24 hours. A suppressed email still shares the document.
+- **Bookkeeping:** each successful send appends a timestamp to `recipients[].emailedAt` on the shared document (`recordShareEmail`), pruned to 24 hours. It is stored per document, not on the sharing ledger, so a second document to the same person isn't held back. The owner can already update `recipients`, so no rules change is needed. Enforcement is best-effort: concurrent shares can slip past the cooldown.
+
+The notifier returns `{ sent: true }` or `{ sent: false, reason }`, where `reason` is `cooldown`, `daily-cap`, or a `sendEmail` failure reason.
 
 ## Testing
 
