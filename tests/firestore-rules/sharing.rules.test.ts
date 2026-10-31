@@ -8,12 +8,16 @@ import {
   type RulesTestEnvironment,
 } from "@firebase/rules-unit-testing";
 import {
+  collection,
   doc,
   getDoc,
+  getDocs,
+  query,
   setDoc,
   updateDoc,
   deleteDoc,
   Timestamp,
+  where,
 } from "firebase/firestore";
 import { afterAll, beforeAll, beforeEach, describe, it } from "vitest";
 
@@ -121,6 +125,38 @@ describe("sharedDocuments — read", () => {
     );
   });
 
+  it("lets the owner list their own shares, and a recipient list theirs", async () => {
+    await seed();
+    await assertSucceeds(
+      getDocs(
+        query(
+          collection(ownerDb(), "sharedDocuments"),
+          where("ownerId", "==", OWNER),
+        ),
+      ),
+    );
+    await assertSucceeds(
+      getDocs(
+        query(
+          collection(bobDb(), "sharedDocuments"),
+          where("recipientEmails", "array-contains", "bob@example.com"),
+        ),
+      ),
+    );
+  });
+
+  it("refuses listing someone else's shares", async () => {
+    await seed();
+    await assertFails(
+      getDocs(
+        query(
+          collection(strangerDb(), "sharedDocuments"),
+          where("ownerId", "==", OWNER),
+        ),
+      ),
+    );
+  });
+
   it("denies a stranger and an unauthenticated caller", async () => {
     await seed();
     await assertFails(getDoc(doc(strangerDb(), "sharedDocuments/s1")));
@@ -225,6 +261,15 @@ describe("sharedDocuments — recipient signing", () => {
 
   it("refuses signing as someone else's email", async () => {
     await assertFails(sign(bobDb(), signature({ email: "alice@example.com" })));
+  });
+
+  it("refuses signing without locking the document", async () => {
+    await assertFails(sign(bobDb(), signature(), { locked: false }));
+  });
+
+  it("refuses a second signature once signed", async () => {
+    await assertSucceeds(sign(bobDb()));
+    await assertFails(sign(bobDb(), signature({ value: "Someone Else" })));
   });
 
   it("refuses an empty, over-long or non-typed signature", async () => {

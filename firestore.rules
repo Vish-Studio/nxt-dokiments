@@ -156,7 +156,8 @@ service cloud.firestore {
     // Who can do what:
     //   owner      — read; create; edit and delete while unlocked. Never writes
     //                `signatures` or `locked`, so they cannot forge a signature.
-    //   recipient  — read; add exactly one signature, their own, while unlocked.
+    //   recipient  — read; sign once, which locks the document. The signature and
+    //                `locked = true` must be written together.
     //   everybody  — nothing at all once `locked` is true (no update, no delete).
     //
     // A recipient is matched on the flat `recipientUids` array, or on an address in
@@ -231,6 +232,7 @@ service cloud.firestore {
 
       allow update: if isSharedRecipient(resource.data)
         && resource.data.locked == false
+        && request.resource.data.locked == true
         && request.resource.data.diff(resource.data).affectedKeys()
           .hasOnly(['locked', 'signatures', 'updatedAt'])
         && !(request.auth.uid in resource.data.signatures)

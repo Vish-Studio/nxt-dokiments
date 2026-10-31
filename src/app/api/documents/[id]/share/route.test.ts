@@ -8,6 +8,20 @@ const flag = vi.hoisted(() => {
   return { enabled: true };
 });
 
+const email = vi.hoisted(() => ({
+  notify: vi.fn(async () => ({ sent: true })),
+  scheduled: [] as (() => unknown)[],
+}));
+
+vi.mock("next/server", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("next/server")>()),
+  after: (callback: () => unknown) => email.scheduled.push(callback),
+}));
+
+vi.mock("@/lib/sharing/notify-document-shared", () => ({
+  notifyDocumentShared: email.notify,
+}));
+
 vi.mock("@/lib/sharing/feature-flag", () => ({
   get documentSharingEnabled() {
     return flag.enabled;
@@ -28,7 +42,12 @@ type FirestoreStub = {
 };
 
 let stub: FirestoreStub;
-let commits: { writes: { currentDocument?: { exists: boolean } }[] }[];
+let commits: {
+  writes: {
+    currentDocument?: { exists: boolean };
+    update?: { fields?: { values?: { mapValue?: { fields?: object } } } };
+  }[];
+}[];
 let commitStatus: number;
 
 const string = (value: string) => ({ stringValue: value });
@@ -65,7 +84,14 @@ const buildUserDocument = (signable: boolean) => ({
       },
     },
     updatedAt: timestamp("2026-10-01T00:00:00.000Z"),
-    values: { mapValue: { fields: { party: string("Acme") } } },
+    values: {
+      mapValue: {
+        fields: {
+          party: string("Acme"),
+          recipientSignature: string("Typed by the owner"),
+        },
+      },
+    },
   },
   name: "projects/p/databases/(default)/documents/users/owner-uid/documents/doc_1",
 });
@@ -184,6 +210,8 @@ const post = async (body: unknown, { signedIn = true } = {}) =>
   POST(await shareRequest(body, signedIn), context);
 
 beforeEach(() => {
+  email.notify.mockClear();
+  email.scheduled.length = 0;
   flag.enabled = true;
   commits = [];
   commitStatus = 200;
@@ -217,6 +245,15 @@ describe("POST /api/documents/:id/share", () => {
       { exists: false },
       { exists: false },
     ]);
+  });
+
+  it("never copies the owner's typed recipient signature into the shared copy", async () => {
+    await post({ email: "bob@example.com" });
+
+    const copied =
+      commits[0].writes[0].update?.fields?.values?.mapValue?.fields;
+    expect(copied).toHaveProperty("party");
+    expect(copied).not.toHaveProperty("recipientSignature");
   });
 
   it("treats an absent shared document the same as a refused read", async () => {
@@ -301,6 +338,61 @@ describe("POST /api/documents/:id/share", () => {
     commitStatus = 409;
 
     expect((await post({ email: "bob@example.com" })).status).toBe(409);
+  });
+});
+
+describe("POST /api/documents/:id/share notification", () => {
+  const runScheduled = () =>
+    Promise.all(email.scheduled.map((callback) => callback()));
+
+  it("emails the recipient after the response with the 'shared' wording", async () => {
+    const response = await post({ email: "Bob@Example.com" });
+    expect(response.status).toBe(201);
+    expect(email.notify).not.toHaveBeenCalled();
+
+    await runScheduled();
+
+    expect(email.notify).toHaveBeenCalledTimes(1);
+    expect(email.notify).toHaveBeenCalledWith(
+      expect.objectContaining({
+        user: expect.objectContaining({ uid: "owner-uid" }),
+      }),
+      expect.objectContaining({
+        created: true,
+        documentName: "NDA",
+        recipientEmail: "bob@example.com",
+        sharedDocumentId: "owner-uid_doc_1",
+        sharedAt: expect.any(Number),
+      }),
+    );
+  });
+
+  it("passes created=false on a re-share", async () => {
+    stub.sharedDocument = sharedDocument({});
+    stub.ledger = ["bob@example.com"];
+
+    await post({ email: "bob@example.com" });
+    await runScheduled();
+
+    expect(email.notify).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.objectContaining({ created: false }),
+    );
+  });
+
+  it.each([
+    ["the document is not found", () => (stub.sourceDocument = false)],
+    [
+      "the document is locked",
+      () => (stub.sharedDocument = sharedDocument({ locked: true })),
+    ],
+    ["the feature flag is off", () => (flag.enabled = false)],
+  ])("schedules no email when %s", async (_, arrange) => {
+    arrange();
+
+    await post({ email: "bob@example.com" });
+
+    expect(email.scheduled).toHaveLength(0);
   });
 });
 

@@ -1,9 +1,12 @@
+import { after } from "next/server";
+
 import { z } from "zod";
 
 import { parseBody } from "@/lib/api/validate";
 import { withSession } from "@/lib/api/with-session";
 import { shareDocument } from "@/lib/firebase/server-shared-documents";
 import { shareEmailSchema } from "@/lib/sharing/email-schema";
+import { notifyDocumentShared } from "@/lib/sharing/notify-document-shared";
 import { assertDocumentSharingEnabled } from "@/lib/sharing/server-guard";
 
 type Context = { params: Promise<{ id: string }> };
@@ -19,6 +22,10 @@ const ShareDocumentSchema = z.object({
  * sharing again with the same address updates the shared copy (while it is
  * unlocked) instead of creating a second one. A document has one recipient for
  * now. Answers `404` while the `documentSharing` flag is off.
+ *
+ * After the response is sent, the recipient is emailed ("shared" the first time,
+ * "updated" on a repeat) unless the cooldown or the sender's daily cap applies.
+ * The email never changes the response, even when it fails.
  *
  * @returns `{ sharedDocumentId, recipient: { email, status } }` with status `201`
  *   on the first share and `200` on a repeat.
@@ -36,10 +43,17 @@ export const POST = withSession<Context>(async (request, context, session) => {
 
   const { id } = await context.params;
   const { email } = await parseBody(request, ShareDocumentSchema);
-  const { created, recipient, sharedDocumentId } = await shareDocument(
-    session,
-    id,
-    email,
+  const { created, documentName, recipient, sharedAt, sharedDocumentId } =
+    await shareDocument(session, id, email);
+
+  after(() =>
+    notifyDocumentShared(session, {
+      created,
+      documentName,
+      recipientEmail: recipient.email,
+      sharedAt,
+      sharedDocumentId,
+    }),
   );
 
   return Response.json(

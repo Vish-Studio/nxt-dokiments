@@ -440,7 +440,9 @@ export const PrefillFromClient: Story = {
       canvas.getByRole("button", { name: "Prefill from client (optional)" }),
     );
     await userEvent.click(
-      canvas.getByRole("menuitemradio", { name: "Northline Studio" }),
+      canvas.getByRole("menuitemradio", {
+        name: "Northline Studio accounts@northline.com",
+      }),
     );
 
     // companyName wins over the contact name for `toName`. Asserted via the "To"

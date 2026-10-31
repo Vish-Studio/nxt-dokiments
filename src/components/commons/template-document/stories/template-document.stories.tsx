@@ -44,6 +44,18 @@ export const Filled: Story = {
   },
 };
 
+/** A filled sender signature uses the script font; an empty one keeps the muted placeholder. */
+export const SenderSignature: Story = {
+  args: { values: { senderSignature: "John Smith" } },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await expect(canvas.getByText("John Smith")).toHaveClass("font-signature");
+    await expect(canvas.getByText("Name / signature")).not.toHaveClass(
+      "font-signature",
+    );
+  },
+};
+
 export const ModernStyle: Story = {
   args: { template: getTemplateById("modern-invoice") as MarketplaceTemplate },
 };
