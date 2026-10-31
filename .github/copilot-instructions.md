@@ -122,7 +122,14 @@ export type SendEmailInput = {
 ## CI gotchas
 
 - `PageProps<"/route">` and other Next-generated globals exist only after Next generates `.next/types`. CI runs `tsc` on a clean checkout before `next build`, so **declare your own props interface** (`interface Props { params: Promise<{ id: string }> }`).
-- To reproduce CI locally, move `.next` aside, run `npx tsc --noEmit`, then restore it.
+- To reproduce CI locally, type-check a **temp copy** that has no `.next`. **Never move, rename or copy `.next` inside the repo** (for example `.next.bak`): it is only ignored under its exact name, so Tailwind scans the copy as source and the dev server then fails with `Parsing CSS source code failed` (daisyUI `.cally` rule, control-character classes). Also avoid running `tsc` or tests against a repo with `next dev` running if it means touching `.next`.
+
+  ```bash
+  T=$(mktemp -d) && rsync -a --exclude .next --exclude node_modules --exclude .git --exclude tsconfig.tsbuildinfo ./ "$T/" \
+    && ln -s "$PWD/node_modules" "$T/node_modules" && (cd "$T" && npx tsc --noEmit); rm -rf "$T"
+  ```
+
+  If the dev server already shows that CSS error, stop it, run `rm -rf .next`, and restart.
 - Storybook doesn't load `next/font`, so fonts fall back there. Check PDF and font changes in a real export.
 
 ## Environment and configuration
