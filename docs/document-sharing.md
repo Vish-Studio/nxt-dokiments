@@ -26,7 +26,7 @@ Top-level, because two parties read the same record. The owner's original in
 | `ownerId`, `ownerName`, `ownerEmail` | string | Immutable `ownerId`. |
 | `name`, `templateId`, `values`, `templateSnapshot?` | | Copied from the source document. |
 | `sourceDocumentId` | string | The document the share was made from. |
-| `recipients` | array of map | `{ email, invitedAt, status, signedAt?, uid? }`. Informational; the API is its only writer. |
+| `recipients` | array of map | `{ email, invitedAt, status, signedAt?, uid?, emailedAt? }`. `emailedAt` is a list of recent share-email send times (24h), used for the email cooldown and daily cap. Informational; the API is its only writer. |
 | `recipientEmails` | string[] | Normalised addresses. **Derived from `recipients`** — security rules cannot look inside an array of maps. |
 | `recipientUids` | string[] | Linked accounts. Derived from `recipients`. |
 | `signatures` | map | Keyed by signer uid → `{ email, signedAt, type: "typed", value }`. |
@@ -102,6 +102,9 @@ in the server route only, not in the rules, so changing it needs no rules deploy
 - No account lookup: recipients are matched by verified address, so `uid` stays
   unset until the invite story links accounts. An unverified recipient is not
   detectable at share time — they simply see nothing until they verify.
+- After a successful share the route sends the recipient an email in the background (`after()`), subject to a cooldown and daily cap — see
+  [`email.md`](./email.md#document-shared-email). It doesn't change the response.
+- The email links to `/my-documents?tab=shared`. A signed-out recipient is redirected to `/sign-in?next=…`, and the sign-in and sign-up pages keep `next` when switching between them (`withNext`).
 - `GET /api/documents/shared?by=me` lists what the caller has shared (a query on
   `ownerId`), which is how the owner's row finds its shared copy.
 - Reads of an absent or foreign document are refused by the rules (403), which
