@@ -3,6 +3,7 @@ import Link from "next/link";
 
 import { AuthLayout } from "@/components/commons/auth-layout/auth-layout";
 import { SignInForm } from "@/components/commons/sign-in-form/sign-in-form";
+import { withNext } from "@/lib/auth/auth-link";
 import { pageMetadata } from "@/lib/seo/site";
 
 export const metadata: Metadata = pageMetadata({
@@ -16,7 +17,13 @@ export const viewport: Viewport = {
   themeColor: "#ffffff",
 };
 
-const SignInPage = () => {
+type SignInPageProps = {
+  searchParams: Promise<{ next?: string | string[] }>;
+};
+
+const SignInPage = async ({ searchParams }: SignInPageProps) => {
+  const { next } = await searchParams;
+
   return (
     <AuthLayout
       description="Sign in to access your documents, templates, and clients."
@@ -25,7 +32,7 @@ const SignInPage = () => {
           Don&apos;t have an account?{" "}
           <Link
             className="font-title font-bold text-nox-noir underline-offset-4 hover:underline"
-            href="/sign-up"
+            href={withNext("/sign-up", typeof next === "string" ? next : null)}
           >
             Sign up
           </Link>
