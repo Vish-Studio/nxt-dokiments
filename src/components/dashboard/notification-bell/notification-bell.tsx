@@ -6,6 +6,7 @@ import {
   BellIcon,
   FilePlusIcon,
   InfoIcon,
+  SealCheckIcon,
   ShareNetworkIcon,
 } from "@phosphor-icons/react";
 import Link from "next/link";
@@ -20,6 +21,7 @@ import type { AppNotification } from "@/types/notification";
 const kindIcons: Record<string, Icon> = {
   "app-update": ArrowsClockwiseIcon,
   "document-shared": ShareNetworkIcon,
+  "document-signed": SealCheckIcon,
   template: FilePlusIcon,
 };
 
