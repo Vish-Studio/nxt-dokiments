@@ -1,9 +1,9 @@
 import "server-only";
 
 import { createElement } from "react";
-import { createHash } from "node:crypto";
 
-import { cleanEmailLabel } from "@/lib/email/clean-label";
+import { cleanEmailLabel, personLabel } from "@/lib/email/clean-label";
+import { hashedIdempotencyKey } from "@/lib/email/idempotency-key";
 import { sendEmail } from "@/lib/email/send-email";
 import {
   SharedDocumentEmail,
@@ -51,19 +51,6 @@ export type NotifyDocumentSharedResult =
 const sharedTabUrl = () => `${siteUrl}/my-documents?tab=shared`;
 
 /**
- * Resend rejects idempotency keys over 256 characters, and an address alone can
- * reach 254, so the identifying parts are hashed.
- */
-const idempotencyKeyFor = (
-  sharedDocumentId: string,
-  email: string,
-  sharedAt: number,
-) =>
-  `share-${createHash("sha256")
-    .update(`${sharedDocumentId}|${email}|${sharedAt}`)
-    .digest("hex")}`;
-
-/**
  * Emails the recipient of a share, unless a limit says to hold it back. Meant to
  * run inside `after()` from the share route, so the share itself never waits on
  * the provider and never fails because of it.
@@ -101,16 +88,13 @@ export const notifyDocumentShared = async (
 
     const props = {
       documentName: cleanEmailLabel(input.documentName),
-      senderName: cleanEmailLabel(
-        session.user.displayName,
-        60,
-        session.user.email,
-      ),
+      senderName: personLabel(session.user),
       variant: input.created ? ("shared" as const) : ("updated" as const),
     };
 
     const result = await sendEmail({
-      idempotencyKey: idempotencyKeyFor(
+      idempotencyKey: hashedIdempotencyKey(
+        "share",
         input.sharedDocumentId,
         input.recipientEmail,
         input.sharedAt,

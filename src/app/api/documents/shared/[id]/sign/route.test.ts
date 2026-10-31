@@ -8,6 +8,20 @@ const flag = vi.hoisted(() => {
   return { enabled: true };
 });
 
+const email = vi.hoisted(() => ({
+  notify: vi.fn(),
+  scheduled: [] as (() => unknown)[],
+}));
+
+vi.mock("next/server", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("next/server")>()),
+  after: (callback: () => unknown) => email.scheduled.push(callback),
+}));
+
+vi.mock("@/lib/sharing/notify-document-signed", () => ({
+  notifyDocumentSigned: email.notify,
+}));
+
 vi.mock("@/lib/sharing/feature-flag", () => ({
   get documentSharingEnabled() {
     return flag.enabled;
@@ -144,6 +158,8 @@ const installFetch = (
 beforeEach(() => {
   flag.enabled = true;
   patches = [];
+  email.scheduled.length = 0;
+  email.notify.mockReset();
 });
 
 afterEach(() => {
@@ -173,6 +189,40 @@ describe("POST /api/documents/shared/:id/sign", () => {
       value: "Bob Smith",
     });
     expect(document.recipients[0].status).toBe("signed");
+  });
+
+  it("emails the owner in the background once the document is signed", async () => {
+    installFetch(sharedDocument());
+
+    await post({ signature: "Bob Smith" });
+    expect(email.notify).not.toHaveBeenCalled();
+    await Promise.all(email.scheduled.map((callback) => callback()));
+
+    expect(email.notify).toHaveBeenCalledTimes(1);
+    const [session, document] = email.notify.mock.calls[0];
+    expect(session.user.uid).toBe("bob-uid");
+    expect(document.locked).toBe(true);
+    expect(document.signatures["bob-uid"].value).toBe("Bob Smith");
+  });
+
+  it("still signs when the email helper fails", async () => {
+    installFetch(sharedDocument());
+    email.notify.mockRejectedValue(new Error("boom"));
+
+    const response = await post({ signature: "Bob Smith" });
+
+    expect(response.status).toBe(200);
+  });
+
+  it("schedules no email for a refused or invalid sign", async () => {
+    installFetch(sharedDocument({ locked: true }));
+    await post({ signature: "Bob Smith" });
+    installFetch("absent");
+    await post({ signature: "Bob Smith" });
+    vi.spyOn(console, "error").mockImplementation(() => undefined);
+    await post({});
+
+    expect(email.scheduled).toHaveLength(0);
   });
 
   it("returns 409 and writes nothing when the document is already locked", async () => {
@@ -238,5 +288,6 @@ describe("POST /api/documents/shared/:id/sign", () => {
 
     expect((await post({ signature: "Bob Smith" })).status).toBe(404);
     expect(patches).toHaveLength(0);
+    expect(email.scheduled).toHaveLength(0);
   });
 });

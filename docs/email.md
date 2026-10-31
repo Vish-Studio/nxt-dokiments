@@ -97,6 +97,8 @@ after(async () => {
 
 Build it from what makes the email logically unique, never from a timestamp taken at send time. A retried request then reuses the key and Resend delivers once, while a genuine re-share (new `lastSharedAt`) gets a new key and sends again.
 
+When the identifying parts can be long (addresses, ids), build the key with `hashedIdempotencyKey(prefix, ...parts)` (`src/lib/email/idempotency-key.ts`), which hashes them to stay under Resend's 256-character limit. Use `personLabel(session.user)` to name a person in an email (display name, or their address when they have none).
+
 ## Writing a template
 
 Build it on `EmailLayout` and keep to what mail clients support:
@@ -185,6 +187,17 @@ When a document is shared, the share route schedules `notifyDocumentShared` (`sr
 - **Bookkeeping:** each successful send appends a timestamp to `recipients[].emailedAt` on the shared document (`recordShareEmail`), pruned to 24 hours. It is stored per document, not on the sharing ledger, so a second document to the same person isn't held back. The owner can already update `recipients`, so no rules change is needed. Enforcement is best-effort: concurrent shares can slip past the cooldown.
 
 The notifier returns `{ sent: true }` or `{ sent: false, reason }`, where `reason` is `cooldown`, `daily-cap`, or a `sendEmail` failure reason.
+
+## Document signed email
+
+When a recipient signs, the sign route schedules `notifyDocumentSigned` (`src/lib/sharing/notify-document-signed.ts`) with `after()`, so signing never waits on the email and a failure never affects the signature. The notifier never throws.
+
+- **Recipient of the email:** the `ownerEmail` stored on the shared document. The notifier runs as the signer and the app can't read another user's account, so the owner's current account email isn't available.
+- **Template:** `SignedDocumentEmail` (`src/lib/email/templates/signed-document-email.tsx`) on `EmailLayout`. It names the signer (display name, or their email when they have none), the document and the signing time in UTC. It never includes the typed signature. The button opens `/my-documents/shared/[id]`.
+- **Idempotency key:** `signed-<sha256 of "sharedDocumentId|signerUid|signedAt">`.
+- **No limits:** a document signs once and then locks, so there is no cooldown, cap or bookkeeping write, and no rules change.
+
+The notifier returns `{ sent: true }` or `{ sent: false, reason }`, where `reason` is `no-signature` or a `sendEmail` failure reason.
 
 ## Testing
 
