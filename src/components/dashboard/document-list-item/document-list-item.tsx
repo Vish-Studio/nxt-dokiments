@@ -1,12 +1,18 @@
 import {
+  DotsThreeIcon,
   FileTextIcon,
+  ArrowSquareOutIcon,
   PencilSimpleIcon,
   PrinterIcon,
+  ShareNetworkIcon,
 } from "@phosphor-icons/react";
 
 import { Badge } from "@/components/commons/badge/badge";
+import { Button } from "@/components/commons/button/button";
 import { ButtonIcon } from "@/components/commons/button-icon/button-icon";
+import { Dropdown } from "@/components/commons/dropdown/dropdown";
 import { DashboardListRow } from "@/components/dashboard/dashboard-list-row/dashboard-list-row";
+import { isSignableDocument } from "@/lib/sharing/signable";
 import type { UserDocument } from "@/types/template";
 
 export interface DocumentListItemProps {
@@ -14,6 +20,10 @@ export interface DocumentListItemProps {
   onEdit: (document: UserDocument) => void;
   onPreview: (document: UserDocument) => void;
   onPrint: (document: UserDocument) => void;
+  /** Adds a "Share" action in the row menu. Omit it while sharing is off. */
+  onShare?: (document: UserDocument) => void;
+  /** Adds a "View shared copy" action. Pass it only for a document that has been shared. */
+  onViewShared?: (document: UserDocument) => void;
 }
 
 const dateFormatter = new Intl.DateTimeFormat("en-GB", {
@@ -33,6 +43,8 @@ export const DocumentListItem = ({
   onEdit,
   onPreview,
   onPrint,
+  onShare,
+  onViewShared,
 }: DocumentListItemProps) => {
   const snapshot = document.templateSnapshot;
   const documentType = snapshot
@@ -84,7 +96,8 @@ export const DocumentListItem = ({
         </time>
       </div>
 
-      <div className="relative z-20 flex items-center justify-end gap-2 sm:col-span-2 sm:justify-self-end">
+      <div className="relative z-20 flex items-center justify-end gap-2 focus-within:z-30 sm:col-span-2 sm:justify-self-end">
+        {/* focus-within lifts this row above the rows below it while its menu is open, since the menu can only stack inside this container. */}{" "}
         <ButtonIcon
           aria-label={`Print ${documentTitle}`}
           icon={
@@ -113,6 +126,61 @@ export const DocumentListItem = ({
           size="sm"
           variant="primary"
         />
+        {onShare ? (
+          <div className="flex size-10 shrink-0 items-center justify-center">
+            {isSignableDocument(snapshot) ? (
+              <Dropdown
+                ariaLabel={`More actions for ${documentTitle}`}
+                buttonClassName="size-8 min-h-8 text-nox-noir hover:bg-base-200"
+                className="shrink-0"
+                iconTrigger={
+                  <DotsThreeIcon
+                    aria-hidden
+                    size={20}
+                    weight="bold"
+                  />
+                }
+                iconTriggerShape="square"
+                menuClassName="w-48"
+              >
+                <Button
+                  className="w-full justify-start gap-2 px-3 whitespace-nowrap"
+                  icon={
+                    <ShareNetworkIcon
+                      aria-hidden
+                      size={16}
+                      weight="bold"
+                    />
+                  }
+                  iconPosition="left"
+                  onClick={() => onShare(document)}
+                  size="sm"
+                  variant="ghost"
+                >
+                  Share
+                </Button>
+                {onViewShared ? (
+                  <Button
+                    className="w-full justify-start gap-2 px-3 whitespace-nowrap"
+                    icon={
+                      <ArrowSquareOutIcon
+                        aria-hidden
+                        size={16}
+                        weight="bold"
+                      />
+                    }
+                    iconPosition="left"
+                    onClick={() => onViewShared(document)}
+                    size="sm"
+                    variant="ghost"
+                  >
+                    View shared copy
+                  </Button>
+                ) : null}
+              </Dropdown>
+            ) : null}
+          </div>
+        ) : null}
       </div>
     </DashboardListRow>
   );

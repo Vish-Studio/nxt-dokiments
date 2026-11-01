@@ -56,6 +56,15 @@ const BACKOFF_JITTER = 0.25;
 const ATTEMPT_TIMEOUT_MS = 5_000;
 
 /**
+ * Tighter per-attempt ceiling for idempotent reads. A stalled read is worth
+ * abandoning sooner because it is safe to re-send on a fresh socket.
+ */
+const READ_ATTEMPT_TIMEOUT_MS = 3_000;
+
+/** Timeout retries allowed per call, on top of the connect-failure retries. */
+const MAX_TIMEOUT_RETRIES = 1;
+
+/**
  * Ceiling on the whole retry sequence, backoff included.
  *
  * Needed because a single failing attempt is not cheap: a 2s connect budget
@@ -96,11 +105,22 @@ const causeCodes = (error: unknown): string[] => {
  *   a write may already have been applied upstream.
  * - `ECONNRESET` / `UND_ERR_SOCKET` — the socket can drop after the request was
  *   sent, so delivery is unknown.
- * - `AbortError` from our own `ATTEMPT_TIMEOUT_MS` — delivery is ambiguous by
- *   definition; we timed out waiting for a reply that may already be in flight.
+ * - Our own attempt timeout on a non-idempotent request — delivery is ambiguous
+ *   by definition; we timed out waiting for a reply that may already be in flight.
+ *   For GET/HEAD this is retried once (see `fetchUpstream`), since re-reading is harmless.
  */
 const isUndeliveredRequestError = (error: unknown): boolean =>
   causeCodes(error).some((code) => RETRYABLE_CONNECT_CODES.has(code));
+
+/** Whether the request is an idempotent read, so re-sending it can't duplicate a write. */
+const isIdempotentRead = (init?: RequestInit): boolean => {
+  const method = (init?.method ?? "GET").toUpperCase();
+  return method === "GET" || method === "HEAD";
+};
+
+/** Whether the failure is our own `AbortSignal.timeout` firing. */
+const isAttemptTimeout = (error: unknown): boolean =>
+  error instanceof Error && error.name === "TimeoutError";
 
 /** Backoff for the given retry index, with jitter to avoid lock-step retries. */
 const backoffMs = (attempt: number): number => {
@@ -115,7 +135,8 @@ const sleep = (ms: number) =>
 
 /**
  * `fetch` for third-party APIs, with a per-attempt timeout and retries limited to
- * failures where the request provably never left this process.
+ * failures where the request provably never left this process, plus a single
+ * retry of a timed-out GET/HEAD.
  *
  * Success and non-2xx responses are returned untouched — callers keep full
  * control over status handling. Only transport failures are translated, into
@@ -134,6 +155,11 @@ export const fetchUpstream = async (
 ): Promise<Response> => {
   const startedAt = Date.now();
   let lastError: unknown;
+  const idempotent = isIdempotentRead(init);
+  const attemptTimeoutMs = idempotent
+    ? READ_ATTEMPT_TIMEOUT_MS
+    : ATTEMPT_TIMEOUT_MS;
+  let timeoutRetries = 0;
 
   for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt += 1) {
     // Cap each attempt by whatever is left of the overall budget, so the total is
@@ -148,13 +174,18 @@ export const fetchUpstream = async (
       return await fetch(url, {
         ...init,
         signal: AbortSignal.timeout(
-          Math.min(ATTEMPT_TIMEOUT_MS, remainingBudget),
+          Math.min(attemptTimeoutMs, remainingBudget),
         ),
       });
     } catch (error) {
       lastError = error;
 
-      if (!isUndeliveredRequestError(error)) {
+      if (idempotent && isAttemptTimeout(error)) {
+        if (timeoutRetries >= MAX_TIMEOUT_RETRIES) {
+          break;
+        }
+        timeoutRetries += 1;
+      } else if (!isUndeliveredRequestError(error)) {
         break;
       }
 

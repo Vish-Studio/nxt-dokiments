@@ -53,7 +53,9 @@ export const ClientPicker = ({ fields, onSelect }: ClientPickerProps) => {
     (client) => client.id === selectedClientId,
   );
   const selectedLabel = selectedClient
-    ? selectedClient.companyName || selectedClient.name
+    ? [selectedClient.companyName || selectedClient.name, selectedClient.email]
+        .filter(Boolean)
+        .join(" · ")
     : "Choose a client";
 
   return (
@@ -78,6 +80,7 @@ export const ClientPicker = ({ fields, onSelect }: ClientPickerProps) => {
               }
             },
             options: clients.map((client) => ({
+              description: client.email,
               label: client.companyName || client.name,
               value: client.id,
             })),

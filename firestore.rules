@@ -113,6 +113,135 @@ service cloud.firestore {
       match /notificationMeta/{documentId} {
         allow read, create, update: if isOwner(uid);
       }
+
+      // --- users/{uid}/shareRecipients/{email} — the owner's sharing ledger -------
+      //
+      // One entry per distinct person this account has ever shared a document with;
+      // the doc ID is that person's normalised (lower-case) address. A plan's
+      // recipient limit counts these (src/lib/sharing/policy.ts).
+      //
+      // `create` and `update`, deliberately no `delete` — same reasoning as
+      // promoRedemptions: if an owner could delete entries they could clear their
+      // own count and share past any limit. `firstSharedAt` is immutable for the
+      // same reason, and `email` must equal the doc ID so an entry cannot claim to
+      // be someone it is not keyed as.
+      match /shareRecipients/{shareId} {
+        allow read: if isOwner(uid);
+
+        allow create: if isOwner(uid)
+          && request.resource.data.keys().hasOnly([
+            'email', 'firstSharedAt', 'lastSharedAt'
+          ])
+          && request.resource.data.email == shareId
+          && shareId == shareId.lower()
+          && shareId.size() <= 254
+          && request.resource.data.firstSharedAt is timestamp
+          && request.resource.data.lastSharedAt is timestamp;
+
+        allow update: if isOwner(uid)
+          && request.resource.data.keys().hasOnly([
+            'email', 'firstSharedAt', 'lastSharedAt'
+          ])
+          && request.resource.data.email == resource.data.email
+          && request.resource.data.firstSharedAt == resource.data.firstSharedAt
+          && request.resource.data.lastSharedAt is timestamp;
+      }
+    }
+
+    // --- sharedDocuments/{docId} — documents shared for signature ----------------
+    //
+    // Top-level, not under users/{uid}, because two parties read the same record.
+    // See docs/document-sharing.md for the data model.
+    //
+    // Who can do what:
+    //   owner      — read; create; edit and delete while unlocked. Never writes
+    //                `signatures` or `locked`, so they cannot forge a signature.
+    //   recipient  — read; sign once, which locks the document. The signature and
+    //                `locked = true` must be written together.
+    //   everybody  — nothing at all once `locked` is true (no update, no delete).
+    //
+    // A recipient is matched on the flat `recipientUids` array, or on an address in
+    // `recipientEmails` that Firebase reports as *verified*. An unverified address is
+    // never enough: this app does not verify email at sign-up, so anyone could
+    // register an account under an address someone else shared a document with.
+    // Linking such a person is done by adding their uid (DS-7), not by trusting
+    // their claimed address.
+
+    function sharedDocumentKeys() {
+      return [
+        'createdAt', 'locked', 'name', 'ownerEmail', 'ownerId', 'ownerName',
+        'recipientEmails', 'recipientUids', 'recipients', 'signatures',
+        'sourceDocumentId', 'templateId', 'templateSnapshot', 'updatedAt', 'values'
+      ];
+    }
+
+    function isSharedOwner(doc) {
+      return signedIn() && doc.ownerId == request.auth.uid;
+    }
+
+    function isSharedRecipient(doc) {
+      return signedIn() && (
+        request.auth.uid in doc.recipientUids
+        || (request.auth.token.email_verified == true
+            && request.auth.token.email.lower() in doc.recipientEmails)
+      );
+    }
+
+    // A signature is typed, non-empty, bounded, and names the signer by the
+    // address on their own token — so a recipient cannot sign as someone else.
+    function validSignature(signature) {
+      return signature.keys().hasOnly(['email', 'signedAt', 'type', 'value'])
+        && signature.type == 'typed'
+        && signature.value is string
+        && signature.value.size() > 0
+        && signature.value.size() <= 200
+        && signature.signedAt is timestamp
+        && signature.email == request.auth.token.email.lower();
+    }
+
+    match /sharedDocuments/{docId} {
+      allow read: if isSharedOwner(resource.data) || isSharedRecipient(resource.data);
+
+      allow create: if signedIn()
+        && request.resource.data.ownerId == request.auth.uid
+        && request.resource.data.keys().hasOnly(sharedDocumentKeys())
+        && request.resource.data.keys().hasAll([
+          'createdAt', 'locked', 'name', 'ownerEmail', 'ownerId', 'ownerName',
+          'recipientEmails', 'recipientUids', 'recipients', 'signatures',
+          'sourceDocumentId', 'templateId', 'updatedAt', 'values'
+        ])
+        && request.resource.data.locked == false
+        && request.resource.data.signatures.size() == 0
+        && request.resource.data.name is string
+        && request.resource.data.name.size() > 0
+        && request.resource.data.name.size() <= 500
+        && request.resource.data.recipients is list
+        && request.resource.data.recipientEmails is list
+        && request.resource.data.recipientEmails.size() <= 100
+        && request.resource.data.recipientUids is list
+        && request.resource.data.createdAt is timestamp
+        && request.resource.data.updatedAt is timestamp;
+
+      allow update: if isSharedOwner(resource.data)
+        && resource.data.locked == false
+        && request.resource.data.keys().hasOnly(sharedDocumentKeys())
+        && request.resource.data.ownerId == resource.data.ownerId
+        && request.resource.data.locked == false
+        && request.resource.data.signatures == resource.data.signatures
+        && request.resource.data.recipientEmails.size() <= 100;
+
+      allow update: if isSharedRecipient(resource.data)
+        && resource.data.locked == false
+        && request.resource.data.locked == true
+        && request.resource.data.diff(resource.data).affectedKeys()
+          .hasOnly(['locked', 'signatures', 'updatedAt'])
+        && !(request.auth.uid in resource.data.signatures)
+        && request.resource.data.signatures.diff(resource.data.signatures)
+          .affectedKeys().hasOnly([request.auth.uid])
+        && request.auth.uid in request.resource.data.signatures
+        && validSignature(request.resource.data.signatures[request.auth.uid]);
+
+      allow delete: if isSharedOwner(resource.data) && resource.data.locked == false;
     }
 
     // --- templates/{templateId} — marketplace catalog ---------------------------

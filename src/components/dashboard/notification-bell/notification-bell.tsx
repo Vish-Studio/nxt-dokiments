@@ -6,6 +6,8 @@ import {
   BellIcon,
   FilePlusIcon,
   InfoIcon,
+  SealCheckIcon,
+  ShareNetworkIcon,
 } from "@phosphor-icons/react";
 import Link from "next/link";
 
@@ -18,12 +20,14 @@ import type { AppNotification } from "@/types/notification";
 /** Icon per notification `kind`; unknown kinds fall back to a generic one. */
 const kindIcons: Record<string, Icon> = {
   "app-update": ArrowsClockwiseIcon,
+  "document-shared": ShareNetworkIcon,
+  "document-signed": SealCheckIcon,
   template: FilePlusIcon,
 };
 
 export type NotificationBellTone = "dark" | "light" | "outline";
 
-const toneClasses: Record<NotificationBellTone, string> = {
+export const toneClasses: Record<NotificationBellTone, string> = {
   dark: "!border-none !bg-white/10 !text-white hover:!bg-white/20",
   outline:
     "!border !border-steel-mist !bg-transparent !text-nox-noir hover:!bg-base-200",

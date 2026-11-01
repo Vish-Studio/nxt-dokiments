@@ -34,7 +34,7 @@ by Firebase Auth/Firestore, installable to a home screen, and usable offline.
 
 ## How it works
 
-- **Marketplace** — a read-only catalog of templates (4 styles × 14 document
+- **Marketplace** — a read-only catalog of templates (4 styles × 15 document
   types), seeded into Firestore and served from `/api/templates`.
 - **Save & customize** — a user saves a template to their own library
   (`/api/saved-templates`), then creates a document from it
@@ -141,6 +141,7 @@ Open [http://localhost:3000](http://localhost:3000).
 | `npm run start` | Serve a production build |
 | `npm run lint` | ESLint |
 | `npm run pre-pr-check` | Lint + build + `vitest run` — run before opening a PR |
+| `npm run test:rules` | Firestore security-rules tests against the emulator (needs Java 21+); not part of `pre-pr-check` |
 | `npm run seed:templates` | Seed/refresh the Firestore template catalog |
 | `npm run storybook` | Component workbench at `http://localhost:6006` |
 | `npm run build-storybook` | Static Storybook build |
@@ -181,11 +182,25 @@ scripts/           # One-off scripts (e.g. seed-templates.ts)
 
 - **Unit/DOM tests** live alongside their source files (`*.test.ts(x)`) and run via Vitest.
 - **Storybook** stories double as browser tests through `@storybook/addon-vitest` (Playwright-driven).
+- Marketplace browser stories keep the full catalog in `FreeUser`, checking
+  every style's card count. Saved-state and confirmation stories use one
+  invoice per style to avoid repeatedly rendering the entire catalog.
+- Run Node tests separately with `npx vitest run --project=node`, or browser
+  tests with `npx vitest run --project=storybook`.
 - Run everything CI runs locally with:
 
   ```bash
   npm run lint && npx tsc --noEmit && npx vitest run && npm run build
   ```
+
+PR Checks runs lint, type checking, Node tests, and the build in parallel
+with two Storybook shards (`--project=storybook --shard=1/2` and
+`--project=storybook --shard=2/2`). The browser jobs use the official
+Playwright container, with browsers and Linux dependencies preinstalled.
+When upgrading Playwright, update the `playwright` matrix version in
+`.github/workflows/pr-checks.yml` to match `package-lock.json`; CI checks
+that they agree. The final `Lint, typecheck, test, build` check requires
+both the quality job and every browser shard to pass.
 
 ## Git workflow & deployment
 

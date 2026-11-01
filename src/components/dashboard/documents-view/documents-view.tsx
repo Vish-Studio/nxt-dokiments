@@ -4,11 +4,12 @@ import {
   ArrowLeftIcon,
   EyeIcon,
   PlusIcon,
+  ShareNetworkIcon,
   TrashIcon,
 } from "@phosphor-icons/react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { Suspense, useCallback, useEffect, useMemo, useState } from "react";
 
 import { Button } from "@/components/commons/button/button";
 import CollectionToolbar from "@/components/commons/collection-toolbar/collection-toolbar";
@@ -30,6 +31,8 @@ import {
   documentListColumns,
   documentSkeletonRow,
 } from "@/components/dashboard/document-list/document-list";
+import { ShareDialog } from "@/components/dashboard/share-dialog/share-dialog";
+import { SharedCopyStatus } from "@/components/dashboard/shared-copy-status/shared-copy-status";
 import { ResponsiveHeaderControls } from "@/components/dashboard/responsive-header-controls/responsive-header-controls";
 import {
   useCreateDocumentMutation,
@@ -40,6 +43,22 @@ import {
 import { useSavedTemplatesQuery } from "@/hooks/queries/use-saved-templates";
 import { useScrollContentToTopOnMobile } from "@/hooks/use-scroll-content-to-top-on-mobile";
 import { trackEvent } from "@/lib/analytics/track";
+import { documentSharingEnabled } from "@/lib/sharing/feature-flag";
+import {
+  useSharedByMeQuery,
+  useSharedDocumentsQuery,
+} from "@/hooks/queries/use-shared-documents";
+import {
+  SharedDocumentList,
+  sharedDocumentListColumns,
+  sharedDocumentSkeletonRow,
+} from "@/components/dashboard/shared-document-list/shared-document-list";
+import { TabMenu } from "@/components/commons/tab-menu/tab-menu";
+import type { SharedDocument } from "@/types/sharing";
+import {
+  isSignableDocument,
+  RECIPIENT_SIGNATURE_KEY,
+} from "@/lib/sharing/signable";
 import { documentBlueprints } from "@/lib/market-place/documents";
 import {
   clientPrefillValues,
@@ -49,11 +68,15 @@ import {
 import { useAuthStore } from "@/stores/auth-store";
 import type { MarketplaceTemplate, UserDocument } from "@/types/template";
 import { snapshotToMarketplaceTemplate } from "@/types/template";
-import { getDocumentTypeLabel, getTemplateDisplayName } from "@/lib/market-place/document-labels";
+import {
+  getDocumentTypeLabel,
+  getTemplateDisplayName,
+} from "@/lib/market-place/document-labels";
 
 type Mode = "list" | "picker" | "editor";
 
 const EMPTY_DOCUMENTS: UserDocument[] = [];
+const EMPTY_SHARED_DOCUMENTS: SharedDocument[] = [];
 
 /** Resolves a document's own template, using its `templateSnapshot` — never a live
  * catalog lookup — so a later template edit/deactivation can't affect an existing document. */
@@ -65,6 +88,23 @@ const templateOf = (document: UserDocument): MarketplaceTemplate | null =>
       )
     : null;
 
+/**
+ * Switches to the "Shared with me" tab while the URL says `?tab=shared` (the bell's
+ * link). Reads the router's search params rather than `window.location` so
+ * following the link while already on this page still triggers it. Renders nothing.
+ */
+const SharedTabLink = ({ onOpen }: { onOpen: () => void }) => {
+  const isSharedLink = useSearchParams().get("tab") === "shared";
+
+  useEffect(() => {
+    if (isSharedLink) {
+      onOpen();
+    }
+  }, [isSharedLink, onOpen]);
+
+  return null;
+};
+
 export const DocumentsView = () => {
   const router = useRouter();
   const user = useAuthStore((state) => state.user);
@@ -75,6 +115,13 @@ export const DocumentsView = () => {
     useDocumentsQuery();
   const { isPending: isCreatePending, mutate: createDocument } =
     useCreateDocumentMutation();
+  const {
+    data: sharedDocuments = EMPTY_SHARED_DOCUMENTS,
+    isLoading: isSharedLoading,
+  } = useSharedDocumentsQuery({ enabled: documentSharingEnabled });
+  const { data: sharedByMe = EMPTY_SHARED_DOCUMENTS } = useSharedByMeQuery({
+    enabled: documentSharingEnabled,
+  });
   const { mutate: updateDocument } = useUpdateDocumentMutation();
   const { mutate: deleteDocument } = useDeleteDocumentMutation();
 
@@ -100,6 +147,12 @@ export const DocumentsView = () => {
     null,
   );
   const [isEditorPreviewOpen, setIsEditorPreviewOpen] = useState(false);
+  const [shareTarget, setShareTarget] = useState<{
+    id: string;
+    name: string;
+    recipientEmail?: string;
+  } | null>(null);
+  const [listTab, setListTab] = useState<"mine" | "shared">("mine");
   const [search, setSearch] = useState("");
   const [documentType, setDocumentType] = useState("all");
   const [sort, setSort] = useState("newest");
@@ -109,6 +162,18 @@ export const DocumentsView = () => {
     () => saved.map((item) => item.template),
     [saved],
   );
+
+  const sharedCopyIds = useMemo(
+    () =>
+      Object.fromEntries(
+        sharedByMe.map((shared) => [shared.sourceDocumentId, shared.id]),
+      ),
+    [sharedByMe],
+  );
+
+  const activeSharedCopy = activeDocumentId
+    ? sharedByMe.find((shared) => shared.sourceDocumentId === activeDocumentId)
+    : undefined;
 
   const documentTypeOptions = useMemo(
     () =>
@@ -324,6 +389,26 @@ export const DocumentsView = () => {
     window.setTimeout(() => startNewDocument(template), 0);
   }, [authStatus, ownedTemplates, startNewDocument]);
 
+  const openSharedTab = useCallback(() => setListTab("shared"), []);
+
+  // Mirrors the tab into the URL so the page can remount (e.g. once auth settles)
+  // without losing it, and so the bell's link changes the URL again after a manual switch.
+  const selectListTab = (tab: "mine" | "shared") => {
+    setListTab(tab);
+
+    const nextUrl = new URL(window.location.href);
+    if (tab === "shared") {
+      nextUrl.searchParams.set("tab", "shared");
+    } else {
+      nextUrl.searchParams.delete("tab");
+    }
+    window.history.replaceState(
+      null,
+      "",
+      `${nextUrl.pathname}${nextUrl.search}`,
+    );
+  };
+
   const openDocument = (document: UserDocument) => {
     setActiveTemplate(templateOf(document));
     setActiveDocumentId(document.id);
@@ -443,28 +528,50 @@ export const DocumentsView = () => {
             <div className="mt-6 grid gap-5">
               <TemplateForm
                 documentNameField={
-              <Input
-                label="Document name"
-                onChange={(event) => {
-                  setDraftName(event.target.value);
-                }}
-                placeholder="e.g. Acme service contract"
-                value={draftName}
-              />
+                  <Input
+                    label="Document name"
+                    onChange={(event) => {
+                      setDraftName(event.target.value);
+                    }}
+                    placeholder="e.g. Acme service contract"
+                    value={draftName}
+                  />
                 }
                 recipientPicker={
-              <ClientPicker
-                fields={editorTemplate.fields}
-                onSelect={(client) => {
-                  setDraftValues((previous) => ({
-                    ...previous,
-                    ...clientPrefillValues(client, editorTemplate.fields),
-                  }));
-                  trackEvent("document_client_prefilled", {
-                    document_type: editorTemplate.documentType,
-                  });
-                }}
-              />
+                  <ClientPicker
+                    fields={editorTemplate.fields}
+                    onSelect={(client) => {
+                      setDraftValues((previous) => ({
+                        ...previous,
+                        ...clientPrefillValues(client, editorTemplate.fields),
+                      }));
+                      trackEvent("document_client_prefilled", {
+                        document_type: editorTemplate.documentType,
+                      });
+                    }}
+                  />
+                }
+                fieldSlots={
+                  activeSharedCopy
+                    ? {
+                        [RECIPIENT_SIGNATURE_KEY]: (
+                          <SharedCopyStatus
+                            document={activeSharedCopy}
+                            label={
+                              editorTemplate.fields.find(
+                                (field) =>
+                                  field.key === RECIPIENT_SIGNATURE_KEY,
+                              )?.label ?? "Recipient signature"
+                            }
+                            onView={() =>
+                              router.push(
+                                `/my-documents/shared/${activeSharedCopy.id}`,
+                              )
+                            }
+                          />
+                        ),
+                      }
+                    : undefined
                 }
                 fields={editorTemplate.fields}
                 onChange={(key, value) => {
@@ -487,6 +594,30 @@ export const DocumentsView = () => {
                     ? "Creating…"
                     : "Create document"}
               </Button>
+              {activeDocumentId &&
+              documentSharingEnabled &&
+              isSignableDocument(editorTemplate) ? (
+                <Button
+                  icon={
+                    <ShareNetworkIcon
+                      aria-hidden
+                      size={16}
+                      weight="bold"
+                    />
+                  }
+                  iconPosition="left"
+                  onClick={() =>
+                    setShareTarget({
+                      id: activeDocumentId,
+                      name: draftValues.title?.trim() || draftName,
+                      recipientEmail: draftValues.toEmail,
+                    })
+                  }
+                  variant="outline"
+                >
+                  Share
+                </Button>
+              ) : null}
               {activeDocumentId ? (
                 <Button
                   icon={
@@ -514,6 +645,12 @@ export const DocumentsView = () => {
             />
           </div>
         </div>
+
+        <ShareDialog
+          document={shareTarget ?? { id: "", name: "" }}
+          onClose={() => setShareTarget(null)}
+          open={Boolean(shareTarget)}
+        />
 
         <SidePanel
           ariaLabel="Document preview"
@@ -647,15 +784,62 @@ export const DocumentsView = () => {
   }
 
   // --- Document list --------------------------------------------------------
+  const showSharedTab = documentSharingEnabled && listTab === "shared";
+
   return (
     <div className="flex min-h-0 w-full flex-1 flex-col gap-2 pt-6">
-      <ResponsiveHeaderControls
-        desktopContent={toolbar}
-        desktopHeader={headerSearch}
-      >
-        {toolbar}
-      </ResponsiveHeaderControls>
-      {isDocumentsLoading ? (
+      {documentSharingEnabled ? (
+        <Suspense fallback={null}>
+          <SharedTabLink onOpen={openSharedTab} />
+        </Suspense>
+      ) : null}
+      {documentSharingEnabled ? (
+        <TabMenu
+          ariaLabel="Document lists"
+          className="mb-1"
+          items={[
+            { id: "mine", label: "My documents" },
+            {
+              badge:
+                sharedDocuments.length > 0 ? (
+                  <span className="text-xs opacity-70">
+                    {sharedDocuments.length}
+                  </span>
+                ) : undefined,
+              id: "shared",
+              label: "Shared with me",
+            },
+          ]}
+          onChange={(id) => selectListTab(id === "shared" ? "shared" : "mine")}
+          value={listTab}
+        />
+      ) : null}
+      {showSharedTab ? null : (
+        <ResponsiveHeaderControls
+          desktopContent={toolbar}
+          desktopHeader={headerSearch}
+        >
+          {toolbar}
+        </ResponsiveHeaderControls>
+      )}
+      {showSharedTab ? (
+        isSharedLoading ? (
+          <DashboardListSkeleton
+            columns={sharedDocumentListColumns}
+            message="Loading documents shared with you…"
+            ordered
+            row={sharedDocumentSkeletonRow}
+          />
+        ) : (
+          <SharedDocumentList
+            documents={sharedDocuments}
+            onOpen={(shared) =>
+              router.push(`/my-documents/shared/${shared.id}`)
+            }
+            userEmail={user?.email}
+          />
+        )
+      ) : isDocumentsLoading ? (
         <DashboardListSkeleton
           columns={documentListColumns}
           message="Loading your documents…"
@@ -677,6 +861,20 @@ export const DocumentsView = () => {
           onEdit={openDocument}
           onPreview={setPreviewDocument}
           onPrint={handlePrintDocument}
+          onViewShared={(sharedId) =>
+            router.push(`/my-documents/shared/${sharedId}`)
+          }
+          sharedCopyIds={sharedCopyIds}
+          onShare={
+            documentSharingEnabled
+              ? (document) =>
+                  setShareTarget({
+                    id: document.id,
+                    name: document.values.title?.trim() || document.name,
+                    recipientEmail: document.values.toEmail,
+                  })
+              : undefined
+          }
         />
       )}
 
@@ -701,6 +899,12 @@ export const DocumentsView = () => {
         template={previewDocument ? templateOf(previewDocument) : null}
         tone="purple"
         values={previewDocument?.values}
+      />
+
+      <ShareDialog
+        document={shareTarget ?? { id: "", name: "" }}
+        onClose={() => setShareTarget(null)}
+        open={Boolean(shareTarget)}
       />
 
       <DocumentExportDialog

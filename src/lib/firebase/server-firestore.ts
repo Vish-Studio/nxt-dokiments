@@ -78,6 +78,20 @@ const describeToken = (idToken: string): string => {
 };
 
 /**
+ * A Firestore call that the security rules refused (HTTP 403).
+ *
+ * A subclass of `Error`, so existing handling is unchanged. It lets a caller
+ * tell "the rules said no" from other failures — for example a read of a
+ * document that does not exist yet, which the rules cannot evaluate and so deny.
+ */
+export class FirestorePermissionDeniedError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "FirestorePermissionDeniedError";
+  }
+}
+
+/**
  * Builds the error for a failed Firestore call made with a caller's ID token.
  *
  * A 401 means the token itself was rejected, so it becomes an `ApiError(401)`
@@ -103,6 +117,10 @@ const toFirestoreError = (
     }
 
     return new ApiError(401, "Unauthorised.");
+  }
+
+  if (response.status === 403) {
+    return new FirestorePermissionDeniedError(message || fallback);
   }
 
   return new Error(message || fallback);
@@ -348,6 +366,140 @@ export const createFirestoreDocument = async (
   }
 
   return body as FirestoreDocument;
+};
+
+/** One write in an atomic `documents:commit`. */
+export type FirestoreWrite = {
+  fields: FirestoreFields;
+  /**
+   * `true` requires the document to exist and `false` requires it not to, so a
+   * concurrent request that got there first fails the commit. Omit for an upsert.
+   */
+  mustExist?: boolean;
+  /** Document path relative to the database root. */
+  path: string;
+};
+
+/**
+ * Writes several documents atomically through `documents:commit`: either every
+ * write lands or none does.
+ *
+ * @param writes - The documents to write, each replacing the whole document.
+ * @param idToken - Firebase ID token used to authorise the request.
+ * @returns `true` when committed, `false` when a `mustExist` precondition failed
+ *   and nothing was written.
+ * @throws When the commit fails for any other reason.
+ */
+export const commitFirestoreWrites = async (
+  writes: FirestoreWrite[],
+  idToken: string,
+): Promise<boolean> => {
+  const databasePath = `projects/${serverFirebaseConfig.projectId}/databases/(default)/documents`;
+
+  const response = await fetchUpstream(
+    `${FIRESTORE_BASE_URL}/${databasePath}:commit`,
+    {
+      body: JSON.stringify({
+        writes: writes.map(({ fields, mustExist, path }) => ({
+          ...(mustExist === undefined
+            ? {}
+            : { currentDocument: { exists: mustExist } }),
+          update: { fields, name: `${databasePath}/${path}` },
+        })),
+      }),
+      headers: {
+        "Content-Type": "application/json",
+        ...(serverFirebaseConfig.apiKey
+          ? { "X-Goog-Api-Key": serverFirebaseConfig.apiKey }
+          : {}),
+        Authorization: `Bearer ${idToken}`,
+      },
+      method: "POST",
+    },
+  );
+
+  if (response.ok) return true;
+
+  const body = (await response
+    .json()
+    .catch(() => null)) as FirestoreErrorBody | null;
+  const status = body?.error?.status;
+
+  if (status && DOCUMENT_EXISTS_STATUSES.has(status)) return false;
+
+  throw toFirestoreError(
+    response,
+    body?.error?.message,
+    "Unable to write the requested documents.",
+    idToken,
+  );
+};
+
+/** A single-field filter for `runFirestoreQuery`. */
+export type FirestoreQueryFilter = {
+  field: string;
+  op: "ARRAY_CONTAINS" | "EQUAL";
+  value: FirestoreValue;
+};
+
+/**
+ * Runs a single-filter query over a top-level collection via `documents:runQuery`.
+ *
+ * Security rules are evaluated against the query itself, so a caller can only
+ * run a query the rules would allow for every document it could match.
+ *
+ * @param collectionId - Top-level collection name, e.g. `sharedDocuments`.
+ * @param filter - The one condition documents must meet.
+ * @param idToken - Firebase ID token used to authorise the request.
+ * @param limit - Maximum documents to return.
+ * @returns The matching documents, in server-returned order.
+ * @throws When the request fails, including a `FirestorePermissionDeniedError`.
+ */
+export const runFirestoreQuery = async (
+  collectionId: string,
+  filter: FirestoreQueryFilter,
+  idToken: string,
+  limit = 200,
+): Promise<FirestoreDocument[]> => {
+  const response = await fetchUpstream(
+    `${FIRESTORE_BASE_URL}/projects/${serverFirebaseConfig.projectId}/databases/(default)/documents:runQuery`,
+    {
+      body: JSON.stringify({
+        structuredQuery: {
+          from: [{ collectionId }],
+          limit,
+          where: {
+            fieldFilter: {
+              field: { fieldPath: filter.field },
+              op: filter.op,
+              value: filter.value,
+            },
+          },
+        },
+      }),
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${idToken}`,
+      },
+      method: "POST",
+    },
+  );
+
+  const body = (await response.json().catch(() => null)) as
+    | (FirestoreErrorBody & { length?: undefined })
+    | { document?: FirestoreDocument }[]
+    | null;
+
+  if (!response.ok || !Array.isArray(body)) {
+    throw toFirestoreError(
+      response,
+      Array.isArray(body) ? undefined : body?.error?.message,
+      "Unable to query the requested collection.",
+      idToken,
+    );
+  }
+
+  return body.flatMap((entry) => (entry.document ? [entry.document] : []));
 };
 
 /**

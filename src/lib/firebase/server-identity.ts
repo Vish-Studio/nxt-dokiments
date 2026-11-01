@@ -146,6 +146,18 @@ export class FirebaseReauthRequiredError extends Error {
 }
 
 /**
+ * Thrown when Firebase rejects a request with `TOO_MANY_ATTEMPTS_TRY_LATER` — it is
+ * throttling this account or address. Still an `Error` carrying the usual mapped
+ * message, so callers that don't care keep working; routes that do can answer `429`.
+ */
+export class FirebaseRateLimitedError extends Error {
+  constructor() {
+    super(mapFirebaseError("TOO_MANY_ATTEMPTS_TRY_LATER"));
+    this.name = "FirebaseRateLimitedError";
+  }
+}
+
+/**
  * Performs a JSON fetch against Firebase Identity Toolkit / Secure Token Service and throws a
  * mapped Firebase error on non-OK responses.
  *
@@ -153,6 +165,7 @@ export class FirebaseReauthRequiredError extends Error {
  * @param url - Fully-qualified request URL.
  * @param init - Standard `fetch` init options (body, method, headers, etc.).
  * @throws {FirebaseReauthRequiredError} When Firebase's raw error code is `CREDENTIAL_TOO_OLD_LOGIN_AGAIN`.
+ * @throws {FirebaseRateLimitedError} When Firebase's raw error code is `TOO_MANY_ATTEMPTS_TRY_LATER`.
  * @throws When the response status is not in the 2xx range for any other reason.
  */
 const requestIdentityJson = async <TResponse>(
@@ -174,6 +187,10 @@ const requestIdentityJson = async <TResponse>(
   if (!response.ok) {
     if (data?.error?.message?.startsWith("CREDENTIAL_TOO_OLD_LOGIN_AGAIN")) {
       throw new FirebaseReauthRequiredError();
+    }
+
+    if (data?.error?.message?.startsWith("TOO_MANY_ATTEMPTS_TRY_LATER")) {
+      throw new FirebaseRateLimitedError();
     }
 
     throw new Error(mapFirebaseError(data?.error?.message));
@@ -262,6 +279,35 @@ export const sendPasswordResetEmail = async (email: string) => {
     authUrl("accounts:sendOobCode"),
     {
       body: JSON.stringify({ email, requestType: "PASSWORD_RESET" }),
+      method: "POST",
+    },
+  );
+};
+
+/**
+ * Sends a Firebase verification email to the account that owns `idToken`.
+ *
+ * The link opens Firebase's standard action page, whose Continue button returns
+ * the user to `continueUrl`. That URL's domain must be listed under Authorised
+ * domains in the Firebase console, or Firebase rejects the request.
+ *
+ * @param idToken - ID token of the account to verify; the address is taken from it.
+ * @param continueUrl - Where Firebase's action page sends the user afterwards.
+ * @throws When the token is invalid, Firebase is throttling the account, or
+ *   `continueUrl`'s domain is not authorised.
+ */
+export const sendEmailVerification = async (
+  idToken: string,
+  continueUrl?: string,
+) => {
+  await requestIdentityJson<{ email: string }>(
+    authUrl("accounts:sendOobCode"),
+    {
+      body: JSON.stringify({
+        continueUrl,
+        idToken,
+        requestType: "VERIFY_EMAIL",
+      }),
       method: "POST",
     },
   );

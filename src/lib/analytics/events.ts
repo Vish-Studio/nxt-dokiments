@@ -72,6 +72,7 @@ export type AnalyticsEventMap = {
   cta_click: {
     placement: string;
   };
+  data_refreshed: EmptyAnalyticsParams;
   document_client_prefilled: {
     document_type: string;
   };
@@ -89,6 +90,11 @@ export type AnalyticsEventMap = {
     name_changed: boolean;
     values_changed: boolean;
   };
+  /** The user asked whether their email is verified yet; `verified` is the answer. */
+  email_verification_checked: {
+    verified: boolean;
+  };
+  email_verification_resent: EmptyAnalyticsParams;
   /**
    * A user sent feedback or reported a problem.
    *
@@ -170,7 +176,7 @@ export type AnalyticsEventMap = {
     tier: string;
   };
   upgrade_dialog_opened: {
-    reason: "saved_template_limit" | "tier_locked";
+    reason: "saved_template_limit" | "share_limit" | "tier_locked";
   };
 };
 

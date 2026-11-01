@@ -56,7 +56,11 @@ export const TemplatePreviewDialog = ({
 
   return (
     <SidePanel
-      ariaLabel={template ? `${getTemplateDisplayName(template)} preview` : "Template preview"}
+      ariaLabel={
+        template
+          ? `${getTemplateDisplayName(template)} preview`
+          : "Template preview"
+      }
       footer={
         template ? (
           mode === "document" ? (

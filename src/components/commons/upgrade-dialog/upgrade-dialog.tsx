@@ -13,7 +13,7 @@ export type UpgradeDialogProps = {
   onClose: () => void;
   open: boolean;
   /** Which limit triggered this dialog — carried on the `upgrade_dialog_opened` event. */
-  reason: "saved_template_limit" | "tier_locked";
+  reason: "saved_template_limit" | "share_limit" | "tier_locked";
   title?: string;
 };
 

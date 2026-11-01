@@ -53,6 +53,7 @@ export const GET = async (request: Request): Promise<Response> => {
       user: session.user ?? {
         displayName: "Dev User",
         email: "dev@dokiments.local",
+        emailVerified: true,
         provider: "password",
         role: "special",
         uid: "dev-auth-bypass-user",

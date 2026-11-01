@@ -12,6 +12,7 @@ import { LinkButton } from "@/components/commons/link-button/link-button";
 import { PromoCodeCallout } from "@/components/commons/promo-code-callout/promo-code-callout";
 import { trackEvent } from "@/lib/analytics/track";
 import { syncAutofilledFields } from "@/lib/forms/autofill";
+import { withNext } from "@/lib/auth/auth-link";
 import { withOnboarding } from "@/lib/onboarding/onboarding";
 import { withPromoStatus } from "@/lib/promo/promo-status";
 import { queryKeys } from "@/lib/query/keys";
@@ -224,7 +225,7 @@ export const SignUpForm = ({ onSubmit }: SignUpFormProps) => {
         <p className="text-sm text-nox-noir/60">Already have an account?</p>
         <LinkButton
           className="w-full"
-          href="/sign-in"
+          href={next === "/dashboard" ? "/sign-in" : withNext("/sign-in", next)}
           variant="outline"
         >
           Sign in
