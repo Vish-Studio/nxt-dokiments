@@ -164,6 +164,10 @@ require both. Errors: `404 NOT_A_RECIPIENT` (owners, strangers and absent
 documents alike), `409 DOCUMENT_LOCKED` (already signed, or refused by the
 rules), `400` for a bad signature, `401` without a session.
 
+After a successful sign the route emails the owner in the background
+(`after()`), which doesn't change the response — see
+[`email.md`](./email.md#document-signed-email).
+
 Only the **shared copy** locks; the owner's original in
 `users/{uid}/documents` stays editable.
 
@@ -182,6 +186,8 @@ same page for both parties and is flag-gated (`notFound()` when off):
 The signature script font is `--font-signature` (Dancing Script via
 `next/font`, utility `font-signature`). It is reserved for typed signatures.
 
+When a recipient signs, the owner gets a `document-signed` notification in the
+bell, linking to the shared copy (see `docs/notifications.md`).
 ## Monthly document quota
 
 The app currently has no monthly document quota (the plan list says "Create

@@ -31,3 +31,15 @@ export const cleanEmailLabel = (
     ? `${cleaned.slice(0, max - 1).trimEnd()}…`
     : cleaned;
 };
+
+/**
+ * Names a person in an email: their display name cleaned and capped at 60
+ * characters, or their email address when they have no usable name.
+ *
+ * @param user - The person, normally `session.user`.
+ *
+ * @example
+ * personLabel({ displayName: "", email: "bob@example.com" }); // "bob@example.com"
+ */
+export const personLabel = (user: { displayName: string; email: string }) =>
+  cleanEmailLabel(user.displayName, 60, user.email);

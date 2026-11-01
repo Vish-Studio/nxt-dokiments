@@ -2,8 +2,12 @@ import "server-only";
 
 import type { AuthenticatedSession } from "@/lib/api/with-session";
 import { listActiveTemplates } from "@/lib/firebase/server-catalog";
-import { listSharedWithMe } from "@/lib/firebase/server-shared-documents";
+import {
+  listSharedByMe,
+  listSharedWithMe,
+} from "@/lib/firebase/server-shared-documents";
 import { sharedDocumentNotifications } from "@/lib/notifications/shared-document-notifications";
+import { signedDocumentNotifications } from "@/lib/notifications/signed-document-notifications";
 import { documentSharingEnabled } from "@/lib/sharing/feature-flag";
 import type { AppNotification } from "@/types/notification";
 
@@ -107,8 +111,27 @@ const sharedDocumentSource: ServerNotificationSource = {
   },
 };
 
+/**
+ * "Someone signed your document", derived from the owner's `sharedDocuments`
+ * query — no per-user records are written. Silent while sharing is off.
+ */
+const signedDocumentSource: ServerNotificationSource = {
+  kind: "document-signed",
+  list: async ({ session }) => {
+    if (!documentSharingEnabled) {
+      return [];
+    }
+
+    return signedDocumentNotifications(
+      await listSharedByMe(session),
+      session.user.uid,
+    );
+  },
+};
+
 /** Register new server-side notification sources here. */
 export const serverNotificationSources: ServerNotificationSource[] = [
   templateSource,
   sharedDocumentSource,
+  signedDocumentSource,
 ];

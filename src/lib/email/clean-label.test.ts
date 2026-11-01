@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { cleanEmailLabel } from "./clean-label";
+import { cleanEmailLabel, personLabel } from "./clean-label";
 
 describe("cleanEmailLabel", () => {
   it("keeps a normal name unchanged", () => {
@@ -23,5 +23,22 @@ describe("cleanEmailLabel", () => {
   it("falls back when nothing is left", () => {
     expect(cleanEmailLabel(" \n ")).toBe("a document");
     expect(cleanEmailLabel("", 80, "Someone")).toBe("Someone");
+  });
+});
+
+describe("personLabel", () => {
+  it("uses the cleaned display name, capped at 60 characters", () => {
+    expect(
+      personLabel({ displayName: "Bob\nSmith", email: "bob@example.com" }),
+    ).toBe("Bob Smith");
+    expect(
+      personLabel({ displayName: "x".repeat(80), email: "bob@example.com" }),
+    ).toHaveLength(60);
+  });
+
+  it("falls back to the email address when there is no usable name", () => {
+    expect(personLabel({ displayName: "  ", email: "bob@example.com" })).toBe(
+      "bob@example.com",
+    );
   });
 });
