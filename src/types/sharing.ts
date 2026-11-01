@@ -39,6 +39,13 @@ export type ShareRecipient = {
   /** Epoch milliseconds. */
   invitedAt: number;
   status: ShareRecipientStatus;
+  /**
+   * Epoch milliseconds, set when the owner revokes access. A revoked recipient
+   * stays in `recipients` for the audit trail but is dropped from the flat
+   * `recipientEmails` and `recipientUids` arrays the rules authorise against, so
+   * they lose access immediately. Re-sharing with the same address clears it.
+   */
+  revokedAt?: number;
   /** Epoch milliseconds, set once the recipient has signed. */
   signedAt?: number;
   /** Known once the recipient has an account that is linked to this share. */
@@ -53,6 +60,14 @@ export type ShareSignature = {
   signedAt: number;
   type: "typed";
   value: string;
+};
+
+/** The first time a recipient opened a shared document. */
+export type ShareView = {
+  /** The viewer's normalised address, taken from their auth token. */
+  email: string;
+  /** Epoch milliseconds. */
+  viewedAt: number;
 };
 
 /**
@@ -78,6 +93,13 @@ export type SharedDocument = {
   templateId: string;
   updatedAt: number;
   values: Record<string, string>;
+  /**
+   * Keyed by the viewer's uid. A recipient adds only their own entry, once, when
+   * they first open the document; it is how `viewed` is derived, because
+   * recipients cannot write `recipients`. Absent on documents shared before it
+   * existed.
+   */
+  views?: Record<string, ShareView>;
   templateSnapshot?: TemplateSnapshot;
 };
 
