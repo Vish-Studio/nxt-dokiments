@@ -65,6 +65,7 @@ import {
 } from "@/lib/sharing/signable";
 import { documentBlueprints } from "@/lib/market-place/documents";
 import {
+  clientFieldKeys,
   clientPrefillValues,
   senderPrefillValues,
   sharedContentPrefillValue,
@@ -546,9 +547,20 @@ export const DocumentsView = () => {
                     value={draftName}
                   />
                 }
-                recipientPicker={
+                renderRecipientFields={(recipientFields) => (
                   <ClientPicker
                     fields={editorTemplate.fields}
+                    onClear={() => {
+                      setDraftValues((previous) => ({
+                        ...previous,
+                        ...Object.fromEntries(
+                          clientFieldKeys(editorTemplate.fields).map((key) => [
+                            key,
+                            "",
+                          ]),
+                        ),
+                      }));
+                    }}
                     onSelect={(client) => {
                       setDraftValues((previous) => ({
                         ...previous,
@@ -558,8 +570,11 @@ export const DocumentsView = () => {
                         document_type: editorTemplate.documentType,
                       });
                     }}
-                  />
-                }
+                    values={draftValues}
+                  >
+                    {recipientFields}
+                  </ClientPicker>
+                )}
                 fieldSlots={
                   activeSharedCopy
                     ? {

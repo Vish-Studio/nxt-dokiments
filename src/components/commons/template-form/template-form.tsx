@@ -48,9 +48,13 @@ export type TemplateFormProps = {
   onChange: (key: string, value: string) => void;
   values: Record<string, string>;
   documentNameField?: ReactNode;
-  recipientPicker?: ReactNode;
   /** Replaces a field's input, by key — e.g. a read-only status once a recipient has been sent the document. */
   fieldSlots?: Partial<Record<string, ReactNode>>;
+  /**
+   * Wraps the recipient (Client details) section's rendered inputs, so a caller can show,
+   * hide, or add controls around them — e.g. `ClientPicker` swaps them for a saved client's summary.
+   */
+  renderRecipientFields?: (fields: ReactNode) => ReactNode;
 };
 
 export const TemplateForm = ({
@@ -58,8 +62,8 @@ export const TemplateForm = ({
   onChange,
   values,
   documentNameField,
-  recipientPicker,
   fieldSlots,
+  renderRecipientFields,
 }: TemplateFormProps) => {
   const isBilling =
     fields.some((entry) => entry.key === "subtotal") &&
@@ -97,6 +101,11 @@ export const TemplateForm = ({
     setOpenId(sections[index + 1]?.id ?? null);
   };
 
+  const wrapRecipient = (sectionId: string, fieldNodes: ReactNode) =>
+    sectionId === "to" && renderRecipientFields
+      ? renderRecipientFields(fieldNodes)
+      : fieldNodes;
+
   return (
     <div className="template-form grid min-w-0 gap-4">
       {sections.map((section, index) => {
@@ -117,120 +126,124 @@ export const TemplateForm = ({
             title={section.title}
           >
             {section.id === "details" ? documentNameField : null}
-            {section.id === "to" ? recipientPicker : null}
-            {section.fields.map((field) => {
-              const slot = fieldSlots?.[field.key];
-              if (slot) {
-                return <div key={field.key}>{slot}</div>;
-              }
-              if (field.key === "skillsDisplay") {
-                return (
-                  <CvSkillsDisplayField
-                    key={field.key}
-                    onChange={(value) => change({ [field.key]: value })}
-                    value={values[field.key] ?? ""}
-                  />
-                );
-              }
-              if (isCvListKey(field.key)) {
-                return (
-                  <CvListEditor
-                    key={field.key}
-                    listKey={field.key}
-                    onChange={(value) => change({ [field.key]: value })}
-                    value={values[field.key] ?? ""}
-                  />
-                );
-              }
-              if (isBilling && field.key === "items") {
-                return (
-                  <LineItemsEditor
-                    key={field.key}
-                    value={values.items ?? ""}
-                    onChange={(value) => change({ items: value })}
-                  />
-                );
-              }
-              if (
-                isBilling &&
-                (field.key === "subtotal" || field.key === "total")
-              ) {
-                const isSubtotal = field.key === "subtotal";
-                const manualKey = isSubtotal ? "subtotalManual" : "totalManual";
-                const isManual = values[manualKey] === "true";
-                return (
-                  <div
-                    className="grid gap-2"
-                    key={field.key}
-                  >
-                    <Input
-                      label={field.label}
-                      onChange={(event) =>
-                        change({
-                          [manualKey]: "true",
-                          [field.key]: event.target.value,
-                        })
-                      }
-                      placeholder={field.placeholder}
+            {wrapRecipient(
+              section.id,
+              section.fields.map((field) => {
+                const slot = fieldSlots?.[field.key];
+                if (slot) {
+                  return <div key={field.key}>{slot}</div>;
+                }
+                if (field.key === "skillsDisplay") {
+                  return (
+                    <CvSkillsDisplayField
+                      key={field.key}
+                      onChange={(value) => change({ [field.key]: value })}
                       value={values[field.key] ?? ""}
                     />
-                    <p className="text-xs text-nox-noir/60">
-                      {isManual
-                        ? "Manually overridden."
-                        : isSubtotal
-                          ? "Calculated from line items."
-                          : "Calculated from subtotal and tax."}{" "}
-                      {isManual ? (
-                        <button
-                          className="font-semibold underline"
-                          onClick={() => change({ [manualKey]: "" })}
-                          type="button"
-                        >
-                          Reset to calculated
-                        </button>
-                      ) : (
-                        "Edit the field to override."
-                      )}
-                    </p>
-                  </div>
-                );
-              }
-              if (field.type === "textarea") {
-                return (
-                  <label
-                    className="form-control w-full"
-                    key={field.key}
-                  >
-                    <span className="label pb-2">
-                      <span className="label-text font-title text-sm font-semibold text-nox-noir">
-                        {field.label}
+                  );
+                }
+                if (isCvListKey(field.key)) {
+                  return (
+                    <CvListEditor
+                      key={field.key}
+                      listKey={field.key}
+                      onChange={(value) => change({ [field.key]: value })}
+                      value={values[field.key] ?? ""}
+                    />
+                  );
+                }
+                if (isBilling && field.key === "items") {
+                  return (
+                    <LineItemsEditor
+                      key={field.key}
+                      value={values.items ?? ""}
+                      onChange={(value) => change({ items: value })}
+                    />
+                  );
+                }
+                if (
+                  isBilling &&
+                  (field.key === "subtotal" || field.key === "total")
+                ) {
+                  const isSubtotal = field.key === "subtotal";
+                  const manualKey = isSubtotal
+                    ? "subtotalManual"
+                    : "totalManual";
+                  const isManual = values[manualKey] === "true";
+                  return (
+                    <div
+                      className="grid gap-2"
+                      key={field.key}
+                    >
+                      <Input
+                        label={field.label}
+                        onChange={(event) =>
+                          change({
+                            [manualKey]: "true",
+                            [field.key]: event.target.value,
+                          })
+                        }
+                        placeholder={field.placeholder}
+                        value={values[field.key] ?? ""}
+                      />
+                      <p className="text-xs text-nox-noir/60">
+                        {isManual
+                          ? "Manually overridden."
+                          : isSubtotal
+                            ? "Calculated from line items."
+                            : "Calculated from subtotal and tax."}{" "}
+                        {isManual ? (
+                          <button
+                            className="font-semibold underline"
+                            onClick={() => change({ [manualKey]: "" })}
+                            type="button"
+                          >
+                            Reset to calculated
+                          </button>
+                        ) : (
+                          "Edit the field to override."
+                        )}
+                      </p>
+                    </div>
+                  );
+                }
+                if (field.type === "textarea") {
+                  return (
+                    <label
+                      className="form-control w-full"
+                      key={field.key}
+                    >
+                      <span className="label pb-2">
+                        <span className="label-text font-title text-sm font-semibold text-nox-noir">
+                          {field.label}
+                        </span>
                       </span>
-                    </span>
-                    <textarea
-                      className="textarea min-h-28 w-full border border-steel-mist bg-base-200 text-base text-nox-noir transition-colors placeholder:text-nox-noir/40 focus:border-nox-noir focus:bg-base-100 focus:outline-none focus:ring-2 focus:ring-nox-noir/15"
-                      onChange={(event) =>
-                        change({ [field.key]: event.target.value })
-                      }
-                      placeholder={field.placeholder}
-                      value={values[field.key] ?? ""}
-                    />
-                  </label>
-                );
-              }
+                      <textarea
+                        className="textarea min-h-28 w-full border border-steel-mist bg-base-200 text-base text-nox-noir transition-colors placeholder:text-nox-noir/40 focus:border-nox-noir focus:bg-base-100 focus:outline-none focus:ring-2 focus:ring-nox-noir/15"
+                        onChange={(event) =>
+                          change({ [field.key]: event.target.value })
+                        }
+                        placeholder={field.placeholder}
+                        value={values[field.key] ?? ""}
+                      />
+                    </label>
+                  );
+                }
 
-              return (
-                <Input
-                  key={field.key}
-                  label={field.label}
-                  onChange={(event) =>
-                    change({ [field.key]: event.target.value })
-                  }
-                  placeholder={field.placeholder}
-                  type={field.type}
-                  value={values[field.key] ?? ""}
-                />
-              );
-            })}
+                return (
+                  <Input
+                    key={field.key}
+                    label={field.label}
+                    onChange={(event) =>
+                      change({ [field.key]: event.target.value })
+                    }
+                    placeholder={field.placeholder}
+                    type={field.type}
+                    value={values[field.key] ?? ""}
+                  />
+                );
+              }),
+            )}
           </FormAccordionSection>
         );
       })}

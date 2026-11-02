@@ -1,5 +1,5 @@
 import type { AuthUser } from "@/types/auth";
-import type { Client } from "@/types/client";
+import type { Client, ClientInput } from "@/types/client";
 import type { TemplateField } from "@/types/template";
 import { withPartyContacts } from "./party-fields";
 
@@ -99,6 +99,44 @@ export const clientPrefillValues = (
   client: Client,
   fields: TemplateField[],
 ): Record<string, string> => applyRules(CLIENT_RULES, client, fields);
+
+/**
+ * The recipient field keys a template declares (one per client rule), e.g. `toName`, `toEmail`.
+ * Used to clear a picked client's details when the user switches to entering a new client.
+ */
+export const clientFieldKeys = (fields: TemplateField[]): string[] => {
+  const templateKeys = new Set(withPartyContacts(fields).map((field) => field.key));
+
+  return CLIENT_RULES.flatMap((rule) => {
+    const key = rule.keys.find((candidate) => templateKeys.has(candidate));
+    return key ? [key] : [];
+  });
+};
+
+/**
+ * The reverse of `clientPrefillValues`: reads what the user typed into a document's recipient
+ * block back into client details, to seed "Save to My Clients". The recipient name goes to
+ * `companyName` (documents address the business); the contact person's `name` has no document
+ * field, so it is left for the user to fill in.
+ */
+export const clientInputFromValues = (
+  values: Record<string, string>,
+  fields: TemplateField[],
+): Partial<ClientInput> => {
+  const templateKeys = new Set(withPartyContacts(fields).map((field) => field.key));
+  const read = (keys: string[]) => {
+    const key = keys.find((candidate) => templateKeys.has(candidate));
+    return key ? (values[key] ?? "").trim() : "";
+  };
+
+  return {
+    address: read(["toAddress", "partyTwoAddress"]),
+    brn: read(["toBrn"]),
+    companyName: read(["toName", "partyTwo"]),
+    email: read(["toEmail"]),
+    phone: read(["toPhone"]),
+  };
+};
 
 /**
  * Values to seed a brand-new document's draft with, from the signed-in user's
