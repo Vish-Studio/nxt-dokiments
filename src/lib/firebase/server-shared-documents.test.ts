@@ -52,7 +52,7 @@ describe("shared document serialisation", () => {
       "s1",
     );
 
-    expect(parsed).toEqual({ ...document, id: "s1" });
+    expect(parsed).toEqual({ ...document, id: "s1", views: {} });
   });
 
   it("reports a recipient as signed once a signature exists, matched by uid", () => {
@@ -100,6 +100,54 @@ describe("shared document serialisation", () => {
     );
 
     expect(parsed.recipients[1].status).toBe("signed");
+  });
+
+  it("leaves a revoked recipient out of the flat arrays but keeps them in recipients", () => {
+    const revoked = {
+      ...document,
+      recipients: [
+        {
+          ...document.recipients[0],
+          revokedAt: 4_000_000,
+          status: "revoked" as const,
+        },
+        document.recipients[1],
+      ],
+    };
+    const fields = toSharedDocumentFields(revoked);
+
+    expect(readArray(fields.recipientEmails).map(readString)).toEqual([
+      "carol@example.com",
+    ]);
+    expect(readArray(fields.recipientUids).map(readString)).toEqual([]);
+
+    const parsed = parseSharedDocument({ fields }, "s1");
+    expect(parsed.recipients[0]).toMatchObject({
+      revokedAt: 4_000_000,
+      status: "revoked",
+    });
+  });
+
+  it("round-trips views and reports the viewer as viewed", () => {
+    const viewed = {
+      ...document,
+      views: {
+        "bob-uid": { email: "bob@example.com", viewedAt: 3_000_000 },
+      },
+    };
+
+    const parsed = parseSharedDocument(
+      { fields: toSharedDocumentFields(viewed) },
+      "s1",
+    );
+
+    expect(parsed.views).toEqual(viewed.views);
+    expect(parsed.recipients[0].status).toBe("viewed");
+    expect(parsed.recipients[1].status).toBe("pending");
+  });
+
+  it("writes no views field when nobody has viewed it", () => {
+    expect(toSharedDocumentFields(document)).not.toHaveProperty("views");
   });
 
   it("keys ledger entries by the normalised address", () => {

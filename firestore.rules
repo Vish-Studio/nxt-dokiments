@@ -156,7 +156,7 @@ service cloud.firestore {
     // Who can do what:
     //   owner      — read; create; edit and delete while unlocked. Never writes
     //                `signatures` or `locked`, so they cannot forge a signature.
-    //   recipient  — read; sign once, which locks the document. The signature and
+    //   recipient  — read; record their first view; sign once, which locks the document. The signature and
     //                `locked = true` must be written together.
     //   everybody  — nothing at all once `locked` is true (no update, no delete).
     //
@@ -171,7 +171,8 @@ service cloud.firestore {
       return [
         'createdAt', 'locked', 'name', 'ownerEmail', 'ownerId', 'ownerName',
         'recipientEmails', 'recipientUids', 'recipients', 'signatures',
-        'sourceDocumentId', 'templateId', 'templateSnapshot', 'updatedAt', 'values'
+        'sourceDocumentId', 'templateId', 'templateSnapshot', 'updatedAt', 'values',
+        'views'
       ];
     }
 
@@ -228,7 +229,27 @@ service cloud.firestore {
         && request.resource.data.ownerId == resource.data.ownerId
         && request.resource.data.locked == false
         && request.resource.data.signatures == resource.data.signatures
+        // The owner can clear a view (a re-share starts afresh) but never add or alter one.
+        && request.resource.data.get('views', {}).keys()
+          .hasOnly(resource.data.get('views', {}).keys())
+        && request.resource.data.get('views', {})
+          .diff(resource.data.get('views', {})).changedKeys().size() == 0
         && request.resource.data.recipientEmails.size() <= 100;
+
+      // A recipient records that they opened the document, once, under their
+      // own uid. `updatedAt` stays untouched so a view never reorders lists.
+      allow update: if isSharedRecipient(resource.data)
+        && resource.data.locked == false
+        && request.resource.data.diff(resource.data).affectedKeys()
+          .hasOnly(['views'])
+        && !(request.auth.uid in resource.data.get('views', {}))
+        && request.resource.data.views.diff(resource.data.get('views', {}))
+          .affectedKeys().hasOnly([request.auth.uid])
+        && request.resource.data.views[request.auth.uid].keys()
+          .hasOnly(['email', 'viewedAt'])
+        && request.resource.data.views[request.auth.uid].viewedAt is timestamp
+        && request.resource.data.views[request.auth.uid].email
+          == request.auth.token.email.lower();
 
       allow update: if isSharedRecipient(resource.data)
         && resource.data.locked == false

@@ -7,9 +7,15 @@ import { useState } from "react";
 import { Button } from "@/components/commons/button/button";
 import { ConfirmDialog } from "@/components/commons/confirm-dialog/confirm-dialog";
 import { TemplateDocument } from "@/components/commons/template-document/template-document";
+import { ShareTimeline } from "@/components/dashboard/share-timeline/share-timeline";
 import { ShareStatusBadge } from "@/components/dashboard/share-status-badge/share-status-badge";
 import { SignatureField } from "@/components/dashboard/signature-field/signature-field";
 import { SignedSignature } from "@/components/dashboard/signed-signature/signed-signature";
+import {
+  currentRecipient,
+  resolveRecipientStatus,
+  shareTimeline,
+} from "@/lib/sharing/share-activity";
 import { RECIPIENT_SIGNATURE_KEY } from "@/lib/sharing/signable";
 import { snapshotToMarketplaceTemplate } from "@/types/template";
 import type { SharedDocument } from "@/types/sharing";
@@ -44,6 +50,7 @@ export const SharedDocumentSheet = ({
 
   const title = document.values.title?.trim() || document.name;
   const signature = Object.values(document.signatures)[0];
+  const headerRecipient = currentRecipient(document);
   const canSign = viewer === "recipient" && !document.locked;
   const trimmed = typed.trim();
   const backHref =
@@ -93,12 +100,18 @@ export const SharedDocumentSheet = ({
             <p className="mt-1 text-sm text-nox-noir/60">
               {viewer === "recipient"
                 ? `Shared by ${document.ownerName || document.ownerEmail}`
-                : `Shared copy of your document — ${document.recipients
-                    .map((recipient) => recipient.email)
-                    .join(", ")}`}
+                : `Shared copy of your document — ${headerRecipient?.email ?? ""}`}
             </p>
           </div>
-          <ShareStatusBadge status={document.locked ? "signed" : "pending"} />
+          <ShareStatusBadge
+            status={
+              document.locked
+                ? "signed"
+                : headerRecipient
+                  ? resolveRecipientStatus(headerRecipient, document).status
+                  : "pending"
+            }
+          />
         </div>
 
         {document.locked ? (
@@ -111,6 +124,15 @@ export const SharedDocumentSheet = ({
             />
             This copy is signed and locked. It can no longer be changed.
           </p>
+        ) : null}
+
+        {document.locked ? (
+          <section
+            aria-label="Activity"
+            className="rounded-box border border-steel-mist bg-base-100 p-3"
+          >
+            <ShareTimeline events={shareTimeline(document)} />
+          </section>
         ) : null}
 
         {document.templateSnapshot ? (

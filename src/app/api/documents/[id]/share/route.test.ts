@@ -142,6 +142,8 @@ const installFetch = () =>
 const sharedDocument = (overrides: {
   locked?: boolean;
   recipientEmail?: string;
+  status?: string;
+  viewed?: boolean;
 }) => ({
   fields: {
     createdAt: timestamp("2026-10-02T00:00:00.000Z"),
@@ -158,7 +160,7 @@ const sharedDocument = (overrides: {
               fields: {
                 email: string(overrides.recipientEmail ?? "bob@example.com"),
                 invitedAt: timestamp("2026-10-02T00:00:00.000Z"),
-                status: string("pending"),
+                status: string(overrides.status ?? "pending"),
               },
             },
           },
@@ -170,6 +172,26 @@ const sharedDocument = (overrides: {
     templateId: string("nda"),
     updatedAt: timestamp("2026-10-02T00:00:00.000Z"),
     values: { mapValue: { fields: {} } },
+    ...(overrides.viewed
+      ? {
+          views: {
+            mapValue: {
+              fields: {
+                "bob-uid": {
+                  mapValue: {
+                    fields: {
+                      email: string(
+                        overrides.recipientEmail ?? "bob@example.com",
+                      ),
+                      viewedAt: timestamp("2026-10-03T00:00:00.000Z"),
+                    },
+                  },
+                },
+              },
+            },
+          },
+        }
+      : {}),
   },
   name: "projects/p/databases/(default)/documents/sharedDocuments/owner-uid_doc_1",
 });
@@ -323,6 +345,44 @@ describe("POST /api/documents/:id/share", () => {
 
     expect(response.status).toBe(409);
     expect(commits).toHaveLength(0);
+  });
+
+  it("allows a new address once the previous recipient was revoked", async () => {
+    stub.sharedDocument = sharedDocument({
+      recipientEmail: "carol@example.com",
+      status: "revoked",
+    });
+
+    const response = await post({ email: "bob@example.com" });
+
+    expect(response.status).toBe(201);
+    expect(commits).toHaveLength(1);
+  });
+
+  it("reactivates a revoked recipient and counts it as a new share", async () => {
+    stub.sharedDocument = sharedDocument({ status: "revoked" });
+    stub.ledger = ["bob@example.com"];
+
+    const response = await post({ email: "bob@example.com" });
+
+    expect(response.status).toBe(201);
+    expect(commits).toHaveLength(1);
+  });
+
+  it("clears the earlier view when a revoked recipient is re-shared", async () => {
+    stub.sharedDocument = sharedDocument({ status: "revoked", viewed: true });
+
+    await post({ email: "bob@example.com" });
+
+    expect(JSON.stringify(commits[0].writes[0])).not.toContain("viewedAt");
+  });
+
+  it("keeps the view on a plain re-share", async () => {
+    stub.sharedDocument = sharedDocument({ viewed: true });
+
+    await post({ email: "bob@example.com" });
+
+    expect(JSON.stringify(commits[0].writes[0])).toContain("viewedAt");
   });
 
   it("returns 409 once the shared document is locked", async () => {

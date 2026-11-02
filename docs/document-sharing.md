@@ -26,16 +26,19 @@ Top-level, because two parties read the same record. The owner's original in
 | `ownerId`, `ownerName`, `ownerEmail` | string | Immutable `ownerId`. |
 | `name`, `templateId`, `values`, `templateSnapshot?` | | Copied from the source document. |
 | `sourceDocumentId` | string | The document the share was made from. |
-| `recipients` | array of map | `{ email, invitedAt, status, signedAt?, uid?, emailedAt? }`. `emailedAt` is a list of recent share-email send times (24h), used for the email cooldown and daily cap. Informational; the API is its only writer. |
+| `recipients` | array of map | `{ email, invitedAt, status, revokedAt?, signedAt?, uid?, emailedAt? }`. `emailedAt` is a list of recent share-email send times (24h), used for the email cooldown and daily cap. Informational; the API is its only writer. |
 | `recipientEmails` | string[] | Normalised addresses. **Derived from `recipients`** — security rules cannot look inside an array of maps. |
 | `recipientUids` | string[] | Linked accounts. Derived from `recipients`. |
+| `views` | map | Keyed by viewer uid → `{ email, viewedAt }`. A recipient adds only their own key, once, on first open. Absent until someone opens the copy. |
 | `signatures` | map | Keyed by signer uid → `{ email, signedAt, type: "typed", value }`. |
 | `locked` | bool | Once true, nobody can write or delete. |
 | `createdAt`, `updatedAt` | timestamp | |
 
 A recipient's `signed` status is derived from `signatures`, not stored by them:
 rules only let a recipient write `signatures`, `locked` and `updatedAt`, so they
-cannot alter `recipients`. `parseSharedDocument` applies that derivation.
+cannot alter `recipients`. `parseSharedDocument` applies that derivation. The
+same goes for `viewed`, derived from `views`. Only `revoked` is stored on the
+recipient, because only the owner can revoke.
 
 ### `users/{uid}/shareRecipients/{normalisedEmail}` — sharing ledger
 
@@ -49,8 +52,8 @@ limit is switched on, existing usage is already known.
 
 | Actor | May |
 |---|---|
-| Owner | Read. Create (unlocked, no signatures). Edit and delete while unlocked. Never write `signatures` or `locked`; cannot change `ownerId`. |
-| Recipient | Read. Sign while unlocked: add exactly one signature (their own uid key) **and set `locked` to true in the same write**. Nothing else. |
+| Owner | Read. Create (unlocked, no signatures). Edit and delete while unlocked. Never write `signatures`, `locked` or `views`; cannot change `ownerId`. |
+| Recipient | Read. Record their first view while unlocked: add exactly their own uid key to `views`, with their token address, touching nothing else (not even `updatedAt`). Sign while unlocked: add exactly one signature (their own uid key) **and set `locked` to true in the same write**. Nothing else. |
 | Anyone, once `locked` | Read only (owner and recipients). No update, no delete. An owner re-share is refused too, so a signed copy cannot be replaced. |
 | Anyone else | Nothing. |
 
@@ -188,6 +191,36 @@ The signature script font is `--font-signature` (Dancing Script via
 
 When a recipient signs, the owner gets a `document-signed` notification in the
 bell, linking to the shared copy (see `docs/notifications.md`).
+## Managing a share (DS-10)
+
+The owner's `SharedCopyStatus` panel (in the document editor) shows the status
+badge (pending, viewed, signed, revoked), the activity timeline, and while the
+copy is unsigned, **Resend email** and **Revoke access**.
+
+- **Revoke** — `POST /api/documents/shared/:id/revoke`. Owner only, unlocked
+  copies only (`409` once signed, or when nobody is active). The recipient is
+  kept in `recipients` with `status: "revoked"` and `revokedAt`, but their
+  address and uid are removed from `recipientEmails` and `recipientUids`, which
+  is what ends their access at once. The copy stays, so the audit trail does
+  too. The owner can share again afterwards: the same address is reactivated as
+  a fresh `pending` entry (keeping its `emailedAt`, so revoke and re-share cannot
+  skip the email cooldown), and a different address is accepted because only
+  *active* recipients count. A revoke never hands a plan slot back: the ledger is
+  never decremented.
+- **Resend** — the existing share route, called again with the active
+  recipient's address. The 10-minute cooldown and 20-a-day cap still apply; the
+  button is disabled with a countdown inside the cooldown. The daily cap is not
+  visible to the client, so the server skips that email silently.
+- **Viewed** — `GET /api/documents/shared/:id` records the caller's first view in
+  `after()` (a failure never changes the response). It is a no-op for the owner,
+  non-recipients, revoked recipients, locked copies and accounts that already
+  viewed.
+- **Audit trail** — no log collection. `shareTimeline` (`src/lib/sharing/
+  share-activity.ts`) derives *shared*, *viewed*, *signed* and *revoked* events
+  from `invitedAt`, `views`, `signatures` and `revokedAt`. Once the copy is
+  locked, both parties see it on the shared copy. Known limit: re-sharing a
+  revoked address clears its `revokedAt`, so the earlier revoke is not listed.
+
 ## Monthly document quota
 
 The app currently has no monthly document quota (the plan list says "Create

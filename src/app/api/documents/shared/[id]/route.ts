@@ -1,5 +1,10 @@
+import { after } from "next/server";
+
 import { withSession } from "@/lib/api/with-session";
-import { getSharedDocument } from "@/lib/firebase/server-shared-documents";
+import {
+  getSharedDocument,
+  recordSharedDocumentView,
+} from "@/lib/firebase/server-shared-documents";
 import {
   assertDocumentSharingEnabled,
   shareApiError,
@@ -14,6 +19,10 @@ type Context = { params: Promise<{ id: string }> };
  * that does not exist and one the caller may not see are indistinguishable:
  * both return `404`. Answers `404` while the `documentSharing` flag is off.
  *
+ * When a recipient opens the document for the first time, the view is recorded in
+ * the background (`after()`) so the owner can see it was opened. Recording never
+ * changes the response, even when it fails.
+ *
  * @returns `{ document: SharedDocument }` on success.
  * @returns `{ error: string }` with status `401` when no session is present.
  * @returns `{ error: string }` with status `404` when not found or not accessible.
@@ -27,6 +36,14 @@ export const GET = withSession<Context>(async (_request, context, session) => {
   if (!document) {
     throw shareApiError("NOT_A_RECIPIENT");
   }
+
+  after(async () => {
+    try {
+      await recordSharedDocumentView(session, document);
+    } catch {
+      console.error("[share] could not record a view");
+    }
+  });
 
   return Response.json({ document });
 });

@@ -66,9 +66,15 @@ export const useShareDocumentMutation = () => {
   return useMutation({
     mutationFn: postShare,
     onSuccess: () =>
-      queryClient.invalidateQueries({
-        queryKey: queryKeys.shareRecipients.all(),
-      }),
+      Promise.all([
+        queryClient.invalidateQueries({
+          queryKey: queryKeys.shareRecipients.all(),
+        }),
+        // A re-share can reactivate a revoked recipient and always stamps the email.
+        queryClient.invalidateQueries({
+          queryKey: queryKeys.sharedDocuments.all(),
+        }),
+      ]),
   });
 };
 

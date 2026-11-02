@@ -34,11 +34,32 @@ const signed: SharedDocument = {
   },
 };
 
+const NOW = new Date("2026-10-21T15:00:00Z").getTime();
+
+const revoked: SharedDocument = {
+  ...pending,
+  recipients: [
+    {
+      email: "sam@example.com",
+      invitedAt: 1,
+      revokedAt: NOW - 60_000,
+      status: "revoked",
+    },
+  ],
+};
+
 const meta = {
   title: "Dashboard/Shared Copy Status",
   component: SharedCopyStatus,
   tags: ["ai-generated"],
-  args: { document: pending, label: "Recipient signature", onView: fn() },
+  args: {
+    document: pending,
+    label: "Recipient signature",
+    now: NOW,
+    onResend: fn(),
+    onRevoke: fn(),
+    onView: fn(),
+  },
   decorators: [
     (Story) => (
       <div className="max-w-xl p-6">
@@ -58,6 +79,7 @@ export const Waiting: Story = {
     await expect(
       canvas.getByText("Waiting for sam@example.com to sign"),
     ).toBeVisible();
+    await expect(canvas.getByText("Pending")).toBeVisible();
     await userEvent.click(
       canvas.getByRole("button", { name: "View shared copy" }),
     );
@@ -74,5 +96,74 @@ export const Signed: Story = {
         "Signed by sam@example.com on 21 Oct 2026",
       ),
     ).toBeVisible();
+  },
+};
+
+/** Resend emails the recipient again. */
+export const Resend: Story = {
+  play: async ({ args, canvasElement }) => {
+    await userEvent.click(
+      within(canvasElement).getByRole("button", { name: "Resend email" }),
+    );
+    await expect(args.onResend).toHaveBeenCalledOnce();
+  },
+};
+
+/** Inside the cooldown the button is disabled and says how long to wait. */
+export const ResendCooldown: Story = {
+  args: {
+    document: {
+      ...pending,
+      recipients: [
+        {
+          email: "sam@example.com",
+          emailedAt: [NOW - 3 * 60_000],
+          invitedAt: 1,
+          status: "pending",
+        },
+      ],
+    },
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await expect(
+      canvas.getByRole("button", { name: "Resend email" }),
+    ).toBeDisabled();
+    await expect(canvas.getByText("You can resend in 7 min.")).toBeVisible();
+  },
+};
+
+/** Revoking asks for confirmation before it calls back. */
+export const Revoke: Story = {
+  play: async ({ args, canvasElement }) => {
+    const canvas = within(canvasElement);
+    await userEvent.click(
+      canvas.getByRole("button", { name: "Revoke access" }),
+    );
+    await expect(args.onRevoke).not.toHaveBeenCalled();
+    const dialog = within(await within(document.body).findByRole("dialog"));
+    await userEvent.click(
+      dialog.getByRole("button", { name: "Revoke access" }),
+    );
+    await expect(args.onRevoke).toHaveBeenCalledOnce();
+  },
+};
+
+/** Revoked: no actions apart from viewing the copy, and a hint to share again. */
+export const Revoked: Story = {
+  args: { document: revoked },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await expect(
+      canvas.getByText(
+        "Access revoked for sam@example.com. Share again to invite someone.",
+      ),
+    ).toBeVisible();
+    await expect(
+      canvas.queryByRole("button", { name: "Resend email" }),
+    ).toBeNull();
+    await expect(
+      canvas.queryByRole("button", { name: "Revoke access" }),
+    ).toBeNull();
   },
 };

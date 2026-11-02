@@ -44,10 +44,14 @@ import { useSavedTemplatesQuery } from "@/hooks/queries/use-saved-templates";
 import { useScrollContentToTopOnMobile } from "@/hooks/use-scroll-content-to-top-on-mobile";
 import { trackEvent } from "@/lib/analytics/track";
 import { documentSharingEnabled } from "@/lib/sharing/feature-flag";
+import { activeRecipient } from "@/lib/sharing/share-activity";
+import { useShareDocumentMutation } from "@/hooks/queries/use-share";
 import {
+  useRevokeSharedDocumentMutation,
   useSharedByMeQuery,
   useSharedDocumentsQuery,
 } from "@/hooks/queries/use-shared-documents";
+import { useToastStore } from "@/stores/toast-store";
 import {
   SharedDocumentList,
   sharedDocumentListColumns,
@@ -122,6 +126,11 @@ export const DocumentsView = () => {
   const { data: sharedByMe = EMPTY_SHARED_DOCUMENTS } = useSharedByMeQuery({
     enabled: documentSharingEnabled,
   });
+  const showToast = useToastStore((state) => state.showToast);
+  const { isPending: isResending, mutate: resendShare } =
+    useShareDocumentMutation();
+  const { isPending: isRevoking, mutate: revokeShare } =
+    useRevokeSharedDocumentMutation();
   const { mutate: updateDocument } = useUpdateDocumentMutation();
   const { mutate: deleteDocument } = useDeleteDocumentMutation();
 
@@ -557,6 +566,47 @@ export const DocumentsView = () => {
                         [RECIPIENT_SIGNATURE_KEY]: (
                           <SharedCopyStatus
                             document={activeSharedCopy}
+                            isResending={isResending}
+                            isRevoking={isRevoking}
+                            onResend={() => {
+                              const email =
+                                activeRecipient(activeSharedCopy)?.email;
+                              if (!email) {
+                                return;
+                              }
+                              resendShare(
+                                {
+                                  documentId: activeSharedCopy.sourceDocumentId,
+                                  email,
+                                },
+                                {
+                                  onError: (error) =>
+                                    showToast({
+                                      message: error.message,
+                                      tone: "error",
+                                    }),
+                                  onSuccess: () =>
+                                    showToast({
+                                      message: `Email sent to ${email}.`,
+                                      tone: "success",
+                                    }),
+                                },
+                              );
+                            }}
+                            onRevoke={() =>
+                              revokeShare(activeSharedCopy.id, {
+                                onError: (error) =>
+                                  showToast({
+                                    message: error.message,
+                                    tone: "error",
+                                  }),
+                                onSuccess: () =>
+                                  showToast({
+                                    message: "Access revoked.",
+                                    tone: "success",
+                                  }),
+                              })
+                            }
                             label={
                               editorTemplate.fields.find(
                                 (field) =>
