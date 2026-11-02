@@ -145,12 +145,16 @@ export const OwnerPending: Story = {
   },
 };
 
-/** The owner sees who signed and when. */
+/** The owner sees who signed and when, in the activity trail. */
 export const OwnerSigned: Story = {
   args: { document: signedDocument, viewer: "owner" },
   play: async ({ canvasElement }) => {
+    const activity = within(
+      within(canvasElement).getByRole("region", { name: "Activity" }),
+    );
     await expect(
-      within(canvasElement).getByText(/Signed by sam@example.com/),
+      activity.getByText(/Shared with sam@example.com/),
     ).toBeVisible();
+    await expect(activity.getByText(/Signed by sam@example.com/)).toBeVisible();
   },
 };
