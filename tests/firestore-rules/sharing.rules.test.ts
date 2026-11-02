@@ -313,6 +313,88 @@ describe("sharedDocuments — recipient signing", () => {
   });
 });
 
+describe("sharedDocuments — viewed and revoked", () => {
+  const view = (overrides: Record<string, unknown> = {}) => ({
+    email: "bob@example.com",
+    viewedAt: now(),
+    ...overrides,
+  });
+  const recordView = (
+    db: ReturnType<typeof bobDb>,
+    value: Record<string, unknown> = view(),
+    uid = BOB,
+  ) =>
+    updateDoc(doc(db, "sharedDocuments/s1"), {
+      views: { [uid]: value },
+    });
+
+  beforeEach(() => seed());
+
+  it("lets a recipient record their own first view", async () => {
+    await assertSucceeds(recordView(bobDb()));
+  });
+
+  it("refuses a second view, another uid, or a foreign email", async () => {
+    await assertFails(recordView(bobDb(), view({ email: "eve@example.com" })));
+    await assertFails(recordView(bobDb(), view(), STRANGER));
+    await seed(sharedDoc({ views: { [BOB]: view() } }));
+    await assertFails(recordView(bobDb()));
+  });
+
+  it("refuses a view that also touches other fields", async () => {
+    await assertFails(
+      updateDoc(doc(bobDb(), "sharedDocuments/s1"), {
+        name: "x",
+        views: { [BOB]: view() },
+      }),
+    );
+  });
+
+  it("refuses a view from a stranger, the owner, or once locked", async () => {
+    await assertFails(recordView(strangerDb(), view(), STRANGER));
+    await assertFails(recordView(ownerDb(), view(), OWNER));
+    await seed(sharedDoc({ locked: true }));
+    await assertFails(recordView(bobDb()));
+  });
+
+  it("stops the owner adding or altering a view", async () => {
+    await assertFails(recordView(ownerDb()));
+    await seed(sharedDoc({ views: { [BOB]: view() } }));
+    await assertFails(
+      recordView(ownerDb(), view({ viewedAt: Timestamp.fromMillis(1) })),
+    );
+  });
+
+  it("lets the owner clear a view when re-sharing", async () => {
+    await seed(sharedDoc({ views: { [BOB]: view() } }));
+    await assertSucceeds(
+      updateDoc(doc(ownerDb(), "sharedDocuments/s1"), {
+        updatedAt: now(),
+        views: {},
+      }),
+    );
+  });
+
+  it("lets the owner revoke, which ends the recipient's access", async () => {
+    await assertSucceeds(
+      updateDoc(doc(ownerDb(), "sharedDocuments/s1"), {
+        recipientEmails: [],
+        recipientUids: [],
+        recipients: [
+          {
+            email: "bob@example.com",
+            invitedAt: now(),
+            revokedAt: now(),
+            status: "revoked",
+          },
+        ],
+        updatedAt: now(),
+      }),
+    );
+    await assertFails(getDoc(doc(bobDb(), "sharedDocuments/s1")));
+  });
+});
+
 describe("sharedDocuments — locked", () => {
   beforeEach(() =>
     seed(sharedDoc({ locked: true, signatures: { [BOB]: signature() } })),
