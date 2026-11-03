@@ -162,10 +162,13 @@ describe("GET /api/documents/shared", () => {
   });
 
   it("returns an empty list when the rules refuse an unverified account", async () => {
+    // Only the address query is refused; the uid query is always allowed.
     vi.stubGlobal(
       "fetch",
-      vi.fn(async () =>
-        respond({ error: { status: "PERMISSION_DENIED" } }, 403),
+      vi.fn(async (_url: string, init: { body: string }) =>
+        init.body.includes("recipientEmails")
+          ? respond({ error: { status: "PERMISSION_DENIED" } }, 403)
+          : respond([{}]),
       ),
     );
 
