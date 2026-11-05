@@ -185,6 +185,12 @@ same page for both parties and is flag-gated (`notFound()` when off):
   signature, signer address and time).
 - **Owner** — read-only. The owner reaches it from the **View shared copy** row
   action, shown only for documents in their `?by=me` list.
+- **Export** — once signed (locked, with a signature, and a template snapshot),
+  both parties get **Download signed PDF**, which opens `DocumentExportDialog`
+  with `SignedSignature` passed through its `fieldSlots`. The owner's original,
+  exported from My Documents, stays unsigned because the signature is never
+  merged into it. No new API is involved: the PDF is built in the browser from
+  the shared copy both parties can already read.
 
 The signature script font is `--font-signature` (Dancing Script via
 `next/font`, utility `font-signature`). It is reserved for typed signatures.
