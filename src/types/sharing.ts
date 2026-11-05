@@ -86,6 +86,13 @@ export type SharedDocument = {
   ownerId: string;
   ownerName: string;
   recipients: ShareRecipient[];
+  /**
+   * Accounts that can read the document by uid, as stored in `recipientUids`.
+   * A recipient who accepted an invite link adds their own uid here, so the
+   * list is read back and carried through owner writes rather than rebuilt from
+   * `recipients`. Absent on documents parsed before it existed.
+   */
+  recipientUids?: string[];
   /** Keyed by the signer's uid. */
   signatures: Record<string, ShareSignature>;
   /** The document the share was made from. */
@@ -115,4 +122,29 @@ export type ShareLedgerEntry = {
   email: string;
   /** Epoch milliseconds. */
   lastSharedAt: number;
+};
+
+/**
+ * A single-purpose invitation to one shared document, stored at
+ * `sharedInvites/{tokenHash}` where the ID is the SHA-256 of the token that was
+ * emailed. The raw token is never stored, so a leaked database cannot be used to
+ * open anyone's link.
+ *
+ * It carries a snapshot of what the public preview shows, because the rules do
+ * not let an unauthenticated visitor read `sharedDocuments`.
+ */
+export type SharedInvite = {
+  /** Epoch milliseconds after which the link no longer works (14 days). */
+  expiresAt: number;
+  /** Normalised address the invitation was sent to. */
+  email: string;
+  /** Epoch milliseconds. */
+  createdAt: number;
+  name: string;
+  ownerEmail: string;
+  ownerId: string;
+  ownerName: string;
+  sharedDocumentId: string;
+  templateSnapshot?: TemplateSnapshot;
+  values: Record<string, string>;
 };

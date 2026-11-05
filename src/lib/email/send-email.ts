@@ -6,6 +6,7 @@ import { render } from "@react-email/render";
 import { Resend } from "resend";
 
 import { getEmailConfig } from "./config";
+import { maskEmail } from "./mask-email";
 
 export type SendEmailInput = {
   /** A single recipient address. Surrounding whitespace is trimmed. */
@@ -42,12 +43,6 @@ export type SendEmailResult =
 
 /** A plausibility check only. Resend does the strict validation. */
 const EMAIL_PATTERN = /^[^\s@<>]+@[^\s@<>]+\.[^\s@<>]+$/;
-
-/** `jane@example.com` becomes `j***@example.com`, so logs never hold full addresses. */
-const maskEmail = (email: string) => {
-  const [local = "", domain = ""] = email.split("@");
-  return `${local.slice(0, 1)}***@${domain}`;
-};
 
 /**
  * Sends one transactional email through Resend. This is the only module that
