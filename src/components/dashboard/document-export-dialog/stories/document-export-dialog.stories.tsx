@@ -27,7 +27,22 @@ type Story = StoryObj<typeof meta>;
 export const Ready: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    await expect(await canvas.findByRole("button", { name: "Download PDF" })).toBeVisible();
+    await expect(
+      await canvas.findByRole("button", { name: "Download PDF" }),
+    ).toBeVisible();
+  },
+};
+
+export const SignedCopy: Story = {
+  args: {
+    documentName: "Client Service Agreement (signed)",
+    fieldSlots: { recipientSignature: <p>Sam Rivera</p> },
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await expect(
+      await canvas.findByRole("button", { name: "Download PDF" }),
+    ).toBeVisible();
   },
 };
 
@@ -47,6 +62,8 @@ export const Failure: Story = {
   },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    await expect(await canvas.findByText("PDF could not be created")).toBeVisible();
+    await expect(
+      await canvas.findByText("PDF could not be created"),
+    ).toBeVisible();
   },
 };
