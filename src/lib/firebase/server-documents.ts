@@ -247,6 +247,61 @@ export const createDocument = async (
   return parseUserDocument(document, documentId);
 };
 
+/** The edited content a duplicate is created with. */
+export type DuplicateDocumentInput = {
+  /** Name of the copy, as the user left it in the editor. */
+  name: string;
+  /** Field values of the copy, as the user left them in the editor. */
+  values: Record<string, string>;
+};
+
+/**
+ * Duplicates one of the user's documents into a new, independent document.
+ *
+ * The caller supplies the `name` and `values` (the draft the user reviewed in
+ * the editor), but the structure always comes from the source: `templateId` and
+ * `templateSnapshot` are copied from what is stored, never from the request, so
+ * the copy keeps the original layout even if the template has since changed or
+ * been deactivated. The copy gets a new ID and fresh timestamps, and shares
+ * nothing with the original (no share or signature state is carried over).
+ *
+ * @param session - Active server-side session containing the Firebase `idToken` and user `uid`.
+ * @param documentId - ID of the document to duplicate.
+ * @param input - The edited `name` and `values` for the copy.
+ * @returns The new `UserDocument`, or `null` when the source doesn't exist, belongs to
+ *   another user, or has no `templateSnapshot` (a legacy document the editor can't open).
+ *   Callers should surface `null` as a 404.
+ * @throws When the Firestore read or write fails.
+ */
+export const duplicateDocument = async (
+  session: AuthSession,
+  documentId: string,
+  input: DuplicateDocumentInput,
+): Promise<UserDocument | null> => {
+  const source = await getDocument(session, documentId);
+  if (!source?.templateSnapshot) {
+    return null;
+  }
+
+  const newId = makeDocumentId();
+  const now = toTimestampValue();
+  const fields: FirestoreFields = {
+    createdAt: now,
+    name: toStringValue(input.name),
+    templateId: toStringValue(source.templateId),
+    templateSnapshot: toTemplateSnapshotValue(source.templateSnapshot),
+    updatedAt: now,
+    values: toValuesValue(input.values),
+  };
+
+  const document = await patchFirestoreDocument(
+    documentPath(session.user.uid, newId),
+    fields,
+    session.idToken,
+  );
+  return parseUserDocument(document, newId);
+};
+
 /** Fields that can be updated on an existing document. */
 export type UpdateDocumentInput = {
   name?: string;
