@@ -85,6 +85,12 @@ export type AnalyticsEventMap = {
     document_id: string;
     template_id: string;
   };
+  /** A user duplicated one of their documents. `document_id` is the new copy. */
+  document_duplicated: {
+    document_id: string;
+    document_type: string;
+    source_document_id: string;
+  };
   document_updated: {
     document_id: string;
     name_changed: boolean;
