@@ -77,6 +77,30 @@ const mockDocumentsApi = (
       return new Response(JSON.stringify({ documents }), { status: 200 });
     }
 
+    if (method === "POST" && idMatch && url.endsWith("/duplicate")) {
+      const source = documents.find((document) => document.id === idMatch[1]);
+      if (!source?.templateSnapshot) {
+        return new Response(JSON.stringify({ error: "Document not found." }), {
+          status: 404,
+        });
+      }
+      const body = JSON.parse((init?.body as string) ?? "{}") as {
+        name: string;
+        values: Record<string, string>;
+      };
+      const now = Date.now();
+      const copy: UserDocument = {
+        ...source,
+        createdAt: now,
+        id: `doc-copy-${now}`,
+        name: body.name,
+        updatedAt: now,
+        values: body.values,
+      };
+      documents = [...documents, copy];
+      return new Response(JSON.stringify({ document: copy }), { status: 201 });
+    }
+
     if (method === "POST") {
       const body = JSON.parse((init?.body as string) ?? "{}") as {
         name: string;
@@ -292,6 +316,53 @@ export const EditDocument: Story = {
     await expect(
       await canvas.findByText("Lumina Events Invoice"),
     ).toBeVisible();
+  },
+};
+
+export const DuplicateDocument: Story = {
+  decorators: WithDocuments.decorators,
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const openDraft = async () => {
+      await userEvent.click(
+        await canvas.findByRole("button", {
+          name: "More actions for Lumina Events Invoice",
+        }),
+      );
+      await userEvent.click(canvas.getByRole("button", { name: "Duplicate" }));
+      await expect(
+        await canvas.findByDisplayValue("Copy of March Invoice"),
+      ).toBeVisible();
+    };
+
+    await openDraft();
+    await expect(
+      await canvas.findByDisplayValue("Copy of Lumina Events Invoice"),
+    ).toBeVisible();
+
+    // Leaving without confirming must not create anything.
+    await userEvent.click(
+      canvas.getByRole("button", { name: "Back to documents" }),
+    );
+    await expect(
+      await canvas.findByText("Lumina Events Invoice"),
+    ).toBeVisible();
+    await expect(
+      canvas.queryByText("Copy of Lumina Events Invoice"),
+    ).toBeNull();
+
+    await openDraft();
+    await userEvent.click(
+      canvas.getByRole("button", { name: "Duplicate document" }),
+    );
+    await expect(
+      await canvas.findByRole("dialog", { name: "Document saved" }),
+    ).toBeVisible();
+    await userEvent.click(canvas.getByRole("button", { name: "Continue" }));
+    await expect(
+      await canvas.findByText("Copy of Lumina Events Invoice"),
+    ).toBeVisible();
+    await expect(canvas.getByText("Lumina Events Invoice")).toBeVisible();
   },
 };
 
