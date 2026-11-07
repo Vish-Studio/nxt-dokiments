@@ -13,6 +13,8 @@ export interface SharedDocumentEmailProps {
   senderName: string;
   /** Title of the shared document. Shown as plain text. */
   documentName: string;
+  /** `false` for a view-only share: the copy then asks the recipient to view, not sign. */
+  signable: boolean;
   /** Absolute link the button opens, normally `/my-documents?tab=shared`. */
   url: string;
 }
@@ -33,8 +35,9 @@ export const sharedDocumentEmailSubject = ({
     : `${senderName} updated "${documentName}"`;
 
 /**
- * The email a recipient gets when a document is shared with them for signature,
- * or when the sender shares it again. Built on `EmailLayout`.
+ * The email a recipient gets when a document is shared with them (for
+ * signature, or view-only when `signable` is false), or when the sender shares
+ * it again. Built on `EmailLayout`.
  *
  * Pass `senderName` and `documentName` already cleaned (see
  * `cleanEmailLabel`); React escapes them as text, so they cannot inject markup.
@@ -44,6 +47,7 @@ export const sharedDocumentEmailSubject = ({
  *   variant="shared"
  *   senderName="Jane Doe"
  *   documentName="Service agreement"
+ *   signable
  *   url="https://dokiments.com/my-documents?tab=shared"
  * />
  */
@@ -51,6 +55,7 @@ export const SharedDocumentEmail = ({
   variant,
   senderName,
   documentName,
+  signable,
   url,
 }: SharedDocumentEmailProps) => {
   const isUpdate = variant === "updated";
@@ -71,8 +76,8 @@ export const SharedDocumentEmail = ({
     >
       <Text style={paragraph}>
         {isUpdate
-          ? `${senderName} made changes to "${documentName}". Open it to review the latest version and sign.`
-          : `${senderName} shared "${documentName}" with you on ${siteName} for your signature.`}
+          ? `${senderName} made changes to "${documentName}". Open it to review the latest version${signable ? " and sign" : ""}.`
+          : `${senderName} shared "${documentName}" with you on ${siteName} ${signable ? "for your signature" : "to view"}.`}
       </Text>
       <Text style={paragraph}>
         New to {siteName}? Create an account with this email address and the

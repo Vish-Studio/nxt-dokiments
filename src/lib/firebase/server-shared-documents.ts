@@ -353,10 +353,18 @@ export type ShareDocumentResult = {
   /** Epoch milliseconds of this share; unique per explicit share or re-share. */
   sharedAt: number;
   sharedDocumentId: string;
+  /**
+   * Whether the recipient can sign the copy (its layout has a recipient
+   * signature). `false` means a view-only share.
+   */
+  signable: boolean;
 };
 
 /**
  * Shares one of the signed-in user's documents with `rawEmail`.
+ *
+ * Any document can be shared. One whose layout has a recipient signature is
+ * shared for signing; any other is shared view-only (see `isSignableDocument`).
  *
  * Copies the document (name, values, template snapshot) into `sharedDocuments`
  * and records the address in the owner's ledger, in one atomic commit. Sharing
@@ -386,10 +394,6 @@ export const shareDocument = async (
   const source = await getDocument(session, sourceDocumentId);
   if (!source) {
     throw new ApiError(404, "Document not found.");
-  }
-
-  if (!isSignableDocument(source.templateSnapshot)) {
-    throw shareApiError("SHARE_NOT_SIGNABLE");
   }
 
   const sharedDocumentId = sharedDocumentIdFor(uid, sourceDocumentId);
@@ -510,6 +514,7 @@ export const shareDocument = async (
     recipient,
     sharedAt: now,
     sharedDocumentId,
+    signable: isSignableDocument(source.templateSnapshot),
   };
 };
 
@@ -600,7 +605,9 @@ export const listSharedByMe = async (
 /**
  * Signs a document shared with the signed-in user and locks it, in one write.
  * Only a recipient can sign (not the owner), and only while the document is
- * unlocked. With one recipient per document, their signature completes it.
+ * unlocked, and only when its layout has a recipient signature: a view-only
+ * share cannot be signed. With one recipient per document, their signature
+ * completes it.
  *
  * The rules re-check every condition on the write itself, so a request that
  * races a lock or a second signature is refused there too.
@@ -610,7 +617,8 @@ export const listSharedByMe = async (
  * @param value - The typed signature, already validated.
  * @returns The signed, locked document.
  * @throws `NOT_A_RECIPIENT` (404) when the document is unknown or not shared
- *   with the caller; `DOCUMENT_LOCKED` (409) when it is already signed.
+ *   with the caller; `DOCUMENT_LOCKED` (409) when it is already signed;
+ *   `SHARE_NOT_SIGNABLE` (400) when it is a view-only share.
  */
 export const signSharedDocument = async (
   session: AuthSession,
@@ -631,6 +639,9 @@ export const signSharedDocument = async (
   }
   if (document.locked) {
     throw shareApiError("DOCUMENT_LOCKED");
+  }
+  if (!isSignableDocument(document.templateSnapshot)) {
+    throw shareApiError("SHARE_NOT_SIGNABLE");
   }
 
   const now = Date.now();

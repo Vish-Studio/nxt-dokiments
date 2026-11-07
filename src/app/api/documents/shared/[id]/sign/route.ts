@@ -25,7 +25,8 @@ const SignDocumentSchema = z.object({
  * or failed email never changes the response.
  *
  * @returns `{ document: SharedDocument }` on success.
- * @returns `{ error: string }` with status `400` for a missing or over-long signature.
+ * @returns `{ error: string }` with status `400` for a missing or over-long
+ *   signature, or a view-only share (no recipient signature to sign).
  * @returns `{ error: string }` with status `401` when no session is present.
  * @returns `{ error: string }` with status `404` when the document is not
  *   shared with the caller (or does not exist), or sharing is off.

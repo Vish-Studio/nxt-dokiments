@@ -11,6 +11,7 @@ import {
 const props = {
   documentName: "Service agreement",
   senderName: "Jane Doe",
+  signable: true,
   url: "https://example.com/my-documents?tab=shared",
 };
 
@@ -27,6 +28,29 @@ describe("SharedDocumentEmail", () => {
       'href="https://example.com/my-documents?tab=shared"',
     );
     expect(html).toContain("Create an account with this email address");
+    expect(html).toContain("for your signature");
+  });
+
+  it("asks only to view a view-only share", async () => {
+    const shared = await render(
+      createElement(SharedDocumentEmail, {
+        ...props,
+        signable: false,
+        variant: "shared",
+      }),
+    );
+    const updated = await render(
+      createElement(SharedDocumentEmail, {
+        ...props,
+        signable: false,
+        variant: "updated",
+      }),
+    );
+
+    expect(shared).toContain("to view.");
+    expect(shared).not.toContain("signature");
+    expect(updated).toContain("review the latest version.");
+    expect(updated).not.toContain("and sign");
   });
 
   it("says the document was updated on a re-share", async () => {

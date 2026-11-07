@@ -71,7 +71,7 @@ export type ShareView = {
 };
 
 /**
- * A document that has been shared for signature. Lives at `sharedDocuments/{id}`
+ * A document that has been shared (for signature, or view-only). Lives at `sharedDocuments/{id}`
  * rather than under `users/{uid}` so that both the owner and the recipients can
  * read it; the owner's original in `users/{uid}/documents` is left untouched.
  */
