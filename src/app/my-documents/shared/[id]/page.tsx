@@ -22,7 +22,7 @@ const SharedDocumentPage = async ({ params }: SharedDocumentPageProps) => {
   return (
     <AppShell
       activeItem="My Documents"
-      description="Review and sign a document shared with you."
+      description="Review a document shared with you, and sign it when asked."
       title="Shared document"
     >
       <SharedDocumentView id={id} />

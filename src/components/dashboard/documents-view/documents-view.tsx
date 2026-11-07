@@ -160,6 +160,7 @@ export const DocumentsView = () => {
     id: string;
     name: string;
     recipientEmail?: string;
+    signable: boolean;
   } | null>(null);
   const [listTab, setListTab] = useState<"mine" | "shared">("mine");
   const [search, setSearch] = useState("");
@@ -502,6 +503,66 @@ export const DocumentsView = () => {
   const editorTemplate = activeTemplate;
 
   if (mode === "editor" && editorTemplate) {
+    const isEditorSignable = isSignableDocument(editorTemplate);
+    // Where the owner follows the share: in place of the recipient signature
+    // when the document has one, below the form for a view-only share.
+    const sharedCopyStatus = activeSharedCopy ? (
+      <SharedCopyStatus
+        document={activeSharedCopy}
+        isResending={isResending}
+        isRevoking={isRevoking}
+        onResend={() => {
+          const email = activeRecipient(activeSharedCopy)?.email;
+          if (!email) {
+            return;
+          }
+          resendShare(
+            {
+              documentId: activeSharedCopy.sourceDocumentId,
+              email,
+            },
+            {
+              onError: (error) =>
+                showToast({
+                  message: error.message,
+                  tone: "error",
+                }),
+              onSuccess: () =>
+                showToast({
+                  message: `Email sent to ${email}.`,
+                  tone: "success",
+                }),
+            },
+          );
+        }}
+        onRevoke={() =>
+          revokeShare(activeSharedCopy.id, {
+            onError: (error) =>
+              showToast({
+                message: error.message,
+                tone: "error",
+              }),
+            onSuccess: () =>
+              showToast({
+                message: "Access revoked.",
+                tone: "success",
+              }),
+          })
+        }
+        label={
+          isEditorSignable
+            ? (editorTemplate.fields.find(
+                (field) => field.key === RECIPIENT_SIGNATURE_KEY,
+              )?.label ?? "Recipient signature")
+            : "Sharing"
+        }
+        onView={() =>
+          router.push(`/my-documents/shared/${activeSharedCopy.id}`)
+        }
+        signable={isEditorSignable}
+      />
+    ) : null;
+
     return (
       <div className="w-full">
         <Button
@@ -561,66 +622,8 @@ export const DocumentsView = () => {
                   />
                 }
                 fieldSlots={
-                  activeSharedCopy
-                    ? {
-                        [RECIPIENT_SIGNATURE_KEY]: (
-                          <SharedCopyStatus
-                            document={activeSharedCopy}
-                            isResending={isResending}
-                            isRevoking={isRevoking}
-                            onResend={() => {
-                              const email =
-                                activeRecipient(activeSharedCopy)?.email;
-                              if (!email) {
-                                return;
-                              }
-                              resendShare(
-                                {
-                                  documentId: activeSharedCopy.sourceDocumentId,
-                                  email,
-                                },
-                                {
-                                  onError: (error) =>
-                                    showToast({
-                                      message: error.message,
-                                      tone: "error",
-                                    }),
-                                  onSuccess: () =>
-                                    showToast({
-                                      message: `Email sent to ${email}.`,
-                                      tone: "success",
-                                    }),
-                                },
-                              );
-                            }}
-                            onRevoke={() =>
-                              revokeShare(activeSharedCopy.id, {
-                                onError: (error) =>
-                                  showToast({
-                                    message: error.message,
-                                    tone: "error",
-                                  }),
-                                onSuccess: () =>
-                                  showToast({
-                                    message: "Access revoked.",
-                                    tone: "success",
-                                  }),
-                              })
-                            }
-                            label={
-                              editorTemplate.fields.find(
-                                (field) =>
-                                  field.key === RECIPIENT_SIGNATURE_KEY,
-                              )?.label ?? "Recipient signature"
-                            }
-                            onView={() =>
-                              router.push(
-                                `/my-documents/shared/${activeSharedCopy.id}`,
-                              )
-                            }
-                          />
-                        ),
-                      }
+                  activeSharedCopy && isEditorSignable
+                    ? { [RECIPIENT_SIGNATURE_KEY]: sharedCopyStatus }
                     : undefined
                 }
                 fields={editorTemplate.fields}
@@ -629,6 +632,7 @@ export const DocumentsView = () => {
                 }}
                 values={draftValues}
               />
+              {isEditorSignable ? null : sharedCopyStatus}
             </div>
 
             <div className="mt-6 flex items-center gap-3">
@@ -644,9 +648,7 @@ export const DocumentsView = () => {
                     ? "Creating…"
                     : "Create document"}
               </Button>
-              {activeDocumentId &&
-              documentSharingEnabled &&
-              isSignableDocument(editorTemplate) ? (
+              {activeDocumentId && documentSharingEnabled ? (
                 <Button
                   icon={
                     <ShareNetworkIcon
@@ -661,6 +663,7 @@ export const DocumentsView = () => {
                       id: activeDocumentId,
                       name: draftValues.title?.trim() || draftName,
                       recipientEmail: draftValues.toEmail,
+                      signable: isEditorSignable,
                     })
                   }
                   variant="outline"
@@ -922,6 +925,7 @@ export const DocumentsView = () => {
                     id: document.id,
                     name: document.values.title?.trim() || document.name,
                     recipientEmail: document.values.toEmail,
+                    signable: isSignableDocument(document.templateSnapshot),
                   })
               : undefined
           }
