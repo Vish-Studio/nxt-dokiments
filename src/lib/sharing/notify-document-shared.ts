@@ -30,6 +30,8 @@ export type NotifyDocumentSharedInput = {
   /** Epoch milliseconds of this share, from `shareDocument`. */
   sharedAt: number;
   sharedDocumentId: string;
+  /** `false` for a view-only share, which drops the request to sign from the email. */
+  signable: boolean;
 };
 
 /** What happened, mostly for tests and logs. Callers don't need to act on it. */
@@ -67,7 +69,7 @@ const sharedTabUrl = () => `${siteUrl}/my-documents?tab=shared`;
  * @returns Whether an email was sent, or why not.
  *
  * @example
- * after(() => notifyDocumentShared(session, { created, documentName, recipientEmail, sharedAt, sharedDocumentId }));
+ * after(() => notifyDocumentShared(session, { created, documentName, recipientEmail, sharedAt, sharedDocumentId, signable }));
  */
 export const notifyDocumentShared = async (
   session: AuthSession,
@@ -89,6 +91,7 @@ export const notifyDocumentShared = async (
     const props = {
       documentName: cleanEmailLabel(input.documentName),
       senderName: personLabel(session.user),
+      signable: input.signable,
       variant: input.created ? ("shared" as const) : ("updated" as const),
     };
 

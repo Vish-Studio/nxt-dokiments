@@ -23,8 +23,16 @@ import { shareEmailSchema } from "@/lib/sharing/email-schema";
 type ShareValues = { email: string };
 
 export interface ShareDialogProps {
-  /** The document being shared; `recipientEmail` is the one named on it, offered first. */
-  document: { id: string; name: string; recipientEmail?: string };
+  /**
+   * The document being shared; `recipientEmail` is the one named on it, offered
+   * first. `signable: false` marks a view-only share, so the copy drops "sign".
+   */
+  document: {
+    id: string;
+    name: string;
+    recipientEmail?: string;
+    signable?: boolean;
+  };
   onClose: () => void;
   open: boolean;
 }
@@ -56,6 +64,7 @@ export const ShareDialog = ({
     setValue,
   } = useForm<ShareValues>({ defaultValues: { email: "" } });
   const typedEmail = useWatch({ control, name: "email" });
+  const action = target.signable === false ? "view" : "view and sign";
   const documentRecipient = shareEmailSchema.safeParse(
     target.recipientEmail ?? "",
   );
@@ -191,7 +200,7 @@ export const ShareDialog = ({
             Document shared
           </h3>
           <p className="mt-2 text-sm leading-6 text-nox-noir/65">
-            {sharedWith} can now view and sign{" "}
+            {sharedWith} can now {action}{" "}
             <span className="font-semibold text-nox-noir">{target.name}</span>{" "}
             once they sign in with a verified email.
           </p>
@@ -217,7 +226,7 @@ export const ShareDialog = ({
           <p className="mt-2 text-sm leading-6 text-nox-noir/65">
             Send{" "}
             <span className="font-semibold text-nox-noir">{target.name}</span>{" "}
-            to someone who needs to view and sign it.
+            to someone who needs to {action} it.
           </p>
 
           {errorMessage ? (

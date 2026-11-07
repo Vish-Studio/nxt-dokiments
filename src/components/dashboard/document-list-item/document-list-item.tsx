@@ -12,7 +12,6 @@ import { Button } from "@/components/commons/button/button";
 import { ButtonIcon } from "@/components/commons/button-icon/button-icon";
 import { Dropdown } from "@/components/commons/dropdown/dropdown";
 import { DashboardListRow } from "@/components/dashboard/dashboard-list-row/dashboard-list-row";
-import { isSignableDocument } from "@/lib/sharing/signable";
 import type { UserDocument } from "@/types/template";
 
 export interface DocumentListItemProps {
@@ -128,57 +127,55 @@ export const DocumentListItem = ({
         />
         {onShare ? (
           <div className="flex size-10 shrink-0 items-center justify-center">
-            {isSignableDocument(snapshot) ? (
-              <Dropdown
-                ariaLabel={`More actions for ${documentTitle}`}
-                buttonClassName="size-8 min-h-8 text-nox-noir hover:bg-base-200"
-                className="shrink-0"
-                iconTrigger={
-                  <DotsThreeIcon
+            <Dropdown
+              ariaLabel={`More actions for ${documentTitle}`}
+              buttonClassName="size-8 min-h-8 text-nox-noir hover:bg-base-200"
+              className="shrink-0"
+              iconTrigger={
+                <DotsThreeIcon
+                  aria-hidden
+                  size={20}
+                  weight="bold"
+                />
+              }
+              iconTriggerShape="square"
+              menuClassName="w-48"
+            >
+              <Button
+                className="w-full justify-start gap-2 px-3 whitespace-nowrap"
+                icon={
+                  <ShareNetworkIcon
                     aria-hidden
-                    size={20}
+                    size={16}
                     weight="bold"
                   />
                 }
-                iconTriggerShape="square"
-                menuClassName="w-48"
+                iconPosition="left"
+                onClick={() => onShare(document)}
+                size="sm"
+                variant="ghost"
               >
+                Share
+              </Button>
+              {onViewShared ? (
                 <Button
                   className="w-full justify-start gap-2 px-3 whitespace-nowrap"
                   icon={
-                    <ShareNetworkIcon
+                    <ArrowSquareOutIcon
                       aria-hidden
                       size={16}
                       weight="bold"
                     />
                   }
                   iconPosition="left"
-                  onClick={() => onShare(document)}
+                  onClick={() => onViewShared(document)}
                   size="sm"
                   variant="ghost"
                 >
-                  Share
+                  View shared copy
                 </Button>
-                {onViewShared ? (
-                  <Button
-                    className="w-full justify-start gap-2 px-3 whitespace-nowrap"
-                    icon={
-                      <ArrowSquareOutIcon
-                        aria-hidden
-                        size={16}
-                        weight="bold"
-                      />
-                    }
-                    iconPosition="left"
-                    onClick={() => onViewShared(document)}
-                    size="sm"
-                    variant="ghost"
-                  >
-                    View shared copy
-                  </Button>
-                ) : null}
-              </Dropdown>
-            ) : null}
+              ) : null}
+            </Dropdown>
           </div>
         ) : null}
       </div>

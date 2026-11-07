@@ -28,7 +28,7 @@ export const shareErrorDefinitions: Record<
   },
   SHARE_NOT_SIGNABLE: {
     message:
-      "This type of document has no recipient signature, so it cannot be shared for signing.",
+      "This document has no recipient signature. It was shared to view, so it cannot be signed.",
     status: 400,
   },
   SHARE_SELF_NOT_ALLOWED: {

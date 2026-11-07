@@ -70,6 +70,29 @@ a uid from an email, and cannot write another user's profile. Linking a
 password-registered recipient with an unverified address therefore needs a proof
 of address ownership (the emailed invite token) and a rule that accepts it.
 
+## Which documents can be shared
+
+**Every document can be shared.** What the recipient can do depends on the
+layout (`isSignableDocument`, `src/lib/sharing/signable.ts`):
+
+- **Signable** — the template has a `recipientSignature` field (contract, NDA,
+  statement of work, change order, contract addendum). The recipient signs it,
+  as described under [Signing](#signing-ds-5).
+- **View-only** — any other template (invoice, quotation, proposal, CV, …). The
+  recipient can open it and the owner can see it was viewed, but there is
+  nothing to sign: `viewed` is as far as the share goes and the copy never
+  locks. The sign route refuses it with `400 SHARE_NOT_SIGNABLE`. Until the
+  recipient opens it, `ShareStatusBadge` (`signable={false}`) labels it
+  **Not opened** rather than **Pending**, which would suggest a signature is
+  outstanding. `isViewOnlyShare` decides this for a shared copy: the layout
+  must be known and lack the field, so a copy with a missing layout keeps the
+  usual labels.
+
+Resend, revoke, view tracking and the timeline work the same for both. The
+share email, the share dialog and `SharedCopyStatus` drop the mention of
+signing for a view-only share; the route passes `signable` (from
+`shareDocument`) to `notifyDocumentShared` for the email.
+
 ## Share policy
 
 All sharing decisions go through `canShareWith` in `src/lib/sharing/policy.ts`.
@@ -87,7 +110,8 @@ in the server route only, not in the rules, so changing it needs no rules deploy
 ## Error codes
 
 `SHARE_LIMIT_REACHED` (403), `SHARE_SELF_NOT_ALLOWED` (400), `DOCUMENT_LOCKED` (409),
-`NOT_A_RECIPIENT` (404), `SHARE_ALREADY_WITH_ANOTHER` (409) — statuses and user-safe messages in
+`NOT_A_RECIPIENT` (404), `SHARE_ALREADY_WITH_ANOTHER` (409), `SHARE_NOT_SIGNABLE` (400, signing a
+view-only share) — statuses and user-safe messages in
 `src/lib/sharing/server-guard.ts`.
 
 ## Share API
@@ -119,8 +143,10 @@ in the server route only, not in the rules, so changing it needs no rules deploy
 
 `ShareDialog` (`components/dashboard/share-dialog`) shares a document by email.
 It is reachable from the three-dot menu on each My Documents row and from a
-**Share** button in the document editor (saved documents only), and both are
-hidden while `NEXT_PUBLIC_DOCUMENT_SHARING_ENABLED` is off.
+**Share** button in the document editor (saved documents only), for every
+document type, and both are hidden while `NEXT_PUBLIC_DOCUMENT_SHARING_ENABLED`
+is off. For a view-only document the dialog says the recipient can "view" it
+rather than "view and sign".
 
 - The address is validated with `shareEmailSchema` (`lib/sharing/email-schema.ts`),
   the same schema the route uses, so the dialog and the API agree.
@@ -165,7 +191,8 @@ account name. One masked write sets `signatures.{uid}`, `locked = true` and
 `updatedAt`, so the signature and the lock land together and the rules can
 require both. Errors: `404 NOT_A_RECIPIENT` (owners, strangers and absent
 documents alike), `409 DOCUMENT_LOCKED` (already signed, or refused by the
-rules), `400` for a bad signature, `401` without a session.
+rules), `400 SHARE_NOT_SIGNABLE` for a view-only share, `400` for a bad
+signature, `401` without a session.
 
 After a successful sign the route emails the owner in the background
 (`after()`), which doesn't change the response — see
@@ -185,6 +212,8 @@ same page for both parties and is flag-gated (`notFound()` when off):
   signature, signer address and time).
 - **Owner** — read-only. The owner reaches it from the **View shared copy** row
   action, shown only for documents in their `?by=me` list.
+- **Recipient, view-only** — no signing controls; a note says the document was
+  shared to view and there is nothing to sign.
 
 The signature script font is `--font-signature` (Dancing Script via
 `next/font`, utility `font-signature`). It is reserved for typed signatures.
@@ -195,7 +224,10 @@ bell, linking to the shared copy (see `docs/notifications.md`).
 
 The owner's `SharedCopyStatus` panel (in the document editor) shows the status
 badge (pending, viewed, signed, revoked), the activity timeline, and while the
-copy is unsigned, **Resend email** and **Revoke access**.
+copy is unsigned, **Resend email** and **Revoke access**. For a signable
+document it takes the place of the recipient signature input; for a view-only
+one (`signable={false}`) it sits below the form, labelled "Sharing", and reads
+"Waiting for … to view" / "Viewed by … on …".
 
 - **Revoke** — `POST /api/documents/shared/:id/revoke`. Owner only, unlocked
   copies only (`409` once signed, or when nobody is active). The recipient is

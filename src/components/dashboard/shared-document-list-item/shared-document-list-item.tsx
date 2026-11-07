@@ -2,12 +2,13 @@ import { FileTextIcon } from "@phosphor-icons/react";
 
 import { DashboardListRow } from "@/components/dashboard/dashboard-list-row/dashboard-list-row";
 import { ShareStatusBadge } from "@/components/dashboard/share-status-badge/share-status-badge";
+import { isViewOnlyShare } from "@/lib/sharing/signable";
 import type { ShareRecipientStatus, SharedDocument } from "@/types/sharing";
 
 export interface SharedDocumentListItemProps {
   /** The shared copy; its owner and share date fill the row. */
   document: SharedDocument;
-  /** Called when the row is activated, to open the signing page. */
+  /** Called when the row is activated, to open the shared document. */
   onOpen: (document: SharedDocument) => void;
   /** The signed-in user's own progress on this document. */
   status: ShareRecipientStatus;
@@ -74,7 +75,10 @@ export const SharedDocumentListItem = ({
       </div>
 
       <div className="pointer-events-none relative z-10 sm:col-span-2 sm:justify-self-end">
-        <ShareStatusBadge status={status} />
+        <ShareStatusBadge
+          signable={!isViewOnlyShare(document)}
+          status={status}
+        />
       </div>
     </DashboardListRow>
   );

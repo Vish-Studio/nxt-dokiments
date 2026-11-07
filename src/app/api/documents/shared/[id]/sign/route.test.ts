@@ -40,6 +40,7 @@ const sharedDocument = (
     locked?: boolean;
     ownerId?: string;
     recipientEmail?: string;
+    signable?: boolean;
     signatures?: Record<string, unknown>;
   } = {},
 ) => ({
@@ -68,6 +69,35 @@ const sharedDocument = (
     signatures: { mapValue: { fields: overrides.signatures ?? {} } },
     sourceDocumentId: string("doc_1"),
     templateId: string("nda"),
+    templateSnapshot: {
+      mapValue: {
+        fields: {
+          description: string(""),
+          documentType: string("nda"),
+          fields: {
+            arrayValue: {
+              values: [
+                {
+                  mapValue: {
+                    fields: {
+                      key: string(
+                        (overrides.signable ?? true)
+                          ? "recipientSignature"
+                          : "notes",
+                      ),
+                      label: string("Recipient signature"),
+                      type: string("text"),
+                    },
+                  },
+                },
+              ],
+            },
+          },
+          name: string("NDA"),
+          style: { mapValue: { fields: { id: string("classic") } } },
+        },
+      },
+    },
     updatedAt: timestamp("2026-10-01T00:00:00.000Z"),
     values: { mapValue: { fields: {} } },
   },
@@ -238,6 +268,16 @@ describe("POST /api/documents/shared/:id/sign", () => {
     installFetch(sharedDocument(), { writeDenied: true });
 
     expect((await post({ signature: "Bob Smith" })).status).toBe(409);
+  });
+
+  it("returns 400 and writes nothing for a view-only share", async () => {
+    installFetch(sharedDocument({ signable: false }));
+
+    const response = await post({ signature: "Bob Smith" });
+
+    expect(response.status).toBe(400);
+    expect(patches).toHaveLength(0);
+    expect(email.scheduled).toHaveLength(0);
   });
 
   it("returns 404 for the owner, who cannot sign their own document", async () => {
