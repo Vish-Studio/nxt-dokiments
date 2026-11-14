@@ -7,6 +7,8 @@ import { AnalyticsProvider } from "@/components/commons/analytics-provider/analy
 import { AuthProvider } from "@/components/commons/auth-provider/auth-provider";
 import { BottomNotices } from "@/components/commons/bottom-notices/bottom-notices";
 import { CookieConsent } from "@/components/website/cookie-consent/cookie-consent";
+import  ChatbotWidget  from "@/components/chatbot/chatbot-widget";
+
 import { analyticsConfig, hasAnalyticsConfig } from "@/lib/analytics/config";
 import { COOKIE_CONSENT_STORAGE_KEY } from "@/lib/cookie-consent";
 import { QueryProvider } from "@/lib/query/query-provider";
@@ -187,6 +189,7 @@ const RootLayout = ({
           */}
           <BottomNotices />
         </SerwistProvider>
+        <ChatbotWidget />
       </body>
     </html>
   );

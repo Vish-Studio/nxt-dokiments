@@ -1,0 +1,19 @@
+{
+  "changelists": [
+    {
+      "name": "Default",
+      "files": [
+        "package-lock.json",
+        "package.json",
+        ".vscode/changelists.json",
+        "src/app/chatbot/page.tsx",
+        "src/app/api/chatbot/route.ts",
+        ".env.example",
+        "src/components/chatbot/chatbot.module.css",
+        "src/components/chatbot/chatbot-widget.tsx",
+        "src/app/layout.tsx"
+      ]
+    }
+  ],
+  "active": "Default"
+}
