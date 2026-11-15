@@ -65,10 +65,41 @@ nudges unverified users to confirm it — see
 [`firebase-auth.md`](./firebase-auth.md#email-verification). A signature must
 carry the signer's own token address, so nobody can sign as someone else.
 
-**Open point for the invite story:** with no admin SDK, the server cannot look up
-a uid from an email, and cannot write another user's profile. Linking a
-password-registered recipient with an unverified address therefore needs a proof
-of address ownership (the emailed invite token) and a rule that accepts it.
+Someone who has no account, or an unverified one, is linked through the
+[invite flow](#invite-links-ds-7) instead.
+
+## Invite links (DS-7)
+
+The share email links to `/shared/<token>` rather than the dashboard, so a person
+without an account can see what was sent and sign up to sign it.
+
+- **Token:** 32 random bytes, base64url. Only its SHA-256 hash is stored, as the
+  document ID of `sharedInvites/{tokenHash}`. It is valid for 14 days.
+- **Snapshot:** the invite holds a preview (name, values, template, sender) so the
+  public page needs no access to `sharedDocuments`. The public API returns only
+  the document name and the sender's name and address. The share route refreshes
+  the snapshot on every re-share.
+- **Lifecycle:** minted only once the email is actually going out. A new invite
+  replaces older ones after a successful send, and revoking deletes them all.
+  A replaced, revoked or unknown link is `invalid`; a link past 14 days is
+  `expired`. The two are never told apart further, so nothing leaks.
+- **Accepting:** a signed-in user whose address matches the invite is linked by
+  appending their uid to `recipientUids` (a REST `appendMissingElements`
+  transform, because an unverified user cannot read the document to rebuild the
+  array). The token plus a matching account address stands in for address
+  verification. The rules allow this single write only while the invite exists, is
+  unexpired and names the same address, and it cannot touch any other field.
+- **Wrong account:** answers `403` with the invited address masked
+  (`j***@example.com`); the page offers to sign out.
+- **Shared tab:** `listSharedWithMe` also queries by `recipientUids`, which is
+  what an unverified account can read.
+
+| Method and path | Auth | Purpose |
+| --- | --- | --- |
+| `GET /api/shared-invites/:token` | none | Preview, `valid`, `expired` or `invalid`. Never cached. |
+| `POST /api/shared-invites/:token/accept` | session | Link the account. `403` mismatch, `404` invalid, `410` expired. |
+
+Both answer `404` while the `documentSharing` flag is off.
 
 ## Share policy
 

@@ -13,7 +13,11 @@ export interface SharedDocumentEmailProps {
   senderName: string;
   /** Title of the shared document. Shown as plain text. */
   documentName: string;
-  /** Absolute link the button opens, normally `/my-documents?tab=shared`. */
+  /**
+   * Absolute link the button opens: the personal invite link
+   * (`/shared/<token>`), or `/my-documents?tab=shared` when no invite could be
+   * created.
+   */
   url: string;
 }
 
@@ -75,8 +79,9 @@ export const SharedDocumentEmail = ({
           : `${senderName} shared "${documentName}" with you on ${siteName} for your signature.`}
       </Text>
       <Text style={paragraph}>
-        New to {siteName}? Create an account with this email address and the
-        document will be waiting under Shared with me.
+        New to {siteName}? The button above lets you preview the document, then
+        create an account with this email address to sign it. The link works for
+        14 days.
       </Text>
     </EmailLayout>
   );

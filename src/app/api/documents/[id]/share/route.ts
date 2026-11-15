@@ -5,6 +5,7 @@ import { z } from "zod";
 import { parseBody } from "@/lib/api/validate";
 import { withSession } from "@/lib/api/with-session";
 import { shareDocument } from "@/lib/firebase/server-shared-documents";
+import { refreshInviteSnapshots } from "@/lib/firebase/server-shared-invites";
 import { shareEmailSchema } from "@/lib/sharing/email-schema";
 import { notifyDocumentShared } from "@/lib/sharing/notify-document-shared";
 import { assertDocumentSharingEnabled } from "@/lib/sharing/server-guard";
@@ -23,8 +24,9 @@ const ShareDocumentSchema = z.object({
  * unlocked) instead of creating a second one. A document has one recipient for
  * now. Answers `404` while the `documentSharing` flag is off.
  *
- * After the response is sent, the recipient is emailed ("shared" the first time,
- * "updated" on a repeat) unless the cooldown or the sender's daily cap applies.
+ * After the response is sent, the preview of any earlier invite link is brought
+ * up to date, and the recipient is emailed a new invite link ("shared" the first
+ * time, "updated" on a repeat) unless the cooldown or the sender's daily cap applies.
  * The email never changes the response, even when it fails.
  *
  * @returns `{ sharedDocumentId, recipient: { email, status } }` with status `201`
@@ -46,15 +48,25 @@ export const POST = withSession<Context>(async (request, context, session) => {
   const { created, documentName, recipient, sharedAt, sharedDocumentId } =
     await shareDocument(session, id, email);
 
-  after(() =>
-    notifyDocumentShared(session, {
+  after(async () => {
+    // Older links keep working until a new email replaces them, so their
+    // preview must follow the shared copy in the meantime.
+    await refreshInviteSnapshots(session, sharedDocumentId).catch(
+      (error: unknown) => {
+        console.error(
+          `[share] invite preview not refreshed: ${error instanceof Error ? error.message : "unknown error"}`,
+        );
+      },
+    );
+
+    await notifyDocumentShared(session, {
       created,
       documentName,
       recipientEmail: recipient.email,
       sharedAt,
       sharedDocumentId,
-    }),
-  );
+    });
+  });
 
   return Response.json(
     {

@@ -1,5 +1,6 @@
 import { withSession } from "@/lib/api/with-session";
 import { revokeSharedDocument } from "@/lib/firebase/server-shared-documents";
+import { deleteInvites } from "@/lib/firebase/server-shared-invites";
 import { assertDocumentSharingEnabled } from "@/lib/sharing/server-guard";
 
 type Context = { params: Promise<{ id: string }> };
@@ -10,7 +11,8 @@ type Context = { params: Promise<{ id: string }> };
  * Takes the current recipient's access to a shared document away, before they
  * have signed. Only the owner can revoke. The recipient stays on the document as
  * `revoked` for the audit trail but can no longer read it, and the owner can
- * share it again afterwards. Answers `404` while the `documentSharing` flag is off.
+ * share it again afterwards. Its invite links stop working too, so the public
+ * preview no longer opens. Answers `404` while the `documentSharing` flag is off.
  *
  * @returns `{ document: SharedDocument }` on success.
  * @returns `{ error: string }` with status `401` when no session is present.
@@ -24,6 +26,13 @@ export const POST = withSession<Context>(async (_request, context, session) => {
 
   const { id } = await context.params;
   const document = await revokeSharedDocument(session, id);
+
+  // Access is already gone, so a failure here only leaves a dead preview behind.
+  await deleteInvites(session, id).catch((error: unknown) => {
+    console.error(
+      `[revoke] invites not deleted: ${error instanceof Error ? error.message : "unknown error"}`,
+    );
+  });
 
   return Response.json({ document });
 });

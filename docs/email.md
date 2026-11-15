@@ -180,7 +180,7 @@ The Resend free plan allows 100 emails per day and 3,000 per month. Callers that
 
 When a document is shared, the share route schedules `notifyDocumentShared` (`src/lib/sharing/notify-document-shared.ts`) with `after()`, so the response never waits on the email and a failure never affects the share. The notifier never throws.
 
-- **Template:** `SharedDocumentEmail` (`src/lib/email/templates/shared-document-email.tsx`) on `EmailLayout`. The `shared` variant is sent on the first share, `updated` on every explicit re-share. It links to `/my-documents?tab=shared` and tells people without an account to sign up with the address the email was sent to.
+- **Template:** `SharedDocumentEmail` (`src/lib/email/templates/shared-document-email.tsx`) on `EmailLayout`. The `shared` variant is sent on the first share, `updated` on every explicit re-share. It links to the personal invite page `/shared/<token>` (see [document sharing](./document-sharing.md#invite-links-ds-7)), falling back to `/my-documents?tab=shared` if the invite cannot be created, and tells people without an account to preview the document, then sign up with the address the email was sent to.
 - **Labels:** the sender name and document name go through `cleanEmailLabel` (`clean-label.ts`), which strips control characters, collapses whitespace and truncates, so they can't break the subject or spoof the body.
 - **Idempotency key:** `share-<sha256 of "sharedDocumentId|email|sharedAt">`. Hashed to stay under Resend's 256-character limit.
 - **Limits** (`share-email-limits.ts`): one email per recipient per document every 10 minutes, and 20 share emails per sender per 24 hours. A suppressed email still shares the document.

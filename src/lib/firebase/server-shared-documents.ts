@@ -186,13 +186,34 @@ const withAccess = (recipients: ShareRecipient[]) =>
   recipients.filter((recipient) => recipient.status !== "revoked");
 
 /**
+ * The uids written to `recipientUids`: those already stored (a recipient who
+ * accepted an invite link added their own) plus any known on `recipients`. Empty
+ * once nobody has access, so a revoke always clears the list.
+ */
+const linkedUids = (
+  document: Pick<SharedDocument, "recipientUids" | "recipients">,
+): string[] => {
+  const active = withAccess(document.recipients);
+  if (!active.length) return [];
+
+  return [
+    ...new Set([
+      ...(document.recipientUids ?? []),
+      ...active.flatMap((recipient) => (recipient.uid ? [recipient.uid] : [])),
+    ]),
+  ];
+};
+
+/**
  * Serialises a shared document for a Firestore write.
  *
  * Besides `recipients`, it writes `recipientEmails` and `recipientUids` as flat
  * string arrays. Security rules cannot look inside an array of maps, so they
- * authorise against these two; they are always derived from `recipients` here so
- * the three can never disagree. Revoked recipients stay in `recipients` for the
- * audit trail but are left out of both arrays.
+ * authorise against these two. `recipientEmails` is always derived from
+ * `recipients`; `recipientUids` is too, plus the uids already stored, because a
+ * recipient who accepts an invite link adds their own and an owner write must not
+ * undo it. Revoked recipients stay in `recipients` for the audit trail but are
+ * left out of both arrays.
  *
  * `templateSnapshot` is passed in already serialised, since the document module
  * that owns that format is the one that knows how to build it.
@@ -210,11 +231,7 @@ export const toSharedDocumentFields = (
   recipientEmails: toStringArray(
     withAccess(document.recipients).map((recipient) => recipient.email),
   ),
-  recipientUids: toStringArray(
-    withAccess(document.recipients).flatMap((recipient) =>
-      recipient.uid ? [recipient.uid] : [],
-    ),
-  ),
+  recipientUids: toStringArray(linkedUids(document)),
   recipients: toArrayValue(document.recipients.map(serialiseRecipient)),
   signatures: serialiseSignatures(document.signatures),
   sourceDocumentId: toStringValue(document.sourceDocumentId),
@@ -271,6 +288,10 @@ export const parseSharedDocument = (
         ...recipient,
         ...resolveRecipientStatus(recipient, { signatures, views }),
       })),
+    recipientUids: readArray(fields?.recipientUids).flatMap((value) => {
+      const uid = readString(value);
+      return uid ? [uid] : [];
+    }),
     signatures,
     sourceDocumentId: readString(fields?.sourceDocumentId) ?? "",
     templateId: readString(fields?.templateId) ?? "",
@@ -455,6 +476,7 @@ export const shareDocument = async (
             ownerEmail: session.user.email,
             ownerId: uid,
             ownerName: session.user.displayName,
+            recipientUids: regainsAccess ? [] : existing?.recipientUids,
             recipients,
             signatures: existing?.signatures ?? {},
             sourceDocumentId,
@@ -540,29 +562,27 @@ export const getSharedDocument = async (
 /**
  * Lists the documents shared with the signed-in user, newest first.
  *
- * Matches on the verified address in the token, so an unverified account
- * receives an empty list rather than an error.
+ * Runs two queries and merges them: one on the verified address in the token, and
+ * one on the user's uid, which is how an account that accepted an invite link is
+ * found before its address is verified. Each is refused by the rules when it does
+ * not apply, and a refusal is read as "nothing here" rather than an error.
  *
- * @throws When the Firestore query fails for any other reason.
+ * @throws When a Firestore query fails for any other reason.
  */
 export const listSharedWithMe = async (
   session: AuthSession,
 ): Promise<SharedDocument[]> => {
-  try {
-    const documents = await runFirestoreQuery(
-      sharedDocumentsPath,
-      {
-        field: "recipientEmails",
-        op: "ARRAY_CONTAINS",
-        value: toStringValue(normaliseEmail(session.user.email)),
-      },
-      session.idToken,
-    );
-
-    return documents
-      .map((document) => readSharedDocument(document))
-      .sort((a, b) => b.updatedAt - a.updatedAt);
-  } catch (error) {
+  const byEmail = runFirestoreQuery(
+    sharedDocumentsPath,
+    {
+      field: "recipientEmails",
+      op: "ARRAY_CONTAINS",
+      value: toStringValue(normaliseEmail(session.user.email)),
+    },
+    session.idToken,
+  ).catch((error: unknown) => {
+    // The rules only honour a verified address, so for anyone else this query
+    // is refused by design. A refusal for a verified account is a real failure.
     if (
       error instanceof FirestorePermissionDeniedError &&
       session.user.emailVerified !== true
@@ -570,7 +590,27 @@ export const listSharedWithMe = async (
       return [];
     }
     throw error;
-  }
+  });
+
+  const byUid = runFirestoreQuery(
+    sharedDocumentsPath,
+    {
+      field: "recipientUids",
+      op: "ARRAY_CONTAINS",
+      value: toStringValue(session.user.uid),
+    },
+    session.idToken,
+  );
+
+  const documents = new Map(
+    (await Promise.all([byEmail, byUid]))
+      .flat()
+      .map((document) => [getDocumentId(document), document]),
+  );
+
+  return [...documents.values()]
+    .map((document) => readSharedDocument(document))
+    .sort((a, b) => b.updatedAt - a.updatedAt);
 };
 
 /**
@@ -756,6 +796,7 @@ export const revokeSharedDocument = async (
   );
   const fields = toSharedDocumentFields({
     ...document,
+    recipientUids: [],
     recipients,
     updatedAt: now,
   });
