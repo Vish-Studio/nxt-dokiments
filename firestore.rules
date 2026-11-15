@@ -426,5 +426,26 @@ service cloud.firestore {
         && request.resource.data.createdAt is timestamp
         && request.resource.data.status == 'subscribed';
     }
+
+    // --- chatbotUnanswered/{entryId} — questions the chatbot couldn't answer ----
+    // Written by POST /api/chatbot/unanswered for any visitor, signed in or not, so
+    // this cannot lean on auth. Anonymous by design: there is no uid or email field,
+    // and the route redacts emails and long numbers from the message first.
+    //
+    // Create-only. No read, update or delete from the app; entries are reviewed in
+    // the Firebase console, which bypasses these rules. The shape is pinned exactly
+    // (hasOnly plus a type check per field) so this stays a narrow log rather than
+    // a general public write surface. 300 matches MAX_UNANSWERED_LENGTH.
+    match /chatbotUnanswered/{entryId} {
+      allow create: if request.resource.data.keys().hasOnly([
+          'createdAt', 'message', 'path'
+        ])
+        && request.resource.data.message is string
+        && request.resource.data.message.size() > 0
+        && request.resource.data.message.size() <= 300
+        && request.resource.data.path is string
+        && request.resource.data.path.size() <= 512
+        && request.resource.data.createdAt is timestamp;
+    }
   }
 }
