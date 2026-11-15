@@ -1,12 +1,17 @@
 "use client";
 
-import { ArrowLeftIcon, LockSimpleIcon } from "@phosphor-icons/react";
+import {
+  ArrowLeftIcon,
+  LockSimpleIcon,
+  PrinterIcon,
+} from "@phosphor-icons/react";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 
 import { Button } from "@/components/commons/button/button";
 import { ConfirmDialog } from "@/components/commons/confirm-dialog/confirm-dialog";
 import { TemplateDocument } from "@/components/commons/template-document/template-document";
+import { DocumentExportDialog } from "@/components/dashboard/document-export-dialog/document-export-dialog";
 import { ShareTimeline } from "@/components/dashboard/share-timeline/share-timeline";
 import { ShareStatusBadge } from "@/components/dashboard/share-status-badge/share-status-badge";
 import { SignatureField } from "@/components/dashboard/signature-field/signature-field";
@@ -47,9 +52,20 @@ export const SharedDocumentSheet = ({
   const router = useRouter();
   const [typed, setTyped] = useState("");
   const [isConfirming, setIsConfirming] = useState(false);
+  const [isExporting, setIsExporting] = useState(false);
+
+  const { templateSnapshot, templateId } = document;
+  const template = useMemo(
+    () =>
+      templateSnapshot
+        ? snapshotToMarketplaceTemplate(templateSnapshot, templateId)
+        : null,
+    [templateSnapshot, templateId],
+  );
 
   const title = document.values.title?.trim() || document.name;
   const signature = Object.values(document.signatures)[0];
+  const canExportSigned = document.locked && Boolean(signature) && template;
   const headerRecipient = currentRecipient(document);
   const canSign = viewer === "recipient" && !document.locked;
   const trimmed = typed.trim();
@@ -103,15 +119,34 @@ export const SharedDocumentSheet = ({
                 : `Shared copy of your document — ${headerRecipient?.email ?? ""}`}
             </p>
           </div>
-          <ShareStatusBadge
-            status={
-              document.locked
-                ? "signed"
-                : headerRecipient
-                  ? resolveRecipientStatus(headerRecipient, document).status
-                  : "pending"
-            }
-          />
+          <div className="flex shrink-0 flex-col items-end gap-2">
+            <ShareStatusBadge
+              status={
+                document.locked
+                  ? "signed"
+                  : headerRecipient
+                    ? resolveRecipientStatus(headerRecipient, document).status
+                    : "pending"
+              }
+            />
+            {canExportSigned ? (
+              <Button
+                icon={
+                  <PrinterIcon
+                    aria-hidden
+                    size={16}
+                    weight="bold"
+                  />
+                }
+                iconPosition="left"
+                onClick={() => setIsExporting(true)}
+                size="sm"
+                variant="outline"
+              >
+                Download signed PDF
+              </Button>
+            ) : null}
+          </div>
         </div>
 
         {document.locked ? (
@@ -135,14 +170,11 @@ export const SharedDocumentSheet = ({
           </section>
         ) : null}
 
-        {document.templateSnapshot ? (
+        {template ? (
           <TemplateDocument
             className="rounded-box border border-steel-mist"
             fieldSlots={fieldSlots}
-            template={snapshotToMarketplaceTemplate(
-              document.templateSnapshot,
-              document.templateId,
-            )}
+            template={template}
             values={document.values}
           />
         ) : (
@@ -182,6 +214,21 @@ export const SharedDocumentSheet = ({
           open={isConfirming}
           title="Sign this document?"
         />
+
+        {canExportSigned && signature ? (
+          <DocumentExportDialog
+            documentName={`${title} (signed)`}
+            fieldSlots={{
+              [RECIPIENT_SIGNATURE_KEY]: (
+                <SignedSignature signature={signature} />
+              ),
+            }}
+            onClose={() => setIsExporting(false)}
+            open={isExporting}
+            template={template}
+            values={document.values}
+          />
+        ) : null}
       </div>
     </div>
   );

@@ -130,6 +130,21 @@ export const Signed: Story = {
     await expect(
       canvas.queryByRole("button", { name: "Sign document" }),
     ).not.toBeInTheDocument();
+    await expect(
+      canvas.getByRole("button", { name: "Download signed PDF" }),
+    ).toBeVisible();
+  },
+};
+
+/** Nothing to download until the recipient has signed. */
+export const UnsignedHasNoPdf: Story = {
+  args: { viewer: "owner" },
+  play: async ({ canvasElement }) => {
+    await expect(
+      within(canvasElement).queryByRole("button", {
+        name: "Download signed PDF",
+      }),
+    ).not.toBeInTheDocument();
   },
 };
 
@@ -145,10 +160,15 @@ export const OwnerPending: Story = {
   },
 };
 
-/** The owner sees who signed and when, in the activity trail. */
+/** The owner can download the signed copy too. */
 export const OwnerSigned: Story = {
   args: { document: signedDocument, viewer: "owner" },
   play: async ({ canvasElement }) => {
+    await expect(
+      within(canvasElement).getByRole("button", {
+        name: "Download signed PDF",
+      }),
+    ).toBeVisible();
     const activity = within(
       within(canvasElement).getByRole("region", { name: "Activity" }),
     );
