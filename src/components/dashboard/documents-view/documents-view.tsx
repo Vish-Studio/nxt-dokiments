@@ -38,11 +38,13 @@ import {
   useCreateDocumentMutation,
   useDeleteDocumentMutation,
   useDocumentsQuery,
+  useDuplicateDocumentMutation,
   useUpdateDocumentMutation,
 } from "@/hooks/queries/use-documents";
 import { useSavedTemplatesQuery } from "@/hooks/queries/use-saved-templates";
 import { useScrollContentToTopOnMobile } from "@/hooks/use-scroll-content-to-top-on-mobile";
 import { trackEvent } from "@/lib/analytics/track";
+import { buildDuplicateDraft } from "@/lib/documents/duplicate-draft";
 import { documentSharingEnabled } from "@/lib/sharing/feature-flag";
 import { activeRecipient } from "@/lib/sharing/share-activity";
 import { useShareDocumentMutation } from "@/hooks/queries/use-share";
@@ -119,6 +121,8 @@ export const DocumentsView = () => {
     useDocumentsQuery();
   const { isPending: isCreatePending, mutate: createDocument } =
     useCreateDocumentMutation();
+  const { isPending: isDuplicatePending, mutate: duplicateDocument } =
+    useDuplicateDocumentMutation();
   const {
     data: sharedDocuments = EMPTY_SHARED_DOCUMENTS,
     isLoading: isSharedLoading,
@@ -138,6 +142,11 @@ export const DocumentsView = () => {
   const [activeTemplate, setActiveTemplate] =
     useState<MarketplaceTemplate | null>(null);
   const [activeDocumentId, setActiveDocumentId] = useState<string | null>(null);
+  // The saved document an unsaved duplicate draft was started from. Nothing is
+  // written until the user confirms with "Duplicate document".
+  const [duplicateSource, setDuplicateSource] = useState<UserDocument | null>(
+    null,
+  );
   const [draftName, setDraftName] = useState("");
   const [draftValues, setDraftValues] = useState<Record<string, string>>({});
   // Set by the `?shared=` deep link from `/share-target`; consumed once by
@@ -296,6 +305,7 @@ export const DocumentsView = () => {
     setMode("list");
     setActiveTemplate(null);
     setActiveDocumentId(null);
+    setDuplicateSource(null);
     setIsDeleteConfirmationOpen(false);
     setIsSaveConfirmationOpen(false);
     setIsEditorPreviewOpen(false);
@@ -305,6 +315,7 @@ export const DocumentsView = () => {
     (template: MarketplaceTemplate) => {
       setActiveTemplate(template);
       setActiveDocumentId(null);
+      setDuplicateSource(null);
       setDraftName(getTemplateDisplayName(template));
       // Seeds the sender block from the user's own profile — identical on every
       // document they create, so there's nothing to pick. Only on a new document:
@@ -421,8 +432,31 @@ export const DocumentsView = () => {
   const openDocument = (document: UserDocument) => {
     setActiveTemplate(templateOf(document));
     setActiveDocumentId(document.id);
+    setDuplicateSource(null);
     setDraftName(document.name);
     setDraftValues(document.values);
+    setIsDeleteConfirmationOpen(false);
+    setIsSaveConfirmationOpen(false);
+    setIsEditorPreviewOpen(false);
+    setMode("editor");
+  };
+
+  // Opens the editor on an unsaved copy. No request is made here, so leaving
+  // the editor discards the draft and nothing is created behind the user's back.
+  const handleDuplicate = (document: UserDocument) => {
+    const template = templateOf(document);
+
+    if (!template) {
+      return;
+    }
+
+    const draft = buildDuplicateDraft(document);
+
+    setActiveTemplate(template);
+    setActiveDocumentId(null);
+    setDuplicateSource(document);
+    setDraftName(draft.name);
+    setDraftValues(draft.values);
     setIsDeleteConfirmationOpen(false);
     setIsSaveConfirmationOpen(false);
     setIsEditorPreviewOpen(false);
@@ -444,6 +478,33 @@ export const DocumentsView = () => {
         patch: { name: draftName, values: draftValues },
       });
       setIsSaveConfirmationOpen(true);
+      return;
+    }
+
+    if (duplicateSource) {
+      if (isDuplicatePending) {
+        return;
+      }
+
+      duplicateDocument(
+        {
+          documentId: duplicateSource.id,
+          name: draftName || "Untitled document",
+          values: draftValues,
+        },
+        {
+          onError: (error) =>
+            showToast({
+              message: error.message || "Unable to duplicate this document.",
+              tone: "error",
+            }),
+          onSuccess: (document) => {
+            setActiveDocumentId(document.id);
+            setDuplicateSource(null);
+            setIsSaveConfirmationOpen(true);
+          },
+        },
+      );
       return;
     }
 
@@ -633,16 +694,22 @@ export const DocumentsView = () => {
 
             <div className="mt-6 flex items-center gap-3">
               <Button
-                disabled={!activeDocumentId && isCreatePending}
+                disabled={
+                  !activeDocumentId && (isCreatePending || isDuplicatePending)
+                }
                 onClick={handleSave}
                 type="button"
                 variant="accent"
               >
                 {activeDocumentId
                   ? "Save changes"
-                  : isCreatePending
-                    ? "Creating…"
-                    : "Create document"}
+                  : duplicateSource
+                    ? isDuplicatePending
+                      ? "Duplicating…"
+                      : "Duplicate document"
+                    : isCreatePending
+                      ? "Creating…"
+                      : "Create document"}
               </Button>
               {activeDocumentId &&
               documentSharingEnabled &&
@@ -908,6 +975,7 @@ export const DocumentsView = () => {
       ) : (
         <DocumentList
           documents={visibleDocuments}
+          onDuplicate={handleDuplicate}
           onEdit={openDocument}
           onPreview={setPreviewDocument}
           onPrint={handlePrintDocument}

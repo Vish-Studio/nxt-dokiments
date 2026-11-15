@@ -102,6 +102,35 @@ export const WithViewShared: Story = {
   },
 };
 
+/** Duplicate is offered for every document, without needing sharing to be on. */
+export const WithDuplicate: Story = {
+  args: { onDuplicate: fn() },
+  play: async ({ args, canvasElement }) => {
+    const canvas = within(canvasElement);
+    await userEvent.click(
+      canvas.getByRole("button", { name: `More actions for ${documentTitle}` }),
+    );
+    await userEvent.click(canvas.getByRole("button", { name: "Duplicate" }));
+    await expect(args.onDuplicate).toHaveBeenCalledWith(document);
+    await expect(canvas.queryByRole("button", { name: "Share" })).toBeNull();
+  },
+};
+
+/** A legacy document with no template snapshot can't be opened, so it can't be copied. */
+export const DuplicateHiddenWithoutSnapshot: Story = {
+  args: {
+    document: { ...document, templateSnapshot: undefined },
+    onDuplicate: fn(),
+  },
+  play: async ({ canvasElement }) => {
+    await expect(
+      within(canvasElement).queryByRole("button", {
+        name: `More actions for ${documentTitle}`,
+      }),
+    ).toBeNull();
+  },
+};
+
 export const WithoutShare: Story = {
   play: async ({ canvasElement }) => {
     await expect(

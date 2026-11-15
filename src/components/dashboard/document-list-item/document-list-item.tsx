@@ -1,7 +1,8 @@
 import {
+  ArrowSquareOutIcon,
+  CopyIcon,
   DotsThreeIcon,
   FileTextIcon,
-  ArrowSquareOutIcon,
   PencilSimpleIcon,
   PrinterIcon,
   ShareNetworkIcon,
@@ -20,6 +21,11 @@ export interface DocumentListItemProps {
   onEdit: (document: UserDocument) => void;
   onPreview: (document: UserDocument) => void;
   onPrint: (document: UserDocument) => void;
+  /**
+   * Adds a "Duplicate" action in the row menu. Omit it to hide the action. It is
+   * also hidden for a document without a template snapshot, which can't be copied.
+   */
+  onDuplicate?: (document: UserDocument) => void;
   /** Adds a "Share" action in the row menu. Omit it while sharing is off. */
   onShare?: (document: UserDocument) => void;
   /** Adds a "View shared copy" action. Pass it only for a document that has been shared. */
@@ -43,6 +49,7 @@ export const DocumentListItem = ({
   onEdit,
   onPreview,
   onPrint,
+  onDuplicate,
   onShare,
   onViewShared,
 }: DocumentListItemProps) => {
@@ -52,6 +59,11 @@ export const DocumentListItem = ({
     : "Document";
   const documentTitle = document.values.title?.trim() || document.name;
   const createdDate = new Date(document.createdAt);
+  // Legacy documents without a snapshot can't open in the editor, so a copy would be a dead end.
+  const canDuplicate = Boolean(onDuplicate && snapshot);
+  const canShare = Boolean(onShare) && isSignableDocument(snapshot);
+  const menuHasItems = canDuplicate || canShare;
+  const hasMenu = Boolean(onShare) || canDuplicate;
 
   return (
     <DashboardListRow
@@ -126,9 +138,9 @@ export const DocumentListItem = ({
           size="sm"
           variant="primary"
         />
-        {onShare ? (
+        {hasMenu ? (
           <div className="flex size-10 shrink-0 items-center justify-center">
-            {isSignableDocument(snapshot) ? (
+            {menuHasItems ? (
               <Dropdown
                 ariaLabel={`More actions for ${documentTitle}`}
                 buttonClassName="size-8 min-h-8 text-nox-noir hover:bg-base-200"
@@ -143,23 +155,43 @@ export const DocumentListItem = ({
                 iconTriggerShape="square"
                 menuClassName="w-48"
               >
-                <Button
-                  className="w-full justify-start gap-2 px-3 whitespace-nowrap"
-                  icon={
-                    <ShareNetworkIcon
-                      aria-hidden
-                      size={16}
-                      weight="bold"
-                    />
-                  }
-                  iconPosition="left"
-                  onClick={() => onShare(document)}
-                  size="sm"
-                  variant="ghost"
-                >
-                  Share
-                </Button>
-                {onViewShared ? (
+                {canDuplicate ? (
+                  <Button
+                    className="w-full justify-start gap-2 px-3 whitespace-nowrap"
+                    icon={
+                      <CopyIcon
+                        aria-hidden
+                        size={16}
+                        weight="bold"
+                      />
+                    }
+                    iconPosition="left"
+                    onClick={() => onDuplicate?.(document)}
+                    size="sm"
+                    variant="ghost"
+                  >
+                    Duplicate
+                  </Button>
+                ) : null}
+                {canShare ? (
+                  <Button
+                    className="w-full justify-start gap-2 px-3 whitespace-nowrap"
+                    icon={
+                      <ShareNetworkIcon
+                        aria-hidden
+                        size={16}
+                        weight="bold"
+                      />
+                    }
+                    iconPosition="left"
+                    onClick={() => onShare?.(document)}
+                    size="sm"
+                    variant="ghost"
+                  >
+                    Share
+                  </Button>
+                ) : null}
+                {canShare && onViewShared ? (
                   <Button
                     className="w-full justify-start gap-2 px-3 whitespace-nowrap"
                     icon={

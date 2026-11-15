@@ -107,6 +107,64 @@ export const useCreateDocumentMutation = () => {
   });
 };
 
+export type DuplicateDocumentVariables = {
+  /** ID of the saved document being duplicated. */
+  documentId: string;
+  /** Name of the copy, as edited in the draft. */
+  name: string;
+  /** Field values of the copy, as edited in the draft. */
+  values: Record<string, string>;
+};
+
+const postDuplicateDocument = async ({
+  documentId,
+  name,
+  values,
+}: DuplicateDocumentVariables): Promise<UserDocument> => {
+  const response = await fetch(
+    `/api/documents/${encodeURIComponent(documentId)}/duplicate`,
+    {
+      body: JSON.stringify({ name, values }),
+      headers: { "Content-Type": "application/json" },
+      method: "POST",
+    },
+  );
+
+  const data = (await response.json().catch(() => ({}))) as {
+    document?: UserDocument;
+  } & Partial<DocumentsApiError>;
+
+  if (!response.ok || !data.document) {
+    throw new Error(data.error ?? "Unable to duplicate this document.");
+  }
+
+  return data.document;
+};
+
+/**
+ * Creates the copy of a document once the user confirms the duplicate draft.
+ * The caller sends the source ID plus the edited `name` and `values`; the server
+ * copies the saved snapshot itself. Resolves with the new document and
+ * invalidates the documents cache so it is listed.
+ */
+export const useDuplicateDocumentMutation = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: postDuplicateDocument,
+    onSuccess: (document, variables) => {
+      void queryClient.invalidateQueries({
+        queryKey: queryKeys.documents.all(),
+      });
+      trackEvent("document_duplicated", {
+        document_id: document.id,
+        document_type: document.templateSnapshot?.documentType ?? "unknown",
+        source_document_id: variables.documentId,
+      });
+    },
+  });
+};
+
 export type UpdateDocumentInput = {
   name?: string;
   values?: Record<string, string>;
