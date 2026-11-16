@@ -7,6 +7,8 @@ export interface InvitePreviewData {
   name: string;
   ownerEmail: string;
   ownerName: string;
+  /** `false` for a view-only share: the page then asks the visitor to view, not sign. */
+  signable: boolean;
 }
 
 /**

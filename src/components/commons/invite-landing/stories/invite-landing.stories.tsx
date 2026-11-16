@@ -42,6 +42,7 @@ const valid = {
     name: "Website redesign NDA",
     ownerEmail: "alex@example.com",
     ownerName: "Alex Morgan",
+    signable: true,
   },
   state: "valid",
 };
@@ -83,6 +84,26 @@ export const SignedOut: Story = {
       "href",
       "/sign-in?next=%2Fshared%2Fstory-token",
     );
+  },
+};
+
+/** A view-only share: the sign-up button asks to view, not sign. */
+export const SignedOutViewOnly: Story = {
+  decorators: [
+    (Story) => {
+      mockApi({
+        preview: { ...valid, invite: { ...valid.invite, signable: false } },
+        signedIn: false,
+      });
+      return <Story />;
+    },
+  ],
+  play: async ({ canvas }) => {
+    await expect(
+      await canvas.findByRole("link", { name: "Sign up to view" }),
+    ).toBeVisible();
+    await expect(canvas.getByText(/open for you to view/)).toBeVisible();
+    await expect(canvas.queryByText(/signature/)).not.toBeInTheDocument();
   },
 };
 

@@ -50,3 +50,12 @@ export const Default: Story = {
 };
 
 export const WithoutActions: Story = {};
+
+/** A view-only share: the next step does not mention a signature. */
+export const ViewOnly: Story = {
+  args: { signable: false },
+  play: async ({ canvas }) => {
+    await expect(canvas.getByText(/open for you to view/)).toBeVisible();
+    await expect(canvas.queryByText(/signature/)).not.toBeInTheDocument();
+  },
+};

@@ -70,8 +70,12 @@ Someone who has no account, or an unverified one, is linked through the
 
 ## Invite links (DS-7)
 
-The share email links to `/shared/<token>` rather than the dashboard, so a person
-without an account can see what was sent and sign up to sign it.
+The share email links to `/shared/<token>` rather than the dashboard, so a
+person without an account can see what was sent and sign up to sign it. For a
+view-only share the preview endpoint returns `signable: false`, so the page, its
+sign-up button ("Sign up to view"), the accept toast and the email ask the
+visitor to view rather than sign. The page heading is neutral because it renders
+before the invite is looked up.
 
 - **Token:** 32 random bytes, base64url. Only its SHA-256 hash is stored, as the
   document ID of `sharedInvites/{tokenHash}`. It is valid for 14 days.

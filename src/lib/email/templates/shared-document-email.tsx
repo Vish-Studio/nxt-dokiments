@@ -84,9 +84,7 @@ export const SharedDocumentEmail = ({
           : `${senderName} shared "${documentName}" with you on ${siteName} ${signable ? "for your signature" : "to view"}.`}
       </Text>
       <Text style={paragraph}>
-        New to {siteName}? The button above lets you preview the document, then
-        create an account with this email address to sign it. The link works for
-        14 days.
+        {`New to ${siteName}? The button above lets you preview the document, then create an account with this email address to ${signable ? "sign" : "open"} it. The link works for 14 days.`}
       </Text>
     </EmailLayout>
   );

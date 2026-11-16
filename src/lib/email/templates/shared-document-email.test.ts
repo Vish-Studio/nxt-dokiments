@@ -29,6 +29,7 @@ describe("SharedDocumentEmail", () => {
     );
     expect(html).toContain("create an account with this email address");
     expect(html).toContain("for your signature");
+    expect(html).toContain("to sign it.");
   });
 
   it("asks only to view a view-only share", async () => {
@@ -49,6 +50,8 @@ describe("SharedDocumentEmail", () => {
 
     expect(shared).toContain("to view.");
     expect(shared).not.toContain("signature");
+    expect(shared).toContain("to open it.");
+    expect(shared).not.toContain("to sign it");
     expect(updated).toContain("review the latest version.");
     expect(updated).not.toContain("and sign");
   });
