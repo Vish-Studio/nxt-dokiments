@@ -10,6 +10,7 @@ export interface DocumentListProps {
   onEdit: (document: UserDocument) => void;
   onPreview: (document: UserDocument) => void;
   onPrint: (document: UserDocument) => void;
+  onDuplicate?: (document: UserDocument) => void;
   onShare?: (document: UserDocument) => void;
   /** Opens a document's shared copy, by its shared-document ID. Needs `sharedCopyIds`. */
   onViewShared?: (sharedDocumentId: string) => void;
@@ -59,6 +60,7 @@ export const DocumentList = ({
   onEdit,
   onPreview,
   onPrint,
+  onDuplicate,
   onShare,
   onViewShared,
   sharedCopyIds,
@@ -76,6 +78,7 @@ export const DocumentList = ({
             document={document}
             key={document.id}
             onEdit={onEdit}
+            onDuplicate={onDuplicate}
             onPreview={onPreview}
             onPrint={onPrint}
             onShare={onShare}

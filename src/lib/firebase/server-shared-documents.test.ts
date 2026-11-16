@@ -46,13 +46,37 @@ describe("shared document serialisation", () => {
     ]);
   });
 
+  it("keeps a uid an invite accepted, and clears them all once nobody has access", () => {
+    const accepted = { ...document, recipientUids: ["dave-uid"] };
+
+    expect(
+      readArray(toSharedDocumentFields(accepted).recipientUids).map(readString),
+    ).toEqual(["dave-uid", "bob-uid"]);
+
+    const revoked = {
+      ...accepted,
+      recipients: document.recipients.map((recipient) => ({
+        ...recipient,
+        status: "revoked" as const,
+      })),
+    };
+    expect(readArray(toSharedDocumentFields(revoked).recipientUids)).toEqual(
+      [],
+    );
+  });
+
   it("round-trips through Firestore's REST shape", () => {
     const parsed = parseSharedDocument(
       { fields: toSharedDocumentFields(document) },
       "s1",
     );
 
-    expect(parsed).toEqual({ ...document, id: "s1", views: {} });
+    expect(parsed).toEqual({
+      ...document,
+      id: "s1",
+      recipientUids: ["bob-uid"],
+      views: {},
+    });
   });
 
   it("reports a recipient as signed once a signature exists, matched by uid", () => {

@@ -27,7 +27,7 @@ describe("SharedDocumentEmail", () => {
     expect(html).toContain(
       'href="https://example.com/my-documents?tab=shared"',
     );
-    expect(html).toContain("Create an account with this email address");
+    expect(html).toContain("create an account with this email address");
     expect(html).toContain("for your signature");
   });
 

@@ -6,7 +6,7 @@ import {
   SpinnerGapIcon,
   WarningCircleIcon,
 } from "@phosphor-icons/react";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 
 import { Button } from "@/components/commons/button/button";
 import {
@@ -25,6 +25,7 @@ type ExportStatus = "error" | "generating" | "ready";
 
 export interface DocumentExportDialogProps {
   documentName: string;
+  fieldSlots?: Partial<Record<string, ReactNode>>;
   generatePdf?: (
     element: HTMLElement,
     options?: GenerateDocumentPdfOptions,
@@ -47,6 +48,7 @@ const getFileName = (documentName: string) => {
 
 export const DocumentExportDialog = ({
   documentName,
+  fieldSlots,
   generatePdf = generateDocumentPdf,
   onClose,
   open,
@@ -265,6 +267,7 @@ export const DocumentExportDialog = ({
       >
         <TemplateDocument
           className="rounded-none border-0"
+          fieldSlots={fieldSlots}
           layout="print"
           template={template}
           values={values}
