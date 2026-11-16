@@ -45,6 +45,8 @@ export const InviteLanding = ({ token }: InviteLandingProps) => {
   const started = useRef(false);
 
   const state = preview.data?.state;
+  const signable =
+    preview.data?.state === "valid" ? preview.data.invite.signable : true;
   const signedIn = Boolean(session.data);
 
   useEffect(() => {
@@ -55,13 +57,15 @@ export const InviteLanding = ({ token }: InviteLandingProps) => {
     mutate(undefined, {
       onSuccess: (sharedDocumentId) => {
         showToast({
-          message: "A document is waiting for your signature",
+          message: signable
+            ? "A document is waiting for your signature"
+            : "A document was shared with you",
           tone: "success",
         });
         router.replace(`/my-documents/shared/${sharedDocumentId}`);
       },
     });
-  }, [mutate, router, showToast, signedIn, state]);
+  }, [mutate, router, showToast, signable, signedIn, state]);
 
   if (preview.isPending || session.isPending) {
     return (
@@ -132,6 +136,7 @@ export const InviteLanding = ({ token }: InviteLandingProps) => {
       documentName={invite.name}
       senderEmail={invite.ownerEmail}
       senderName={invite.ownerName}
+      signable={invite.signable}
     >
       {signedIn ? (
         <LoadingStatus message="Linking the document to your account" />
@@ -141,7 +146,7 @@ export const InviteLanding = ({ token }: InviteLandingProps) => {
             href={withNext("/sign-up", `/shared/${token}`)}
             variant="primary"
           >
-            Sign up to sign
+            {invite.signable ? "Sign up to sign" : "Sign up to view"}
           </LinkButton>
           <LinkButton
             href={withNext("/sign-in", `/shared/${token}`)}

@@ -19,7 +19,8 @@ const ShareDocumentSchema = z.object({
 /**
  * `POST /api/documents/:id/share`
  *
- * Shares one of the caller's documents with `email` for signature. Idempotent:
+ * Shares one of the caller's documents with `email`: for signature when its
+ * layout has a recipient signature, view-only otherwise. Idempotent:
  * sharing again with the same address updates the shared copy (while it is
  * unlocked) instead of creating a second one. A document has one recipient for
  * now. Answers `404` while the `documentSharing` flag is off.
@@ -45,8 +46,14 @@ export const POST = withSession<Context>(async (request, context, session) => {
 
   const { id } = await context.params;
   const { email } = await parseBody(request, ShareDocumentSchema);
-  const { created, documentName, recipient, sharedAt, sharedDocumentId } =
-    await shareDocument(session, id, email);
+  const {
+    created,
+    documentName,
+    recipient,
+    sharedAt,
+    sharedDocumentId,
+    signable,
+  } = await shareDocument(session, id, email);
 
   after(async () => {
     // Older links keep working until a new email replaces them, so their
@@ -65,6 +72,7 @@ export const POST = withSession<Context>(async (request, context, session) => {
       recipientEmail: recipient.email,
       sharedAt,
       sharedDocumentId,
+      signable,
     });
   });
 

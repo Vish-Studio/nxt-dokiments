@@ -10,6 +10,8 @@ export interface InvitePreviewProps {
   senderEmail: string;
   /** The actions for the visitor, such as the sign-up and sign-in buttons. */
   children?: ReactNode;
+  /** `false` for a view-only share, so the next step does not mention signing. */
+  signable?: boolean;
 }
 
 /**
@@ -22,6 +24,7 @@ export const InvitePreview = ({
   senderName,
   senderEmail,
   children,
+  signable = true,
 }: InvitePreviewProps) => (
   <section className="invite-preview rounded-box border border-steel-mist bg-white p-6">
     <div className="flex items-start gap-4">
@@ -49,7 +52,8 @@ export const InvitePreview = ({
     </div>
     <p className="mt-5 text-sm leading-6 text-nox-noir/70">
       Sign in or create an account with the email address this invitation was
-      sent to, and the document will open ready for your signature.
+      sent to, and the document will open{" "}
+      {signable ? "ready for your signature" : "for you to view"}.
     </p>
     {children ? (
       <div className="mt-6 flex flex-col gap-3">{children}</div>

@@ -90,3 +90,32 @@ export const Signed: Story = {
     await expect(canvas.getByText("Signed")).toBeVisible();
   },
 };
+
+/** A view-only share the recipient has not opened: "Not opened", not "Pending". */
+export const NotOpenedViewOnly: Story = {
+  args: {
+    document: {
+      ...sharedDocuments[0],
+      name: "October invoice",
+      templateId: "invoice",
+      templateSnapshot: {
+        description: "",
+        documentType: "invoice",
+        fields: [{ key: "title", label: "Title", type: "text" }],
+        name: "Invoice",
+        style: {
+          description: "",
+          id: "classic",
+          name: "Classic",
+          tier: "free",
+        },
+      },
+      values: { title: "October invoice" },
+    },
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await expect(canvas.getByText("Not opened")).toBeVisible();
+    await expect(canvas.queryByText("Pending")).not.toBeInTheDocument();
+  },
+};

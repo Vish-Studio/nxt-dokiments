@@ -13,7 +13,6 @@ import { Button } from "@/components/commons/button/button";
 import { ButtonIcon } from "@/components/commons/button-icon/button-icon";
 import { Dropdown } from "@/components/commons/dropdown/dropdown";
 import { DashboardListRow } from "@/components/dashboard/dashboard-list-row/dashboard-list-row";
-import { isSignableDocument } from "@/lib/sharing/signable";
 import type { UserDocument } from "@/types/template";
 
 export interface DocumentListItemProps {
@@ -61,9 +60,8 @@ export const DocumentListItem = ({
   const createdDate = new Date(document.createdAt);
   // Legacy documents without a snapshot can't open in the editor, so a copy would be a dead end.
   const canDuplicate = Boolean(onDuplicate && snapshot);
-  const canShare = Boolean(onShare) && isSignableDocument(snapshot);
-  const menuHasItems = canDuplicate || canShare;
-  const hasMenu = Boolean(onShare) || canDuplicate;
+  const canShare = Boolean(onShare);
+  const hasMenu = canShare || canDuplicate;
 
   return (
     <DashboardListRow
@@ -140,77 +138,75 @@ export const DocumentListItem = ({
         />
         {hasMenu ? (
           <div className="flex size-10 shrink-0 items-center justify-center">
-            {menuHasItems ? (
-              <Dropdown
-                ariaLabel={`More actions for ${documentTitle}`}
-                buttonClassName="size-8 min-h-8 text-nox-noir hover:bg-base-200"
-                className="shrink-0"
-                iconTrigger={
-                  <DotsThreeIcon
-                    aria-hidden
-                    size={20}
-                    weight="bold"
-                  />
-                }
-                iconTriggerShape="square"
-                menuClassName="w-48"
-              >
-                {canDuplicate ? (
-                  <Button
-                    className="w-full justify-start gap-2 px-3 whitespace-nowrap"
-                    icon={
-                      <CopyIcon
-                        aria-hidden
-                        size={16}
-                        weight="bold"
-                      />
-                    }
-                    iconPosition="left"
-                    onClick={() => onDuplicate?.(document)}
-                    size="sm"
-                    variant="ghost"
-                  >
-                    Duplicate
-                  </Button>
-                ) : null}
-                {canShare ? (
-                  <Button
-                    className="w-full justify-start gap-2 px-3 whitespace-nowrap"
-                    icon={
-                      <ShareNetworkIcon
-                        aria-hidden
-                        size={16}
-                        weight="bold"
-                      />
-                    }
-                    iconPosition="left"
-                    onClick={() => onShare?.(document)}
-                    size="sm"
-                    variant="ghost"
-                  >
-                    Share
-                  </Button>
-                ) : null}
-                {canShare && onViewShared ? (
-                  <Button
-                    className="w-full justify-start gap-2 px-3 whitespace-nowrap"
-                    icon={
-                      <ArrowSquareOutIcon
-                        aria-hidden
-                        size={16}
-                        weight="bold"
-                      />
-                    }
-                    iconPosition="left"
-                    onClick={() => onViewShared(document)}
-                    size="sm"
-                    variant="ghost"
-                  >
-                    View shared copy
-                  </Button>
-                ) : null}
-              </Dropdown>
-            ) : null}
+            <Dropdown
+              ariaLabel={`More actions for ${documentTitle}`}
+              buttonClassName="size-8 min-h-8 text-nox-noir hover:bg-base-200"
+              className="shrink-0"
+              iconTrigger={
+                <DotsThreeIcon
+                  aria-hidden
+                  size={20}
+                  weight="bold"
+                />
+              }
+              iconTriggerShape="square"
+              menuClassName="w-48"
+            >
+              {canDuplicate ? (
+                <Button
+                  className="w-full justify-start gap-2 px-3 whitespace-nowrap"
+                  icon={
+                    <CopyIcon
+                      aria-hidden
+                      size={16}
+                      weight="bold"
+                    />
+                  }
+                  iconPosition="left"
+                  onClick={() => onDuplicate?.(document)}
+                  size="sm"
+                  variant="ghost"
+                >
+                  Duplicate
+                </Button>
+              ) : null}
+              {canShare ? (
+                <Button
+                  className="w-full justify-start gap-2 px-3 whitespace-nowrap"
+                  icon={
+                    <ShareNetworkIcon
+                      aria-hidden
+                      size={16}
+                      weight="bold"
+                    />
+                  }
+                  iconPosition="left"
+                  onClick={() => onShare?.(document)}
+                  size="sm"
+                  variant="ghost"
+                >
+                  Share
+                </Button>
+              ) : null}
+              {canShare && onViewShared ? (
+                <Button
+                  className="w-full justify-start gap-2 px-3 whitespace-nowrap"
+                  icon={
+                    <ArrowSquareOutIcon
+                      aria-hidden
+                      size={16}
+                      weight="bold"
+                    />
+                  }
+                  iconPosition="left"
+                  onClick={() => onViewShared(document)}
+                  size="sm"
+                  variant="ghost"
+                >
+                  View shared copy
+                </Button>
+              ) : null}
+            </Dropdown>
           </div>
         ) : null}
       </div>

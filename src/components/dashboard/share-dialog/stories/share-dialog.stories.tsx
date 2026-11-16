@@ -285,6 +285,24 @@ export const Success: Story = {
   },
 };
 
+/** A view-only share: the copy asks the recipient to view, not sign. */
+export const ViewOnlySuccess: Story = {
+  args: {
+    document: { id: "doc_1", name: "Project status report", signable: false },
+  },
+  play: async () => {
+    mockShareApi("success");
+
+    await expect(
+      screen.getByText(/someone who needs to view it/i),
+    ).toBeVisible();
+    await typeAndShare("Sam@Example.com");
+
+    await expect(await screen.findByText(/can now view/i)).toBeVisible();
+    await expect(screen.queryByText(/view and sign/i)).not.toBeInTheDocument();
+  },
+};
+
 /** Closed — renders nothing at all, rather than a hidden dialog. */
 export const Closed: Story = {
   args: { open: false },

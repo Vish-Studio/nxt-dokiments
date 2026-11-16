@@ -20,6 +20,9 @@ interface InvitePageProps {
  * Public landing page for an emailed invite link (`/shared/<token>`). It is
  * outside the protected prefixes on purpose: the visitor may not have an
  * account yet. Answers `404` while the `documentSharing` flag is off.
+ *
+ * The heading is rendered before the invite is looked up, so it stays neutral:
+ * the share may be for signing or view-only.
  */
 const InvitePage = async ({ params }: InvitePageProps) => {
   if (!documentSharingEnabled) {
@@ -30,8 +33,8 @@ const InvitePage = async ({ params }: InvitePageProps) => {
 
   return (
     <AuthLayout
-      description="Someone shared a document with you for your signature."
-      title="You have a document to sign"
+      description="Someone shared a document with you."
+      title="You have a shared document"
     >
       <InviteLanding token={token} />
     </AuthLayout>

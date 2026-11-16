@@ -167,3 +167,39 @@ export const Revoked: Story = {
     ).toBeNull();
   },
 };
+
+/** View-only share, not opened yet: waits on a view rather than a signature. */
+export const ViewOnlyWaiting: Story = {
+  args: { label: "Sharing", signable: false },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await expect(
+      canvas.getByText("Waiting for sam@example.com to view"),
+    ).toBeVisible();
+    await expect(canvas.getByText("Not opened")).toBeVisible();
+  },
+};
+
+/** View-only share once opened: says who viewed it and when. */
+export const ViewOnlyViewed: Story = {
+  args: {
+    document: {
+      ...pending,
+      views: {
+        "recipient-1": {
+          email: "sam@example.com",
+          viewedAt: new Date("2026-10-21T14:05:00Z").getTime(),
+        },
+      },
+    },
+    label: "Sharing",
+    signable: false,
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await expect(
+      canvas.getByText("Viewed by sam@example.com on 21 Oct 2026"),
+    ).toBeVisible();
+    await expect(canvas.getByText("Viewed")).toBeVisible();
+  },
+};

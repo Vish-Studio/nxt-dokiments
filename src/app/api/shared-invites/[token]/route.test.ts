@@ -82,7 +82,39 @@ describe("GET /api/shared-invites/:token", () => {
       name: "NDA",
       ownerEmail: "alice@example.com",
       ownerName: "Alice",
+      signable: true,
     });
+  });
+
+  it("marks a view-only share as not signable", async () => {
+    state.lookup.mockResolvedValue({
+      invite: {
+        email: "bob@example.com",
+        name: "Invoice",
+        ownerEmail: "alice@example.com",
+        ownerId: "owner-uid",
+        ownerName: "Alice",
+        sharedDocumentId: "s1",
+        templateSnapshot: {
+          description: "",
+          documentType: "invoice",
+          fields: [{ key: "title", label: "Title", type: "text" }],
+          name: "Invoice",
+          style: {
+            description: "",
+            id: "classic",
+            name: "Classic",
+            tier: "free",
+          },
+        },
+        values: {},
+      },
+      state: "valid",
+    });
+
+    const response = await GET(new Request("http://localhost/x"), context);
+
+    expect((await response.json()).invite.signable).toBe(false);
   });
 
   it.each(["expired", "invalid"])("reports a %s link", async (value) => {

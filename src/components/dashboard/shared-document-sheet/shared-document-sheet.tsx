@@ -2,6 +2,7 @@
 
 import {
   ArrowLeftIcon,
+  EyeIcon,
   LockSimpleIcon,
   PrinterIcon,
 } from "@phosphor-icons/react";
@@ -21,7 +22,10 @@ import {
   resolveRecipientStatus,
   shareTimeline,
 } from "@/lib/sharing/share-activity";
-import { RECIPIENT_SIGNATURE_KEY } from "@/lib/sharing/signable";
+import {
+  isViewOnlyShare,
+  RECIPIENT_SIGNATURE_KEY,
+} from "@/lib/sharing/signable";
 import { snapshotToMarketplaceTemplate } from "@/types/template";
 import type { SharedDocument } from "@/types/sharing";
 
@@ -33,7 +37,7 @@ export interface SharedDocumentSheetProps {
   isSigning?: boolean;
   /** Called with the trimmed signature once the recipient confirms. */
   onSign: (signature: string) => void;
-  /** The owner only watches; a recipient can sign while the copy is unlocked. */
+  /** The owner only watches; a recipient can sign while a signable copy is unlocked. */
   viewer: "owner" | "recipient";
 }
 
@@ -41,6 +45,9 @@ export interface SharedDocumentSheetProps {
  * A shared copy of a document, read-only for everyone. A recipient signs it in
  * place of the signature field; once signed the copy is locked and both parties
  * see the signature, who signed and when.
+ *
+ * A copy whose layout has no recipient signature is view-only: there is nothing
+ * to sign, so the recipient gets a note instead of the signing controls.
  */
 export const SharedDocumentSheet = ({
   document,
@@ -67,7 +74,8 @@ export const SharedDocumentSheet = ({
   const signature = Object.values(document.signatures)[0];
   const canExportSigned = document.locked && Boolean(signature) && template;
   const headerRecipient = currentRecipient(document);
-  const canSign = viewer === "recipient" && !document.locked;
+  const isViewOnly = isViewOnlyShare(document);
+  const canSign = viewer === "recipient" && !document.locked && !isViewOnly;
   const trimmed = typed.trim();
   const backHref =
     viewer === "recipient" ? "/my-documents?tab=shared" : "/my-documents";
@@ -121,6 +129,7 @@ export const SharedDocumentSheet = ({
           </div>
           <div className="flex shrink-0 flex-col items-end gap-2">
             <ShareStatusBadge
+              signable={!isViewOnly}
               status={
                 document.locked
                   ? "signed"
@@ -158,6 +167,18 @@ export const SharedDocumentSheet = ({
               weight="bold"
             />
             This copy is signed and locked. It can no longer be changed.
+          </p>
+        ) : null}
+
+        {isViewOnly && viewer === "recipient" ? (
+          <p className="flex items-start gap-2 rounded-box border border-steel-mist bg-base-100 p-3 text-sm text-nox-noir/70">
+            <EyeIcon
+              aria-hidden
+              className="mt-0.5 shrink-0"
+              size={16}
+              weight="bold"
+            />
+            This document was shared with you to view. There is nothing to sign.
           </p>
         ) : null}
 

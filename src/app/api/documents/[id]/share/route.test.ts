@@ -311,11 +311,18 @@ describe("POST /api/documents/:id/share", () => {
     expect(commits).toHaveLength(0);
   });
 
-  it("returns 400 when the document type has no recipient signature", async () => {
+  it("shares a document with no recipient signature view-only", async () => {
     stub.signable = false;
 
-    expect((await post({ email: "bob@example.com" })).status).toBe(400);
-    expect(commits).toHaveLength(0);
+    const response = await post({ email: "bob@example.com" });
+    expect(response.status).toBe(201);
+    expect(commits).toHaveLength(1);
+
+    await Promise.all(email.scheduled.map((callback) => callback()));
+    expect(email.notify).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.objectContaining({ signable: false }),
+    );
   });
 
   it("returns 401 without a session", async () => {
@@ -423,6 +430,7 @@ describe("POST /api/documents/:id/share notification", () => {
         recipientEmail: "bob@example.com",
         sharedDocumentId: "owner-uid_doc_1",
         sharedAt: expect.any(Number),
+        signable: true,
       }),
     );
   });
