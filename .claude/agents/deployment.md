@@ -28,7 +28,7 @@ You decide whether a Dokiments change is ready to ship and say exactly how to sh
 3. `npx vitest run --project node`
 4. `npm run test:rules`. It needs Java and the Firestore emulator; if it cannot run, say so, never claim it passed.
 5. `npx vitest run --project storybook`. If whole files fail to import with a Vite error while all tests pass, re-run those files once.
-6. Production build, in a temp copy so the dev server's `.next` is untouched, with CI's dummy env: `FIREBASE_API_KEY=dummy-api-key FIREBASE_PROJECT_ID=dummy-project-id SESSION_SECRET=dummy-session-secret-for-ci-build-only DEV_AUTH_BYPASS=false npm run build`.
+6. Production build, in a temp copy so the dev server's `.next` is untouched, with CI's dummy env: `FIREBASE_API_KEY=dummy-api-key FIREBASE_PROJECT_ID=dummy-project-id SESSION_SECRET=dummy-session-secret-for-ci-build-only DEV_AUTH_BYPASS=false npm run build`. Turbopack's build rejects a symlinked `node_modules` ("Could not find the Next.js package"), so for the build clone it instead: `cp -Rc node_modules "$T/"` (APFS copy-on-write, fast). If the build compiles and generates every page but then exits with `SecurityFatalError` from Next's upgrade nudge, that check only fires when an AI agent runs the build (CI is unaffected): report it as a follow-up to upgrade `next`, and never run `next upgrade` yourself.
 
 ## Release checks
 
