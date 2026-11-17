@@ -11,6 +11,7 @@ import { Button } from "@/components/commons/button/button";
 import { ButtonIcon } from "@/components/commons/button-icon/button-icon";
 import { Dropdown } from "@/components/commons/dropdown/dropdown";
 import { isOptimisticClient } from "@/hooks/queries/use-clients";
+import { getClientAccentClass } from "@/lib/clients/clients";
 import type { Client } from "@/types/client";
 
 export interface ClientListItemProps {
@@ -23,24 +24,6 @@ export interface ClientListItemProps {
 /** Card shell, shared with `ClientListSkeleton` so loading cards match loaded ones. */
 export const clientCardClassName =
   "flex h-44 flex-col rounded-box border border-steel-mist bg-base-100 p-4";
-
-const avatarColorClasses = [
-  "bg-play-blue",
-  "bg-play-teal",
-  "bg-play-purple",
-  "bg-play-pink",
-  "bg-play-amber",
-  "bg-golden-harvest",
-];
-
-const getAvatarColorClass = (clientId: string) => {
-  const characterTotal = Array.from(clientId).reduce(
-    (total, character) => total + character.charCodeAt(0),
-    0,
-  );
-
-  return avatarColorClasses[characterTotal % avatarColorClasses.length];
-};
 
 export const ClientListItem = ({
   client,
@@ -57,7 +40,7 @@ export const ClientListItem = ({
       <div className="flex min-w-0 items-start justify-between gap-3">
         <div className="flex min-w-0 items-center gap-3">
           <Avatar
-            className={`${getAvatarColorClass(client.id)} text-nox-noir`}
+            className={`${getClientAccentClass(client.id)} text-nox-noir`}
             name={client.name}
             size="md"
           />
