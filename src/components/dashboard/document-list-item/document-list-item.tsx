@@ -151,6 +151,7 @@ export const DocumentListItem = ({
               }
               iconTriggerShape="square"
               menuClassName="w-48"
+              sheetTitle={documentTitle}
             >
               {canDuplicate ? (
                 <Button

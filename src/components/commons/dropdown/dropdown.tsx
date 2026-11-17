@@ -4,9 +4,11 @@ import { CheckIcon } from "@phosphor-icons/react";
 import type { KeyboardEvent, ReactNode } from "react";
 import { useEffect, useId, useRef, useState } from "react";
 
+import { BottomSheet } from "@/components/commons/bottom-sheet/bottom-sheet";
 import { Button } from "@/components/commons/button/button";
 import { ButtonIcon, type ButtonIconShape } from "@/components/commons/button-icon/button-icon";
 import type { SelectOption } from "@/components/commons/select/select";
+import { phoneMediaQuery, useMediaQuery } from "@/hooks/use-media-query";
 import { cn } from "@/lib/utils";
 
 /**
@@ -41,13 +43,23 @@ export interface DropdownProps {
   align?: "start" | "end";
   buttonClassName?: string;
   className?: string;
+  /** Popover classes (width, position). Not applied in the phone sheet. */
   menuClassName?: string;
+  /**
+   * Opt in to a {@link BottomSheet} on phones (below `sm`): the open menu
+   * renders in a sheet titled with this text instead of the anchored popover,
+   * so actions and filters get thumb-friendly targets. Desktop keeps the
+   * popover. Leave it unset for pickers that belong to a form field.
+   */
+  sheetTitle?: string;
 }
 
 export const Dropdown = ({
   align = "end", ariaLabel, buttonClassName, children, className,
-  closeOnSelect = true, groups, iconTrigger, iconTriggerShape = "circle", menuClassName, trigger,
+  closeOnSelect = true, groups, iconTrigger, iconTriggerShape = "circle", menuClassName, sheetTitle, trigger,
 }: DropdownProps) => {
+  const isPhone = useMediaQuery(phoneMediaQuery);
+  const isSheet = Boolean(sheetTitle) && isPhone;
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const triggerRef = useRef<HTMLButtonElement>(null);
@@ -63,6 +75,8 @@ export const Dropdown = ({
       const target = initialFocus.current === "last" ? items?.[items.length - 1] : items?.[0];
       target?.focus();
     }
+    // The sheet owns its backdrop, Escape and focus return.
+    if (isSheet) return;
     const handlePointerDown = (event: PointerEvent) => {
       if (!dropdownRef.current?.contains(event.target as Node)) setIsOpen(false);
     };
@@ -84,7 +98,7 @@ export const Dropdown = ({
       document.removeEventListener("focusin", handleFocusIn);
       document.removeEventListener("keydown", handleKeyDown);
     };
-  }, [isOpen, hasMenu]);
+  }, [isOpen, hasMenu, isSheet]);
 
   const handleMenuKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
     if (!groups) return;
@@ -113,43 +127,11 @@ export const Dropdown = ({
     }
   };
 
-  return (
-    <div className={cn("dropdown", align === "end" ? "dropdown-end" : "dropdown-start", isOpen && "dropdown-open", className)} ref={dropdownRef}>
-      {iconTrigger ? (
-        <ButtonIcon
-          aria-controls={isOpen ? menuId : undefined}
-          aria-expanded={isOpen}
-          aria-haspopup={groups || children ? "menu" : undefined}
+  // One menu body, shown in the anchored popover or, on phones, in the sheet.
+  const menu = (
+      <div
           aria-label={ariaLabel}
-          className={buttonClassName}
-          icon={iconTrigger}
-          onClick={toggleMenu}
-          onKeyDown={openWithKeyboard}
-          ref={triggerRef}
-          shape={iconTriggerShape}
-          size="sm"
-          variant="ghost"
-        />
-      ) : (
-        <Button
-          aria-controls={isOpen ? menuId : undefined}
-          aria-expanded={isOpen}
-          aria-haspopup={groups || children ? "menu" : undefined}
-          aria-label={ariaLabel}
-          className={cn(dropdownControlClassName, buttonClassName)}
-          onClick={toggleMenu}
-          onKeyDown={openWithKeyboard}
-          ref={triggerRef}
-          size="sm"
-          variant="ghost"
-        >
-          {trigger}
-        </Button>
-      )}
-      {isOpen ? (
-        <div
-          aria-label={ariaLabel}
-          className={cn("dropdown-content z-50 mt-2 max-h-80 overflow-y-auto rounded-box border border-steel-mist bg-base-100 p-2 text-nox-noir shadow-sm", menuClassName)}
+          className={isSheet ? "-mx-2" : cn("dropdown-content z-50 mt-2 max-h-80 overflow-y-auto rounded-box border border-steel-mist bg-base-100 p-2 text-nox-noir shadow-sm", menuClassName)}
           id={menuId}
           // Custom action menus (children) close once one of their buttons is used.
           onClick={(event) => {
@@ -192,6 +174,55 @@ export const Dropdown = ({
           ))}
           {children}
         </div>
+  );
+
+  return (
+    <div className={cn("dropdown", align === "end" ? "dropdown-end" : "dropdown-start", isOpen && "dropdown-open", className)} ref={dropdownRef}>
+      {iconTrigger ? (
+        <ButtonIcon
+          aria-controls={isOpen ? menuId : undefined}
+          aria-expanded={isOpen}
+          aria-haspopup={groups || children ? "menu" : undefined}
+          aria-label={ariaLabel}
+          className={buttonClassName}
+          icon={iconTrigger}
+          onClick={toggleMenu}
+          onKeyDown={openWithKeyboard}
+          ref={triggerRef}
+          shape={iconTriggerShape}
+          size="sm"
+          variant="ghost"
+        />
+      ) : (
+        <Button
+          aria-controls={isOpen ? menuId : undefined}
+          aria-expanded={isOpen}
+          aria-haspopup={groups || children ? "menu" : undefined}
+          aria-label={ariaLabel}
+          className={cn(dropdownControlClassName, buttonClassName)}
+          onClick={toggleMenu}
+          onKeyDown={openWithKeyboard}
+          ref={triggerRef}
+          size="sm"
+          variant="ghost"
+        >
+          {trigger}
+        </Button>
+      )}
+      {isOpen && !isSheet ? menu : null}
+      {sheetTitle ? (
+        <BottomSheet
+          actions={
+            isSheet && !closeOnSelect ? (
+              <Button onClick={() => setIsOpen(false)} size="sm">Done</Button>
+            ) : undefined
+          }
+          onClose={() => setIsOpen(false)}
+          open={isOpen && isSheet}
+          title={sheetTitle}
+        >
+          {menu}
+        </BottomSheet>
       ) : null}
     </div>
   );

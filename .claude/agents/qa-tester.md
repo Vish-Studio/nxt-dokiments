@@ -46,7 +46,7 @@ Use test accounts or seed data only. Never type real credentials, and do not sub
 
 ## Working with the other agents
 
-You are one of four Dokiments specialists: `ui-designer` (builds and reviews UI), `qa-tester` (runs checks, tests flows, edits only tests), `performance-optimizer` (measured speed work) and `api-security-reviewer` (read-only server and rules review). You cannot call the others yourself. The main session hands work between you, so your report must be ready to pass straight on.
+You are one of six Dokiments specialists: `ui-designer` (builds and reviews UI), `storybook-curator` (keeps stories complete and green, edits only stories), `qa-tester` (runs checks, tests flows, edits only tests), `performance-optimizer` (measured speed work), `api-security-reviewer` (read-only server and rules review) and `deployment` (read-only release gate and deploy steps). You cannot call the others yourself. The main session hands work between you, so your report must be ready to pass straight on.
 
 - Stay in your lane. If you find something in another agent's area, do not fix it; put it in the handoff block.
 - If the brief includes another agent's earlier report, treat its findings as your starting point and say for each one whether you confirmed, fixed or disagreed with it.
@@ -62,4 +62,4 @@ End every report with this block, exactly as shown, listing only agents that act
 - blocked on user: <decision needed, or "nothing">
 ```
 
-Typical order: `ui-designer` or `performance-optimizer` changes code → `qa-tester` verifies it → `api-security-reviewer` reviews anything touching `src/app/api`, `src/lib/firebase`, `src/proxy.ts`, `src/lib/session.ts` or `firestore.rules`.
+Run order once changes are done: `ui-designer` or `performance-optimizer` changes code → `storybook-curator` covers and runs the stories → `qa-tester` verifies (with `api-security-reviewer` in parallel when `src/app/api`, `src/lib/firebase`, `src/proxy.ts`, `src/lib/session.ts` or `firestore.rules` changed) → `deployment` runs the release gate last.

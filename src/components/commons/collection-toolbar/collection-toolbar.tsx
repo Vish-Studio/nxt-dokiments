@@ -85,6 +85,7 @@ const CollectionToolbar = ({
             className="static shrink-0 sm:relative"
             buttonClassName={controlClassName}
             menuClassName="left-0 w-full sm:left-auto sm:w-64"
+            sheetTitle="Sort"
             groups={[{ label: "Sort by", value: sort, options: sortOptions, onChange: (value) => { onSort(value); onCollectionChange?.(); } }]}
             trigger={<><SortAscendingIcon aria-hidden size={hasCompactAppearance ? 15 : 17} /><span className="hidden sm:inline">{sortLabel}</span><CaretDownIcon aria-hidden className="hidden sm:block" size={hasCompactAppearance ? 11 : 12} /></>}
           />
@@ -96,6 +97,7 @@ const CollectionToolbar = ({
               buttonClassName={controlClassName}
               closeOnSelect={false}
               menuClassName="left-0 w-full sm:left-auto sm:w-72"
+              sheetTitle="Filters"
               groups={filters.map((filter) => ({ label: filter.label, value: filter.value, options: filter.options, onChange: (value) => { filter.onChange(value); onCollectionChange?.(); } }))}
               trigger={<><FunnelIcon aria-hidden size={hasCompactAppearance ? 15 : 17} /><span className="hidden sm:inline">Filter</span>{activeFilters.length ? <span className="hidden sm:inline-flex"><Badge variant="neutral">{activeFilters.length}</Badge></span> : null}<CaretDownIcon aria-hidden className="hidden sm:block" size={hasCompactAppearance ? 11 : 12} /></>}
             />

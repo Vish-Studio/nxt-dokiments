@@ -314,9 +314,15 @@ export const EditDocument: Story = {
       await canvas.findByRole("button", { name: "Save anyway" }),
     );
     await expect(
-      await canvas.findByRole("dialog", { name: "Document saved" }),
+      await within(canvasElement.ownerDocument.body).findByRole("dialog", {
+        name: "Document saved",
+      }),
     ).toBeVisible();
-    await userEvent.click(canvas.getByRole("button", { name: "Continue" }));
+    await userEvent.click(
+      within(canvasElement.ownerDocument.body).getByRole("button", {
+        name: "Done",
+      }),
+    );
     await expect(
       await canvas.findByText("Lumina Events Invoice"),
     ).toBeVisible();
@@ -363,9 +369,15 @@ export const DuplicateDocument: Story = {
       await canvas.findByRole("button", { name: "Save anyway" }),
     );
     await expect(
-      await canvas.findByRole("dialog", { name: "Document saved" }),
+      await within(canvasElement.ownerDocument.body).findByRole("dialog", {
+        name: "Document saved",
+      }),
     ).toBeVisible();
-    await userEvent.click(canvas.getByRole("button", { name: "Continue" }));
+    await userEvent.click(
+      within(canvasElement.ownerDocument.body).getByRole("button", {
+        name: "Done",
+      }),
+    );
     await expect(
       await canvas.findByText("Copy of Lumina Events Invoice"),
     ).toBeVisible();
@@ -407,7 +419,9 @@ export const SavedConfirmation: Story = {
       await canvas.findByRole("button", { name: "Save anyway" }),
     );
     await expect(
-      await canvas.findByRole("dialog", { name: "Document saved" }),
+      await within(canvasElement.ownerDocument.body).findByRole("dialog", {
+        name: "Document saved",
+      }),
     ).toBeVisible();
   },
 };
@@ -465,14 +479,18 @@ export const SavedNextStepDownload: Story = {
     await userEvent.click(
       await canvas.findByRole("button", { name: "Save anyway" }),
     );
-    const saved = await canvas.findByRole("dialog", { name: "Document saved" });
+    const saved = await within(canvasElement.ownerDocument.body).findByRole("dialog", {
+        name: "Document saved",
+      });
     await expect(within(saved).getByRole("button", { name: "Share" })).toBeVisible();
 
     await userEvent.click(
       within(saved).getByRole("button", { name: "Download PDF" }),
     );
     await expect(
-      canvas.queryByRole("dialog", { name: "Document saved" }),
+      within(canvasElement.ownerDocument.body).queryByRole("dialog", {
+        name: "Document saved",
+      }),
     ).toBeNull();
     await expect(
       await canvas.findByRole("dialog", {

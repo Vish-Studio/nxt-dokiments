@@ -1,6 +1,7 @@
 import type { Meta, StoryObj } from "@storybook/nextjs-vite";
 import { expect, fn, userEvent, within } from "storybook/test";
 
+import { mockPhoneViewport } from "@/lib/storybook/mock-phone-viewport";
 import type { Client } from "@/types/client";
 
 import { ClientListItem } from "../client-list-item";
@@ -101,5 +102,25 @@ export const Optimistic: Story = {
     await expect(
       canvas.getByRole("button", { name: "More actions for Maya Chen" }),
     ).toBeDisabled();
+  },
+};
+
+/** On phones the card menu opens in a bottom sheet titled with the client's name. */
+export const MenuOnPhone: Story = {
+  beforeEach: mockPhoneViewport,
+  play: async ({ args, canvasElement }) => {
+    const page = within(canvasElement.ownerDocument.body);
+
+    await userEvent.click(
+      page.getByRole("button", { name: "More actions for Maya Chen" }),
+    );
+    const sheet = await page.findByRole("dialog", { name: "Maya Chen" });
+    await expect(sheet.closest(".bottom-sheet")).not.toBeNull();
+
+    await userEvent.click(
+      within(sheet).getByRole("button", { name: "Edit client" }),
+    );
+    await expect(args.onEdit).toHaveBeenCalledOnce();
+    await expect(page.queryByRole("dialog", { name: "Maya Chen" })).toBeNull();
   },
 };

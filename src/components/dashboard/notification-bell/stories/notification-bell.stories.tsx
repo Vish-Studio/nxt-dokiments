@@ -1,6 +1,8 @@
 import type { Meta, StoryObj } from "@storybook/nextjs-vite";
 import { expect, fn, userEvent, waitFor, within } from "storybook/test";
 
+import { mockPhoneViewport } from "@/lib/storybook/mock-phone-viewport";
+
 import { NotificationBellView } from "../notification-bell";
 
 const now = Date.now();
@@ -106,6 +108,28 @@ export const MarkAllAsRead: Story = {
     );
     await userEvent.click(
       canvas.getByRole("button", { name: "Mark all as read" }),
+    );
+    await expect(args.onMarkAllAsRead).toHaveBeenCalledTimes(1);
+  },
+};
+
+/** On phones the list opens in a bottom sheet whose title says "Notifications". */
+export const OnPhone: Story = {
+  beforeEach: mockPhoneViewport,
+  play: async ({ args, canvasElement }) => {
+    const page = within(canvasElement.ownerDocument.body);
+
+    await userEvent.click(
+      page.getByRole("button", { name: "Notifications, 2 unread" }),
+    );
+    const sheet = await page.findByRole("dialog", { name: "Notifications" });
+    await expect(sheet.closest(".bottom-sheet")).not.toBeNull();
+    await expect(
+      within(sheet).getByText("New template: Invoice"),
+    ).toBeVisible();
+
+    await userEvent.click(
+      within(sheet).getByRole("button", { name: "Mark all as read" }),
     );
     await expect(args.onMarkAllAsRead).toHaveBeenCalledTimes(1);
   },

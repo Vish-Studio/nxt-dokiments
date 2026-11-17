@@ -4,9 +4,11 @@ import { DownloadSimpleIcon } from "@phosphor-icons/react";
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 
+import { BottomSheet } from "@/components/commons/bottom-sheet/bottom-sheet";
 import type { ButtonProps } from "@/components/commons/button/button";
 import { Button } from "@/components/commons/button/button";
 import { useInstallPrompt } from "@/hooks/use-install-prompt";
+import { phoneMediaQuery, useMediaQuery } from "@/hooks/use-media-query";
 import type { AnalyticsEventMap } from "@/lib/analytics/events";
 import { trackEvent } from "@/lib/analytics/track";
 import type { InstallGuideKey } from "@/lib/pwa/install-availability";
@@ -102,8 +104,11 @@ export const InstallInstructionsDialog = ({
   onClose,
   open,
 }: InstallInstructionsDialogProps) => {
+  const isPhone = useMediaQuery(phoneMediaQuery);
+
+  // The phone sheet handles Escape and the scroll lock itself.
   useEffect(() => {
-    if (!open) {
+    if (!open || isPhone) {
       return;
     }
 
@@ -120,13 +125,56 @@ export const InstallInstructionsDialog = ({
       document.removeEventListener("keydown", handleKeyDown);
       document.body.style.overflow = "";
     };
-  }, [open, onClose]);
+  }, [open, isPhone, onClose]);
 
   if (!open) {
     return null;
   }
 
   const { steps, title } = INSTALL_GUIDES[guide];
+  const intro =
+    "Installed, Dokiments opens in its own window and keeps working when you lose signal.";
+  const stepList = (
+    <ol className="grid gap-3">
+      {steps.map((step, index) => (
+        <li
+          className="flex gap-3 text-sm leading-6 text-nox-noir/75"
+          key={step}
+        >
+          <span
+            aria-hidden
+            className="mt-0.5 flex size-6 shrink-0 items-center justify-center rounded-full bg-base-200 font-title text-xs font-bold text-nox-noir"
+          >
+            {index + 1}
+          </span>
+          {step}
+        </li>
+      ))}
+    </ol>
+  );
+
+  // On phones the steps sit in a bottom sheet, like the OS's own install sheets.
+  if (isPhone) {
+    return (
+      <BottomSheet
+        actions={
+          <Button
+            onClick={onClose}
+            size="sm"
+            variant="ghost"
+          >
+            Got it
+          </Button>
+        }
+        description={intro}
+        onClose={onClose}
+        open
+        title={title}
+      >
+        {stepList}
+      </BottomSheet>
+    );
+  }
 
   return createPortal(
     <div
@@ -144,27 +192,9 @@ export const InstallInstructionsDialog = ({
 
       <div className="relative z-10 w-full max-w-sm rounded-box border border-steel-mist bg-base-100 p-6">
         <h3 className="font-title text-lg font-bold text-nox-noir">{title}</h3>
-        <p className="mt-2 text-sm leading-6 text-nox-noir/65">
-          Installed, Dokiments opens in its own window and keeps working when
-          you lose signal.
-        </p>
+        <p className="mt-2 text-sm leading-6 text-nox-noir/65">{intro}</p>
 
-        <ol className="mt-5 grid gap-3">
-          {steps.map((step, index) => (
-            <li
-              className="flex gap-3 text-sm leading-6 text-nox-noir/75"
-              key={step}
-            >
-              <span
-                aria-hidden
-                className="mt-0.5 flex size-6 shrink-0 items-center justify-center rounded-full bg-base-200 font-title text-xs font-bold text-nox-noir"
-              >
-                {index + 1}
-              </span>
-              {step}
-            </li>
-          ))}
-        </ol>
+        <div className="mt-5">{stepList}</div>
 
         <div className="mt-6 flex justify-end">
           <Button

@@ -28,7 +28,7 @@ import { TemplatePreviewDialog } from "@/components/commons/template-preview-dia
 import { ClientPicker } from "@/components/dashboard/client-picker/client-picker";
 import { DashboardListSkeleton } from "@/components/dashboard/dashboard-list-skeleton/dashboard-list-skeleton";
 import { DocumentExportDialog } from "@/components/dashboard/document-export-dialog/document-export-dialog";
-import { DocumentSavedDialog } from "@/components/dashboard/document-saved-dialog/document-saved-dialog";
+import { DocumentSavedSheet } from "@/components/dashboard/document-saved-sheet/document-saved-sheet";
 import {
   DocumentList,
   documentListColumns,
@@ -876,9 +876,10 @@ export const DocumentsView = () => {
           title="Some fields are empty"
         />
 
-        <DocumentSavedDialog
+        <DocumentSavedSheet
           documentName={draftValues.title?.trim() || draftName || "Document"}
-          onContinue={handleSavedContinue}
+          onClose={() => setIsSaveConfirmationOpen(false)}
+          onDone={handleSavedContinue}
           onDownload={() => {
             setIsSaveConfirmationOpen(false);
             setIsEditorExportOpen(true);
