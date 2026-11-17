@@ -31,7 +31,11 @@ import type {
   MarketplaceTemplate,
   TemplateStyle,
 } from "@/types/template";
-import { getDocumentTypeLabel, getTemplateDisplayName } from "@/lib/market-place/document-labels";
+import {
+  getDocumentTypeLabel,
+  getTemplateDisplayName,
+  sortDocumentTypes,
+} from "@/lib/market-place/document-labels";
 
 const NO_STYLES: TemplateStyle[] = [];
 const NO_TEMPLATES: MarketplaceTemplate[] = [];
@@ -86,9 +90,10 @@ export const MarketplaceBrowser = () => {
 
   const typeOptions = useMemo(
     () =>
-      [...new Set(allTemplates.map((template) => template.documentType))]
-        .map((value) => ({ value, label: getDocumentTypeLabel(value) }))
-        .sort((first, second) => first.label.localeCompare(second.label)),
+      sortDocumentTypes([
+        ...new Set(allTemplates.map((template) => template.documentType)),
+      ])
+        .map((value) => ({ value, label: getDocumentTypeLabel(value) })),
     [allTemplates],
   );
   const styleOptions = useMemo(

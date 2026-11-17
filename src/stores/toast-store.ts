@@ -1,6 +1,12 @@
 import { create } from "zustand";
 
-export type ToastTone = "error" | "success";
+/**
+ * - `success`: something was saved or done.
+ * - `warning`: it worked, or can go ahead, but needs the user's attention
+ *   (e.g. a document still has empty fields).
+ * - `error`: it failed; announced to screen readers as an alert.
+ */
+export type ToastTone = "error" | "success" | "warning";
 
 export type Toast = {
   id: number;

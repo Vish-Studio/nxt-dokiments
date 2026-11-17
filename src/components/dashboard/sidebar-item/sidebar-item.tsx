@@ -3,6 +3,7 @@ import Link from "next/link";
 import type { FunctionComponent } from "react";
 
 import { cn } from "@/lib/utils";
+import { iconSize, navIconWeight } from "@/lib/icons";
 
 interface Props {
   className?: string;
@@ -67,8 +68,8 @@ const SidebarItem: FunctionComponent<Props> = ({
       <Icon
         aria-hidden
         className={cn("shrink-0", isActive && "drop-shadow-[0_0_0_currentColor]")}
-        size={19}
-        weight={isActive ? "fill" : "bold"}
+        size={iconSize.nav}
+        weight={navIconWeight(isActive)}
       />
       <span className={sidebarRowLabelClassName(isCollapsed)}>{label}</span>
     </Link>

@@ -43,3 +43,44 @@ export const getTemplateDisplayName = (
   template.name === documentBlueprints[template.documentType]?.name
     ? getDocumentTypeLabel(template.documentType)
     : template.name;
+
+/**
+ * The document types people reach for most, in the order the marketplace's
+ * "Browse by category" rail and type filter show them, straight after
+ * "All templates".
+ */
+export const featuredDocumentTypes: readonly DocumentType[] = [
+  "invoice",
+  "quotation",
+  "cv",
+  "nda",
+  "contract",
+  "statement-of-work",
+];
+
+/**
+ * Orders document types for category menus: {@link featuredDocumentTypes}
+ * first, in their fixed order, then every other type alphabetically by its
+ * {@link getDocumentTypeLabel} label.
+ *
+ * Returns a new array and leaves the input untouched. Types missing from the
+ * input are not added, so a catalog without CVs simply skips them.
+ *
+ * @example
+ * sortDocumentTypes(["receipt", "nda", "invoice"]); // ["invoice", "nda", "receipt"]
+ */
+export const sortDocumentTypes = (
+  documentTypes: readonly DocumentType[],
+): DocumentType[] => {
+  const rank = (documentType: DocumentType) => {
+    const index = featuredDocumentTypes.indexOf(documentType);
+
+    return index === -1 ? featuredDocumentTypes.length : index;
+  };
+
+  return [...documentTypes].sort(
+    (first, second) =>
+      rank(first) - rank(second) ||
+      getDocumentTypeLabel(first).localeCompare(getDocumentTypeLabel(second)),
+  );
+};

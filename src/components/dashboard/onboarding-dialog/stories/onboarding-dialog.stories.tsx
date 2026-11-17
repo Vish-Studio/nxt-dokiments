@@ -26,7 +26,7 @@ export const Welcome: Story = {
     // Greets by first name only.
     await expect(screen.getByText(/^Hi Anthony! Dokiments helps you/)).toBeVisible();
 
-    await userEvent.click(screen.getByRole("button", { name: "Show me around" }));
+    await userEvent.click(screen.getByRole("button", { name: "Next" }));
     await expect(
       screen.getByRole("dialog", { name: "Find templates in the Marketplace" }),
     ).toBeVisible();

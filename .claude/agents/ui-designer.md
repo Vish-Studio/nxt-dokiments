@@ -32,7 +32,28 @@ When asked to review, do not edit. Report each deviation as `file:line — rule 
 1. `npm run lint`
 2. `npx tsc --noEmit` (use the temp-copy recipe from `.github/copilot-instructions.md` if `next dev` is running; never move or copy `.next`)
 3. `npx vitest run --project storybook <component-name>` for every story you added or touched
-4. If browser tools are available, open the change in the running app (`dev` or `storybook` in `.claude/launch.json`) at 390px and 1280px wide and take a screenshot of each.
-5. Update `.claude/skills/dokiments-ui/SKILL.md` in the same change if you introduced or changed a UI convention.
+4. Open the change in the running app or Storybook (`dev` or `storybook` in `.claude/launch.json`) at 390px and 1280px wide and take a screenshot of each, zoomed to the change. Save them under the scratchpad or `/tmp` path you were given and list their paths in your report, so the main session can show them to the user at the end of the reply. If browser tools are not available, say so plainly.
+5. Icon sizes come from `iconSize` in `src/lib/icons.ts`; never add a raw `size={n}`.
+6. Update `.claude/skills/dokiments-ui/SKILL.md` in the same change if you introduced or changed a UI convention.
 
 Report what you changed, the commands you ran with their results, and anything you could not verify. Never commit or push.
+
+## Working with the other agents
+
+You are one of four Dokiments specialists: `ui-designer` (builds and reviews UI), `qa-tester` (runs checks, tests flows, edits only tests), `performance-optimizer` (measured speed work) and `api-security-reviewer` (read-only server and rules review). You cannot call the others yourself. The main session hands work between you, so your report must be ready to pass straight on.
+
+- Stay in your lane. If you find something in another agent's area, do not fix it; put it in the handoff block.
+- If the brief includes another agent's earlier report, treat its findings as your starting point and say for each one whether you confirmed, fixed or disagreed with it.
+- Do not edit a file another agent is changing in the same run. If the brief says another agent is working in parallel, touch only the files named for you.
+
+End every report with this block, exactly as shown, listing only agents that actually have work to do:
+
+```
+### Handoff
+- files changed: <paths, or "none">
+- next: <agent> — <one-line task with file paths>
+- next: <agent> — <one-line task with file paths>
+- blocked on user: <decision needed, or "nothing">
+```
+
+Typical order: `ui-designer` or `performance-optimizer` changes code → `qa-tester` verifies it → `api-security-reviewer` reviews anything touching `src/app/api`, `src/lib/firebase`, `src/proxy.ts`, `src/lib/session.ts` or `firestore.rules`.

@@ -5,6 +5,7 @@ import { SignOutIcon } from "@phosphor-icons/react";
 
 import { TabMenu } from "@/components/commons/tab-menu/tab-menu";
 import { cn } from "@/lib/utils";
+import { iconSize, navIconWeight } from "@/lib/icons";
 
 export interface SettingsNavItem {
   icon: Icon;
@@ -45,8 +46,8 @@ export const SettingsNav = ({
         icon: (isActive: boolean) => (
           <item.icon
             aria-hidden
-            size={18}
-            weight={isActive ? "bold" : "regular"}
+            size={iconSize.tab}
+            weight={navIconWeight(isActive)}
           />
         ),
         id: item.id,
@@ -83,8 +84,8 @@ export const SettingsNav = ({
               <item.icon
                 aria-hidden
                 className="shrink-0"
-                size={18}
-                weight={isActive ? "bold" : "regular"}
+                size={iconSize.nav}
+                weight={navIconWeight(isActive)}
               />
               {item.label}
             </button>
@@ -100,7 +101,7 @@ export const SettingsNav = ({
         <SignOutIcon
           aria-hidden
           className="shrink-0"
-          size={18}
+          size={iconSize.nav}
           weight="bold"
         />
         Log out

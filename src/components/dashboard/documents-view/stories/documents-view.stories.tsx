@@ -309,6 +309,10 @@ export const EditDocument: Story = {
     ).toBeVisible();
     await expect(canvas.getByRole("button", { name: "Delete" })).toBeVisible();
     await userEvent.click(canvas.getByRole("button", { name: "Save changes" }));
+    // The sample invoice has empty fields, so save goes through the warning.
+    await userEvent.click(
+      await canvas.findByRole("button", { name: "Save anyway" }),
+    );
     await expect(
       await canvas.findByRole("dialog", { name: "Document saved" }),
     ).toBeVisible();
@@ -355,6 +359,9 @@ export const DuplicateDocument: Story = {
     await userEvent.click(
       canvas.getByRole("button", { name: "Duplicate document" }),
     );
+    await userEvent.click(
+      await canvas.findByRole("button", { name: "Save anyway" }),
+    );
     await expect(
       await canvas.findByRole("dialog", { name: "Document saved" }),
     ).toBeVisible();
@@ -395,9 +402,86 @@ export const SavedConfirmation: Story = {
       await canvas.findByRole("button", { name: "Edit Lumina Events Invoice" }),
     );
     await userEvent.click(canvas.getByRole("button", { name: "Save changes" }));
+    // The sample invoice has empty fields, so save goes through the warning.
+    await userEvent.click(
+      await canvas.findByRole("button", { name: "Save anyway" }),
+    );
     await expect(
       await canvas.findByRole("dialog", { name: "Document saved" }),
     ).toBeVisible();
+  },
+};
+
+/**
+ * Saving with empty fields highlights them in the preview, shows a warning
+ * toast and asks to save anyway or fix the document first.
+ */
+export const EmptyFieldsWarning: Story = {
+  decorators: WithDocuments.decorators,
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const page = within(canvasElement.ownerDocument.body);
+    await userEvent.click(
+      await canvas.findByRole("button", { name: "Edit Lumina Events Invoice" }),
+    );
+    await expect(
+      canvasElement.querySelector(".template-document-missing"),
+    ).toBeNull();
+
+    await userEvent.click(canvas.getByRole("button", { name: "Save changes" }));
+    await expect(
+      await canvas.findByRole("dialog", { name: "Some fields are empty" }),
+    ).toBeVisible();
+    await expect(
+      await page.findByText(/highlighted in the preview/),
+    ).toBeVisible();
+    await expect(
+      canvasElement.querySelector(".template-document-missing"),
+    ).not.toBeNull();
+
+    // "Fix document" keeps the user in the editor with the highlights on.
+    await userEvent.click(canvas.getByRole("button", { name: "Fix document" }));
+    await expect(
+      canvas.queryByRole("dialog", { name: "Some fields are empty" }),
+    ).toBeNull();
+    await expect(
+      canvas.getByRole("heading", { name: "Edit document" }),
+    ).toBeVisible();
+    await expect(
+      canvasElement.querySelector(".template-document-missing"),
+    ).not.toBeNull();
+  },
+};
+
+/** After a save, "Download PDF" opens the export for the document just saved, without leaving the editor. */
+export const SavedNextStepDownload: Story = {
+  decorators: WithDocuments.decorators,
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await userEvent.click(
+      await canvas.findByRole("button", { name: "Edit Lumina Events Invoice" }),
+    );
+    await userEvent.click(canvas.getByRole("button", { name: "Save changes" }));
+    await userEvent.click(
+      await canvas.findByRole("button", { name: "Save anyway" }),
+    );
+    const saved = await canvas.findByRole("dialog", { name: "Document saved" });
+    await expect(within(saved).getByRole("button", { name: "Share" })).toBeVisible();
+
+    await userEvent.click(
+      within(saved).getByRole("button", { name: "Download PDF" }),
+    );
+    await expect(
+      canvas.queryByRole("dialog", { name: "Document saved" }),
+    ).toBeNull();
+    await expect(
+      await canvas.findByRole("dialog", {
+        name: "Prepare Lumina Events Invoice",
+      }),
+    ).toBeVisible();
+    await expect(
+      canvas.getByRole("heading", { name: "Edit document" }),
+    ).toBeInTheDocument();
   },
 };
 
