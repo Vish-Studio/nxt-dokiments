@@ -4,6 +4,7 @@ import { expect, userEvent, within } from "storybook/test";
 
 import { getTemplateById } from "@/lib/market-place";
 import { makeStoryQueryClient } from "@/lib/query/story-query-client";
+import { documentSharingEnabled } from "@/lib/sharing/feature-flag";
 import { useAuthStore } from "@/stores/auth-store";
 import type { Client } from "@/types/client";
 import type { TemplateSnapshot, UserDocument } from "@/types/template";
@@ -506,7 +507,11 @@ export const SavedNextStepDownload: Story = {
     const saved = await within(canvasElement.ownerDocument.body).findByRole("dialog", {
         name: "Document saved",
       });
-    await expect(within(saved).getByRole("button", { name: "Share" })).toBeVisible();
+    // "Share" is offered only when document sharing is switched on (CI runs
+    // with it off, like `.env.example`).
+    const share = within(saved).queryByRole("button", { name: "Share" });
+    if (documentSharingEnabled) await expect(share).toBeVisible();
+    else await expect(share).toBeNull();
 
     await userEvent.click(
       within(saved).getByRole("button", { name: "Download PDF" }),
