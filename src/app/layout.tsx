@@ -3,6 +3,7 @@ import type { Metadata, Viewport } from "next";
 import { Raleway, Urbanist, Dancing_Script } from "next/font/google";
 import Script from "next/script";
 
+import { ChatbotWidget } from "@/components/chatbot/chatbot-widget";
 import { AnalyticsProvider } from "@/components/commons/analytics-provider/analytics-provider";
 import { AuthProvider } from "@/components/commons/auth-provider/auth-provider";
 import { BottomNotices } from "@/components/commons/bottom-notices/bottom-notices";
@@ -187,6 +188,7 @@ const RootLayout = ({
           */}
           <BottomNotices />
         </SerwistProvider>
+        <ChatbotWidget />
       </body>
     </html>
   );
