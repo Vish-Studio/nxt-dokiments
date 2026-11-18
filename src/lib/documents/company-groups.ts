@@ -266,3 +266,26 @@ export const countEntriesByType = (entries: readonly CompanyEntry[]) => {
     .map(([type, count]) => ({ count, type }))
     .sort((first, second) => second.count - first.count);
 };
+
+/**
+ * Signature progress with one company: `signed` counts documents you sent that
+ * came back signed plus signed documents it shared with you; `awaiting` counts
+ * documents you sent that are not signed yet (sent or viewed).
+ */
+export const countSignatureStatus = (entries: readonly CompanyEntry[]) =>
+  entries.reduce(
+    (counts, entry) => {
+      if (entry.source === "received") {
+        if (entry.shared?.locked) counts.signed += 1;
+      } else if (entry.shareStatus === "signed") {
+        counts.signed += 1;
+      } else if (
+        entry.shareStatus === "pending" ||
+        entry.shareStatus === "viewed"
+      ) {
+        counts.awaiting += 1;
+      }
+      return counts;
+    },
+    { awaiting: 0, signed: 0 },
+  );

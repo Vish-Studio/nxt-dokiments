@@ -1,15 +1,11 @@
 "use client";
 
 import { CompanyDocumentsCard } from "@/components/dashboard/company-documents-card/company-documents-card";
-import type {
-  CompanyDocumentGroup,
-  CompanyEntry,
-} from "@/lib/documents/company-groups";
+import type { CompanyDocumentGroup } from "@/lib/documents/company-groups";
 import { companyPageHref } from "@/lib/documents/company-page-href";
 
 export interface CompanyDocumentsGridProps {
   groups: CompanyDocumentGroup[];
-  onOpenEntry: (entry: CompanyEntry) => void;
 }
 
 /** Grid tracks, shared with `CompanyDocumentsGridSkeleton`. Matches the My Clients grid. */
@@ -23,7 +19,6 @@ export const companyDocumentsGridClassName =
  */
 export const CompanyDocumentsGrid = ({
   groups,
-  onOpenEntry,
 }: CompanyDocumentsGridProps) =>
   groups.length === 0 ? (
     <div className="company-documents-grid grid min-h-48 place-items-center rounded-box border border-dashed border-steel-mist bg-base-100 p-8 text-center">
@@ -49,7 +44,6 @@ export const CompanyDocumentsGrid = ({
           <CompanyDocumentsCard
             group={group}
             href={companyPageHref(group.key)}
-            onOpenEntry={onOpenEntry}
           />
         </li>
       ))}

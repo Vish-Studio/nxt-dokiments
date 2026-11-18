@@ -3,6 +3,7 @@ import { QueryClientProvider } from "@tanstack/react-query";
 import { expect, within } from "storybook/test";
 
 import { makeStoryQueryClient } from "@/lib/query/story-query-client";
+import { documentSharingEnabled } from "@/lib/sharing/feature-flag";
 import {
   companyStoryDocuments,
   companyStorySharedByMe,
@@ -69,12 +70,16 @@ export const Default: Story = {
         name: "New document for Northline Studio",
       }),
     ).toHaveAttribute("href", "/my-documents?new=1&client=client_northline_01");
+    // The NDA Alex Morgan shared only shows when sharing is on (CI runs with
+    // it off, like `.env.example`).
     await expect(
       within(history)
-        .getAllByText(/From Alex Morgan/)
+        .queryAllByText(/From Alex Morgan/)
         .filter((element) => element.checkVisibility()),
-    ).toHaveLength(1);
-    await expect(within(history).getAllByRole("listitem")).toHaveLength(5);
+    ).toHaveLength(documentSharingEnabled ? 1 : 0);
+    await expect(within(history).getAllByRole("listitem")).toHaveLength(
+      documentSharingEnabled ? 5 : 4,
+    );
 
     const client = canvas.getByRole("region", { name: "Client information" });
     await expect(within(client).getByText("Maya Chen")).toBeVisible();
@@ -154,7 +159,10 @@ export const LongHistory: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     const list = await canvas.findByRole("list", { name: "Company documents" });
-    await expect(within(list).getAllByRole("listitem")).toHaveLength(30);
+    // 29 created + 1 shared with you (only when sharing is on).
+    await expect(within(list).getAllByRole("listitem")).toHaveLength(
+      documentSharingEnabled ? 30 : 29,
+    );
     // The list scrolls inside the card instead of stretching the page.
     await expect(list.scrollHeight).toBeGreaterThan(list.clientHeight);
   },

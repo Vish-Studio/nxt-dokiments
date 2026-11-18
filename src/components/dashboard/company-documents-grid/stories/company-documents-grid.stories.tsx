@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from "@storybook/nextjs-vite";
-import { expect, fn, within } from "storybook/test";
+import { expect, within } from "storybook/test";
 
 import { companyStoryGroups } from "@/lib/storybook/company-document-fixtures";
 
@@ -19,7 +19,6 @@ const meta = {
   ],
   args: {
     groups: companyStoryGroups,
-    onOpenEntry: fn(),
   },
 } satisfies Meta<typeof CompanyDocumentsGrid>;
 

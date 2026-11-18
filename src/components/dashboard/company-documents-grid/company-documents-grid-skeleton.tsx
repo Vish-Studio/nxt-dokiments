@@ -31,19 +31,12 @@ export const CompanyDocumentsGridSkeleton = ({
               <div className="skeleton h-4 w-1/2 rounded-field" />
               <div className="skeleton h-3 w-2/3 rounded-field" />
             </div>
+            <div className="skeleton size-8 shrink-0 rounded-field" />
           </div>
-          <div className="skeleton mt-3 h-3 w-1/3 rounded-field" />
-          <div className="mt-3 grid gap-1.5">
-            {[0, 1, 2].map((row) => (
-              <div
-                className="skeleton h-9 rounded-field"
-                key={row}
-              />
-            ))}
-          </div>
-          <div className="mt-auto flex justify-between pt-4">
-            <div className="skeleton h-8 w-24 rounded-field" />
-            <div className="skeleton h-8 w-32 rounded-field" />
+          <div className="skeleton mb-3 mt-3 h-3 w-3/5 rounded-field" />
+          <div className="mt-auto flex justify-between gap-3 border-t border-steel-mist/70 pt-2.5">
+            <div className="skeleton h-3 w-1/2 rounded-field" />
+            <div className="skeleton h-3 w-10 rounded-field" />
           </div>
         </div>
       ))}
