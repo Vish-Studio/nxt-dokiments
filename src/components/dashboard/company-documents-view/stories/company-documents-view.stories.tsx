@@ -59,36 +59,52 @@ type Story = StoryObj<typeof meta>;
 export const Default: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
+    const history = await canvas.findByRole("region", { name: "Documents" });
+    // The name lives in the top bar now; no intro card in the content.
     await expect(
-      await canvas.findByRole("heading", { name: "Northline Studio" }),
-    ).toBeVisible();
-    const intro = canvas.getByRole("region", { name: "Northline Studio overview" });
+      canvas.queryByRole("heading", { name: "Northline Studio" }),
+    ).not.toBeInTheDocument();
     await expect(
-      within(intro).getByRole("link", { name: /new document/i }),
+      within(history).getByRole("link", {
+        name: "New document for Northline Studio",
+      }),
     ).toHaveAttribute("href", "/my-documents?new=1&client=client_northline_01");
-    const overview = canvas.getByRole("region", { name: "Overview" });
-    await expect(within(overview).getByText("Shared with you")).toBeVisible();
-
-    const history = canvas.getByRole("region", { name: "Documents" });
     await expect(within(history).getByText(/From Alex Morgan/)).toBeVisible();
     await expect(within(history).getAllByRole("listitem")).toHaveLength(5);
-    const details = canvas.getByRole("region", { name: "Client details" });
-    await expect(within(details).getByText("C09876543")).toBeVisible();
+
+    const client = canvas.getByRole("region", { name: "Client information" });
+    await expect(within(client).getByText("Maya Chen")).toBeVisible();
+    await expect(
+      within(client).getByRole("link", { name: "View in My Clients" }),
+    ).toHaveAttribute("href", "/my-clients");
+    const company = canvas.getByRole("region", { name: "Company information" });
+    await expect(within(company).getByText("C09876543")).toBeVisible();
+    await expect(
+      within(company).getByText("24 Market Street, Ebene"),
+    ).toBeVisible();
   },
 };
 
-/** A company outside the client book: "Add to My Clients" instead. */
+/** A company outside the client book: "Add to My Clients"; New document prefills the name. */
 export const NotInMyClients: Story = {
   args: { companyKey: "name-lumina-events" },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
+    const history = await canvas.findByRole("region", { name: "Documents" });
     await expect(
-      await canvas.findByRole("heading", { name: "Lumina Events" }),
-    ).toBeVisible();
+      within(history).getByRole("link", {
+        name: "New document for Lumina Events",
+      }),
+    ).toHaveAttribute("href", "/my-documents?new=1&company=Lumina%20Events");
     await expect(canvas.getByText(/isn't in My Clients yet/)).toBeVisible();
     await expect(
       canvas.getByRole("link", { name: "Add to My Clients" }),
     ).toHaveAttribute("href", "/my-clients");
+    await expect(
+      within(
+        canvas.getByRole("region", { name: "Company information" }),
+      ).getByText("Lumina Events"),
+    ).toBeVisible();
   },
 };
 
