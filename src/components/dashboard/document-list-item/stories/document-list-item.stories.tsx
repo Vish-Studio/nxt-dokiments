@@ -1,6 +1,8 @@
 import type { Meta, StoryObj } from "@storybook/nextjs-vite";
 import { expect, fn, userEvent, within } from "storybook/test";
 
+import { mockPhoneViewport } from "@/lib/storybook/mock-phone-viewport";
+
 import { DocumentListItem } from "../document-list-item";
 
 const document = {
@@ -128,6 +130,23 @@ export const DuplicateHiddenWithoutSnapshot: Story = {
         name: `More actions for ${documentTitle}`,
       }),
     ).toBeNull();
+  },
+};
+
+/** On phones the overflow menu opens in a bottom sheet titled with the document. */
+export const MenuOnPhone: Story = {
+  args: { onShare: fn() },
+  beforeEach: mockPhoneViewport,
+  play: async ({ args, canvasElement }) => {
+    const page = within(canvasElement.ownerDocument.body);
+    await userEvent.click(
+      page.getByRole("button", { name: `More actions for ${documentTitle}` }),
+    );
+    const sheet = await page.findByRole("dialog", { name: documentTitle });
+    await expect(sheet).toHaveAttribute("data-layout", "sheet");
+    await userEvent.click(within(sheet).getByRole("button", { name: "Share" }));
+    await expect(args.onShare).toHaveBeenCalledWith(document);
+    await expect(page.queryByRole("dialog", { name: documentTitle })).toBeNull();
   },
 };
 

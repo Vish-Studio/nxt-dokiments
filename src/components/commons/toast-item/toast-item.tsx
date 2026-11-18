@@ -34,7 +34,9 @@ export const ToastItem = ({ onDismiss, toast }: ToastItemProps) => {
         aria-hidden
         className={cn(
           "shrink-0",
-          toast.tone === "success" ? "text-success" : "text-error",
+          toast.tone === "success" && "text-success",
+          toast.tone === "warning" && "text-golden-harvest",
+          toast.tone === "error" && "text-error",
         )}
         size={20}
         weight="fill"

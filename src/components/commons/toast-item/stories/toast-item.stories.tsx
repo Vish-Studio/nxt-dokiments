@@ -42,3 +42,18 @@ export const ErrorTone: Story = {
     await expect(within(canvasElement).getByRole("alert")).toBeVisible();
   },
 };
+
+export const WarningTone: Story = {
+  args: {
+    toast: {
+      id: 3,
+      message: "3 fields are still empty. They're highlighted in the preview.",
+      tone: "warning",
+    },
+  },
+  play: async ({ canvasElement }) => {
+    await expect(within(canvasElement).getByRole("status")).toHaveTextContent(
+      "3 fields are still empty",
+    );
+  },
+};

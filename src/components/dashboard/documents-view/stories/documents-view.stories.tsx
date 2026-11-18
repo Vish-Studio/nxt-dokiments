@@ -4,6 +4,7 @@ import { expect, userEvent, within } from "storybook/test";
 
 import { getTemplateById } from "@/lib/market-place";
 import { makeStoryQueryClient } from "@/lib/query/story-query-client";
+import { documentSharingEnabled } from "@/lib/sharing/feature-flag";
 import { useAuthStore } from "@/stores/auth-store";
 import type { Client } from "@/types/client";
 import type { TemplateSnapshot, UserDocument } from "@/types/template";
@@ -309,10 +310,20 @@ export const EditDocument: Story = {
     ).toBeVisible();
     await expect(canvas.getByRole("button", { name: "Delete" })).toBeVisible();
     await userEvent.click(canvas.getByRole("button", { name: "Save changes" }));
+    // The sample invoice has empty fields, so save goes through the warning.
+    await userEvent.click(
+      await canvas.findByRole("button", { name: "Save anyway" }),
+    );
     await expect(
-      await canvas.findByRole("dialog", { name: "Document saved" }),
+      await within(canvasElement.ownerDocument.body).findByRole("dialog", {
+        name: "Document saved",
+      }),
     ).toBeVisible();
-    await userEvent.click(canvas.getByRole("button", { name: "Continue" }));
+    await userEvent.click(
+      within(canvasElement.ownerDocument.body).getByRole("button", {
+        name: "Done",
+      }),
+    );
     await expect(
       await canvas.findByText("Lumina Events Invoice"),
     ).toBeVisible();
@@ -355,10 +366,19 @@ export const DuplicateDocument: Story = {
     await userEvent.click(
       canvas.getByRole("button", { name: "Duplicate document" }),
     );
+    await userEvent.click(
+      await canvas.findByRole("button", { name: "Save anyway" }),
+    );
     await expect(
-      await canvas.findByRole("dialog", { name: "Document saved" }),
+      await within(canvasElement.ownerDocument.body).findByRole("dialog", {
+        name: "Document saved",
+      }),
     ).toBeVisible();
-    await userEvent.click(canvas.getByRole("button", { name: "Continue" }));
+    await userEvent.click(
+      within(canvasElement.ownerDocument.body).getByRole("button", {
+        name: "Done",
+      }),
+    );
     await expect(
       await canvas.findByText("Copy of Lumina Events Invoice"),
     ).toBeVisible();
@@ -395,9 +415,120 @@ export const SavedConfirmation: Story = {
       await canvas.findByRole("button", { name: "Edit Lumina Events Invoice" }),
     );
     await userEvent.click(canvas.getByRole("button", { name: "Save changes" }));
+    // The sample invoice has empty fields, so save goes through the warning.
+    await userEvent.click(
+      await canvas.findByRole("button", { name: "Save anyway" }),
+    );
+    const saved = await within(canvasElement.ownerDocument.body).findByRole(
+      "dialog",
+      { name: "Document saved" },
+    );
+    await expect(saved).toBeVisible();
+    // Desktop is always a centred modal, never a bottom sheet.
+    await expect(saved).toHaveAttribute("data-layout", "centered");
+    // The warning closed before the confirmation opened.
     await expect(
-      await canvas.findByRole("dialog", { name: "Document saved" }),
+      canvas.queryByRole("dialog", { name: "Some fields are empty" }),
+    ).toBeNull();
+  },
+};
+
+/**
+ * Saving with empty fields highlights them in the preview, shows a warning
+ * toast and asks to save anyway or fix the document first.
+ */
+export const EmptyFieldsWarning: Story = {
+  decorators: WithDocuments.decorators,
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const page = within(canvasElement.ownerDocument.body);
+    await userEvent.click(
+      await canvas.findByRole("button", { name: "Edit Lumina Events Invoice" }),
+    );
+    await expect(
+      canvasElement.querySelector(".template-document-missing"),
+    ).toBeNull();
+
+    await userEvent.click(canvas.getByRole("button", { name: "Save changes" }));
+    const warning = await canvas.findByRole("dialog", {
+      name: "Some fields are empty",
+    });
+    await expect(warning).toBeVisible();
+    // A decision, so centred even though it sits in the editor (never a sheet).
+    await expect(warning).toHaveAttribute("data-layout", "centered");
+    await expect(warning).toHaveAccessibleDescription(
+      /these fields stay blank in the document/,
+    );
+    const toast = await page.findByText(/highlighted in the preview/);
+    await expect(toast).toBeVisible();
+    await expect(
+      canvasElement.querySelector(".template-document-missing"),
+    ).not.toBeNull();
+
+    // The dialog names each empty field as a chip, and agrees with the toast's count.
+    const chips = within(
+      within(warning).getByRole("list", { name: "Empty fields" }),
+    ).getAllByRole("listitem");
+    const toastCount = /^(\d+) fields/.exec(toast.textContent ?? "")?.[1];
+    await expect(chips.length).toBe(toastCount ? Number(toastCount) : 1);
+    for (const chip of chips) {
+      await expect(chip.textContent?.trim()).not.toBe("");
+    }
+    await expect(
+      within(warning).getByRole("button", { name: "Save anyway" }),
+    ).toBeEnabled();
+
+    // "Fix document" keeps the user in the editor with the highlights on.
+    await userEvent.click(canvas.getByRole("button", { name: "Fix document" }));
+    await expect(
+      canvas.queryByRole("dialog", { name: "Some fields are empty" }),
+    ).toBeNull();
+    await expect(
+      canvas.getByRole("heading", { name: "Edit document" }),
     ).toBeVisible();
+    await expect(
+      canvasElement.querySelector(".template-document-missing"),
+    ).not.toBeNull();
+  },
+};
+
+/** After a save, "Download PDF" opens the export for the document just saved, without leaving the editor. */
+export const SavedNextStepDownload: Story = {
+  decorators: WithDocuments.decorators,
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await userEvent.click(
+      await canvas.findByRole("button", { name: "Edit Lumina Events Invoice" }),
+    );
+    await userEvent.click(canvas.getByRole("button", { name: "Save changes" }));
+    await userEvent.click(
+      await canvas.findByRole("button", { name: "Save anyway" }),
+    );
+    const saved = await within(canvasElement.ownerDocument.body).findByRole("dialog", {
+        name: "Document saved",
+      });
+    // "Share" is offered only when document sharing is switched on (CI runs
+    // with it off, like `.env.example`).
+    const share = within(saved).queryByRole("button", { name: "Share" });
+    if (documentSharingEnabled) await expect(share).toBeVisible();
+    else await expect(share).toBeNull();
+
+    await userEvent.click(
+      within(saved).getByRole("button", { name: "Download PDF" }),
+    );
+    await expect(
+      within(canvasElement.ownerDocument.body).queryByRole("dialog", {
+        name: "Document saved",
+      }),
+    ).toBeNull();
+    await expect(
+      await canvas.findByRole("dialog", {
+        name: "Prepare Lumina Events Invoice",
+      }),
+    ).toBeVisible();
+    await expect(
+      canvas.getByRole("heading", { name: "Edit document" }),
+    ).toBeInTheDocument();
   },
 };
 
@@ -409,9 +540,12 @@ export const DeleteConfirmation: Story = {
       await canvas.findByRole("button", { name: "Edit Lumina Events Invoice" }),
     );
     await userEvent.click(canvas.getByRole("button", { name: "Delete" }));
-    await expect(
-      canvas.getByRole("dialog", { name: "Delete document?" }),
-    ).toBeVisible();
+    const dialog = canvas.getByRole("dialog", { name: "Delete document?" });
+    await expect(dialog).toBeVisible();
+    await expect(dialog).toHaveAttribute("data-layout", "centered");
+    await expect(dialog).toHaveAccessibleDescription(
+      'Delete "Lumina Events Invoice"? This action cannot be undone.',
+    );
   },
 };
 

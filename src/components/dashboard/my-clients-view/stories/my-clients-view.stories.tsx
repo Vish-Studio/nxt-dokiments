@@ -339,8 +339,19 @@ export const DeleteFromPanel: Story = {
     );
 
     await waitFor(() => {
-      expect(canvas.getByText("Delete client?")).toBeVisible();
+      expect(
+        canvas.getByRole("dialog", { name: "Delete client?" }),
+      ).toBeVisible();
     });
+    const confirm = canvas.getByRole("dialog", { name: "Delete client?" });
+    // A destructive decision: centred, with the consequence spelled out.
+    await expect(confirm).toHaveAttribute("data-layout", "centered");
+    await expect(confirm).toHaveAccessibleDescription(
+      /Delete Maya Chen from your clients\? This cannot be undone\./,
+    );
+    await expect(
+      within(confirm).getByRole("button", { name: "Delete client" }),
+    ).toBeVisible();
     // Two overlays at once would leave both competing for the Escape key.
     await expect(
       canvas.queryByRole("dialog", { name: "Maya Chen details" }),

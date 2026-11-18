@@ -1,5 +1,6 @@
 import type { Meta, StoryObj } from "@storybook/nextjs-vite";
 import { expect, fn, userEvent, within } from "storybook/test";
+import { mockPhoneViewport } from "@/lib/storybook/mock-phone-viewport";
 import CollectionToolbar from "../collection-toolbar";
 
 const meta = {
@@ -56,5 +57,35 @@ export const ActiveFilters: Story = {
     canReset: true,
     resultLabel: "3 documents",
     filters: [{ ...meta.args.filters[0], value: "draft" }],
+  },
+};
+
+/** On phones Sort opens in a bottom sheet and closes as soon as an order is picked. */
+export const SortOnPhone: Story = {
+  beforeEach: mockPhoneViewport,
+  play: async ({ canvasElement, args }) => {
+    const page = within(canvasElement.ownerDocument.body);
+    await userEvent.click(page.getByRole("button", { name: "Sort" }));
+    const sheet = await page.findByRole("dialog", { name: "Sort" });
+    await expect(sheet).toHaveAttribute("data-layout", "sheet");
+    await userEvent.click(within(sheet).getByRole("menuitemradio", { name: "Oldest" }));
+    await expect(args.onSort).toHaveBeenCalledWith("oldest");
+    await expect(page.queryByRole("dialog", { name: "Sort" })).toBeNull();
+  },
+};
+
+/** Filters stay open on phones so several can be picked; "Done" closes the sheet. */
+export const FiltersOnPhone: Story = {
+  beforeEach: mockPhoneViewport,
+  play: async ({ canvasElement, args }) => {
+    const page = within(canvasElement.ownerDocument.body);
+    await userEvent.click(page.getByRole("button", { name: "Filters" }));
+    const sheet = await page.findByRole("dialog", { name: "Filters" });
+    await expect(sheet).toHaveAttribute("data-layout", "sheet");
+    await userEvent.click(within(sheet).getByRole("menuitemradio", { name: "Draft" }));
+    await expect(args.filters?.[0].onChange).toHaveBeenCalledWith("draft");
+    await expect(page.getByRole("dialog", { name: "Filters" })).toBeInTheDocument();
+    await userEvent.click(within(sheet).getByRole("button", { name: "Done" }));
+    await expect(page.queryByRole("dialog", { name: "Filters" })).toBeNull();
   },
 };

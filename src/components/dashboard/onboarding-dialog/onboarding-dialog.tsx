@@ -187,7 +187,7 @@ export const OnboardingDialog = ({
                 // The golden accent marks the finish, like the sign-in submit button.
                 variant={isLast ? "accent" : "primary"}
               >
-                {isFirst ? "Show me around" : isLast ? "Get started" : "Next"}
+                {isFirst ? "Next" : isLast ? "Get started" : "Next"}
               </Button>
             </div>
           </div>

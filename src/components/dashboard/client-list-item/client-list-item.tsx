@@ -88,6 +88,7 @@ export const ClientListItem = ({
             iconTrigger={<DotsThreeIcon aria-hidden size={20} weight="bold" />}
             iconTriggerShape="square"
             menuClassName="w-36"
+            sheetTitle={client.name}
           >
             <Button
               className="w-full justify-start gap-2 px-3 whitespace-nowrap"

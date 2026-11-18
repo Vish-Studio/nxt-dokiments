@@ -124,6 +124,7 @@ export const NotificationBellView = ({
       toneClasses[tone],
     )}
     menuClassName="w-80 max-w-[calc(100vw-2rem)] p-0"
+    sheetTitle="Notifications"
     trigger={
       <>
         <BellIcon
@@ -142,8 +143,11 @@ export const NotificationBellView = ({
       </>
     }
   >
-    <div className="flex items-center justify-between border-b border-steel-mist/50 px-3 py-2">
-      <p className="font-title text-sm font-semibold">Notifications</p>
+    <div className="flex items-center justify-end border-b border-steel-mist/50 px-3 py-2 sm:justify-between">
+      {/* On phones the bottom sheet's own title says "Notifications". */}
+      <p className="hidden font-title text-sm font-semibold sm:block">
+        Notifications
+      </p>
       <Button
         className="font-medium!"
         disabled={unreadCount === 0}

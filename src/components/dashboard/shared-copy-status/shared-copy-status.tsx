@@ -1,6 +1,6 @@
 "use client";
 
-import { EyeIcon, LockSimpleIcon } from "@phosphor-icons/react";
+import { EyeIcon, LinkBreakIcon, LockSimpleIcon } from "@phosphor-icons/react";
 import { useEffect, useState } from "react";
 
 import { Button } from "@/components/commons/button/button";
@@ -181,6 +181,7 @@ export const SharedCopyStatus = ({
 
       <ConfirmDialog
         confirmLabel="Revoke access"
+        icon={LinkBreakIcon}
         confirmLoading={isRevoking}
         confirmVariant="danger"
         description={`${active?.email ?? "The recipient"} will no longer be able to open${signable ? " or sign" : ""} this document. You can share it again later.`}

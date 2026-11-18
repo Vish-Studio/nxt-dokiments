@@ -6,13 +6,27 @@ import { partyFieldKeys, TemplateParties } from "./template-parties";
 import { CvDocument } from "@/components/commons/cv-document/cv-document";
 import { DocumentItems } from "@/components/commons/document-items/document-items";
 import { getTemplateDisplayName } from "@/lib/market-place/document-labels";
+import { missingFieldClassName } from "./missing-field-class-name";
 
 export type TemplateDocumentProps = {
   className?: string;
   density?: "default" | "compact";
   /** Replaces the rendered value of a field, by key — e.g. an input where the recipient signs. */
   fieldSlots?: Partial<Record<string, ReactNode>>;
+  /**
+   * Field keys to mark with the yellow "not filled in" highlight, normally the
+   * result of `getEmptyDocumentFields` after the author tries to save. Only
+   * applied while `showPlaceholders` is on.
+   */
+  highlightedFields?: ReadonlySet<string>;
   layout?: "print" | "responsive";
+  /**
+   * Editor preview only: render each empty field's placeholder (e.g. "Client
+   * address") in muted italics so the author can see what is still needed.
+   * Defaults to `false`, so saved, shared, exported and thumbnail renders leave
+   * empty fields blank instead of printing placeholder text.
+   */
+  showPlaceholders?: boolean;
   template: MarketplaceTemplate;
   values?: Record<string, string>;
 };
@@ -93,7 +107,9 @@ const StandardDocument = ({
   className,
   density = "default",
   fieldSlots,
+  highlightedFields,
   layout = "responsive",
+  showPlaceholders = false,
   template,
   values = {},
 }: TemplateDocumentProps) => {
@@ -142,10 +158,19 @@ const StandardDocument = ({
     );
   contentFields.push(...fields.filter((field) => endKeys.has(field.key)));
 
-  const valueFor = (key: string, fallback?: string) => ({
-    isEmpty: !values[key]?.trim(),
-    text: values[key]?.trim() || fallback || "—",
-  });
+  // Empty fields print blank; only the editor preview shows placeholders.
+  const valueFor = (key: string, fallback?: string) => {
+    const value = values[key]?.trim();
+
+    return {
+      isEmpty: !value,
+      isHighlighted: showPlaceholders && Boolean(highlightedFields?.has(key)),
+      text: value || (showPlaceholders ? fallback || "—" : ""),
+    };
+  };
+  const emptyClassName = showPlaceholders ? "italic text-nox-noir/35" : "";
+  const renderText = (text: string, isHighlighted: boolean) =>
+    isHighlighted ? <mark className={missingFieldClassName}>{text}</mark> : text;
 
   return (
     <article
@@ -165,9 +190,11 @@ const StandardDocument = ({
       <div className={cn(config.body, isCompact && "p-5!")}>
         <TemplateParties
           fields={template.fields}
+          highlightedFields={showPlaceholders ? highlightedFields : undefined}
           values={values}
           compact={isCompact}
           labelClassName={cn(config.label, isCompact && "text-[11px]!")}
+          showPlaceholders={showPlaceholders}
         />
         <dl
           className={cn(
@@ -179,7 +206,10 @@ const StandardDocument = ({
             if (field.key === "title") {
               return null;
             }
-            const { isEmpty, text } = valueFor(field.key, field.placeholder);
+            const { isEmpty, isHighlighted, text } = valueFor(
+              field.key,
+              field.placeholder,
+            );
 
             return (
               <div
@@ -192,10 +222,10 @@ const StandardDocument = ({
                 <dd
                   className={cn(
                     isCompact ? "text-xs" : "text-sm",
-                    isEmpty ? "italic text-nox-noir/35" : "font-medium",
+                    isEmpty ? emptyClassName : "font-medium",
                   )}
                 >
-                  {text}
+                  {renderText(text, isHighlighted)}
                 </dd>
               </div>
             );
@@ -203,17 +233,25 @@ const StandardDocument = ({
         </dl>
 
         {contentFields.map((field) => {
-          const { isEmpty, text } = valueFor(field.key, field.placeholder);
+          const { isEmpty, isHighlighted, text } = valueFor(
+            field.key,
+            field.placeholder,
+          );
           const isSenderSignature = field.key === "senderSignature";
           if (
             field.key === "items" &&
             ["invoice", "quotation"].includes(template.documentType)
           )
             return (
-              <DocumentItems
+              <div
+                className={cn(
+                  isHighlighted &&
+                    "-mx-2 rounded-sm bg-golden-harvest/40 px-2 pb-2",
+                )}
                 key={field.key}
-                value={text}
-              />
+              >
+                <DocumentItems value={text} />
+              </div>
             );
 
           if (totals.has(field.key)) {
@@ -234,10 +272,10 @@ const StandardDocument = ({
                   className={cn(
                     "text-right tabular-nums",
                     isCompact ? "text-xs" : "text-sm",
-                    isEmpty ? "italic text-nox-noir/35" : "text-nox-noir/80",
+                    isEmpty ? emptyClassName : "text-nox-noir/80",
                   )}
                 >
-                  {text}
+                  {renderText(text, isHighlighted)}
                 </p>
               </section>
             );
@@ -277,13 +315,11 @@ const StandardDocument = ({
                         )
                       : cn(
                           isCompact ? "text-xs leading-5" : "text-sm leading-6",
-                          isEmpty
-                            ? "italic text-nox-noir/35"
-                            : "text-nox-noir/80",
+                          isEmpty ? emptyClassName : "text-nox-noir/80",
                         ),
                   )}
                 >
-                  {text}
+                  {renderText(text, isHighlighted)}
                 </p>
               )}
             </section>

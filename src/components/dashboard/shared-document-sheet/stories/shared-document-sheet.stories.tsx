@@ -110,10 +110,15 @@ export const RecipientSigns: Story = {
       "  Sam Rivera  ",
     );
     await userEvent.click(signButton);
-    await expect(canvas.getByText("Sign this document?")).toBeVisible();
+    const confirm = canvas.getByRole("dialog", { name: "Sign this document?" });
+    await expect(confirm).toBeVisible();
+    await expect(confirm).toHaveAttribute("data-layout", "centered");
+    await expect(confirm).toHaveAccessibleDescription(
+      "Signing locks this document for everyone. This can't be undone.",
+    );
 
     await userEvent.click(
-      canvas.getByRole("button", { name: "Sign and lock" }),
+      within(confirm).getByRole("button", { name: "Sign and lock" }),
     );
     await expect(args.onSign).toHaveBeenCalledWith("Sam Rivera");
   },

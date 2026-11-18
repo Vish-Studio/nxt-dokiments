@@ -6,6 +6,8 @@ import {
   PlusIcon,
   ShareNetworkIcon,
   TrashIcon,
+  UserListIcon,
+  UsersThreeIcon,
 } from "@phosphor-icons/react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -26,6 +28,7 @@ import { TemplatePreviewDialog } from "@/components/commons/template-preview-dia
 import { ClientPicker } from "@/components/dashboard/client-picker/client-picker";
 import { DashboardListSkeleton } from "@/components/dashboard/dashboard-list-skeleton/dashboard-list-skeleton";
 import { DocumentExportDialog } from "@/components/dashboard/document-export-dialog/document-export-dialog";
+import { DocumentSavedModal } from "@/components/dashboard/document-saved-modal/document-saved-modal";
 import {
   DocumentList,
   documentListColumns,
@@ -45,6 +48,7 @@ import { useSavedTemplatesQuery } from "@/hooks/queries/use-saved-templates";
 import { useScrollContentToTopOnMobile } from "@/hooks/use-scroll-content-to-top-on-mobile";
 import { trackEvent } from "@/lib/analytics/track";
 import { buildDuplicateDraft } from "@/lib/documents/duplicate-draft";
+import { getEmptyDocumentFields } from "@/lib/documents/empty-fields";
 import { documentSharingEnabled } from "@/lib/sharing/feature-flag";
 import { activeRecipient } from "@/lib/sharing/share-activity";
 import { useShareDocumentMutation } from "@/hooks/queries/use-share";
@@ -78,6 +82,7 @@ import {
   getDocumentTypeLabel,
   getTemplateDisplayName,
 } from "@/lib/market-place/document-labels";
+import { iconSize, navIconWeight } from "@/lib/icons";
 
 type Mode = "list" | "picker" | "editor";
 
@@ -89,9 +94,9 @@ const EMPTY_SHARED_DOCUMENTS: SharedDocument[] = [];
 const templateOf = (document: UserDocument): MarketplaceTemplate | null =>
   document.templateSnapshot
     ? snapshotToMarketplaceTemplate(
-        document.templateSnapshot,
-        document.templateId,
-      )
+      document.templateSnapshot,
+      document.templateId,
+    )
     : null;
 
 /**
@@ -159,6 +164,13 @@ export const DocumentsView = () => {
   const [isDeleteConfirmationOpen, setIsDeleteConfirmationOpen] =
     useState(false);
   const [isSaveConfirmationOpen, setIsSaveConfirmationOpen] = useState(false);
+  // Turned on by a save attempt with empty fields: the editor preview then
+  // highlights them until they are filled or the editor closes.
+  const [isEmptyFieldsHighlighted, setIsEmptyFieldsHighlighted] =
+    useState(false);
+  const [isEmptyFieldsDialogOpen, setIsEmptyFieldsDialogOpen] = useState(false);
+  // The PDF export opened from the "Document saved" dialog's next step.
+  const [isEditorExportOpen, setIsEditorExportOpen] = useState(false);
   const [previewTemplate, setPreviewTemplate] =
     useState<MarketplaceTemplate | null>(null);
   const [previewDocument, setPreviewDocument] = useState<UserDocument | null>(
@@ -309,6 +321,9 @@ export const DocumentsView = () => {
     setDuplicateSource(null);
     setIsDeleteConfirmationOpen(false);
     setIsSaveConfirmationOpen(false);
+    setIsEmptyFieldsHighlighted(false);
+    setIsEmptyFieldsDialogOpen(false);
+    setIsEditorExportOpen(false);
     setIsEditorPreviewOpen(false);
   };
 
@@ -328,6 +343,9 @@ export const DocumentsView = () => {
       setSharedContent("");
       setIsDeleteConfirmationOpen(false);
       setIsSaveConfirmationOpen(false);
+      setIsEmptyFieldsHighlighted(false);
+      setIsEmptyFieldsDialogOpen(false);
+      setIsEditorExportOpen(false);
       setIsEditorPreviewOpen(false);
       setMode("editor");
     },
@@ -438,6 +456,9 @@ export const DocumentsView = () => {
     setDraftValues(document.values);
     setIsDeleteConfirmationOpen(false);
     setIsSaveConfirmationOpen(false);
+    setIsEmptyFieldsHighlighted(false);
+    setIsEmptyFieldsDialogOpen(false);
+    setIsEditorExportOpen(false);
     setIsEditorPreviewOpen(false);
     setMode("editor");
   };
@@ -460,6 +481,9 @@ export const DocumentsView = () => {
     setDraftValues(draft.values);
     setIsDeleteConfirmationOpen(false);
     setIsSaveConfirmationOpen(false);
+    setIsEmptyFieldsHighlighted(false);
+    setIsEmptyFieldsDialogOpen(false);
+    setIsEditorExportOpen(false);
     setIsEditorPreviewOpen(false);
     setMode("editor");
   };
@@ -468,10 +492,32 @@ export const DocumentsView = () => {
     deleteDocument(documentId);
   };
 
-  const handleSave = () => {
+  /**
+   * Saves the draft. With empty required fields it first highlights them in the
+   * preview, shows a warning toast and asks to "Save anyway" or "Fix document";
+   * `force` is that "Save anyway" answer. Empty fields are saved blank.
+   */
+  const handleSave = (force = false) => {
     if (!activeTemplate) {
       return;
     }
+
+    const emptyFields = getEmptyDocumentFields(activeTemplate.fields, draftValues);
+
+    if (!force && emptyFields.length > 0) {
+      setIsEmptyFieldsHighlighted(true);
+      setIsEmptyFieldsDialogOpen(true);
+      showToast({
+        message:
+          emptyFields.length === 1
+            ? "1 field is still empty. It's highlighted in the preview."
+            : `${emptyFields.length} fields are still empty. They're highlighted in the preview.`,
+        tone: "warning",
+      });
+      return;
+    }
+
+    setIsEmptyFieldsDialogOpen(false);
 
     if (activeDocumentId) {
       updateDocument({
@@ -564,6 +610,16 @@ export const DocumentsView = () => {
   const editorTemplate = activeTemplate;
 
   if (mode === "editor" && editorTemplate) {
+    const emptyEditorFields = getEmptyDocumentFields(
+      editorTemplate.fields,
+      draftValues,
+    );
+    // Recomputed from the live draft, so a field loses its highlight as soon
+    // as it is filled in.
+    const highlightedFields = isEmptyFieldsHighlighted
+      ? new Set(emptyEditorFields.map((field) => field.key))
+      : undefined;
+
     const isEditorSignable = isSignableDocument(editorTemplate);
     // Where the owner follows the share: in place of the recipient signature
     // when the document has one, below the form for a view-only share.
@@ -613,8 +669,8 @@ export const DocumentsView = () => {
         label={
           isEditorSignable
             ? (editorTemplate.fields.find(
-                (field) => field.key === RECIPIENT_SIGNATURE_KEY,
-              )?.label ?? "Recipient signature")
+              (field) => field.key === RECIPIENT_SIGNATURE_KEY,
+            )?.label ?? "Recipient signature")
             : "Sharing"
         }
         onView={() =>
@@ -701,7 +757,7 @@ export const DocumentsView = () => {
                 disabled={
                   !activeDocumentId && (isCreatePending || isDuplicatePending)
                 }
-                onClick={handleSave}
+                onClick={() => handleSave()}
                 type="button"
                 variant="accent"
               >
@@ -760,6 +816,8 @@ export const DocumentsView = () => {
           <div className="hidden lg:sticky lg:top-2 lg:block">
             <TemplateDocument
               density="compact"
+              highlightedFields={highlightedFields}
+              showPlaceholders
               template={editorTemplate}
               values={draftValues}
             />
@@ -783,13 +841,15 @@ export const DocumentsView = () => {
           <div className="min-h-full bg-app-panel p-3 sm:p-5">
             <TemplateDocument
               density="compact"
+              highlightedFields={highlightedFields}
+              showPlaceholders
               template={editorTemplate}
               values={draftValues}
             />
           </div>
         </SidePanel>
 
-        {isEditorPreviewOpen ? null : (
+        {isEditorPreviewOpen || isEditorExportOpen ? null : (
           <FloatingActionButton
             className="lg:hidden"
             icon={
@@ -805,19 +865,66 @@ export const DocumentsView = () => {
         )}
 
         <ConfirmDialog
-          cancelLabel={null}
-          confirmLabel="Continue"
-          description={`"${draftValues.title?.trim() || draftName || "Document"}" has been saved successfully.`}
-          dismissible={false}
-          onClose={handleSavedContinue}
-          onConfirm={handleSavedContinue}
+          cancelLabel="Fix document"
+          confirmLabel="Save anyway"
+          description="If you save now, these fields stay blank in the document. They're highlighted in yellow in the preview."
+          onClose={() => setIsEmptyFieldsDialogOpen(false)}
+          onConfirm={() => handleSave(true)}
+          open={isEmptyFieldsDialogOpen}
+          title="Some fields are empty"
+          tone="warning"
+        >
+          <ul
+            aria-label="Empty fields"
+            className="flex flex-wrap gap-2"
+          >
+            {emptyEditorFields.map((field) => (
+              <li
+                className="rounded-field bg-golden-harvest/30 px-2.5 py-1 text-xs font-semibold text-nox-noir"
+                key={field.key}
+              >
+                {field.label}
+              </li>
+            ))}
+          </ul>
+        </ConfirmDialog>
+
+        <DocumentSavedModal
+          documentName={draftValues.title?.trim() || draftName || "Document"}
+          onClose={() => setIsSaveConfirmationOpen(false)}
+          onDone={handleSavedContinue}
+          onDownload={() => {
+            setIsSaveConfirmationOpen(false);
+            setIsEditorExportOpen(true);
+          }}
+          onShare={
+            activeDocumentId && documentSharingEnabled
+              ? () => {
+                  setIsSaveConfirmationOpen(false);
+                  setShareTarget({
+                    id: activeDocumentId,
+                    name: draftValues.title?.trim() || draftName,
+                    recipientEmail: draftValues.toEmail,
+                    signable: isEditorSignable,
+                  });
+                }
+              : undefined
+          }
           open={isSaveConfirmationOpen}
-          title="Document saved"
+        />
+
+        <DocumentExportDialog
+          documentName={draftValues.title?.trim() || draftName || "Document"}
+          onClose={() => setIsEditorExportOpen(false)}
+          open={isEditorExportOpen}
+          template={editorTemplate}
+          values={draftValues}
         />
 
         <ConfirmDialog
           confirmLabel="Delete document"
           confirmVariant="danger"
+          icon={TrashIcon}
           description={`Delete "${draftValues.title?.trim() || draftName || "this document"}"? This action cannot be undone.`}
           onClose={() => setIsDeleteConfirmationOpen(false)}
           onConfirm={handleDeleteConfirm}
@@ -918,8 +1025,31 @@ export const DocumentsView = () => {
           ariaLabel="Document lists"
           className="mb-1"
           items={[
-            { id: "mine", label: "My documents" },
             {
+              icon: (isActive: boolean) => (
+                // Optical correction: Phosphor's one-person glyph fills ~13px of
+                // its box while the two-person glyph beside it fills ~10px, so
+                // it is drawn 3px smaller inside the same tab-size slot to look
+                // equal and keep the label spacing identical.
+                <span className="inline-flex size-4 items-center justify-center">
+                  <UserListIcon
+                    aria-hidden
+                    size={iconSize.tab - 3}
+                    weight={navIconWeight(isActive)}
+                  />
+                </span>
+              ),
+              id: "mine",
+              label: "My documents",
+            },
+            {
+              icon: (isActive: boolean) => (
+                <UsersThreeIcon
+                  aria-hidden
+                  size={iconSize.tab}
+                  weight={navIconWeight(isActive)}
+                />
+              ),
               badge:
                 sharedDocuments.length > 0 ? (
                   <span className="text-xs opacity-70">
@@ -989,12 +1119,12 @@ export const DocumentsView = () => {
           onShare={
             documentSharingEnabled
               ? (document) =>
-                  setShareTarget({
-                    id: document.id,
-                    name: document.values.title?.trim() || document.name,
-                    recipientEmail: document.values.toEmail,
-                    signable: isSignableDocument(document.templateSnapshot),
-                  })
+                setShareTarget({
+                  id: document.id,
+                  name: document.values.title?.trim() || document.name,
+                  recipientEmail: document.values.toEmail,
+                  signable: isSignableDocument(document.templateSnapshot),
+                })
               : undefined
           }
         />
