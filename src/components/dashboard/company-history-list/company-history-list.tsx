@@ -65,16 +65,16 @@ export const CompanyHistoryList = ({
     <section
       aria-label="Documents"
       className={cn(
-        "company-history-list flex min-w-0 flex-col rounded-box border border-steel-mist bg-base-100 p-5 sm:p-6",
+        "company-history-list flex min-w-0 flex-col rounded-box border border-steel-mist bg-base-100 p-4 sm:p-6",
         className,
       )}
     >
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+      <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
         <div className="min-w-0 flex-1">
           <h3 className="font-title text-xl font-bold text-nox-noir">
             Documents
           </h3>
-          <p className="mt-1 text-sm leading-6 text-nox-noir/60">
+          <p className="mt-1 hidden text-sm leading-6 text-nox-noir/60 lg:block">
             {companyName
               ? `Everything you've created for ${companyName} and everything it shared with you, newest first.`
               : "Documents without a client, newest first."}
@@ -85,7 +85,7 @@ export const CompanyHistoryList = ({
             aria-label={
               companyName ? `New document for ${companyName}` : "New document"
             }
-            className="w-full shrink-0 whitespace-nowrap sm:w-auto"
+            className="shrink-0 whitespace-nowrap max-lg:hidden"
             href={newDocumentHref}
             icon={
               <PlusIcon
@@ -103,7 +103,7 @@ export const CompanyHistoryList = ({
         ) : null}
       </div>
 
-      <div className="mt-5 flex flex-wrap items-center gap-2">
+      <div className="mt-4 flex flex-wrap items-center gap-2 lg:mt-5">
         <div
           aria-label="Show documents"
           className="inline-flex gap-1 rounded-field bg-base-200 p-1"

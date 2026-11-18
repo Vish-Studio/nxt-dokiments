@@ -69,7 +69,6 @@ export const Outline: Story = {
 export const WithBack: Story = {
   args: {
     back: { href: "/my-documents", label: "Companies" },
-    onToggleSidebar: () => {},
     title: "Northline Studio",
     tone: "purple",
   },
@@ -78,7 +77,7 @@ export const WithBack: Story = {
     await expect(
       within(canvasElement).getByRole("link", { name: "Back to Companies" }),
     ).toHaveAttribute("href", "/my-documents");
-    // Only the back arrow: no sidebar toggle on a sub-page.
+    // Only the back arrow before the title (the sidebar toggle lives in the sidebar).
     await expect(
       within(canvasElement).queryByRole("button", { name: /sidebar/i }),
     ).toBeNull();

@@ -169,9 +169,7 @@ export const AppShell = ({
                     }
                     className="hidden lg:flex"
                     footer={headerContent}
-                    isSidebarCollapsed={isSidebarCollapsed}
                     back={resolvedBack}
-                    onToggleSidebar={toggleSidebar}
                     showSettingsLink
                     title={resolvedTitle}
                     tone={resolvedTone}

@@ -69,7 +69,11 @@ export const Default: Story = {
         name: "New document for Northline Studio",
       }),
     ).toHaveAttribute("href", "/my-documents?new=1&client=client_northline_01");
-    await expect(within(history).getByText(/From Alex Morgan/)).toBeVisible();
+    await expect(
+      within(history)
+        .getAllByText(/From Alex Morgan/)
+        .filter((element) => element.checkVisibility()),
+    ).toHaveLength(1);
     await expect(within(history).getAllByRole("listitem")).toHaveLength(5);
 
     const client = canvas.getByRole("region", { name: "Client information" });

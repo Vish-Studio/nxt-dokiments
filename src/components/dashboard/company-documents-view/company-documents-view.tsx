@@ -9,6 +9,7 @@ import {
   ClientInformationCard,
   CompanyInformationCard,
 } from "@/components/dashboard/company-details-card/company-details-card";
+import { CompanySummaryCard } from "@/components/dashboard/company-summary-card/company-summary-card";
 import { CompanyHistoryList } from "@/components/dashboard/company-history-list/company-history-list";
 import { DocumentExportDialog } from "@/components/dashboard/document-export-dialog/document-export-dialog";
 import { useClientsQuery } from "@/hooks/queries/use-clients";
@@ -135,6 +136,13 @@ export const CompanyDocumentsView = ({
           the right. Desktop: the Documents card takes exactly the right
           column's height and scrolls inside (min-h-96 keeps it usable when
           that column is short). Phones: documents first, list capped. */}
+      {/* Phones: who the company is and how to reach it, then its documents. */}
+      <CompanySummaryCard
+        className="lg:hidden"
+        group={group}
+        newDocumentHref={newDocumentHref}
+      />
+
       <div className="grid gap-4 lg:grid-cols-[1.3fr_0.7fr]">
         <div className="relative min-w-0 lg:min-h-96">
           <CompanyHistoryList
@@ -150,7 +158,7 @@ export const CompanyDocumentsView = ({
             onPrint={setExportDocument}
           />
         </div>
-        <div className="grid min-w-0 content-start gap-4">
+        <div className="hidden min-w-0 content-start gap-4 lg:grid">
           <ClientInformationCard
             client={group.client}
             name={group.name}

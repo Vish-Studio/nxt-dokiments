@@ -8,6 +8,10 @@ import { CompanyHistoryRow } from "../company-history-row";
 const created = northlineGroup.entries.find((entry) => entry.id === "doc:nl-1")!;
 const received = northlineGroup.entries.find((entry) => entry.source === "received")!;
 
+/** Phones and desktop render different meta lines; count only the visible one. */
+const visibleCount = (elements: HTMLElement[]) =>
+  elements.filter((element) => element.checkVisibility()).length;
+
 const meta = {
   title: "Dashboard/Company History Row",
   component: CompanyHistoryRow,
@@ -29,8 +33,8 @@ type Story = StoryObj<typeof meta>;
 export const CreatedAndSigned: Story = {
   play: async ({ args, canvasElement }) => {
     const canvas = within(canvasElement);
-    await expect(canvas.getByText("Signed")).toBeVisible();
-    await expect(canvas.getByText(/By you/)).toBeVisible();
+    await expect(visibleCount(canvas.getAllByText("Signed"))).toBe(1);
+    await expect(visibleCount(canvas.getAllByText(/By you/))).toBe(1);
     await expect(canvas.getByText("18 Jun 2026, 09:30")).toBeVisible();
     await expect(
       canvas.getByRole("link", { name: "Edit June retainer invoice" }),
@@ -47,8 +51,8 @@ export const Received: Story = {
   args: { entry: received },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    await expect(canvas.getByText(/From Alex Morgan/)).toBeVisible();
-    await expect(canvas.getByText("Received")).toBeVisible();
+    await expect(visibleCount(canvas.getAllByText(/From Alex Morgan/))).toBe(1);
+    await expect(visibleCount(canvas.getAllByText("Received"))).toBe(1);
     await expect(
       canvas.getByRole("link", { name: "Open Mutual NDA" }),
     ).toHaveAttribute("href", "/my-documents/shared/sh-in-1");
