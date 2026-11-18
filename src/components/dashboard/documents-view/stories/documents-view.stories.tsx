@@ -458,6 +458,7 @@ export const SavedConfirmation: Story = {
 export const EmptyFieldsWarning: Story = {
   decorators: WithDocuments.decorators,
   play: async ({ canvasElement }) => {
+    await showAllDocuments(canvasElement);
     const canvas = within(canvasElement);
     const page = within(canvasElement.ownerDocument.body);
     await userEvent.click(
@@ -514,6 +515,7 @@ export const EmptyFieldsWarning: Story = {
 export const SavedNextStepDownload: Story = {
   decorators: WithDocuments.decorators,
   play: async ({ canvasElement }) => {
+    await showAllDocuments(canvasElement);
     const canvas = within(canvasElement);
     await userEvent.click(
       await canvas.findByRole("button", { name: "Edit Lumina Events Invoice" }),
