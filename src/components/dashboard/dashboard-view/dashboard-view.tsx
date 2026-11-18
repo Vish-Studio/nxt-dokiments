@@ -299,9 +299,11 @@ export const DashboardView = () => {
                     ? getTemplateDisplayName(latestDocument.templateSnapshot)
                     : "Document template"}
                 </p>
+                {/* Straight into the editor for this document (My Documents'
+                    `?edit=` deep link), not the document list. */}
                 <Link
                   className="group btn btn-primary mt-5 min-h-11 h-11 font-title font-semibold tracking-normal"
-                  href="/my-documents"
+                  href={`/my-documents?edit=${encodeURIComponent(latestDocument.id)}`}
                 >
                   Open document
                   <ArrowRightIcon

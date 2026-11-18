@@ -7,6 +7,7 @@ import type { UserDocument } from "@/types/template";
 import {
   buildCompanyEntries,
   countEntriesByType,
+  countSignatureStatus,
   getDocumentCompanyName,
   getSharedCompanyName,
   groupEntriesByCompany,
@@ -137,5 +138,31 @@ describe("sorting, months and types", () => {
 
     expect(groupEntriesByMonth(entries).map((month) => month.label)).toEqual(["June 2026", "May 2026"]);
     expect(countEntriesByType(entries)).toEqual([{ count: 2, type: "invoice" }]);
+  });
+});
+
+describe("countSignatureStatus", () => {
+  it("counts signed both ways and sent-but-unsigned as awaiting", () => {
+    const [a, b, c, d] = buildCompanyEntries([
+      doc("a", "2026-06-01"),
+      doc("b", "2026-06-02"),
+      doc("c", "2026-06-03"),
+      doc("d", "2026-06-04"),
+    ]);
+    const entries = [
+      { ...a, shareStatus: "signed" as const },
+      { ...b, shareStatus: "pending" as const },
+      { ...c, shareStatus: "viewed" as const },
+      d,
+      ...buildCompanyEntries(
+        [],
+        [
+          shared("s1", "2026-06-05", { locked: true }),
+          shared("s2", "2026-06-06"),
+        ],
+      ),
+    ];
+
+    expect(countSignatureStatus(entries)).toEqual({ awaiting: 2, signed: 2 });
   });
 });

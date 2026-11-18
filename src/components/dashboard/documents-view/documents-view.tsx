@@ -1302,14 +1302,7 @@ export const DocumentsView = () => {
           </p>
         </div>
       ) : listTab === "companies" ? (
-        <CompanyDocumentsGrid
-          groups={companyGroups}
-          onOpenEntry={(entry) => {
-            if (entry.document) setPreviewDocument(entry.document);
-            else if (entry.shared)
-              router.push(`/my-documents/shared/${entry.shared.id}`);
-          }}
-        />
+        <CompanyDocumentsGrid groups={companyGroups} />
       ) : (
         <DocumentList
           documents={visibleDocuments}

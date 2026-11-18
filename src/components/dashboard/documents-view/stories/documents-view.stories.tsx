@@ -802,13 +802,12 @@ export const ByCompany: Story = {
     await expect(
       await canvas.findByRole("heading", { name: "Northline Studio" }),
     ).toBeVisible();
-    // Northline groups documents by company name and by contact name.
+    // Northline groups documents by company name and by contact name, so its
+    // figures count all 4.
+    const northline = canvas.getByRole("article", { name: "Northline Studio" });
     await expect(
-      canvas.getByText("4 documents · latest 18 Jun"),
-    ).toBeVisible();
-    await expect(
-      canvas.getByRole("link", { name: "View company Northline Studio" }),
-    ).toHaveTextContent("View all 4");
+      within(northline).getByTestId("company-figures"),
+    ).toHaveTextContent(/^4 documents/);
     await expect(
       canvas.getByRole("heading", { name: "No client yet" }),
     ).toBeVisible();
