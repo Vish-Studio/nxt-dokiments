@@ -123,7 +123,7 @@ export const OnPhone: Story = {
       page.getByRole("button", { name: "Notifications, 2 unread" }),
     );
     const sheet = await page.findByRole("dialog", { name: "Notifications" });
-    await expect(sheet.closest(".bottom-sheet")).not.toBeNull();
+    await expect(sheet).toHaveAttribute("data-layout", "sheet");
     await expect(
       within(sheet).getByText("New template: Invoice"),
     ).toBeVisible();

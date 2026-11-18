@@ -143,7 +143,7 @@ export const MenuOnPhone: Story = {
       page.getByRole("button", { name: `More actions for ${documentTitle}` }),
     );
     const sheet = await page.findByRole("dialog", { name: documentTitle });
-    await expect(sheet.closest(".bottom-sheet")).not.toBeNull();
+    await expect(sheet).toHaveAttribute("data-layout", "sheet");
     await userEvent.click(within(sheet).getByRole("button", { name: "Share" }));
     await expect(args.onShare).toHaveBeenCalledWith(document);
     await expect(page.queryByRole("dialog", { name: documentTitle })).toBeNull();

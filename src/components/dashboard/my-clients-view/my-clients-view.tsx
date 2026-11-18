@@ -1,6 +1,6 @@
 "use client";
 
-import { PlusIcon } from "@phosphor-icons/react";
+import { PlusIcon, TrashIcon } from "@phosphor-icons/react";
 import { useMemo, useState } from "react";
 
 import { Button } from "@/components/commons/button/button";
@@ -288,6 +288,7 @@ export const MyClientsView = () => {
       <ConfirmDialog
         confirmLabel="Delete client"
         confirmVariant="danger"
+        icon={TrashIcon}
         description={`Delete ${pendingDeletion?.name ?? "this client"} from your clients? This cannot be undone. Documents you already prepared for them are not affected.`}
         onClose={() => setPendingDeletion(null)}
         onConfirm={confirmDelete}

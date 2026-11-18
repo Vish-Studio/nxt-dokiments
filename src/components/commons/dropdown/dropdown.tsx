@@ -4,7 +4,7 @@ import { CheckIcon } from "@phosphor-icons/react";
 import type { KeyboardEvent, ReactNode } from "react";
 import { useEffect, useId, useRef, useState } from "react";
 
-import { BottomSheet } from "@/components/commons/bottom-sheet/bottom-sheet";
+import { Modal } from "@/components/commons/modal/modal";
 import { Button } from "@/components/commons/button/button";
 import { ButtonIcon, type ButtonIconShape } from "@/components/commons/button-icon/button-icon";
 import type { SelectOption } from "@/components/commons/select/select";
@@ -46,7 +46,7 @@ export interface DropdownProps {
   /** Popover classes (width, position). Not applied in the phone sheet. */
   menuClassName?: string;
   /**
-   * Opt in to a {@link BottomSheet} on phones (below `sm`): the open menu
+   * Opt in to a bottom-sheet {@link Modal} on phones (below `sm`): the open menu
    * renders in a sheet titled with this text instead of the anchored popover,
    * so actions and filters get thumb-friendly targets. Desktop keeps the
    * popover. Leave it unset for pickers that belong to a form field.
@@ -127,11 +127,12 @@ export const Dropdown = ({
     }
   };
 
-  // One menu body, shown in the anchored popover or, on phones, in the sheet.
+  // One menu body, shown in the anchored popover or, on phones, in the sheet,
+  // where every item grows to a 44px touch target.
   const menu = (
       <div
           aria-label={ariaLabel}
-          className={isSheet ? "-mx-2" : cn("dropdown-content z-50 mt-2 max-h-80 overflow-y-auto rounded-box border border-steel-mist bg-base-100 p-2 text-nox-noir shadow-sm", menuClassName)}
+          className={isSheet ? "-mx-2 [&_button]:h-11 [&_button]:min-h-11" : cn("dropdown-content z-50 mt-2 max-h-80 overflow-y-auto rounded-box border border-steel-mist bg-base-100 p-2 text-nox-noir shadow-sm", menuClassName)}
           id={menuId}
           // Custom action menus (children) close once one of their buttons is used.
           onClick={(event) => {
@@ -211,7 +212,7 @@ export const Dropdown = ({
       )}
       {isOpen && !isSheet ? menu : null}
       {sheetTitle ? (
-        <BottomSheet
+        <Modal
           actions={
             isSheet && !closeOnSelect ? (
               <Button onClick={() => setIsOpen(false)} size="sm">Done</Button>
@@ -222,7 +223,7 @@ export const Dropdown = ({
           title={sheetTitle}
         >
           {menu}
-        </BottomSheet>
+        </Modal>
       ) : null}
     </div>
   );

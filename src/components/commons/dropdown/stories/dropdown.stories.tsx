@@ -106,9 +106,23 @@ export const PhoneSheet: Story = {
     const page = within(canvasElement.ownerDocument.body);
     await userEvent.click(page.getByRole("button", { name: "Sort" }));
     const sheet = await page.findByRole("dialog", { name: "Sort" });
-    await expect(sheet.closest(".bottom-sheet")).not.toBeNull();
+    await expect(sheet).toHaveAttribute("data-layout", "sheet");
     await userEvent.click(within(sheet).getByRole("menuitemradio", { name: "Name" }));
     await expect(args.groups?.[0]?.onChange).toHaveBeenCalledWith("name");
     await expect(page.queryByRole("dialog", { name: "Sort" })).toBeNull();
+  },
+};
+
+/** The same `sheetTitle` menu on desktop keeps the anchored popover: no modal. */
+export const SheetTitleOnDesktop: Story = {
+  args: PhoneSheet.args,
+  play: async ({ args, canvasElement }) => {
+    const page = within(canvasElement.ownerDocument.body);
+    await userEvent.click(page.getByRole("button", { name: "Sort" }));
+    await expect(page.queryByRole("dialog", { name: "Sort" })).toBeNull();
+    await userEvent.click(
+      within(canvasElement).getByRole("menuitemradio", { name: "Name" }),
+    );
+    await expect(args.groups?.[0]?.onChange).toHaveBeenCalledWith("name");
   },
 };

@@ -11,7 +11,7 @@ You are the Dokiments UI designer and front-end engineer. The `dokiments-ui` ski
 ## Before you touch anything
 
 1. Read `.github/copilot-instructions.md` (component, import and Prettier rules) and the Next 16 docs in `node_modules/next/dist/docs/` for any Next API you use.
-2. Find the closest existing component and copy its structure: folder layout, export style, first class name, story file. Reuse shared pieces (`Button`, `LinkButton`, `Dropdown`, `Badge`, `SidePanel`, `StepIndicator`, `DashboardList`, `ConfirmDialog`, `Toaster` via `useToastStore`, `PageBanner`, `Carousel`) before building anything new.
+2. Find the closest existing component and copy its structure: folder layout, export style, first class name, story file. Reuse shared pieces (`Button`, `LinkButton`, `Dropdown`, `Badge`, `SidePanel`, `StepIndicator`, `DashboardList`, `ConfirmDialog` / `Modal` (tone icon, title, description, actions; see the skill's Modals section), `Toaster` via `useToastStore`, `PageBanner`, `Carousel`) before building anything new.
 3. Pick exactly one bucket: `commons`, `website`, `dashboard` or `admin`.
 
 ## Rules you must not break

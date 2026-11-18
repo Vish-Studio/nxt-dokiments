@@ -28,7 +28,7 @@ import { TemplatePreviewDialog } from "@/components/commons/template-preview-dia
 import { ClientPicker } from "@/components/dashboard/client-picker/client-picker";
 import { DashboardListSkeleton } from "@/components/dashboard/dashboard-list-skeleton/dashboard-list-skeleton";
 import { DocumentExportDialog } from "@/components/dashboard/document-export-dialog/document-export-dialog";
-import { DocumentSavedSheet } from "@/components/dashboard/document-saved-sheet/document-saved-sheet";
+import { DocumentSavedModal } from "@/components/dashboard/document-saved-modal/document-saved-modal";
 import {
   DocumentList,
   documentListColumns,
@@ -867,16 +867,29 @@ export const DocumentsView = () => {
         <ConfirmDialog
           cancelLabel="Fix document"
           confirmLabel="Save anyway"
-          description={`These fields are still empty and will be left blank: ${emptyEditorFields
-            .map((field) => field.label)
-            .join(", ")}.`}
+          description="If you save now, these fields stay blank in the document. They're highlighted in yellow in the preview."
           onClose={() => setIsEmptyFieldsDialogOpen(false)}
           onConfirm={() => handleSave(true)}
           open={isEmptyFieldsDialogOpen}
           title="Some fields are empty"
-        />
+          tone="warning"
+        >
+          <ul
+            aria-label="Empty fields"
+            className="flex flex-wrap gap-2"
+          >
+            {emptyEditorFields.map((field) => (
+              <li
+                className="rounded-field bg-golden-harvest/30 px-2.5 py-1 text-xs font-semibold text-nox-noir"
+                key={field.key}
+              >
+                {field.label}
+              </li>
+            ))}
+          </ul>
+        </ConfirmDialog>
 
-        <DocumentSavedSheet
+        <DocumentSavedModal
           documentName={draftValues.title?.trim() || draftName || "Document"}
           onClose={() => setIsSaveConfirmationOpen(false)}
           onDone={handleSavedContinue}
@@ -911,6 +924,7 @@ export const DocumentsView = () => {
         <ConfirmDialog
           confirmLabel="Delete document"
           confirmVariant="danger"
+          icon={TrashIcon}
           description={`Delete "${draftValues.title?.trim() || draftName || "this document"}"? This action cannot be undone.`}
           onClose={() => setIsDeleteConfirmationOpen(false)}
           onConfirm={handleDeleteConfirm}

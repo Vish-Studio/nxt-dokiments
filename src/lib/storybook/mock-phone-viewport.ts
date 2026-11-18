@@ -2,8 +2,8 @@ import { phoneMediaQuery } from "@/hooks/use-media-query";
 
 /**
  * Storybook `beforeEach` that makes {@link phoneMediaQuery} match, so a story
- * renders the phone variant (a `BottomSheet` instead of a popover or centred
- * dialog) whatever the test runner's viewport is. Other queries still go to
+ * renders the phone variant (a bottom-sheet `Modal` instead of a popover or
+ * centred modal) whatever the test runner's viewport is. Other queries still go to
  * the real `matchMedia`. Returns the cleanup that restores it.
  *
  * Story-only: never import it from application code.

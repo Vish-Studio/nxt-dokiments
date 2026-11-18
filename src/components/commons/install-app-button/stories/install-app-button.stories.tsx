@@ -96,7 +96,13 @@ export const GuideModeExplainsTheSafariDockPath: Story = {
       name: "Add Dokiments to your Dock",
     });
 
+    // Desktop is always a centred modal, never a bottom sheet.
+    await expect(dialog).toHaveAttribute("data-layout", "centered");
     await expect(within(dialog).getByText(/Add to Dock/)).toBeInTheDocument();
+    // The steps are a real ordered list, so screen readers announce "1 of 3".
+    await expect(
+      within(within(dialog).getByRole("list")).getAllByRole("listitem"),
+    ).toHaveLength(3);
   },
 };
 
@@ -170,7 +176,7 @@ export const GuideOnPhoneUsesBottomSheet: Story = {
     const sheet = document_().getByRole("dialog", {
       name: "Add Dokiments to your Home Screen",
     });
-    await expect(sheet.closest(".bottom-sheet")).not.toBeNull();
+    await expect(sheet).toHaveAttribute("data-layout", "sheet");
     await expect(within(sheet).getByText(/Add to Home Screen/)).toBeVisible();
     await userEvent.click(within(sheet).getByRole("button", { name: "Got it" }));
     await expect(

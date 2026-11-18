@@ -418,11 +418,17 @@ export const SavedConfirmation: Story = {
     await userEvent.click(
       await canvas.findByRole("button", { name: "Save anyway" }),
     );
+    const saved = await within(canvasElement.ownerDocument.body).findByRole(
+      "dialog",
+      { name: "Document saved" },
+    );
+    await expect(saved).toBeVisible();
+    // Desktop is always a centred modal, never a bottom sheet.
+    await expect(saved).toHaveAttribute("data-layout", "centered");
+    // The warning closed before the confirmation opened.
     await expect(
-      await within(canvasElement.ownerDocument.body).findByRole("dialog", {
-        name: "Document saved",
-      }),
-    ).toBeVisible();
+      canvas.queryByRole("dialog", { name: "Some fields are empty" }),
+    ).toBeNull();
   },
 };
 
@@ -443,15 +449,33 @@ export const EmptyFieldsWarning: Story = {
     ).toBeNull();
 
     await userEvent.click(canvas.getByRole("button", { name: "Save changes" }));
-    await expect(
-      await canvas.findByRole("dialog", { name: "Some fields are empty" }),
-    ).toBeVisible();
-    await expect(
-      await page.findByText(/highlighted in the preview/),
-    ).toBeVisible();
+    const warning = await canvas.findByRole("dialog", {
+      name: "Some fields are empty",
+    });
+    await expect(warning).toBeVisible();
+    // A decision, so centred even though it sits in the editor (never a sheet).
+    await expect(warning).toHaveAttribute("data-layout", "centered");
+    await expect(warning).toHaveAccessibleDescription(
+      /these fields stay blank in the document/,
+    );
+    const toast = await page.findByText(/highlighted in the preview/);
+    await expect(toast).toBeVisible();
     await expect(
       canvasElement.querySelector(".template-document-missing"),
     ).not.toBeNull();
+
+    // The dialog names each empty field as a chip, and agrees with the toast's count.
+    const chips = within(
+      within(warning).getByRole("list", { name: "Empty fields" }),
+    ).getAllByRole("listitem");
+    const toastCount = /^(\d+) fields/.exec(toast.textContent ?? "")?.[1];
+    await expect(chips.length).toBe(toastCount ? Number(toastCount) : 1);
+    for (const chip of chips) {
+      await expect(chip.textContent?.trim()).not.toBe("");
+    }
+    await expect(
+      within(warning).getByRole("button", { name: "Save anyway" }),
+    ).toBeEnabled();
 
     // "Fix document" keeps the user in the editor with the highlights on.
     await userEvent.click(canvas.getByRole("button", { name: "Fix document" }));
@@ -511,9 +535,12 @@ export const DeleteConfirmation: Story = {
       await canvas.findByRole("button", { name: "Edit Lumina Events Invoice" }),
     );
     await userEvent.click(canvas.getByRole("button", { name: "Delete" }));
-    await expect(
-      canvas.getByRole("dialog", { name: "Delete document?" }),
-    ).toBeVisible();
+    const dialog = canvas.getByRole("dialog", { name: "Delete document?" });
+    await expect(dialog).toBeVisible();
+    await expect(dialog).toHaveAttribute("data-layout", "centered");
+    await expect(dialog).toHaveAccessibleDescription(
+      'Delete "Lumina Events Invoice"? This action cannot be undone.',
+    );
   },
 };
 

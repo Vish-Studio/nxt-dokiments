@@ -24,15 +24,15 @@ You own Dokiments' Storybook. Stories are the component tests here (`@storybook/
 - Args use realistic Dokiments data (real-looking names, documents, clients), never `foo`/`lorem`.
 - Each meaningful state gets a story: default, empty, loading, error, disabled, and each variant.
 - Interactions get a `play` function using `storybook/test` (`expect`, `userEvent`, `within`, `fn`). Assert behaviour (callbacks fired, text visible, dialog opened and closed), not class names, unless the class is the contract (e.g. `btn-primary` for the main action).
-- **Portals:** `BottomSheet`, `ShareDialog`, `FeedbackDialog`, `OnboardingDialog` and the install dialog render into `document.body`, so query them with `within(canvasElement.ownerDocument.body)`, not `within(canvasElement)`.
-- **Phone variants:** anything that switches on `phoneMediaQuery` (a `Dropdown` with `sheetTitle`, `UpgradeDialog`, the install steps, any component using `useMediaQuery`) needs a story with `beforeEach: mockPhoneViewport` from `@/lib/storybook/mock-phone-viewport` that asserts the bottom sheet appears. The test runner's own viewport is not a phone.
+- **Portals:** `Modal` (and everything built on it except `ConfirmDialog`: `DocumentSavedModal`, `UpgradeDialog`, install steps, `Dropdown` phone sheets), `ShareDialog`, `FeedbackDialog` and `OnboardingDialog` render into `document.body`, so query them with `within(canvasElement.ownerDocument.body)`, not `within(canvasElement)`.
+- **Phone variants:** anything that switches on `phoneMediaQuery` (a `Dropdown` with `sheetTitle`, `UpgradeDialog`, the install steps, any component using `useMediaQuery`) needs a story with `beforeEach: mockPhoneViewport` from `@/lib/storybook/mock-phone-viewport` that asserts the dialog has `data-layout="sheet"` (and its `data-tone` when the tone matters) (or `"centered"` for `ConfirmDialog`). Desktop stories assert `data-layout="centered"`: desktop never shows a bottom sheet. The test runner's own viewport is not a phone.
 - **Accessibility:** use role and name queries (`getByRole("button", { name: "Share" })`). A story that can only find an element by class or test id usually means the markup lacks a label: report it.
 - Toasts are mounted once in `.storybook/preview.tsx`; never mount another `Toaster` in a story.
 
 ## Run
 
 1. `npx vitest run --project storybook <pattern>` for every touched story. Name several patterns in one run.
-2. When the change touches shared pieces (`commons/`, `globals.css`, `Dropdown`, `BottomSheet`, `Button`, stores), run the full suite: `npx vitest run --project storybook`. Run it in the background; it takes a few minutes.
+2. When the change touches shared pieces (`commons/`, `globals.css`, `Dropdown`, `Modal`, `ConfirmDialog`, `Button`, stores), run the full suite: `npx vitest run --project storybook`. Run it in the background; it takes a few minutes.
 3. If whole files fail to import with a Vite error (for example `Failed to import test file … setup-file-with-project-annotations.js`) while every individual test passes, Vite re-bundled dependencies partway through the run. Re-run those files once before reporting a failure.
 4. If browser tools are available and a visual check helps, start the `storybook` config from `.claude/launch.json`, screenshot the changed stories (desktop and phone width), stop the server afterwards, and list the screenshot paths.
 

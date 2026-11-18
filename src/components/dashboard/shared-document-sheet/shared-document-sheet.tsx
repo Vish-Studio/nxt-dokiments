@@ -225,6 +225,8 @@ export const SharedDocumentSheet = ({
 
         <ConfirmDialog
           confirmLabel="Sign and lock"
+          icon={LockSimpleIcon}
+          tone="warning"
           confirmLoading={isSigning}
           description="Signing locks this document for everyone. This can't be undone."
           onClose={() => setIsConfirming(false)}

@@ -141,7 +141,14 @@ export const Revoke: Story = {
       canvas.getByRole("button", { name: "Revoke access" }),
     );
     await expect(args.onRevoke).not.toHaveBeenCalled();
-    const dialog = within(await within(document.body).findByRole("dialog"));
+    const confirm = await within(canvasElement).findByRole("dialog", {
+      name: /revoke/i,
+    });
+    await expect(confirm).toHaveAttribute("data-layout", "centered");
+    await expect(confirm).toHaveAccessibleDescription(
+      /will no longer be able to open/,
+    );
+    const dialog = within(confirm);
     await userEvent.click(
       dialog.getByRole("button", { name: "Revoke access" }),
     );

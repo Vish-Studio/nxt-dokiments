@@ -1,19 +1,15 @@
 "use client";
 
-import {
-  CheckCircleIcon,
-  FilePdfIcon,
-  ShareNetworkIcon,
-} from "@phosphor-icons/react";
+import { FilePdfIcon, ShareNetworkIcon } from "@phosphor-icons/react";
 
-import { BottomSheet } from "@/components/commons/bottom-sheet/bottom-sheet";
 import { Button } from "@/components/commons/button/button";
+import { Modal } from "@/components/commons/modal/modal";
 import { iconSize } from "@/lib/icons";
 
-export interface DocumentSavedSheetProps {
+export interface DocumentSavedModalProps {
   /** The saved document's display name, quoted in the confirmation. */
   documentName: string;
-  /** Dismisses the sheet (Escape, backdrop, close button) and keeps the user in the editor. */
+  /** Dismisses the modal (Escape, backdrop, close button) and keeps the user in the editor. */
   onClose: () => void;
   /** "Done": leaves the editor for the documents list. */
   onDone: () => void;
@@ -29,23 +25,23 @@ export interface DocumentSavedSheetProps {
 }
 
 /**
- * Confirms a successful save in a {@link BottomSheet} and offers the next
- * step: Share (main action), Download PDF, or Done back to the documents list.
+ * Confirms a successful save and offers the next step: Share (main action),
+ * Download PDF, or Done back to the documents list. A success-toned
+ * {@link Modal}: centred on desktop, a bottom sheet on phones.
  *
- * A sheet rather than a centred dialog because nothing here needs a decision:
- * it is a lightweight "what's next" moment, so it stays quiet (a success
- * check, one line of copy, standard buttons) and can be dismissed to keep
- * editing.
+ * Nothing here needs a decision, so it stays light: the success tile says
+ * "done" at a glance, one sentence names the document, and the buttons name
+ * the next steps in plain words. Dismissing it keeps the user in the editor.
  */
-export const DocumentSavedSheet = ({
+export const DocumentSavedModal = ({
   documentName,
   onClose,
   onDone,
   onDownload,
   onShare,
   open,
-}: DocumentSavedSheetProps) => (
-  <BottomSheet
+}: DocumentSavedModalProps) => (
+  <Modal
     actions={
       <>
         <Button
@@ -89,27 +85,20 @@ export const DocumentSavedSheet = ({
         ) : null}
       </>
     }
-    className="document-saved-sheet"
+    className="document-saved-modal"
     description={
       <>
         <span className="font-semibold text-nox-noir">
           &quot;{documentName}&quot;
         </span>{" "}
-        is saved. What would you like to do next?
+        is saved. Share it with your client or download a PDF copy.
       </>
-    }
-    icon={
-      <CheckCircleIcon
-        aria-hidden
-        className="text-success"
-        size={iconSize.feature}
-        weight="fill"
-      />
     }
     onClose={onClose}
     open={open}
     title="Document saved"
+    tone="success"
   />
 );
 
-export default DocumentSavedSheet;
+export default DocumentSavedModal;

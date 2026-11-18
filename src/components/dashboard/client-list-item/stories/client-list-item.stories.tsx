@@ -115,7 +115,7 @@ export const MenuOnPhone: Story = {
       page.getByRole("button", { name: "More actions for Maya Chen" }),
     );
     const sheet = await page.findByRole("dialog", { name: "Maya Chen" });
-    await expect(sheet.closest(".bottom-sheet")).not.toBeNull();
+    await expect(sheet).toHaveAttribute("data-layout", "sheet");
 
     await userEvent.click(
       within(sheet).getByRole("button", { name: "Edit client" }),
