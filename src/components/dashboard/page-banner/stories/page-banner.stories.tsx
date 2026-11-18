@@ -64,3 +64,23 @@ export const Soft: Story = {
 export const Outline: Story = {
   args: { title: "My Documents", tone: "blue", variant: "outline" },
 };
+
+/** A sub-page: a back arrow sits before the title. */
+export const WithBack: Story = {
+  args: {
+    back: { href: "/my-documents", label: "Companies" },
+    onToggleSidebar: () => {},
+    title: "Northline Studio",
+    tone: "purple",
+  },
+  parameters: { nextjs: { appDirectory: true } },
+  play: async ({ canvasElement }) => {
+    await expect(
+      within(canvasElement).getByRole("link", { name: "Back to Companies" }),
+    ).toHaveAttribute("href", "/my-documents");
+    // Only the back arrow: no sidebar toggle on a sub-page.
+    await expect(
+      within(canvasElement).queryByRole("button", { name: /sidebar/i }),
+    ).toBeNull();
+  },
+};

@@ -6,6 +6,7 @@ import { getTemplateById } from "@/lib/market-place";
 import { makeStoryQueryClient } from "@/lib/query/story-query-client";
 import { documentSharingEnabled } from "@/lib/sharing/feature-flag";
 import { useAuthStore } from "@/stores/auth-store";
+import { useUiStore } from "@/stores/ui-store";
 import type { Client } from "@/types/client";
 import type { TemplateSnapshot, UserDocument } from "@/types/template";
 
@@ -168,6 +169,13 @@ const seedUser = () => {
   });
 };
 
+/** These stories exercise the flat list, which sits on the "My documents" tab. */
+const showAllDocuments = async (canvasElement: HTMLElement) => {
+  await userEvent.click(
+    await within(canvasElement).findByRole("tab", { name: "My documents" }),
+  );
+};
+
 const meta = {
   title: "Dashboard/Documents View",
   component: DocumentsView,
@@ -256,6 +264,7 @@ export const WithDocuments: Story = {
     },
   ],
   play: async ({ canvasElement }) => {
+    await showAllDocuments(canvasElement);
     const canvas = within(canvasElement);
     await expect(
       await canvas.findByText("Lumina Events Invoice"),
@@ -276,6 +285,7 @@ export const WithDocuments: Story = {
 export const PrintableDocuments: Story = {
   decorators: WithDocuments.decorators,
   play: async ({ canvasElement }) => {
+    await showAllDocuments(canvasElement);
     const canvas = within(canvasElement);
     await userEvent.click(
       await canvas.findByRole("button", {
@@ -298,6 +308,7 @@ export const PrintableDocuments: Story = {
 export const EditDocument: Story = {
   decorators: WithDocuments.decorators,
   play: async ({ canvasElement }) => {
+    await showAllDocuments(canvasElement);
     const canvas = within(canvasElement);
     await userEvent.click(
       await canvas.findByRole("button", { name: "Edit Lumina Events Invoice" }),
@@ -305,9 +316,11 @@ export const EditDocument: Story = {
     await expect(
       canvas.getByRole("heading", { name: "Edit document" }),
     ).toBeVisible();
-    await expect(
-      canvas.getByRole("button", { name: "Back to documents" }),
-    ).toBeVisible();
+    // The editor is a sub-page: the top bar gets its title and back arrow.
+    await expect(useUiStore.getState().pageHeader).toMatchObject({
+      back: { label: "My Documents" },
+      title: "Edit document",
+    });
     await expect(canvas.getByRole("button", { name: "Delete" })).toBeVisible();
     await userEvent.click(canvas.getByRole("button", { name: "Save changes" }));
     // The sample invoice has empty fields, so save goes through the warning.
@@ -333,6 +346,7 @@ export const EditDocument: Story = {
 export const DuplicateDocument: Story = {
   decorators: WithDocuments.decorators,
   play: async ({ canvasElement }) => {
+    await showAllDocuments(canvasElement);
     const canvas = within(canvasElement);
     const openDraft = async () => {
       await userEvent.click(
@@ -352,9 +366,11 @@ export const DuplicateDocument: Story = {
     ).toBeVisible();
 
     // Leaving without confirming must not create anything.
-    await userEvent.click(
-      canvas.getByRole("button", { name: "Back to documents" }),
+    await expect(useUiStore.getState().pageHeader?.title).toBe(
+      "Duplicate document",
     );
+    // The top bar's back arrow (rendered by AppShell, not in this story).
+    useUiStore.getState().pageHeader?.back?.onClick?.();
     await expect(
       await canvas.findByText("Lumina Events Invoice"),
     ).toBeVisible();
@@ -389,6 +405,7 @@ export const DuplicateDocument: Story = {
 export const DeleteDocument: Story = {
   decorators: WithDocuments.decorators,
   play: async ({ canvasElement }) => {
+    await showAllDocuments(canvasElement);
     const canvas = within(canvasElement);
     await userEvent.click(
       await canvas.findByRole("button", { name: "Edit Lumina Events Invoice" }),
@@ -410,6 +427,7 @@ export const DeleteDocument: Story = {
 export const SavedConfirmation: Story = {
   decorators: WithDocuments.decorators,
   play: async ({ canvasElement }) => {
+    await showAllDocuments(canvasElement);
     const canvas = within(canvasElement);
     await userEvent.click(
       await canvas.findByRole("button", { name: "Edit Lumina Events Invoice" }),
@@ -535,6 +553,7 @@ export const SavedNextStepDownload: Story = {
 export const DeleteConfirmation: Story = {
   decorators: WithDocuments.decorators,
   play: async ({ canvasElement }) => {
+    await showAllDocuments(canvasElement);
     const canvas = within(canvasElement);
     await userEvent.click(
       await canvas.findByRole("button", { name: "Edit Lumina Events Invoice" }),
@@ -552,6 +571,7 @@ export const DeleteConfirmation: Story = {
 export const EditorReady: Story = {
   decorators: WithDocuments.decorators,
   play: async ({ canvasElement }) => {
+    await showAllDocuments(canvasElement);
     const canvas = within(canvasElement);
     await userEvent.click(
       await canvas.findByRole("button", { name: "Edit Lumina Events Invoice" }),
@@ -576,6 +596,7 @@ export const MobileEditorPreview: Story = {
     viewport: { value: "mobile1", isRotated: false },
   },
   play: async ({ canvasElement }) => {
+    await showAllDocuments(canvasElement);
     const canvas = within(canvasElement);
     await userEvent.click(
       await canvas.findByRole("button", { name: "Edit Lumina Events Invoice" }),
@@ -735,5 +756,76 @@ export const PrefillWithNoClients: Story = {
     await expect(
       canvas.queryByLabelText("Prefill from client (optional)"),
     ).not.toBeInTheDocument();
+  },
+};
+
+const at = (value: string) => new Date(value).getTime();
+
+const companyDocument = (
+  id: string,
+  templateId: string,
+  createdAt: string,
+  values: Record<string, string>,
+): UserDocument => ({
+  createdAt: at(createdAt),
+  id,
+  name: values.title ?? id,
+  templateId,
+  templateSnapshot: toSnapshot(templateId),
+  updatedAt: at(createdAt),
+  values,
+});
+
+/** Documents for three companies (one in the client book) and one with no client. */
+const byCompanyFixture: UserDocument[] = [
+  companyDocument("nl-1", "classic-invoice", "2026-06-18T09:30:00", { title: "June retainer invoice", toName: "Northline Studio" }),
+  companyDocument("nl-2", "classic-quotation", "2026-06-02T14:10:00", { title: "Brand refresh quotation", toName: "Northline Studio" }),
+  companyDocument("nl-3", "classic-contract", "2026-05-12T11:00:00", { title: "Design services contract", toName: "Maya Chen" }),
+  companyDocument("nl-4", "classic-invoice", "2026-04-28T08:45:00", { title: "April retainer invoice", toName: "Northline Studio" }),
+  companyDocument("lu-1", "classic-invoice", "2026-06-10T10:00:00", { title: "Lumina Events invoice", toName: "Lumina Events" }),
+  companyDocument("lu-2", "classic-nda", "2026-03-03T16:20:00", { partyTwo: "Lumina Events", title: "Event planning NDA" }),
+  companyDocument("ha-1", "classic-proposal", "2026-05-20T12:00:00", { title: "Harbour fit-out proposal", toName: "Harbour Cafe" }),
+  companyDocument("no-1", "classic-proposal", "2026-06-15T09:00:00", { title: "Website proposal draft" }),
+];
+
+/** The default "By company" view: one card per company, newest activity first. */
+export const ByCompany: Story = {
+  decorators: [
+    (Story) => {
+      seedUser();
+      mockDocumentsApi(byCompanyFixture);
+      return <Story />;
+    },
+  ],
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await expect(
+      await canvas.findByRole("heading", { name: "Northline Studio" }),
+    ).toBeVisible();
+    // Northline groups documents by company name and by contact name.
+    await expect(
+      canvas.getByText("4 documents · latest 18 Jun"),
+    ).toBeVisible();
+    await expect(
+      canvas.getByRole("link", { name: "View company Northline Studio" }),
+    ).toHaveTextContent("View all 4");
+    await expect(
+      canvas.getByRole("heading", { name: "No client yet" }),
+    ).toBeVisible();
+    // The toolbar renders once for phones and once for desktop.
+    await expect(
+      canvas.getAllByText("3 companies · 8 documents").length,
+    ).toBeGreaterThan(0);
+
+    await expect(
+      canvas.getByRole("link", { name: "View company Northline Studio" }),
+    ).toHaveAttribute(
+      "href",
+      "/my-documents/companies/client-client_northline_01",
+    );
+    // Each named company has a quick "New document" with the client filled in.
+    await expect(
+      canvas.getByRole("link", { name: "New document for Northline Studio" }),
+    ).toHaveAttribute("href", "/my-documents?new=1&client=client_northline_01");
   },
 };
