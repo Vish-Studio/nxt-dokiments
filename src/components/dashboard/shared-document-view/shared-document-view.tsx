@@ -1,9 +1,7 @@
 "use client";
 
-import { useRouter } from "next/navigation";
 
 import { LoadingStatus } from "@/components/commons/loading-status/loading-status";
-import { Button } from "@/components/commons/button/button";
 import { SharedDocumentSheet } from "@/components/dashboard/shared-document-sheet/shared-document-sheet";
 import {
   useSharedDocumentQuery,
@@ -22,7 +20,6 @@ export interface SharedDocumentViewProps {
  * owner (read-only) or a recipient (can sign), then hands over to the sheet.
  */
 export const SharedDocumentView = ({ id }: SharedDocumentViewProps) => {
-  const router = useRouter();
   const user = useAuthStore((state) => state.user);
   const { data: document, error, isPending } = useSharedDocumentQuery(id);
   const {
@@ -53,14 +50,6 @@ export const SharedDocumentView = ({ id }: SharedDocumentViewProps) => {
           {error?.message ??
             "This shared document doesn't exist or isn't shared with you."}
         </p>
-        <Button
-          className="mt-4"
-          onClick={() => router.push("/my-documents")}
-          size="sm"
-          variant="outline"
-        >
-          Back to My Documents
-        </Button>
       </div>
     );
   }

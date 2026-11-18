@@ -20,10 +20,16 @@ import { PublicLaunchBanner } from "@/components/dashboard/public-launch-banner/
 import Sidebar from "@/components/dashboard/sidebar/sidebar";
 import { VerifyEmailNotice } from "@/components/dashboard/verify-email-notice/verify-email-notice";
 import { documentSharingEnabled } from "@/lib/sharing/feature-flag";
-import { useUiStore } from "@/stores/ui-store";
+import { type PageBack, useUiStore } from "@/stores/ui-store";
 
 export type AppShellProps = {
   activeItem?: string;
+  /**
+   * Sub-page routes: a back arrow before the title in the top bar, e.g.
+   * `{ href: "/my-documents", label: "Companies" }`. Content can override it
+   * (and the title) at runtime with `usePageHeader`.
+   */
+  back?: PageBack;
   children?: ReactNode;
   headerContent?: ReactNode;
   description?: string;
@@ -39,7 +45,8 @@ type PageTheme = {
 };
 
 const pageThemes: Record<string, PageTheme> = {
-  Dashboard: { tone: "golden" },
+  // Black, like the app chrome, so the golden welcome card stands out below it.
+  Dashboard: { tone: "noir" },
   "My Documents": { tone: "purple" },
   "My Templates": {
     tone: "pink",
@@ -54,6 +61,7 @@ const pageThemes: Record<string, PageTheme> = {
 
 export const AppShell = ({
   activeItem = "Dashboard",
+  back,
   bannerTone,
   bannerVariant,
   children,
@@ -64,6 +72,9 @@ export const AppShell = ({
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
   const isSidebarCollapsed = useUiStore((state) => state.isSidebarCollapsed);
   const toggleSidebar = useUiStore((state) => state.toggleSidebar);
+  const pageHeader = useUiStore((state) => state.pageHeader);
+  const resolvedTitle = pageHeader?.title ?? title;
+  const resolvedBack = pageHeader?.back ?? back;
 
   const theme = pageThemes[activeItem] ?? {
     tone: "golden" as PageBannerTone,
@@ -137,9 +148,10 @@ export const AppShell = ({
                       />
                     </div>
                   }
+                  back={resolvedBack}
                   onOpenNavigation={() => setIsMobileSidebarOpen(true)}
                   showSettingsLink
-                  title={title}
+                  title={resolvedTitle}
                   tone={isDashboardHome ? "noir" : resolvedTone}
                   variant={resolvedVariant}
                 />
@@ -158,9 +170,10 @@ export const AppShell = ({
                     className="hidden lg:flex"
                     footer={headerContent}
                     isSidebarCollapsed={isSidebarCollapsed}
+                    back={resolvedBack}
                     onToggleSidebar={toggleSidebar}
                     showSettingsLink
-                    title={title}
+                    title={resolvedTitle}
                     tone={resolvedTone}
                     variant={resolvedVariant}
                   />

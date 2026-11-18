@@ -13,9 +13,14 @@ import type {
   PageBannerTone,
   PageBannerVariant,
 } from "@/components/dashboard/page-banner/page-banner";
+import { toneClasses as notificationToneClasses } from "@/components/dashboard/notification-bell/notification-bell";
+import { PageBackButton } from "@/components/dashboard/page-back-button/page-back-button";
 import { cn } from "@/lib/utils";
+import type { PageBack } from "@/stores/ui-store";
 
 export interface MobilePageHeaderProps {
+  /** Sub-pages: replaces the menu button with a back arrow (see `usePageHeader`). */
+  back?: PageBack;
   /** Rendered beside the settings link, e.g. the notification bell. */
   actions?: ReactNode;
   onOpenNavigation: () => void;
@@ -100,6 +105,7 @@ const toneStyles: Record<PageBannerTone, ToneStyle> = {
 
 export const MobilePageHeader = ({
   actions,
+  back,
   onOpenNavigation,
   showSettingsLink = false,
   title,
@@ -107,10 +113,9 @@ export const MobilePageHeader = ({
   variant = "solid",
 }: MobilePageHeaderProps) => {
   const style = toneStyles[tone];
+  // Same treatment as the notification bell, so every header control's hover matches.
   const controlClassName =
-    tone === "noir"
-      ? "border-none bg-white/10 text-white hover:bg-white/20"
-      : "border-none bg-white/45 text-nox-noir hover:bg-white/65";
+    notificationToneClasses[tone === "noir" ? "dark" : "light"];
 
   return (
     <header
@@ -121,20 +126,28 @@ export const MobilePageHeader = ({
       data-variant={variant}
     >
       <div className="flex min-h-12 items-center gap-3">
-        <ButtonIcon
-          aria-label="Open navigation"
-          className={cn("size-9! min-h-9! shrink-0", controlClassName)}
-          icon={
-            <ListIcon
-              aria-hidden
-              size={15}
-              weight="bold"
-            />
-          }
-          onClick={onOpenNavigation}
-          size="sm"
-          variant="ghost"
-        />
+        {/* On a sub-page the back arrow takes the menu's place, as in native apps. */}
+        {back ? (
+          <PageBackButton
+            back={back}
+            className={controlClassName}
+          />
+        ) : (
+          <ButtonIcon
+            aria-label="Open navigation"
+            className={cn("size-9! min-h-9! shrink-0", controlClassName)}
+            icon={
+              <ListIcon
+                aria-hidden
+                size={15}
+                weight="bold"
+              />
+            }
+            onClick={onOpenNavigation}
+            size="sm"
+            variant="ghost"
+          />
+        )}
 
         <div className="min-w-0 flex-1">
           <div className="flex min-w-0 items-center">

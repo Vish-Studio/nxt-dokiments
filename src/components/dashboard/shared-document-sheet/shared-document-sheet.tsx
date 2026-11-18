@@ -1,12 +1,10 @@
 "use client";
 
 import {
-  ArrowLeftIcon,
   EyeIcon,
   LockSimpleIcon,
   PrinterIcon,
 } from "@phosphor-icons/react";
-import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
 
 import { Button } from "@/components/commons/button/button";
@@ -31,6 +29,7 @@ import {
   isViewOnlyShare,
   RECIPIENT_SIGNATURE_KEY,
 } from "@/lib/sharing/signable";
+import { usePageHeader } from "@/hooks/use-page-header";
 import { snapshotToMarketplaceTemplate } from "@/types/template";
 import type { SharedDocument } from "@/types/sharing";
 
@@ -61,7 +60,6 @@ export const SharedDocumentSheet = ({
   onSign,
   viewer,
 }: SharedDocumentSheetProps) => {
-  const router = useRouter();
   const [typed, setTyped] = useState("");
   const [isConfirming, setIsConfirming] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
@@ -88,6 +86,13 @@ export const SharedDocumentSheet = ({
   const trimmed = typed.trim();
   const backHref =
     viewer === "recipient" ? "/my-documents?tab=shared" : "/my-documents";
+  // The top bar's back arrow, instead of a button in the content.
+  usePageHeader({
+    back: {
+      href: backHref,
+      label: viewer === "recipient" ? "Shared with me" : "My Documents",
+    },
+  });
 
   const fieldSlots = signature
     ? { [RECIPIENT_SIGNATURE_KEY]: <SignedSignature signature={signature} /> }
@@ -105,26 +110,8 @@ export const SharedDocumentSheet = ({
 
   return (
     <div className="shared-document-sheet w-full">
-      <Button
-        icon={
-          <ArrowLeftIcon
-            aria-hidden
-            size={16}
-            weight="bold"
-          />
-        }
-        iconMotion="left"
-        iconPosition="left"
-        onClick={() => router.push(backHref)}
-        size="sm"
-        variant="outline"
-      >
-        {viewer === "recipient"
-          ? "Back to shared with me"
-          : "Back to documents"}
-      </Button>
 
-      <div className="mx-auto mt-5 flex w-full max-w-3xl flex-col gap-4">
+      <div className="mx-auto flex w-full max-w-3xl flex-col gap-4 pt-6">
         <div className="flex items-start justify-between gap-3">
           <div>
             <h2 className="font-title text-xl font-bold text-nox-noir">

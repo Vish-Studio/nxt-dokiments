@@ -11,6 +11,7 @@ import { Button } from "@/components/commons/button/button";
 import { ButtonIcon } from "@/components/commons/button-icon/button-icon";
 import { Dropdown } from "@/components/commons/dropdown/dropdown";
 import { isOptimisticClient } from "@/hooks/queries/use-clients";
+import { getAvatarColorClass } from "@/lib/clients/avatar-color";
 import type { Client } from "@/types/client";
 
 export interface ClientListItemProps {
@@ -24,24 +25,6 @@ export interface ClientListItemProps {
 export const clientCardClassName =
   "flex h-44 flex-col rounded-box border border-steel-mist bg-base-100 p-4";
 
-const avatarColorClasses = [
-  "bg-play-blue",
-  "bg-play-teal",
-  "bg-play-purple",
-  "bg-play-pink",
-  "bg-play-amber",
-  "bg-golden-harvest",
-];
-
-const getAvatarColorClass = (clientId: string) => {
-  const characterTotal = Array.from(clientId).reduce(
-    (total, character) => total + character.charCodeAt(0),
-    0,
-  );
-
-  return avatarColorClasses[characterTotal % avatarColorClasses.length];
-};
-
 export const ClientListItem = ({
   client,
   onDelete,
@@ -52,7 +35,7 @@ export const ClientListItem = ({
 
   return (
     <article
-      className={`client-list-item ${clientCardClassName} transition-colors hover:border-play-blue`}
+      className={`client-list-item group ${clientCardClassName} transition-colors hover:bg-base-200`}
     >
       <div className="flex min-w-0 items-start justify-between gap-3">
         <div className="flex min-w-0 items-center gap-3">
@@ -83,7 +66,7 @@ export const ClientListItem = ({
         ) : (
           <Dropdown
             ariaLabel={`More actions for ${client.name}`}
-            buttonClassName="size-8 min-h-8 text-nox-noir hover:bg-base-200"
+            buttonClassName="size-8 min-h-8 text-nox-noir hover:bg-base-100"
             className="shrink-0"
             iconTrigger={<DotsThreeIcon aria-hidden size={20} weight="bold" />}
             iconTriggerShape="square"
@@ -131,7 +114,7 @@ export const ClientListItem = ({
         ) : (
           <Button
             aria-label={`View details for ${client.name}`}
-            className="h-8 min-h-8 px-3 text-xs"
+            className="h-8 min-h-8 px-3 text-xs group-hover:bg-base-100"
             onClick={() => onPreview(client)}
             size="sm"
             variant="secondary"
