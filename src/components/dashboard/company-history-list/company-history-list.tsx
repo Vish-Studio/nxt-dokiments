@@ -1,12 +1,13 @@
 "use client";
 
-import { CaretDownIcon } from "@phosphor-icons/react";
+import { CaretDownIcon, PlusIcon } from "@phosphor-icons/react";
 import { useState } from "react";
 
 import {
   Dropdown,
   dropdownControlClassName,
 } from "@/components/commons/dropdown/dropdown";
+import { LinkButton } from "@/components/commons/link-button/link-button";
 import { CompanyHistoryRow } from "@/components/dashboard/company-history-row/company-history-row";
 import {
   type CompanyEntry,
@@ -21,6 +22,8 @@ export interface CompanyHistoryListProps {
   /** The company's display name, for the card's description. */
   companyName: string | null;
   entries: CompanyEntry[];
+  /** "New document" with this company prefilled; omitted, no button. */
+  newDocumentHref?: string;
   onOpen: (entry: CompanyEntry) => void;
   onPrint: (document: UserDocument) => void;
 }
@@ -45,6 +48,7 @@ export const CompanyHistoryList = ({
   className,
   companyName,
   entries,
+  newDocumentHref,
   onOpen,
   onPrint,
 }: CompanyHistoryListProps) => {
@@ -65,12 +69,39 @@ export const CompanyHistoryList = ({
         className,
       )}
     >
-      <h3 className="font-title text-xl font-bold text-nox-noir">Documents</h3>
-      <p className="mt-1 text-sm leading-6 text-nox-noir/60">
-        {companyName
-          ? `Everything you've created for ${companyName} and everything it shared with you, newest first.`
-          : "Documents without a client, newest first."}
-      </p>
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+        <div className="min-w-0 flex-1">
+          <h3 className="font-title text-xl font-bold text-nox-noir">
+            Documents
+          </h3>
+          <p className="mt-1 text-sm leading-6 text-nox-noir/60">
+            {companyName
+              ? `Everything you've created for ${companyName} and everything it shared with you, newest first.`
+              : "Documents without a client, newest first."}
+          </p>
+        </div>
+        {newDocumentHref ? (
+          <LinkButton
+            aria-label={
+              companyName ? `New document for ${companyName}` : "New document"
+            }
+            className="w-full shrink-0 whitespace-nowrap sm:w-auto"
+            href={newDocumentHref}
+            icon={
+              <PlusIcon
+                aria-hidden
+                size={16}
+                weight="bold"
+              />
+            }
+            iconPosition="left"
+            size="sm"
+            variant="primary"
+          >
+            New document
+          </LinkButton>
+        ) : null}
+      </div>
 
       <div className="mt-5 flex flex-wrap items-center gap-2">
         <div

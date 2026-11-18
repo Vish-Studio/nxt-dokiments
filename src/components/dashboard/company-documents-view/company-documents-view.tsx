@@ -5,10 +5,11 @@ import { useMemo, useState } from "react";
 
 import { LoadingStatus } from "@/components/commons/loading-status/loading-status";
 import { TemplatePreviewDialog } from "@/components/commons/template-preview-dialog/template-preview-dialog";
-import { CompanyDetailsCard } from "@/components/dashboard/company-details-card/company-details-card";
+import {
+  ClientInformationCard,
+  CompanyInformationCard,
+} from "@/components/dashboard/company-details-card/company-details-card";
 import { CompanyHistoryList } from "@/components/dashboard/company-history-list/company-history-list";
-import { CompanyOverviewCard } from "@/components/dashboard/company-overview-card/company-overview-card";
-import { CompanyProfileHeader } from "@/components/dashboard/company-profile-header/company-profile-header";
 import { DocumentExportDialog } from "@/components/dashboard/document-export-dialog/document-export-dialog";
 import { useClientsQuery } from "@/hooks/queries/use-clients";
 import { usePageHeader } from "@/hooks/use-page-header";
@@ -49,10 +50,11 @@ const templateOf = (document: UserDocument) =>
 
 /**
  * `/my-documents/companies/[key]`: everything exchanged with one company.
- * Built from the dashboard's card style: an intro card (name, one sentence,
- * actions), then "Overview" and "Client details" cards on the left beside the
- * wider "Documents" card (both directions, with its own filters). Previews and PDF export open in place; Edit and New document hand
- * off to My Documents through its `?edit=` / `?new=` deep links.
+ * The company's name is the top-bar title. The wide "Documents" card (both
+ * directions, its own filters, and "New document" with this company
+ * prefilled) is on the left; "Client information" and "Company information"
+ * cards are on the right. Previews and PDF export open in place; Edit and New
+ * document hand off to My Documents through its `?edit=` / `?new=` deep links.
  */
 export const CompanyDocumentsView = ({
   companyKey,
@@ -95,12 +97,14 @@ export const CompanyDocumentsView = ({
         <LoadingStatus message="Loading company…" />
         <div
           aria-hidden
-          className="skeleton h-56 rounded-box"
-        />
-        <div
-          aria-hidden
-          className="skeleton h-96 rounded-box"
-        />
+          className="grid gap-4 lg:grid-cols-[1.3fr_0.7fr]"
+        >
+          <div className="skeleton h-96 rounded-box" />
+          <div className="grid gap-4">
+            <div className="skeleton h-48 rounded-box" />
+            <div className="skeleton h-48 rounded-box" />
+          </div>
+        </div>
       </div>
     );
   }
@@ -127,34 +131,35 @@ export const CompanyDocumentsView = ({
 
   return (
     <div className="company-documents-view flex flex-col gap-4 pt-6">
-      <CompanyProfileHeader
-        group={group}
-        newDocumentHref={newDocumentHref}
-      />
-
-      {/* Same split as the dashboard: summary cards left, the main list right. */}
-      <div className="grid gap-4 lg:grid-cols-[0.8fr_1.2fr]">
-        <div className="grid content-start gap-4">
-          <CompanyOverviewCard group={group} />
-          <CompanyDetailsCard
-            client={group.client}
-            name={group.name}
-          />
-        </div>
-        {/* Desktop: the Documents card takes exactly the left column's height
-            (never taller) and scrolls inside; min-h-96 keeps it usable when the
-            left column is short. Phones: natural height, list capped. */}
+      {/* Documents is the main column (left); the company's details sit to
+          the right. Desktop: the Documents card takes exactly the right
+          column's height and scrolls inside (min-h-96 keeps it usable when
+          that column is short). Phones: documents first, list capped. */}
+      <div className="grid gap-4 lg:grid-cols-[1.3fr_0.7fr]">
         <div className="relative min-w-0 lg:min-h-96">
           <CompanyHistoryList
             className="lg:absolute lg:inset-0"
             companyName={group.name}
             entries={group.entries}
+            newDocumentHref={newDocumentHref}
             onOpen={(entry) => {
               if (entry.document) setPreviewDocument(entry.document);
               else if (entry.shared)
                 router.push(`/my-documents/shared/${entry.shared.id}`);
             }}
             onPrint={setExportDocument}
+          />
+        </div>
+        <div className="grid min-w-0 content-start gap-4">
+          <ClientInformationCard
+            client={group.client}
+            name={group.name}
+          />
+          <CompanyInformationCard
+            client={group.client}
+            firstAt={group.firstAt}
+            latestAt={group.latestAt}
+            name={group.name}
           />
         </div>
       </div>
