@@ -9,7 +9,6 @@ import {
   ButtonIcon,
   buttonIconClasses,
 } from "@/components/commons/button-icon/button-icon";
-import { SidebarToggleButton } from "@/components/dashboard/sidebar-toggle-button/sidebar-toggle-button";
 import { toneClasses as notificationToneClasses } from "@/components/dashboard/notification-bell/notification-bell";
 import { PageBackButton } from "@/components/dashboard/page-back-button/page-back-button";
 import { cn } from "@/lib/utils";
@@ -31,8 +30,6 @@ export type PageBannerProps = {
   className?: string;
   footer?: ReactNode;
   onOpenNavigation?: () => void;
-  isSidebarCollapsed?: boolean;
-  onToggleSidebar?: () => void;
   /** Rendered beside the settings link, e.g. the notification bell. */
   actions?: ReactNode;
   showSettingsLink?: boolean;
@@ -119,9 +116,7 @@ export const PageBanner = ({
   back,
   className,
   footer,
-  isSidebarCollapsed = false,
   onOpenNavigation,
-  onToggleSidebar,
   showSettingsLink = false,
   title,
   tone = "golden",
@@ -160,13 +155,6 @@ export const PageBanner = ({
       ) : null}
 
       <div className="flex min-w-0 items-center gap-3 lg:col-start-1 lg:row-start-1">
-        {onToggleSidebar && !back ? (
-          <SidebarToggleButton
-            className={desktopControlClassName}
-            isCollapsed={isSidebarCollapsed}
-            onToggle={onToggleSidebar}
-          />
-        ) : null}
         {back ? (
           <PageBackButton
             back={back}

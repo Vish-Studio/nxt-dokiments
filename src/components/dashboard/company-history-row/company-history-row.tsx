@@ -93,10 +93,18 @@ export const CompanyHistoryRow = ({
       </span>
 
       <div className="pointer-events-none relative min-w-0 flex-1">
-        <p className="line-clamp-2 text-sm font-semibold text-nox-noir sm:truncate">
+        <p className="truncate text-sm font-semibold text-nox-noir">
           {title}
         </p>
-        <p className="mt-0.5 text-xs text-nox-noir/55 sm:truncate">
+        {/* Phones: the icon already says the type, so just who, when and status. */}
+        <p className="mt-0.5 truncate text-xs text-nox-noir/55 sm:hidden">
+          {isReceived ? `From ${entry.sharedBy} · ` : ""}
+          {formatFullDate(entry.createdAt)} ·{" "}
+          <span className={status === "Signed" ? "font-semibold text-success" : ""}>
+            {status}
+          </span>
+        </p>
+        <p className="mt-0.5 hidden truncate text-xs text-nox-noir/55 sm:block">
           {entry.documentType
             ? getDocumentTypeLabel(entry.documentType)
             : "Document"}{" "}
@@ -104,8 +112,6 @@ export const CompanyHistoryRow = ({
           <time dateTime={created.toISOString()}>
             {formatFullDate(entry.createdAt)}, {timeFormatter.format(created)}
           </time>
-          {/* Phones have no room for the pill, so the status joins this line. */}
-          <span className="sm:hidden"> · {status}</span>
         </p>
       </div>
 
@@ -120,7 +126,7 @@ export const CompanyHistoryRow = ({
           <>
             <ButtonIcon
               aria-label={`Export PDF of ${title}`}
-              className={iconActionClassName}
+              className={`${iconActionClassName} max-sm:hidden`}
               icon={
                 <PrinterIcon
                   aria-hidden

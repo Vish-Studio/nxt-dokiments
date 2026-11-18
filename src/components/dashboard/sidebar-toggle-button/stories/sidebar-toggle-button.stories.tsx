@@ -7,10 +7,17 @@ const meta = {
   title: "Dashboard/Sidebar Toggle Button",
   component: SidebarToggleButton,
   args: {
-    className: "inline-flex border-none bg-white/45 text-nox-noir",
+    className: "inline-flex",
     isCollapsed: false,
     onToggle: fn(),
   },
+  decorators: [
+    (Story) => (
+      <div className="rounded-box bg-app-chrome p-4">
+        <Story />
+      </div>
+    ),
+  ],
   parameters: { layout: "centered" },
 } satisfies Meta<typeof SidebarToggleButton>;
 
