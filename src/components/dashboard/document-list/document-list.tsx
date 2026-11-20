@@ -13,6 +13,8 @@ export interface DocumentListProps {
   onPrint: (document: UserDocument) => void;
   onDuplicate?: (document: UserDocument) => void;
   onShare?: (document: UserDocument) => void;
+  /** Adds "Delete" to each row's menu. The caller confirms before deleting. */
+  onDelete?: (document: UserDocument) => void;
   /** Opens a document's shared copy, by its shared-document ID. Needs `sharedCopyIds`. */
   onViewShared?: (sharedDocumentId: string) => void;
   /** Shared-document ID of each document that has been shared, keyed by the document's ID. */
@@ -75,6 +77,7 @@ export const DocumentList = ({
   onPrint,
   onDuplicate,
   onShare,
+  onDelete,
   onViewShared,
   sharedCopyIds,
   statuses,
@@ -95,6 +98,7 @@ export const DocumentList = ({
             onDuplicate={onDuplicate}
             onPreview={onPreview}
             onPrint={onPrint}
+            onDelete={onDelete}
             onShare={onShare}
             status={statuses?.[document.id]}
             onViewShared={

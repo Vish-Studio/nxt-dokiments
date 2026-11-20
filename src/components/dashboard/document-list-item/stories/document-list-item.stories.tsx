@@ -56,24 +56,34 @@ export default meta;
 type Story = StoryObj<typeof meta>;
 
 export const Default: Story = {
-  play: async ({ canvasElement }) => {
+  args: { onDelete: fn() },
+  play: async ({ args, canvasElement }) => {
     const canvas = within(canvasElement);
-    const rowButton = canvas.getByRole("button", {
-      name: `Open preview for ${documentTitle}`,
-    });
-    const printButton = canvas.getByRole("button", {
-      name: `Print ${documentTitle}`,
-    });
-    const editButton = canvas.getByRole("button", {
-      name: `Edit ${documentTitle}`,
-    });
+    const page = within(canvasElement.ownerDocument.body);
     await expect(canvas.getByText(documentTitle)).toBeVisible();
-    await userEvent.click(rowButton);
-    await expect(meta.args.onPreview).toHaveBeenCalledOnce();
-    await userEvent.click(printButton);
-    await expect(meta.args.onPrint).toHaveBeenCalledOnce();
-    await userEvent.click(editButton);
-    await expect(meta.args.onEdit).toHaveBeenCalledOnce();
+    await userEvent.click(
+      canvas.getByRole("button", { name: `Open preview for ${documentTitle}` }),
+    );
+    await expect(args.onPreview).toHaveBeenCalledOnce();
+
+    // The row itself has only Download PDF and the ⋮ menu.
+    await expect(canvas.queryByRole("button", { name: `Edit ${documentTitle}` })).toBeNull();
+    await userEvent.click(
+      canvas.getByRole("button", { name: `Download PDF of ${documentTitle}` }),
+    );
+    await expect(args.onPrint).toHaveBeenCalledOnce();
+
+    // Every action is in the menu, Delete last.
+    const openMenu = () =>
+      userEvent.click(
+        canvas.getByRole("button", { name: `More actions for ${documentTitle}` }),
+      );
+    await openMenu();
+    await userEvent.click(await page.findByRole("button", { name: "Edit" }));
+    await expect(args.onEdit).toHaveBeenCalledOnce();
+    await openMenu();
+    await userEvent.click(await page.findByRole("button", { name: "Delete" }));
+    await expect(args.onDelete).toHaveBeenCalledWith(document);
   },
 };
 
@@ -182,11 +192,12 @@ export const DuplicateHiddenWithoutSnapshot: Story = {
     onDuplicate: fn(),
   },
   play: async ({ canvasElement }) => {
-    await expect(
-      within(canvasElement).queryByRole("button", {
-        name: `More actions for ${documentTitle}`,
-      }),
-    ).toBeNull();
+    const canvas = within(canvasElement);
+    await userEvent.click(
+      canvas.getByRole("button", { name: `More actions for ${documentTitle}` }),
+    );
+    await expect(canvas.getByRole("button", { name: "Edit" })).toBeInTheDocument();
+    await expect(canvas.queryByRole("button", { name: "Duplicate" })).toBeNull();
   },
 };
 
@@ -209,11 +220,13 @@ export const MenuOnPhone: Story = {
 
 export const WithoutShare: Story = {
   play: async ({ canvasElement }) => {
-    await expect(
-      within(canvasElement).queryByRole("button", {
-        name: `More actions for ${documentTitle}`,
-      }),
-    ).toBeNull();
+    const canvas = within(canvasElement);
+    await userEvent.click(
+      canvas.getByRole("button", { name: `More actions for ${documentTitle}` }),
+    );
+    await expect(canvas.getByRole("button", { name: "Download PDF" })).toBeInTheDocument();
+    await expect(canvas.queryByRole("button", { name: "Share" })).toBeNull();
+    await expect(canvas.queryByRole("button", { name: "Delete" })).toBeNull();
   },
 };
 

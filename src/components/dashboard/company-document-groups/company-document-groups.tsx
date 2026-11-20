@@ -5,11 +5,8 @@ import {
   ArrowSquareOutIcon,
   CaretDownIcon,
   DotsThreeVerticalIcon,
-  DownloadSimpleIcon,
   FileTextIcon,
-  PencilSimpleIcon,
   PlusIcon,
-  ShareNetworkIcon,
   UserCircleDashedIcon,
   type Icon,
 } from "@phosphor-icons/react";
@@ -19,6 +16,10 @@ import { useId, useState } from "react";
 import { Avatar } from "@/components/commons/avatar/avatar";
 import { Button } from "@/components/commons/button/button";
 import { Dropdown } from "@/components/commons/dropdown/dropdown";
+import {
+  DocumentActionItems,
+  type DocumentActionItemsProps,
+} from "@/components/dashboard/document-action-items/document-action-items";
 import { EntryStatusPill } from "@/components/dashboard/entry-status-pill/entry-status-pill";
 import { getAvatarColorClass } from "@/lib/clients/avatar-color";
 import { iconSize } from "@/lib/icons";
@@ -39,17 +40,13 @@ import {
 import { documentIcons } from "@/lib/market-place/document-icons";
 import { getDocumentTypeLabel } from "@/lib/market-place/document-labels";
 import { cn } from "@/lib/utils";
-import type { UserDocument } from "@/types/template";
 
-/** Row menu actions for the user's own documents. */
-export interface CompanyRowActions {
-  /** Opens the document in the editor. */
-  onEdit: (document: UserDocument) => void;
-  /** Opens the PDF export. */
-  onDownload: (document: UserDocument) => void;
-  /** Opens the share dialog; omit while sharing is off. */
-  onShare?: (document: UserDocument) => void;
-}
+/**
+ * Row menu actions for the user's own documents: the same set as the My
+ * documents rows (see {@link DocumentActionItems}). `onViewShared` is offered
+ * only on rows whose document has been shared.
+ */
+export type CompanyRowActions = Omit<DocumentActionItemsProps, "document">;
 
 export interface CompanyDocumentGroupsProps extends CompanyRowActions {
   groups: CompanyDocumentGroup[];
@@ -193,25 +190,13 @@ const CompanyRow = ({
             sheetTitle={entry.title}
           >
             {document ? (
-              <>
-                <MenuItem
-                  icon={PencilSimpleIcon}
-                  label="Edit"
-                  onClick={() => actions.onEdit(document)}
-                />
-                <MenuItem
-                  icon={DownloadSimpleIcon}
-                  label="Download PDF"
-                  onClick={() => actions.onDownload(document)}
-                />
-                {actions.onShare ? (
-                  <MenuItem
-                    icon={ShareNetworkIcon}
-                    label="Share"
-                    onClick={() => actions.onShare?.(document)}
-                  />
-                ) : null}
-              </>
+              <DocumentActionItems
+                {...actions}
+                document={document}
+                onViewShared={
+                  entry.shareStatus ? actions.onViewShared : undefined
+                }
+              />
             ) : (
               <MenuItem
                 icon={ArrowSquareOutIcon}
@@ -386,10 +371,13 @@ const CompanyGroup = ({
  */
 export const CompanyDocumentGroups = ({
   groups,
+  onDelete,
   onDownload,
+  onDuplicate,
   onEdit,
   onOpenEntry,
   onShare,
+  onViewShared,
   previewCount = 5,
 }: CompanyDocumentGroupsProps) =>
   groups.length === 0 ? (
@@ -407,7 +395,14 @@ export const CompanyDocumentGroups = ({
     <div className="company-document-groups grid gap-4">
       {groups.map((group) => (
         <CompanyGroup
-          actions={{ onDownload, onEdit, onShare }}
+          actions={{
+            onDelete,
+            onDownload,
+            onDuplicate,
+            onEdit,
+            onShare,
+            onViewShared,
+          }}
           group={group}
           key={group.key}
           onOpenEntry={onOpenEntry}

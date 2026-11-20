@@ -204,6 +204,8 @@ export const DocumentsView = () => {
   );
   const [isDeleteConfirmationOpen, setIsDeleteConfirmationOpen] =
     useState(false);
+  // A document whose row menu asked to delete it, awaiting confirmation.
+  const [deleteTarget, setDeleteTarget] = useState<UserDocument | null>(null);
   const [isSaveConfirmationOpen, setIsSaveConfirmationOpen] = useState(false);
   // Turned on by a save attempt with empty fields: the editor preview then
   // highlights them until they are filled or the editor closes.
@@ -1372,9 +1374,15 @@ export const DocumentsView = () => {
       ) : listTab === "companies" ? (
         <CompanyDocumentGroups
           groups={companyGroups}
+          onDelete={setDeleteTarget}
           onDownload={handlePrintDocument}
+          onDuplicate={handleDuplicate}
           onEdit={openDocument}
           onShare={documentSharingEnabled ? shareDocument : undefined}
+          onViewShared={(document) => {
+            const sharedId = sharedCopyIds[document.id];
+            if (sharedId) router.push(`/my-documents/shared/${sharedId}`);
+          }}
           onOpenEntry={(entry) => {
             if (entry.document) setPreviewDocument(entry.document);
             else if (entry.shared)
@@ -1391,6 +1399,7 @@ export const DocumentsView = () => {
           onViewShared={(sharedId) =>
             router.push(`/my-documents/shared/${sharedId}`)
           }
+          onDelete={setDeleteTarget}
           sharedCopyIds={sharedCopyIds}
           statuses={documentStatuses}
           onShare={documentSharingEnabled ? shareDocument : undefined}
@@ -1423,6 +1432,20 @@ export const DocumentsView = () => {
         template={previewDocument ? templateOf(previewDocument) : null}
         tone="purple"
         values={previewDocument?.values}
+      />
+
+      <ConfirmDialog
+        confirmLabel="Delete document"
+        confirmVariant="danger"
+        description={`Delete "${deleteTarget?.values.title?.trim() || deleteTarget?.name || "this document"}"? This action cannot be undone.`}
+        icon={TrashIcon}
+        onClose={() => setDeleteTarget(null)}
+        onConfirm={() => {
+          if (deleteTarget) handleRemove(deleteTarget.id);
+          setDeleteTarget(null);
+        }}
+        open={Boolean(deleteTarget)}
+        title="Delete document?"
       />
 
       <ShareDialog
