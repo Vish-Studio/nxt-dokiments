@@ -50,6 +50,11 @@ export interface ModalProps {
   /** Show the close (X) button. Defaults to `dismissible`. */
   showClose?: boolean;
   title: string;
+  /**
+   * A small icon inline before the title ("⧩ Filters"), for menus and sheets
+   * without a `tone` tile. Decorative: the title alone stays the dialog's name.
+   */
+  titleIcon?: Icon;
   /** Shows a tinted {@link ModalIcon} tile beside the title. Omit for plain menus. */
   tone?: ModalTone;
 }
@@ -100,6 +105,7 @@ export const Modal = ({
   portal = true,
   showClose,
   title,
+  titleIcon: TitleIcon,
   tone,
 }: ModalProps) => {
   const titleId = useId();
@@ -198,7 +204,14 @@ export const Modal = ({
         role="dialog"
         tabIndex={-1}
       >
-        <div className="flex items-start gap-4">
+        {/* A plain title row (menu sheets): icon, title and close button share
+            one centre line. With a tone tile or description, align to the top. */}
+        <div
+          className={cn(
+            "flex gap-4",
+            tone || description ? "items-start" : "items-center",
+          )}
+        >
           {tone ? (
             <ModalIcon
               icon={icon}
@@ -207,10 +220,25 @@ export const Modal = ({
           ) : null}
           <div className={cn("min-w-0 flex-1", tone && "pt-1")}>
             <h2
-              className="font-title text-lg font-bold leading-7 text-nox-noir"
+              className={cn(
+                "font-title text-lg font-bold leading-7 text-nox-noir",
+                TitleIcon && "flex min-w-0 items-center gap-2",
+              )}
               id={titleId}
             >
-              {title}
+              {TitleIcon ? (
+                <TitleIcon
+                  aria-hidden
+                  className="shrink-0"
+                  size={iconSize.tile}
+                  weight="bold"
+                />
+              ) : null}
+              {TitleIcon ? (
+                <span className="min-w-0 truncate">{title}</span>
+              ) : (
+                title
+              )}
             </h2>
             {description ? (
               <div
@@ -224,7 +252,10 @@ export const Modal = ({
           {hasClose ? (
             <ButtonIcon
               aria-label="Close"
-              className="-mt-1 -mr-2 shrink-0"
+              className={cn(
+                "-mr-2 shrink-0",
+                Boolean(tone || description) && "-mt-1",
+              )}
               icon={
                 <XIcon
                   aria-hidden

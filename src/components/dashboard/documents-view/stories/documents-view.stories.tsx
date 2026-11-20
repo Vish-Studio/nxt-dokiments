@@ -270,7 +270,10 @@ export const WithDocuments: Story = {
       await canvas.findByText("Lumina Events Invoice"),
     ).toBeVisible();
     await expect(canvas.getByText("Invoice")).toBeVisible();
-    await expect(canvas.getByText("18 Jun 2026")).toBeVisible();
+    await expect(canvas.getByText("18/06/26")).toBeVisible();
+    // The row shows who it is for, not the template style.
+    await expect(canvas.queryByText("Classic designs")).toBeNull();
+    await expect(canvas.getAllByText("Not shared")[0]).toBeVisible();
     await userEvent.click(
       canvas.getByRole("button", {
         name: "Open preview for Lumina Events Invoice",
@@ -584,12 +587,36 @@ export const EditorReady: Story = {
   },
 };
 
+/**
+ * Phones have no Edit button on the row: Edit is in the ⋮ actions sheet.
+ * Opens the editor that way.
+ */
+const openEditorOnPhone = async (canvasElement: HTMLElement) => {
+  await showAllDocuments(canvasElement);
+  const canvas = within(canvasElement);
+  const page = within(canvasElement.ownerDocument.body);
+  await userEvent.click(
+    await canvas.findByRole("button", {
+      name: "More actions for Lumina Events Invoice",
+    }),
+  );
+  const sheet = await page.findByRole("dialog", {
+    name: "Lumina Events Invoice",
+  });
+  await userEvent.click(within(sheet).getByRole("button", { name: "Edit" }));
+};
+
 export const MobileEditorReady: Story = {
   decorators: WithDocuments.decorators,
   globals: {
     viewport: { value: "mobile1", isRotated: false },
   },
-  play: EditorReady.play,
+  play: async ({ canvasElement }) => {
+    await openEditorOnPhone(canvasElement);
+    await expect(
+      within(canvasElement).getByRole("heading", { name: "Edit document" }),
+    ).toBeVisible();
+  },
 };
 
 export const MobileEditorPreview: Story = {
@@ -598,11 +625,8 @@ export const MobileEditorPreview: Story = {
     viewport: { value: "mobile1", isRotated: false },
   },
   play: async ({ canvasElement }) => {
-    await showAllDocuments(canvasElement);
+    await openEditorOnPhone(canvasElement);
     const canvas = within(canvasElement);
-    await userEvent.click(
-      await canvas.findByRole("button", { name: "Edit Lumina Events Invoice" }),
-    );
     const previewButton = canvas.getByRole("button", {
       name: "Preview document",
     });
@@ -780,7 +804,7 @@ const companyDocument = (
 
 /** Documents for three companies (one in the client book) and one with no client. */
 const byCompanyFixture: UserDocument[] = [
-  companyDocument("nl-1", "classic-invoice", "2026-06-18T09:30:00", { title: "June retainer invoice", toName: "Northline Studio" }),
+  companyDocument("nl-1", "classic-invoice", "2026-06-18T09:30:00", { title: "June retainer invoice", toName: "Northline Studio", total: "1250" }),
   companyDocument("nl-2", "classic-quotation", "2026-06-02T14:10:00", { title: "Brand refresh quotation", toName: "Northline Studio" }),
   companyDocument("nl-3", "classic-contract", "2026-05-12T11:00:00", { title: "Design services contract", toName: "Maya Chen" }),
   companyDocument("nl-4", "classic-invoice", "2026-04-28T08:45:00", { title: "April retainer invoice", toName: "Northline Studio" }),
@@ -788,9 +812,14 @@ const byCompanyFixture: UserDocument[] = [
   companyDocument("lu-2", "classic-nda", "2026-03-03T16:20:00", { partyTwo: "Lumina Events", title: "Event planning NDA" }),
   companyDocument("ha-1", "classic-proposal", "2026-05-20T12:00:00", { title: "Harbour fit-out proposal", toName: "Harbour Cafe" }),
   companyDocument("no-1", "classic-proposal", "2026-06-15T09:00:00", { title: "Website proposal draft" }),
+  // A CV: lives in its own tab, never under a company.
+  companyDocument("cv-1", "classic-cv", "2026-06-12T09:00:00", { title: "Product designer CV" }),
 ];
 
-/** The default "By company" view: one card per company, newest activity first. */
+/**
+ * The default "Companies" tab: every document grouped by company (newest
+ * activity first), with Status and Type filter chips.
+ */
 export const ByCompany: Story = {
   decorators: [
     (Story) => {
@@ -801,32 +830,174 @@ export const ByCompany: Story = {
   ],
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
+    const northline = await canvas.findByRole("region", {
+      name: "Northline Studio",
+    });
+    // Northline groups documents by company name and by contact name.
     await expect(
-      await canvas.findByRole("heading", { name: "Northline Studio" }),
-    ).toBeVisible();
-    // Northline groups documents by company name and by contact name, so its
-    // figures count all 4.
-    const northline = canvas.getByRole("article", { name: "Northline Studio" });
+      within(northline).getAllByRole("button", { name: /^Preview / }),
+    ).toHaveLength(4);
     await expect(
-      within(northline).getByTestId("company-figures"),
-    ).toHaveTextContent(/^4 documents/);
-    await expect(
-      canvas.getByRole("heading", { name: "No client yet" }),
+      canvas.getByRole("region", { name: "No client yet" }),
     ).toBeVisible();
     // The toolbar renders once for phones and once for desktop.
     await expect(
       canvas.getAllByText("3 companies · 8 documents").length,
     ).toBeGreaterThan(0);
-
     await expect(
-      canvas.getByRole("link", { name: "View company Northline Studio" }),
+      within(northline).getByRole("link", {
+        name: "View company Northline Studio",
+      }),
     ).toHaveAttribute(
       "href",
       "/my-documents/companies/client-client_northline_01",
     );
-    // Each named company has a quick "New document" with the client filled in.
     await expect(
-      canvas.getByRole("link", { name: "New document for Northline Studio" }),
+      within(northline).getByRole("link", {
+        name: "New document for Northline Studio",
+      }),
     ).toHaveAttribute("href", "/my-documents?new=1&client=client_northline_01");
+
+    // Collapse and reopen a company.
+    const toggle = within(northline).getByRole("button", {
+      name: "Hide documents for Northline Studio",
+    });
+    await userEvent.click(toggle);
+    await expect(toggle).toHaveAttribute("aria-expanded", "false");
+    await userEvent.click(toggle);
+    await expect(toggle).toHaveAttribute("aria-expanded", "true");
+
+    // Amounts at a glance; CVs stay out of the company groups.
+    await expect(within(northline).getByText("1,250.00")).toBeVisible();
+    await expect(canvas.queryByText("Product designer CV")).toBeNull();
+
+    // Each row has a vertical menu.
+    await expect(
+      within(northline).getByRole("button", {
+        name: "More actions for June retainer invoice",
+      }),
+    ).toBeVisible();
+
+    // Filter chips: Status is its own chip, and the sort is not a filter.
+    await expect(
+      canvas.getAllByRole("button", { name: "Status: Any" }).length,
+    ).toBeGreaterThan(0);
+    await expect(
+      canvas.queryAllByRole("button", { name: "Reset filters" }),
+    ).toHaveLength(0);
+  },
+};
+
+/**
+ * Rows show the creation date as dd/mm/yy. Opening a row shows the preview
+ * with a "Document" tab (client, amount, status, created) and a "Template" tab.
+ */
+export const ByCompanyPreviewDetails: Story = {
+  decorators: ByCompany.decorators,
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const northline = await canvas.findByRole("region", {
+      name: "Northline Studio",
+    });
+    const date = within(northline).getByText("18/06/26");
+    await expect(date.tagName).toBe("TIME");
+    await expect(date).toHaveAttribute("title", "18 Jun 2026");
+
+    await userEvent.click(
+      within(northline).getByRole("button", {
+        name: "Preview June retainer invoice",
+      }),
+    );
+    const body = within(canvasElement.ownerDocument.body);
+    const details = await body.findByRole("tabpanel", {
+      name: "Document details",
+    });
+    await expect(within(details).getByText("Northline Studio")).toBeVisible();
+    await expect(within(details).getByText("1,250.00")).toBeVisible();
+    await expect(within(details).getByText("Not shared")).toBeVisible();
+    await expect(within(details).getByText("18/06/26, 09:30")).toBeVisible();
+
+    await userEvent.click(body.getByRole("tab", { name: "Template" }));
+    const template = body.getByRole("tabpanel", { name: "Template details" });
+    await expect(within(template).getByText("Invoice")).toBeVisible();
+    await expect(
+      body.getByRole("tab", { name: "Template" }),
+    ).toHaveAttribute("aria-selected", "true");
+  },
+};
+
+/** CVs have their own tab after "Shared with me", without a Type filter. */
+export const CvsTab: Story = {
+  decorators: ByCompany.decorators,
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await canvas.findByRole("region", { name: "Northline Studio" });
+    await userEvent.click(canvas.getByRole("tab", { name: /CVs/ }));
+    await expect(await canvas.findByText("Product designer CV")).toBeVisible();
+    await expect(canvas.queryByText("June retainer invoice")).toBeNull();
+    await expect(
+      canvas.queryAllByRole("button", { name: /^Type:/ }),
+    ).toHaveLength(0);
+
+    // And "My documents" leaves the CV out.
+    await userEvent.click(canvas.getByRole("tab", { name: /My documents/ }));
+    await expect(await canvas.findByText("June retainer invoice")).toBeVisible();
+    await expect(canvas.queryByText("Product designer CV")).toBeNull();
+  },
+};
+
+/** Status filter: picking "Signed" leaves no unsigned documents and offers "Clear filters". */
+export const ByCompanyStatusFilter: Story = {
+  decorators: ByCompany.decorators,
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await canvas.findByRole("region", { name: "Northline Studio" });
+    const [statusChip] = canvas
+      .getAllByRole("button", { name: "Status: Any" })
+      .filter((element) => element.checkVisibility());
+    await userEvent.click(statusChip);
+    await userEvent.click(
+      await within(canvasElement.ownerDocument.body).findByRole("menuitemradio", {
+        name: "Signed",
+      }),
+    );
+    await expect(
+      await canvas.findByText("No documents match"),
+    ).toBeVisible();
+    await expect(
+      canvas
+        .getAllByRole("button", { name: "Reset filters" })
+        .filter((element) => element.checkVisibility()).length,
+    ).toBeGreaterThan(0);
+  },
+};
+
+/**
+ * The toolbar never leaves the page: on "Shared with me" its search, filter
+ * and sort stay in place but disabled, so the header keeps its height.
+ */
+export const SharedTabKeepsToolbar: Story = {
+  decorators: ByCompany.decorators,
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await canvas.findByRole("region", { name: "Northline Studio" });
+    // The phone toolbar is CSS-hidden at the test runner's width.
+    const [search] = canvas.getAllByRole("searchbox", {
+      hidden: true,
+      name: "Search documents",
+    });
+    await expect(search).toBeEnabled();
+    if (!documentSharingEnabled) return;
+
+    await userEvent.click(canvas.getByRole("tab", { name: /Shared with me/ }));
+    await expect(
+      await canvas.findByText("Nothing shared with you yet"),
+    ).toBeVisible();
+    for (const box of canvas.getAllByRole("searchbox", {
+      hidden: true,
+      name: "Search documents",
+    })) {
+      await expect(box).toBeDisabled();
+    }
   },
 };

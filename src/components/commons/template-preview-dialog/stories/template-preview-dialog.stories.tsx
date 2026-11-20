@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from "@storybook/nextjs-vite";
-import { expect, within } from "storybook/test";
+import { expect, userEvent, within } from "storybook/test";
 
 import { getTemplateById } from "@/lib/market-place";
 import type { MarketplaceTemplate } from "@/types/template";
@@ -67,4 +67,38 @@ export const LibraryActions: Story = {
       canvas.getByRole("link", { name: /use document/i }),
     ).toBeVisible();
   },
+};
+
+/** A saved document: the header card gets "Document" and "Template" tabs. */
+export const DocumentDetails: Story = {
+  args: {
+    details: [
+      { label: "Client", value: "Northline Studio" },
+      { label: "Amount", value: "1,250.00" },
+      { label: "Status", value: "Awaiting signature" },
+      { label: "Created", value: "18/06/26, 09:30" },
+      { label: "Last edited", value: "19/06/26, 16:05" },
+    ],
+    documentName: "June retainer quotation",
+    mode: "document",
+    onDelete: () => {},
+    onEdit: () => {},
+  },
+  play: async ({ canvasElement }) => {
+    const body = within(canvasElement.ownerDocument.body);
+    const details = await body.findByRole("tabpanel", {
+      name: "Document details",
+    });
+    await expect(within(details).getByText("Awaiting signature")).toBeVisible();
+    await userEvent.click(body.getByRole("tab", { name: "Template" }));
+    await expect(
+      body.getByRole("tabpanel", { name: "Template details" }),
+    ).toBeVisible();
+    await expect(body.queryByRole("tabpanel", { name: "Document details" })).toBeNull();
+  },
+};
+
+export const DocumentDetailsPhone: Story = {
+  ...DocumentDetails,
+  globals: { viewport: { value: "mobile1", isRotated: false } },
 };

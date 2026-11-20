@@ -28,13 +28,16 @@ You own Dokiments' Storybook. Stories are the component tests here (`@storybook/
 - **Phone variants:** anything that switches on `phoneMediaQuery` (a `Dropdown` with `sheetTitle`, `UpgradeDialog`, the install steps, any component using `useMediaQuery`) needs a story with `beforeEach: mockPhoneViewport` from `@/lib/storybook/mock-phone-viewport` that asserts the dialog has `data-layout="sheet"` (and its `data-tone` when the tone matters) (or `"centered"` for `ConfirmDialog`). Desktop stories assert `data-layout="centered"`: desktop never shows a bottom sheet. The test runner's own viewport is not a phone.
 - **Accessibility:** use role and name queries (`getByRole("button", { name: "Share" })`). A story that can only find an element by class or test id usually means the markup lacks a label: report it.
 - Toasts are mounted once in `.storybook/preview.tsx`; never mount another `Toaster` in a story.
+- **Feature flags:** CI runs Storybook with `NEXT_PUBLIC_DOCUMENT_SHARING_ENABLED` off (as in `.env.example`) while local `.env` usually has it on. A story that expects a sharing-only element (Share, Received, "Shared with me", signature counts) must branch on `documentSharingEnabled` from `@/lib/sharing/feature-flag`. Before reporting green, also run the touched stories with `NEXT_PUBLIC_DOCUMENT_SHARING_ENABLED=false npx vitest run --project storybook <pattern>`.
+- **Responsive duplicates:** many components render a phone line and a desktop column (or a phone and a desktop toolbar) with the same text, one hidden by CSS. `getByText` finds hidden nodes too, so filter with `element.checkVisibility()` or use `getAllBy…` instead of failing on "Found multiple elements". Text joined by CSS `gap` has no real spaces: render real `" · "` separators so `toHaveTextContent` and screen readers read it right.
 
 ## Run
 
 1. `npx vitest run --project storybook <pattern>` for every touched story. Name several patterns in one run.
-2. When the change touches shared pieces (`commons/`, `globals.css`, `Dropdown`, `Modal`, `ConfirmDialog`, `Button`, stores), run the full suite: `npx vitest run --project storybook`. Run it in the background; it takes a few minutes.
-3. If whole files fail to import with a Vite error (for example `Failed to import test file … setup-file-with-project-annotations.js`) while every individual test passes, Vite re-bundled dependencies partway through the run. Re-run those files once before reporting a failure.
-4. If browser tools are available and a visual check helps, start the `storybook` config from `.claude/launch.json`, screenshot the changed stories (desktop and phone width), stop the server afterwards, and list the screenshot paths.
+2. Run every touched pattern twice: as is, and with `NEXT_PUBLIC_DOCUMENT_SHARING_ENABLED=false` (how CI runs it).
+3. When the change touches shared pieces (`commons/`, `globals.css`, `Dropdown`, `Modal`, `ConfirmDialog`, `Button`, stores), run the full suite: `npx vitest run --project storybook`. Run it in the background; it takes a few minutes.
+4. If whole files fail to import with a Vite error (for example `Failed to import test file … setup-file-with-project-annotations.js`) while every individual test passes, Vite re-bundled dependencies partway through the run. Re-run those files once before reporting a failure.
+5. If browser tools are available and a visual check helps, start the `storybook` config from `.claude/launch.json`, screenshot the changed stories (desktop and phone width), stop the server afterwards, and list the screenshot paths.
 
 ## Report
 

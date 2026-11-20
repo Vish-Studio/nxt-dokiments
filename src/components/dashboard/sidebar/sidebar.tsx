@@ -77,12 +77,16 @@ const Sidebar: FunctionComponent<Props> = ({
             aria-label="Dokiments home"
             href="/"
           >
+            {/* The wordmark is 16880×2544 (≈6.6:1). Its real ratio must be
+                given here: a square 120×120 box reserved a 120px-tall gap until
+                the SVG loaded, pushing the nav down (layout shift on reload). */}
             <Image
-              className={cn("mb-1")}
+              alt="Dokiments logo"
+              className="mb-1 h-[18px] w-[120px]"
+              height={18}
+              priority
               src={"/images/svg/logo-white.svg"}
               width={120}
-              height={120}
-              alt="Dokiments logo"
             />
           </Link>
         </div>

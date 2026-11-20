@@ -1,8 +1,3 @@
-const shortDateFormatter = new Intl.DateTimeFormat("en-GB", {
-  day: "numeric",
-  month: "short",
-});
-
 const fullDateFormatter = new Intl.DateTimeFormat("en-GB", {
   day: "numeric",
   month: "short",
@@ -17,36 +12,27 @@ const dateTimeFormatter = new Intl.DateTimeFormat("en-GB", {
   weekday: "short",
 });
 
-const DAY_MS = 24 * 60 * 60 * 1000;
+const numericDateFormatter = new Intl.DateTimeFormat("en-GB", {
+  day: "2-digit",
+  month: "2-digit",
+  year: "2-digit",
+});
 
-const startOfDay = (time: number) => {
-  const date = new Date(time);
-  date.setHours(0, 0, 0, 0);
-  return date.getTime();
-};
-
-/**
- * A creation date as people say it: "Today", "Yesterday", "3 days ago" within a
- * week, then "18 Jun" this year or "18 Jun 2025" before that. Used on the
- * company cards, where recency matters more than the exact date.
- *
- * @param time - Epoch ms.
- * @param now - Epoch ms to measure from; defaults to the current time.
- */
-export const formatRelativeDate = (time: number, now = Date.now()) => {
-  const days = Math.round((startOfDay(now) - startOfDay(time)) / DAY_MS);
-
-  if (days <= 0) return "Today";
-  if (days === 1) return "Yesterday";
-  if (days < 7) return `${days} days ago`;
-
-  return new Date(time).getFullYear() === new Date(now).getFullYear()
-    ? shortDateFormatter.format(time)
-    : fullDateFormatter.format(time);
-};
+const timeFormatter = new Intl.DateTimeFormat("en-GB", {
+  hour: "2-digit",
+  minute: "2-digit",
+});
 
 /** "18 Jun 2026": a full, unambiguous date. */
 export const formatFullDate = (time: number) => fullDateFormatter.format(time);
 
 /** "Thu 18 Jun, 09:30": the exact moment, for the history timeline. */
 export const formatDateTime = (time: number) => dateTimeFormatter.format(time);
+
+/** "18/06/26" (dd/mm/yy): compact and exact, for list columns. */
+export const formatNumericDate = (time: number) =>
+  numericDateFormatter.format(time);
+
+/** "18/06/26, 09:30": {@link formatNumericDate} plus the time of day. */
+export const formatNumericDateTime = (time: number) =>
+  `${numericDateFormatter.format(time)}, ${timeFormatter.format(time)}`;

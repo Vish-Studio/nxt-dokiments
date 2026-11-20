@@ -24,6 +24,7 @@ import {
   groupEntriesByCompany,
 } from "@/lib/documents/company-groups";
 import { companyNewDocumentHref } from "@/lib/documents/company-page-href";
+import { getDocumentDetails } from "@/lib/documents/document-details";
 import { documentSharingEnabled } from "@/lib/sharing/feature-flag";
 import type { Client } from "@/types/client";
 import type { SharedDocument } from "@/types/sharing";
@@ -173,6 +174,11 @@ export const CompanyDocumentsView = ({
       </div>
 
       <TemplatePreviewDialog
+        details={
+          previewDocument
+            ? getDocumentDetails(previewDocument, sharedByMe)
+            : undefined
+        }
         documentName={
           previewDocument?.values.title?.trim() || previewDocument?.name
         }

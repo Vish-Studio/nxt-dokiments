@@ -3,6 +3,8 @@ import type { Client } from "@/types/client";
 import type { ShareRecipientStatus, SharedDocument } from "@/types/sharing";
 import type { DocumentType, UserDocument } from "@/types/template";
 
+import { getDocumentAmount } from "./document-amount";
+
 /** Group key for created documents that name no client yet. Always sorted last. */
 export const NO_CLIENT_GROUP_KEY = "no-client";
 
@@ -14,6 +16,8 @@ export const NO_CLIENT_GROUP_KEY = "no-client";
  * - `received`: a document this company shared with the user (`shared` is set).
  */
 export type CompanyEntry = {
+  /** Headline amount ("1,250.00", "Rs 10,000"), empty when there is none. */
+  amount: string;
   createdAt: number;
   documentType?: DocumentType;
   /** Unique across both sources: `doc:<id>` or `shared:<id>`. */
@@ -101,6 +105,7 @@ export const buildCompanyEntries = (
     ...documents.map((document): CompanyEntry => {
       const share = shareBySource.get(document.id);
       return {
+        amount: getDocumentAmount(document.values),
         createdAt: document.createdAt,
         document,
         documentType: document.templateSnapshot?.documentType,
@@ -112,6 +117,7 @@ export const buildCompanyEntries = (
     }),
     ...sharedWithMe.map(
       (shared): CompanyEntry => ({
+        amount: getDocumentAmount(shared.values),
         createdAt: shared.createdAt,
         documentType: shared.templateSnapshot?.documentType,
         id: `shared:${shared.id}`,
@@ -267,25 +273,29 @@ export const countEntriesByType = (entries: readonly CompanyEntry[]) => {
     .sort((first, second) => second.count - first.count);
 };
 
+/** Where a document stands, from the user's side. */
+export type EntryStatus = "awaiting" | "not-shared" | "received" | "signed";
+
+export const entryStatusLabels: Record<EntryStatus, string> = {
+  awaiting: "Awaiting signature",
+  "not-shared": "Not shared",
+  received: "Received",
+  signed: "Signed",
+};
+
 /**
- * Signature progress with one company: `signed` counts documents you sent that
- * came back signed plus signed documents it shared with you; `awaiting` counts
- * documents you sent that are not signed yet (sent or viewed).
+ * The status shown on a document row: documents you sent are "signed" once
+ * signed back and "awaiting" while sent or viewed (revoked or never sent is
+ * "not-shared"); documents shared with you are "signed" once locked, else
+ * "received".
  */
-export const countSignatureStatus = (entries: readonly CompanyEntry[]) =>
-  entries.reduce(
-    (counts, entry) => {
-      if (entry.source === "received") {
-        if (entry.shared?.locked) counts.signed += 1;
-      } else if (entry.shareStatus === "signed") {
-        counts.signed += 1;
-      } else if (
-        entry.shareStatus === "pending" ||
-        entry.shareStatus === "viewed"
-      ) {
-        counts.awaiting += 1;
-      }
-      return counts;
-    },
-    { awaiting: 0, signed: 0 },
-  );
+export const getEntryStatus = (entry: CompanyEntry): EntryStatus => {
+  if (entry.source === "received") {
+    return entry.shared?.locked ? "signed" : "received";
+  }
+  if (entry.shareStatus === "signed") return "signed";
+  if (entry.shareStatus === "pending" || entry.shareStatus === "viewed") {
+    return "awaiting";
+  }
+  return "not-shared";
+};
