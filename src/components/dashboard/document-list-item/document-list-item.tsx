@@ -1,19 +1,14 @@
 import {
-  ArrowSquareOutIcon,
-  CopyIcon,
   DotsThreeVerticalIcon,
   DownloadSimpleIcon,
   FileTextIcon,
-  PencilSimpleIcon,
-  PrinterIcon,
-  ShareNetworkIcon,
 } from "@phosphor-icons/react";
 
 import { Badge } from "@/components/commons/badge/badge";
-import { Button } from "@/components/commons/button/button";
 import { ButtonIcon } from "@/components/commons/button-icon/button-icon";
 import { Dropdown } from "@/components/commons/dropdown/dropdown";
 import { DashboardListRow } from "@/components/dashboard/dashboard-list-row/dashboard-list-row";
+import { DocumentActionItems } from "@/components/dashboard/document-action-items/document-action-items";
 import { EntryStatusPill } from "@/components/dashboard/entry-status-pill/entry-status-pill";
 import {
   type EntryStatus,
@@ -25,7 +20,6 @@ import {
   formatNumericDate,
 } from "@/lib/documents/format-document-date";
 import { iconSize } from "@/lib/icons";
-import { cn } from "@/lib/utils";
 import { documentIcons } from "@/lib/market-place/document-icons";
 import { getDocumentTypeLabel } from "@/lib/market-place/document-labels";
 import type { UserDocument } from "@/types/template";
@@ -44,6 +38,11 @@ export interface DocumentListItemProps {
   onShare?: (document: UserDocument) => void;
   /** Adds a "View shared copy" action. Pass it only for a document that has been shared. */
   onViewShared?: (document: UserDocument) => void;
+  /**
+   * Adds a red "Delete" action at the end of the row menu. The caller confirms
+   * before deleting; the row never deletes on its own.
+   */
+  onDelete?: (document: UserDocument) => void;
   /** Where the document stands (from `getEntryStatus`). Defaults to "Not shared". */
   status?: EntryStatus;
 }
@@ -73,6 +72,7 @@ export const DocumentListItem = ({
   onDuplicate,
   onShare,
   onViewShared,
+  onDelete,
   status = "not-shared",
 }: DocumentListItemProps) => {
   const snapshot = document.templateSnapshot;
@@ -87,12 +87,6 @@ export const DocumentListItem = ({
   const amount = getDocumentAmount(document.values);
   const createdDate = new Date(document.createdAt);
   const date = formatNumericDate(document.createdAt);
-  // Legacy documents without a snapshot can't open in the editor, so a copy would be a dead end.
-  const canDuplicate = Boolean(onDuplicate && snapshot);
-  const canShare = Boolean(onShare);
-  // Phones always have a menu: Edit and Download PDF live there instead of
-  // as row buttons. Desktop shows it only when there is something extra.
-  const hasDesktopMenu = canShare || canDuplicate;
 
   return (
     <DashboardListRow
@@ -152,17 +146,17 @@ export const DocumentListItem = ({
         </time>
       </div>
 
-      <div className="relative z-20 flex items-center justify-end gap-2 focus-within:z-30 max-sm:col-start-2 max-sm:row-start-1 max-sm:-mr-2 sm:col-span-2 sm:justify-self-end">
-        {/* Phones: only the ⋮ menu, top right (Edit and Download PDF are in
-            it). focus-within lifts this row above the rows below it while
-            its menu is open. */}
+      {/* Desktop: a Download PDF icon and the ⋮ menu. Phones: only the ⋮,
+          top right, opening a bottom sheet. Every action is in the menu.
+          focus-within lifts this row above the next while its menu is open. */}
+      <div className="relative z-20 flex items-center justify-end gap-1 focus-within:z-30 max-sm:col-start-2 max-sm:row-start-1 max-sm:-mr-2 sm:col-span-2 sm:justify-self-end">
         <ButtonIcon
-          aria-label={`Print ${documentTitle}`}
+          aria-label={`Download PDF of ${documentTitle}`}
           className="max-sm:hidden"
           icon={
-            <PrinterIcon
+            <DownloadSimpleIcon
               aria-hidden
-              size={17}
+              size={iconSize.control}
               weight="bold"
             />
           }
@@ -171,27 +165,7 @@ export const DocumentListItem = ({
           size="sm"
           variant="outline"
         />
-        <ButtonIcon
-          aria-label={`Edit ${documentTitle}`}
-          className="max-sm:hidden"
-          icon={
-            <PencilSimpleIcon
-              aria-hidden
-              size={18}
-              weight="bold"
-            />
-          }
-          onClick={() => onEdit(document)}
-          shape="square"
-          size="sm"
-          variant="primary"
-        />
-        <div
-          className={cn(
-            "flex size-10 shrink-0 items-center justify-center",
-            !hasDesktopMenu && "sm:hidden",
-          )}
-        >
+        <div className="flex size-10 shrink-0 items-center justify-center">
           <Dropdown
             ariaLabel={`More actions for ${documentTitle}`}
             buttonClassName="size-8 min-h-8 text-nox-noir hover:bg-base-200"
@@ -204,97 +178,19 @@ export const DocumentListItem = ({
               />
             }
             iconTriggerShape="square"
-            menuClassName="w-48"
+            menuClassName="w-52"
             sheetIcon={TypeIcon}
             sheetTitle={documentTitle}
           >
-            {/* Row buttons on desktop; menu items on phones. */}
-            <Button
-              className="w-full justify-start gap-2 px-3 whitespace-nowrap sm:hidden"
-              icon={
-                <PencilSimpleIcon
-                  aria-hidden
-                  size={iconSize.control}
-                  weight="bold"
-                />
-              }
-              iconPosition="left"
-              onClick={() => onEdit(document)}
-              size="sm"
-              variant="ghost"
-            >
-              Edit
-            </Button>
-            <Button
-              className="w-full justify-start gap-2 px-3 whitespace-nowrap sm:hidden"
-              icon={
-                <DownloadSimpleIcon
-                  aria-hidden
-                  size={iconSize.control}
-                  weight="bold"
-                />
-              }
-              iconPosition="left"
-              onClick={() => onPrint(document)}
-              size="sm"
-              variant="ghost"
-            >
-              Download PDF
-            </Button>
-            {canDuplicate ? (
-              <Button
-                className="w-full justify-start gap-2 px-3 whitespace-nowrap"
-                icon={
-                  <CopyIcon
-                    aria-hidden
-                    size={16}
-                    weight="bold"
-                  />
-                }
-                iconPosition="left"
-                onClick={() => onDuplicate?.(document)}
-                size="sm"
-                variant="ghost"
-              >
-                Duplicate
-              </Button>
-            ) : null}
-            {canShare ? (
-              <Button
-                className="w-full justify-start gap-2 px-3 whitespace-nowrap"
-                icon={
-                  <ShareNetworkIcon
-                    aria-hidden
-                    size={16}
-                    weight="bold"
-                  />
-                }
-                iconPosition="left"
-                onClick={() => onShare?.(document)}
-                size="sm"
-                variant="ghost"
-              >
-                Share
-              </Button>
-            ) : null}
-            {canShare && onViewShared ? (
-              <Button
-                className="w-full justify-start gap-2 px-3 whitespace-nowrap"
-                icon={
-                  <ArrowSquareOutIcon
-                    aria-hidden
-                    size={16}
-                    weight="bold"
-                  />
-                }
-                iconPosition="left"
-                onClick={() => onViewShared(document)}
-                size="sm"
-                variant="ghost"
-              >
-                View shared copy
-              </Button>
-            ) : null}
+            <DocumentActionItems
+              document={document}
+              onDelete={onDelete}
+              onDownload={onPrint}
+              onDuplicate={onDuplicate}
+              onEdit={onEdit}
+              onShare={onShare}
+              onViewShared={onViewShared}
+            />
           </Dropdown>
         </div>
       </div>

@@ -19,7 +19,9 @@ const meta = {
   ],
   args: {
     groups: companyStoryGroups,
+    onDelete: fn(),
     onDownload: fn(),
+    onDuplicate: fn(),
     onEdit: fn(),
     onOpenEntry: fn(),
     onShare: fn(),
@@ -52,7 +54,7 @@ export const Default: Story = {
     // Amounts show at a glance: typed currency kept, plain numbers formatted.
     await expect(within(northline).getByText("1,250.00")).toBeVisible();
 
-    // The vertical menu: Edit, Download PDF and Share for own documents.
+    // The vertical menu has the same actions as the My documents rows.
     await userEvent.click(
       within(northline).getByRole("button", {
         name: "More actions for June retainer invoice",
@@ -70,6 +72,20 @@ export const Default: Story = {
     );
     await userEvent.click(await body.findByRole("button", { name: "Share" }));
     await expect(args.onShare).toHaveBeenCalledWith(
+      expect.objectContaining({ id: "nl-1" }),
+    );
+    await userEvent.click(
+      within(northline).getByRole("button", {
+        name: "More actions for June retainer invoice",
+      }),
+    );
+    for (const action of ["Edit", "Download PDF", "Duplicate", "Share"]) {
+      await expect(
+        await body.findByRole("button", { name: action }),
+      ).toBeInTheDocument();
+    }
+    await userEvent.click(body.getByRole("button", { name: "Delete" }));
+    await expect(args.onDelete).toHaveBeenCalledWith(
       expect.objectContaining({ id: "nl-1" }),
     );
 

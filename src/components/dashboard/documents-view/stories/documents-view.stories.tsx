@@ -195,6 +195,26 @@ const meta = {
 export default meta;
 type Story = StoryObj<typeof meta>;
 
+/**
+ * Rows keep their actions in the ⋮ menu (a popover on desktop, a sheet on
+ * phones): opens the menu for `title` and clicks `action`.
+ */
+const openRowAction = async (
+  canvasElement: HTMLElement,
+  title: string,
+  action: string,
+) => {
+  const canvas = within(canvasElement);
+  await userEvent.click(
+    await canvas.findByRole("button", { name: `More actions for ${title}` }),
+  );
+  await userEvent.click(
+    await within(canvasElement.ownerDocument.body).findByRole("button", {
+      name: action,
+    }),
+  );
+};
+
 export const Empty: Story = {
   decorators: [
     (Story) => {
@@ -290,11 +310,7 @@ export const PrintableDocuments: Story = {
   play: async ({ canvasElement }) => {
     await showAllDocuments(canvasElement);
     const canvas = within(canvasElement);
-    await userEvent.click(
-      await canvas.findByRole("button", {
-        name: "Print Lumina Events Invoice",
-      }),
-    );
+    await openRowAction(canvasElement, "Lumina Events Invoice", "Download PDF");
     await expect(
       canvas.getByRole("dialog", { name: "Prepare Lumina Events Invoice" }),
     ).toBeVisible();
@@ -313,9 +329,7 @@ export const EditDocument: Story = {
   play: async ({ canvasElement }) => {
     await showAllDocuments(canvasElement);
     const canvas = within(canvasElement);
-    await userEvent.click(
-      await canvas.findByRole("button", { name: "Edit Lumina Events Invoice" }),
-    );
+    await openRowAction(canvasElement, "Lumina Events Invoice", "Edit");
     await expect(
       canvas.getByRole("heading", { name: "Edit document" }),
     ).toBeVisible();
@@ -410,9 +424,7 @@ export const DeleteDocument: Story = {
   play: async ({ canvasElement }) => {
     await showAllDocuments(canvasElement);
     const canvas = within(canvasElement);
-    await userEvent.click(
-      await canvas.findByRole("button", { name: "Edit Lumina Events Invoice" }),
-    );
+    await openRowAction(canvasElement, "Lumina Events Invoice", "Edit");
     await userEvent.click(canvas.getByRole("button", { name: "Delete" }));
     await expect(
       canvas.getByRole("dialog", { name: "Delete document?" }),
@@ -432,9 +444,7 @@ export const SavedConfirmation: Story = {
   play: async ({ canvasElement }) => {
     await showAllDocuments(canvasElement);
     const canvas = within(canvasElement);
-    await userEvent.click(
-      await canvas.findByRole("button", { name: "Edit Lumina Events Invoice" }),
-    );
+    await openRowAction(canvasElement, "Lumina Events Invoice", "Edit");
     await userEvent.click(canvas.getByRole("button", { name: "Save changes" }));
     // The sample invoice has empty fields, so save goes through the warning.
     await userEvent.click(
@@ -464,9 +474,7 @@ export const EmptyFieldsWarning: Story = {
     await showAllDocuments(canvasElement);
     const canvas = within(canvasElement);
     const page = within(canvasElement.ownerDocument.body);
-    await userEvent.click(
-      await canvas.findByRole("button", { name: "Edit Lumina Events Invoice" }),
-    );
+    await openRowAction(canvasElement, "Lumina Events Invoice", "Edit");
     await expect(
       canvasElement.querySelector(".template-document-missing"),
     ).toBeNull();
@@ -520,9 +528,7 @@ export const SavedNextStepDownload: Story = {
   play: async ({ canvasElement }) => {
     await showAllDocuments(canvasElement);
     const canvas = within(canvasElement);
-    await userEvent.click(
-      await canvas.findByRole("button", { name: "Edit Lumina Events Invoice" }),
-    );
+    await openRowAction(canvasElement, "Lumina Events Invoice", "Edit");
     await userEvent.click(canvas.getByRole("button", { name: "Save changes" }));
     await userEvent.click(
       await canvas.findByRole("button", { name: "Save anyway" }),
@@ -560,9 +566,7 @@ export const DeleteConfirmation: Story = {
   play: async ({ canvasElement }) => {
     await showAllDocuments(canvasElement);
     const canvas = within(canvasElement);
-    await userEvent.click(
-      await canvas.findByRole("button", { name: "Edit Lumina Events Invoice" }),
-    );
+    await openRowAction(canvasElement, "Lumina Events Invoice", "Edit");
     await userEvent.click(canvas.getByRole("button", { name: "Delete" }));
     const dialog = canvas.getByRole("dialog", { name: "Delete document?" });
     await expect(dialog).toBeVisible();
@@ -578,9 +582,7 @@ export const EditorReady: Story = {
   play: async ({ canvasElement }) => {
     await showAllDocuments(canvasElement);
     const canvas = within(canvasElement);
-    await userEvent.click(
-      await canvas.findByRole("button", { name: "Edit Lumina Events Invoice" }),
-    );
+    await openRowAction(canvasElement, "Lumina Events Invoice", "Edit");
     await expect(
       canvas.getByRole("heading", { name: "Edit document" }),
     ).toBeVisible();
@@ -593,17 +595,7 @@ export const EditorReady: Story = {
  */
 const openEditorOnPhone = async (canvasElement: HTMLElement) => {
   await showAllDocuments(canvasElement);
-  const canvas = within(canvasElement);
-  const page = within(canvasElement.ownerDocument.body);
-  await userEvent.click(
-    await canvas.findByRole("button", {
-      name: "More actions for Lumina Events Invoice",
-    }),
-  );
-  const sheet = await page.findByRole("dialog", {
-    name: "Lumina Events Invoice",
-  });
-  await userEvent.click(within(sheet).getByRole("button", { name: "Edit" }));
+  await openRowAction(canvasElement, "Lumina Events Invoice", "Edit");
 };
 
 export const MobileEditorReady: Story = {
@@ -999,5 +991,22 @@ export const SharedTabKeepsToolbar: Story = {
     })) {
       await expect(box).toBeDisabled();
     }
+  },
+};
+
+/** Delete from a row's ⋮ menu asks first; Cancel keeps the document. */
+export const DeleteFromRowMenu: Story = {
+  decorators: WithDocuments.decorators,
+  play: async ({ canvasElement }) => {
+    await showAllDocuments(canvasElement);
+    await openRowAction(canvasElement, "Lumina Events Invoice", "Delete");
+    const page = within(canvasElement.ownerDocument.body);
+    const dialog = await page.findByRole("dialog", { name: "Delete document?" });
+    await expect(dialog).toHaveTextContent('Delete "Lumina Events Invoice"?');
+    await userEvent.click(within(dialog).getByRole("button", { name: "Cancel" }));
+    await expect(page.queryByRole("dialog", { name: "Delete document?" })).toBeNull();
+    await expect(
+      within(canvasElement).getByText("Lumina Events Invoice"),
+    ).toBeVisible();
   },
 };
