@@ -1,6 +1,6 @@
 "use client";
 
-import { CheckIcon } from "@phosphor-icons/react";
+import { CheckIcon, type Icon } from "@phosphor-icons/react";
 import type { KeyboardEvent, ReactNode } from "react";
 import { useEffect, useId, useRef, useState } from "react";
 
@@ -40,6 +40,8 @@ export interface DropdownProps {
   iconTriggerShape?: ButtonIconShape;
   groups?: DropdownGroup[];
   closeOnSelect?: boolean;
+  /** Disables the trigger, so the menu can't open. Keeps the control in place (no layout shift). */
+  disabled?: boolean;
   align?: "start" | "end";
   buttonClassName?: string;
   className?: string;
@@ -52,11 +54,19 @@ export interface DropdownProps {
    * popover. Leave it unset for pickers that belong to a form field.
    */
   sheetTitle?: string;
+  /** Icon shown before `sheetTitle` in the phone sheet ("⧩ Filters"). */
+  sheetIcon?: Icon;
+  /**
+   * An extra button shown before "Done" in the phone sheet of a multi-select
+   * menu (`closeOnSelect={false}`), such as "Clear filters". Disabled rather
+   * than hidden when there is nothing to do, so the footer doesn't jump.
+   */
+  sheetSecondaryAction?: { disabled?: boolean; label: string; onClick: () => void };
 }
 
 export const Dropdown = ({
   align = "end", ariaLabel, buttonClassName, children, className,
-  closeOnSelect = true, groups, iconTrigger, iconTriggerShape = "circle", menuClassName, sheetTitle, trigger,
+  closeOnSelect = true, disabled = false, groups, iconTrigger, iconTriggerShape = "circle", menuClassName, sheetIcon, sheetSecondaryAction, sheetTitle, trigger,
 }: DropdownProps) => {
   const isPhone = useMediaQuery(phoneMediaQuery);
   const isSheet = Boolean(sheetTitle) && isPhone;
@@ -186,6 +196,7 @@ export const Dropdown = ({
           aria-haspopup={groups || children ? "menu" : undefined}
           aria-label={ariaLabel}
           className={buttonClassName}
+          disabled={disabled}
           icon={iconTrigger}
           onClick={toggleMenu}
           onKeyDown={openWithKeyboard}
@@ -201,6 +212,7 @@ export const Dropdown = ({
           aria-haspopup={groups || children ? "menu" : undefined}
           aria-label={ariaLabel}
           className={cn(dropdownControlClassName, buttonClassName)}
+          disabled={disabled}
           onClick={toggleMenu}
           onKeyDown={openWithKeyboard}
           ref={triggerRef}
@@ -215,12 +227,28 @@ export const Dropdown = ({
         <Modal
           actions={
             isSheet && !closeOnSelect ? (
-              <Button onClick={() => setIsOpen(false)} size="sm">Done</Button>
+              sheetSecondaryAction ? (
+                <div className="grid w-full grid-cols-2 gap-2">
+                  <Button
+                    className="w-full"
+                    disabled={sheetSecondaryAction.disabled}
+                    onClick={sheetSecondaryAction.onClick}
+                    size="sm"
+                    variant="outline"
+                  >
+                    {sheetSecondaryAction.label}
+                  </Button>
+                  <Button className="w-full" onClick={() => setIsOpen(false)} size="sm">Done</Button>
+                </div>
+              ) : (
+                <Button onClick={() => setIsOpen(false)} size="sm">Done</Button>
+              )
             ) : undefined
           }
           onClose={() => setIsOpen(false)}
           open={isOpen && isSheet}
           title={sheetTitle}
+          titleIcon={sheetIcon}
         >
           {menu}
         </Modal>

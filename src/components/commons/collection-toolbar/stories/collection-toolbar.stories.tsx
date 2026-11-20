@@ -89,3 +89,64 @@ export const FiltersOnPhone: Story = {
     await expect(page.queryByRole("dialog", { name: "Filters" })).toBeNull();
   },
 };
+
+const chipFilters = [
+  { id: "status", label: "Status", value: "signed", defaultValue: "all", options: [{ label: "Any status", value: "all" }, { label: "Signed", value: "signed" }], onChange: fn() },
+  { id: "type", label: "Type", value: "all", defaultValue: "all", options: [{ label: "Any type", value: "all" }, { label: "Invoice", value: "invoice" }], onChange: fn() },
+];
+
+/**
+ * Chips on desktop; on phones they fold into one filter icon (with a dot when
+ * a filter is set) between search and sort, so the row never wraps.
+ */
+export const ChipsCollapseOnPhone: Story = {
+  args: { filterStyle: "chips", filters: chipFilters },
+  globals: { viewport: { value: "mobile1", isRotated: false } },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await expect(
+      canvas.getByRole("button", { hidden: true, name: "Filters (1 active)" }),
+    ).toBeInTheDocument();
+    await expect(
+      canvas.getAllByRole("button", { hidden: true, name: "Status: Signed" }),
+    ).toHaveLength(1);
+  },
+};
+
+/** A tab the toolbar doesn't apply to: every control stays, disabled. */
+export const Disabled: Story = {
+  args: { canReset: true, disabled: true, filterStyle: "chips", filters: chipFilters, search: "nda" },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await expect(canvas.getByRole("searchbox", { name: "Search documents" })).toBeDisabled();
+    await expect(canvas.getByRole("button", { name: "Sort" })).toBeDisabled();
+    await expect(canvas.getByRole("button", { name: "Status: Signed" })).toBeDisabled();
+    await expect(canvas.queryByRole("button", { name: "Clear search" })).toBeNull();
+    await expect(canvas.queryAllByRole("button", { name: "Reset filters" })).toHaveLength(0);
+  },
+};
+
+/** Phones: "Clear filters" sits before "Done" in the Filters sheet, not in the header. */
+export const ClearFiltersInPhoneSheet: Story = {
+  args: { canReset: true, filterStyle: "chips", filters: chipFilters },
+  beforeEach: mockPhoneViewport,
+  globals: { viewport: { value: "mobile1", isRotated: false } },
+  play: async ({ args, canvasElement }) => {
+    const page = within(canvasElement.ownerDocument.body);
+    await userEvent.click(
+      page.getByRole("button", { hidden: true, name: "Filters (1 active)" }),
+    );
+    const sheet = await page.findByRole("dialog", { name: "Filters" });
+    // The sheet title leads with the filter icon; the name stays "Filters".
+    const heading = within(sheet).getByRole("heading", { name: "Filters" });
+    await expect(heading.querySelector("svg")).not.toBeNull();
+    const clear = within(sheet).getByRole("button", { name: "Clear filters" });
+    const done = within(sheet).getByRole("button", { name: "Done" });
+    // Clear comes first, Done last.
+    await expect(
+      clear.compareDocumentPosition(done) & Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
+    await userEvent.click(clear);
+    await expect(args.onReset).toHaveBeenCalledOnce();
+  },
+};

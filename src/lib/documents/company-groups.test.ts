@@ -7,7 +7,7 @@ import type { UserDocument } from "@/types/template";
 import {
   buildCompanyEntries,
   countEntriesByType,
-  countSignatureStatus,
+  getEntryStatus,
   getDocumentCompanyName,
   getSharedCompanyName,
   groupEntriesByCompany,
@@ -141,28 +141,41 @@ describe("sorting, months and types", () => {
   });
 });
 
-describe("countSignatureStatus", () => {
-  it("counts signed both ways and sent-but-unsigned as awaiting", () => {
-    const [a, b, c, d] = buildCompanyEntries([
+describe("getEntryStatus", () => {
+  it("reads signed, awaiting, not shared and received", () => {
+    const [a, b, c, d, e] = buildCompanyEntries([
       doc("a", "2026-06-01"),
       doc("b", "2026-06-02"),
       doc("c", "2026-06-03"),
       doc("d", "2026-06-04"),
+      doc("e", "2026-06-05"),
     ]);
-    const entries = [
-      { ...a, shareStatus: "signed" as const },
-      { ...b, shareStatus: "pending" as const },
-      { ...c, shareStatus: "viewed" as const },
-      d,
-      ...buildCompanyEntries(
-        [],
-        [
-          shared("s1", "2026-06-05", { locked: true }),
-          shared("s2", "2026-06-06"),
-        ],
-      ),
-    ];
+    const [locked, open] = buildCompanyEntries(
+      [],
+      [
+        shared("s1", "2026-06-05", { locked: true }),
+        shared("s2", "2026-06-06"),
+      ],
+    );
 
-    expect(countSignatureStatus(entries)).toEqual({ awaiting: 2, signed: 2 });
+    expect(
+      [
+        { ...a, shareStatus: "signed" as const },
+        { ...b, shareStatus: "pending" as const },
+        { ...c, shareStatus: "viewed" as const },
+        { ...d, shareStatus: "revoked" as const },
+        e,
+        open,
+        locked,
+      ].map(getEntryStatus),
+    ).toEqual([
+      "signed",
+      "awaiting",
+      "awaiting",
+      "not-shared",
+      "not-shared",
+      "received",
+      "signed",
+    ]);
   });
 });

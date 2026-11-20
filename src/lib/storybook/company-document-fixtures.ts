@@ -84,11 +84,11 @@ const storyShared = (
 });
 
 export const companyStoryDocuments: UserDocument[] = [
-  storyDocument("nl-1", "classic-invoice", "2026-06-18T09:30:00", { title: "June retainer invoice", toName: "Northline Studio" }),
+  storyDocument("nl-1", "classic-invoice", "2026-06-18T09:30:00", { title: "June retainer invoice", toName: "Northline Studio", total: "1250" }),
   storyDocument("nl-2", "classic-quotation", "2026-06-02T14:10:00", { title: "Brand refresh quotation", toName: "Northline Studio" }),
   storyDocument("nl-3", "classic-contract", "2026-05-12T11:00:00", { title: "Design services contract", toName: "Maya Chen" }),
   storyDocument("nl-4", "classic-invoice", "2026-04-28T08:45:00", { title: "April retainer invoice", toName: "Northline Studio" }),
-  storyDocument("lu-1", "classic-invoice", "2026-06-10T10:00:00", { title: "Lumina Events invoice", toName: "Lumina Events" }),
+  storyDocument("lu-1", "classic-invoice", "2026-06-10T10:00:00", { title: "Lumina Events invoice", toName: "Lumina Events", total: "Rs 10,000" }),
   storyDocument("lu-2", "classic-nda", "2026-03-03T16:20:00", { partyTwo: "Lumina Events", title: "Event planning NDA" }),
   storyDocument("no-1", "classic-proposal", "2026-06-15T09:00:00", { title: "Website proposal draft" }),
 ];
