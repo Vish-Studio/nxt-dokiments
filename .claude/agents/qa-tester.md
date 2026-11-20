@@ -20,7 +20,7 @@ Run what fits the change, in this order, and record each result:
 2. Type check. If `next dev` is running, use the temp copy from `.github/copilot-instructions.md` ("CI gotchas"); otherwise `npx tsc --noEmit`.
 3. `npx vitest run --project node` (or a folder: `npx vitest run --project node src/lib/sharing`)
 4. `npm run test:rules` when `firestore.rules`, `src/lib/firebase` or sharing changed. It needs Java; if it cannot run, say so. Never claim it passed.
-5. `npx vitest run --project storybook <pattern>` for touched components (the full suite is slow; CI shards it in two).
+5. `npx vitest run --project storybook <pattern>` for touched components (the full suite is slow; CI shards it in two). CI runs with document sharing **off**, so repeat with `NEXT_PUBLIC_DOCUMENT_SHARING_ENABLED=false` before calling a change green; a story that only passes with sharing on fails the PR checks.
 6. `npm run build` only when routes, config, metadata or server/client boundaries changed. Run long commands in the background.
 
 ## Exploratory testing in the app

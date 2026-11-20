@@ -1,6 +1,5 @@
 import type { Icon } from "@phosphor-icons/react";
 import {
-  ArrowsClockwiseIcon,
   BriefcaseIcon,
   CurrencyDollarIcon,
   EnvelopeSimpleIcon,
@@ -24,7 +23,8 @@ import type { DocumentType } from "@/types/template";
  * catalog data importable outside a React/bundler context (e.g. `scripts/seed-templates.ts`).
  */
 export const documentIcons: Record<DocumentType, Icon> = {
-  "change-order": ArrowsClockwiseIcon,
+  // Same as the sidebar's My Documents icon.
+  "change-order": FileTextIcon,
   "contract-addendum": FilePlusIcon,
   "formal-business-letter": EnvelopeSimpleIcon,
   "letter-of-intent": BriefcaseIcon,

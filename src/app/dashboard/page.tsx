@@ -8,7 +8,10 @@ export const metadata: Metadata = privatePageMetadata("Dashboard");
 
 const DashboardPage = () => {
   return (
-    <AppShell activeItem="Dashboard" showBanner={false}>
+    <AppShell
+      activeItem="Dashboard"
+      title="Dashboard"
+    >
       <DashboardView />
     </AppShell>
   );
