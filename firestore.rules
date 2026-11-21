@@ -154,8 +154,9 @@ service cloud.firestore {
     // See docs/document-sharing.md for the data model.
     //
     // Who can do what:
-    //   owner      — read; create; edit and delete while unlocked. Never writes
-    //                `signatures` or `locked`, so they cannot forge a signature.
+    //   owner      — read; create; edit and delete while unlocked. Writes only their
+    //                own entry in `signatures` (their sender signature) and never
+    //                `locked`, so they cannot forge a recipient's signature.
     //   recipient  — read; record their first view; sign once, which locks the document. The signature and
     //                `locked = true` must be written together.
     //   everybody  — nothing at all once `locked` is true (no update, no delete).
@@ -201,6 +202,25 @@ service cloud.firestore {
         && signature.email == request.auth.token.email.lower();
     }
 
+    // The owner signs when sharing, so a copy may start with exactly one entry,
+    // keyed by the owner's uid. It is the only signature the owner can write: a
+    // re-share before the recipient signs may replace it, but never remove it or
+    // add another key.
+    function validOwnerSignatures(doc) {
+      return doc.signatures.size() == 0
+        || (doc.signatures.size() == 1
+            && doc.ownerId in doc.signatures
+            && validSignature(doc.signatures[doc.ownerId]));
+    }
+
+    function ownerSignatureUnchangedOrReplaced(before, after) {
+      return after.signatures.diff(before.signatures).affectedKeys()
+          .hasOnly([before.ownerId])
+        && (before.ownerId in after.signatures
+            ? validSignature(after.signatures[before.ownerId])
+            : !(before.ownerId in before.signatures));
+    }
+
     match /sharedDocuments/{docId} {
       allow read: if isSharedOwner(resource.data) || isSharedRecipient(resource.data);
 
@@ -213,7 +233,7 @@ service cloud.firestore {
           'sourceDocumentId', 'templateId', 'updatedAt', 'values'
         ])
         && request.resource.data.locked == false
-        && request.resource.data.signatures.size() == 0
+        && validOwnerSignatures(request.resource.data)
         && request.resource.data.name is string
         && request.resource.data.name.size() > 0
         && request.resource.data.name.size() <= 500
@@ -229,7 +249,7 @@ service cloud.firestore {
         && request.resource.data.keys().hasOnly(sharedDocumentKeys())
         && request.resource.data.ownerId == resource.data.ownerId
         && request.resource.data.locked == false
-        && request.resource.data.signatures == resource.data.signatures
+        && ownerSignatureUnchangedOrReplaced(resource.data, request.resource.data)
         // The owner can clear a view (a re-share starts afresh) but never add or alter one.
         && request.resource.data.get('views', {}).keys()
           .hasOnly(resource.data.get('views', {}).keys())
