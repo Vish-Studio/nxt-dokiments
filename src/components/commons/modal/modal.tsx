@@ -1,5 +1,6 @@
 "use client";
 
+import { useMediaQuery } from "@altalyst/hookify";
 import { XIcon } from "@phosphor-icons/react";
 import type { Icon } from "@phosphor-icons/react";
 import { useEffect, useId, useRef } from "react";
@@ -7,7 +8,7 @@ import type { KeyboardEvent, ReactNode } from "react";
 import { createPortal } from "react-dom";
 
 import { ButtonIcon } from "@/components/commons/button-icon/button-icon";
-import { phoneMediaQuery, useMediaQuery } from "@/hooks/use-media-query";
+import { phoneMediaQuery } from "@/hooks/use-media-query";
 import { iconSize } from "@/lib/icons";
 import { cn } from "@/lib/utils";
 

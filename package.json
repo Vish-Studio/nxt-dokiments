@@ -15,6 +15,7 @@
     "pre-pr-check": "npm run lint && npm run build && npx vitest run"
   },
   "dependencies": {
+    "@altalyst/hookify": "0.13.0",
     "@phosphor-icons/react": "^2.1.10",
     "@react-email/components": "^1.0.12",
     "@react-email/render": "^2.2.0",
