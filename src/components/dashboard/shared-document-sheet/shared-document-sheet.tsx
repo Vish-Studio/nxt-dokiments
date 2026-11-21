@@ -23,6 +23,11 @@ import {
   shareTimeline,
 } from "@/lib/sharing/share-activity";
 import {
+  recipientSignatureOf,
+  senderSignatureOf,
+  withSenderSignature,
+} from "@/lib/sharing/signatures";
+import {
   isViewOnlyShare,
   RECIPIENT_SIGNATURE_KEY,
 } from "@/lib/sharing/signable";
@@ -71,7 +76,11 @@ export const SharedDocumentSheet = ({
   );
 
   const title = document.values.title?.trim() || document.name;
-  const signature = Object.values(document.signatures)[0];
+  const signature = recipientSignatureOf(document);
+  const values = withSenderSignature(
+    document.values,
+    senderSignatureOf(document),
+  );
   const canExportSigned = document.locked && Boolean(signature) && template;
   const headerRecipient = currentRecipient(document);
   const isViewOnly = isViewOnlyShare(document);
@@ -196,7 +205,7 @@ export const SharedDocumentSheet = ({
             className="rounded-box border border-steel-mist"
             fieldSlots={fieldSlots}
             template={template}
-            values={document.values}
+            values={values}
           />
         ) : (
           <p className="rounded-box border border-dashed border-steel-mist bg-base-100 p-6 text-center text-sm text-nox-noir/60">
@@ -249,7 +258,7 @@ export const SharedDocumentSheet = ({
             onClose={() => setIsExporting(false)}
             open={isExporting}
             template={template}
-            values={document.values}
+            values={values}
           />
         ) : null}
       </div>

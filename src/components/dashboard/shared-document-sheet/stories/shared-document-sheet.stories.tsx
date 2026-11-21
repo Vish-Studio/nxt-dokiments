@@ -65,6 +65,26 @@ const signedDocument: SharedDocument = {
   },
 };
 
+const senderSignedDocument: SharedDocument = {
+  ...baseDocument,
+  signatures: {
+    "owner-1": {
+      email: "alex@example.com",
+      signedAt: new Date("2026-10-20T09:30:00Z").getTime(),
+      type: "typed",
+      value: "Alex Morgan",
+    },
+  },
+  templateSnapshot: baseDocument.templateSnapshot && {
+    ...baseDocument.templateSnapshot,
+    fields: [
+      ...baseDocument.templateSnapshot.fields,
+      { key: "senderSignature", label: "Sender signature", type: "text" },
+    ],
+  },
+  values: { ...baseDocument.values, senderSignature: "An editable draft" },
+};
+
 /** A layout with no recipient signature, so it was shared view-only. */
 const viewOnlyDocument: SharedDocument = {
   ...baseDocument,
@@ -205,5 +225,39 @@ export const RecipientViewOnly: Story = {
     await expect(
       canvas.queryByRole("button", { name: "Sign document" }),
     ).not.toBeInTheDocument();
+  },
+};
+
+/** The sender's signature comes from the record, and does not mark the copy signed. */
+export const SenderSignedRecipientPending: Story = {
+  args: { document: senderSignedDocument },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await expect(canvas.getByText("Alex Morgan")).toBeVisible();
+    await expect(canvas.queryByText("An editable draft")).toBeNull();
+    await expect(canvas.queryByText(/signed and locked/i)).toBeNull();
+    await expect(
+      canvas.getByRole("button", { name: "Sign document" }),
+    ).toBeDisabled();
+  },
+};
+
+/** Once the recipient signs, both signatures show. */
+export const BothSigned: Story = {
+  args: {
+    document: {
+      ...senderSignedDocument,
+      locked: true,
+      signatures: {
+        ...senderSignedDocument.signatures,
+        ...signedDocument.signatures,
+      },
+    },
+    viewer: "owner",
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await expect(canvas.getByText("Alex Morgan")).toBeVisible();
+    await expect(canvas.getByText("Sam Rivera")).toBeVisible();
   },
 };
