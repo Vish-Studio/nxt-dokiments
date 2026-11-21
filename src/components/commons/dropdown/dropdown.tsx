@@ -1,5 +1,6 @@
 "use client";
 
+import { useMediaQuery } from "@altalyst/hookify";
 import { CheckIcon } from "@phosphor-icons/react";
 import type { KeyboardEvent, ReactNode } from "react";
 import { useEffect, useId, useRef, useState } from "react";
@@ -8,7 +9,7 @@ import { Modal } from "@/components/commons/modal/modal";
 import { Button } from "@/components/commons/button/button";
 import { ButtonIcon, type ButtonIconShape } from "@/components/commons/button-icon/button-icon";
 import type { SelectOption } from "@/components/commons/select/select";
-import { phoneMediaQuery, useMediaQuery } from "@/hooks/use-media-query";
+import { phoneMediaQuery } from "@/hooks/use-media-query";
 import { cn } from "@/lib/utils";
 
 /**

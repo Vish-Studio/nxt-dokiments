@@ -1,5 +1,6 @@
 "use client";
 
+import { useCooldown } from "@altalyst/hookify";
 import { useState } from "react";
 
 import { Button } from "@/components/commons/button/button";
@@ -7,7 +8,6 @@ import {
   useRefreshVerificationMutation,
   useSendVerificationMutation,
 } from "@/hooks/queries/use-auth";
-import { useCooldown } from "@/hooks/use-cooldown";
 import { VERIFICATION_RESEND_COOLDOWN_SECONDS } from "@/lib/email-verification-notice";
 import { useAuthStore } from "@/stores/auth-store";
 import { useToastStore } from "@/stores/toast-store";
