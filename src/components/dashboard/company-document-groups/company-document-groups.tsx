@@ -6,6 +6,7 @@ import {
   CaretDownIcon,
   DotsThreeVerticalIcon,
   FileTextIcon,
+  MagnifyingGlassIcon,
   PlusIcon,
   UserCircleDashedIcon,
   type Icon,
@@ -16,6 +17,7 @@ import { useId, useState } from "react";
 import { Avatar } from "@/components/commons/avatar/avatar";
 import { Button } from "@/components/commons/button/button";
 import { Dropdown } from "@/components/commons/dropdown/dropdown";
+import { EmptyState } from "@/components/commons/empty-state/empty-state";
 import {
   DocumentActionItems,
   type DocumentActionItemsProps,
@@ -52,6 +54,8 @@ export interface CompanyDocumentGroupsProps extends CompanyRowActions {
   groups: CompanyDocumentGroup[];
   /** Opens a document: preview for created ones, the shared view for received ones. */
   onOpenEntry: (entry: CompanyEntry) => void;
+  /** The filtered-empty state's "Clear filters" action. */
+  onReset?: () => void;
   /** Documents shown per company before "Show N more". Defaults to 5. */
   previewCount?: number;
 }
@@ -376,21 +380,35 @@ export const CompanyDocumentGroups = ({
   onDuplicate,
   onEdit,
   onOpenEntry,
+  onReset,
   onShare,
   onViewShared,
   previewCount = 5,
 }: CompanyDocumentGroupsProps) =>
   groups.length === 0 ? (
-    <div className="company-document-groups grid min-h-48 place-items-center rounded-box border border-dashed border-steel-mist bg-base-100 p-8 text-center">
-      <div>
-        <p className="font-title text-base font-bold text-nox-noir">
-          No documents match
-        </p>
-        <p className="mt-1 text-sm text-nox-noir/60">
-          Try another search or clear the filters.
-        </p>
-      </div>
-    </div>
+    <EmptyState
+      action={
+        onReset ? (
+          <Button
+            onClick={onReset}
+            size="sm"
+            variant="outline"
+          >
+            Clear filters
+          </Button>
+        ) : undefined
+      }
+      className="company-document-groups"
+      description="Try another search, or clear the filters to see all your documents."
+      icon={
+        <MagnifyingGlassIcon
+          aria-hidden
+          size={iconSize.feature}
+          weight="bold"
+        />
+      }
+      title="No documents match"
+    />
   ) : (
     <div className="company-document-groups grid gap-4">
       {groups.map((group) => (

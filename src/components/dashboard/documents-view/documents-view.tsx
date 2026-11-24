@@ -4,6 +4,7 @@ import {
   BuildingsIcon,
   EyeIcon,
   FileTextIcon,
+  MagnifyingGlassIcon,
   IdentificationCardIcon,
   PlusIcon,
   ShareNetworkIcon,
@@ -1424,11 +1425,47 @@ export const DocumentsView = () => {
             const sharedId = sharedCopyIds[document.id];
             if (sharedId) router.push(`/my-documents/shared/${sharedId}`);
           }}
+          onReset={resetControls}
           onOpenEntry={(entry) => {
             if (entry.document) setPreviewDocument(entry.document);
             else if (entry.shared)
               router.push(`/my-documents/shared/${entry.shared.id}`);
           }}
+        />
+      ) : visibleDocuments.length === 0 ? (
+        <EmptyState
+          action={
+            hasActiveFilters ? (
+              <Button
+                onClick={resetControls}
+                size="sm"
+                variant="outline"
+              >
+                Clear filters
+              </Button>
+            ) : undefined
+          }
+          description={
+            hasActiveFilters
+              ? "Try another search, or clear the filters to see all your documents."
+              : "CVs you create from a CV template appear here."
+          }
+          icon={
+            hasActiveFilters ? (
+              <MagnifyingGlassIcon
+                aria-hidden
+                size={iconSize.feature}
+                weight="bold"
+              />
+            ) : (
+              <IdentificationCardIcon
+                aria-hidden
+                size={iconSize.feature}
+                weight="bold"
+              />
+            )
+          }
+          title={hasActiveFilters ? "No documents match" : "No CVs yet"}
         />
       ) : (
         <DocumentList

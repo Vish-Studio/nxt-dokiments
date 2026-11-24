@@ -1,9 +1,10 @@
 import {
-  DotsThreeIcon,
+  DotsThreeVerticalIcon,
   EnvelopeSimpleIcon,
   PencilSimpleIcon,
   PhoneIcon,
   TrashIcon,
+  UsersThreeIcon,
 } from "@phosphor-icons/react";
 
 import { Avatar } from "@/components/commons/avatar/avatar";
@@ -12,6 +13,7 @@ import { ButtonIcon } from "@/components/commons/button-icon/button-icon";
 import { Dropdown } from "@/components/commons/dropdown/dropdown";
 import { isOptimisticClient } from "@/hooks/queries/use-clients";
 import { getAvatarColorClass } from "@/lib/clients/avatar-color";
+import { iconSize } from "@/lib/icons";
 import type { Client } from "@/types/client";
 
 export interface ClientListItemProps {
@@ -58,7 +60,7 @@ export const ClientListItem = ({
             aria-label={`More actions for ${client.name}`}
             className="size-8 min-h-8"
             disabled
-            icon={<DotsThreeIcon aria-hidden size={18} weight="bold" />}
+            icon={<DotsThreeVerticalIcon aria-hidden size={iconSize.tile} weight="bold" />}
             shape="square"
             size="sm"
             variant="ghost"
@@ -68,9 +70,10 @@ export const ClientListItem = ({
             ariaLabel={`More actions for ${client.name}`}
             buttonClassName="size-8 min-h-8 text-nox-noir hover:bg-base-100"
             className="shrink-0"
-            iconTrigger={<DotsThreeIcon aria-hidden size={20} weight="bold" />}
+            iconTrigger={<DotsThreeVerticalIcon aria-hidden size={iconSize.tile} weight="bold" />}
             iconTriggerShape="square"
-            menuClassName="w-36"
+            menuClassName="w-40"
+            sheetIcon={UsersThreeIcon}
             sheetTitle={client.name}
           >
             <Button

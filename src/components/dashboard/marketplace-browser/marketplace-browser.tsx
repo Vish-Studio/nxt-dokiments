@@ -1,8 +1,11 @@
 "use client";
 
+import { MagnifyingGlassIcon } from "@phosphor-icons/react";
 import { useEffect, useMemo, useState } from "react";
 
+import { Button } from "@/components/commons/button/button";
 import { ConfirmDialog } from "@/components/commons/confirm-dialog/confirm-dialog";
+import { EmptyState } from "@/components/commons/empty-state/empty-state";
 import { LoadingStatus } from "@/components/commons/loading-status/loading-status";
 import { TemplateCardSkeletonGrid } from "@/components/commons/template-card-skeleton/template-card-skeleton";
 import { TemplatePreviewDialog } from "@/components/commons/template-preview-dialog/template-preview-dialog";
@@ -21,6 +24,7 @@ import {
 } from "@/hooks/queries/use-saved-templates";
 import { useTemplatesQuery } from "@/hooks/queries/use-templates";
 import { useScrollContentToTopOnMobile } from "@/hooks/use-scroll-content-to-top-on-mobile";
+import { iconSize } from "@/lib/icons";
 import {
   canUseTier,
   getSavedTemplateLimit,
@@ -134,7 +138,6 @@ export const MarketplaceBrowser = () => {
     setSearch("");
     setDocumentType("all");
     setStyle("all");
-    setSort("newest");
   };
   const handleCategoryChange = (nextDocumentType: "all" | DocumentType) => {
     setDocumentType(nextDocumentType);
@@ -149,6 +152,7 @@ export const MarketplaceBrowser = () => {
     <TemplateLibraryToolbar
       appearance="compact"
       documentType={documentType}
+      resultLabel={`${visibleTemplates.length} ${visibleTemplates.length === 1 ? "template" : "templates"}`}
       onCollectionChange={scrollContentToTop}
       onDocumentType={setDocumentType}
       onReset={resetFilters}
@@ -289,17 +293,16 @@ export const MarketplaceBrowser = () => {
               ))}
             </div>
           ) : (
-            <section className="grid min-h-72 w-full flex-1 place-items-center rounded-box border border-dashed border-steel-mist bg-base-100 p-10 text-center">
-              <div>
-                <h2 className="font-title text-lg font-bold text-nox-noir">
-                  No matching templates
-                </h2>
-                <p className="mt-2 max-w-sm text-sm leading-6 text-nox-noir/60">
-                  Try another search or reset the filters to browse the full
-                  marketplace.
-                </p>
-              </div>
-            </section>
+            <EmptyState
+              action={
+                <Button onClick={resetFilters} size="sm" variant="outline">
+                  Clear filters
+                </Button>
+              }
+              description="Try another search, or clear the filters to browse the full marketplace."
+              icon={<MagnifyingGlassIcon aria-hidden size={iconSize.feature} weight="bold" />}
+              title="No templates match"
+            />
           )}
         </div>
       </div>

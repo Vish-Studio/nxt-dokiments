@@ -42,6 +42,7 @@ export const SettingsNav = ({
     <TabMenu
       ariaLabel="Settings sections"
       className="lg:hidden"
+      fitOnPhones
       items={items.map((item) => ({
         icon: (isActive: boolean) => (
           <item.icon

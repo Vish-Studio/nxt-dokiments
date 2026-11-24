@@ -12,8 +12,25 @@ const meta = {
 export default meta;
 type Story = StoryObj<typeof meta>;
 
+/** First time: no clients at all. The action that fixes it is right there. */
 export const Empty: Story = {
-  args: { clients: [] },
+  args: { clients: [], onAdd: fn() },
+  play: async ({ args, canvas }) => {
+    await expect(canvas.getByText("No clients yet")).toBeVisible();
+    await userEvent.click(canvas.getByRole("button", { name: "Add client" }));
+    await expect(args.onAdd).toHaveBeenCalledOnce();
+  },
+};
+
+/** Clients exist but search or a filter hides them: not the first-time copy. */
+export const NoMatches: Story = {
+  args: { clients: [], hasClients: true, onReset: fn() },
+  play: async ({ args, canvas }) => {
+    await expect(canvas.getByText("No clients match")).toBeVisible();
+    await expect(canvas.queryByText("No clients yet")).toBeNull();
+    await userEvent.click(canvas.getByRole("button", { name: "Clear filters" }));
+    await expect(args.onReset).toHaveBeenCalledOnce();
+  },
 };
 
 export const WithClients: Story = {

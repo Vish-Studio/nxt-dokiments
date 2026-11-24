@@ -145,9 +145,10 @@ export const Dropdown = ({
       aria-label={ariaLabel}
       className={isSheet ? "-mx-2 [&_button]:h-11 [&_button]:min-h-11" : cn("dropdown-content z-50 mt-2 max-h-80 overflow-y-auto rounded-box border border-steel-mist bg-base-100 p-2 text-nox-noir shadow-sm", menuClassName)}
       id={menuId}
-      // Custom action menus (children) close once one of their buttons is used.
+      // Custom action menus (children) close once one of their buttons or links
+      // is used; a link would otherwise leave the sheet open over the next page.
       onClick={(event) => {
-        if (!groups && closeOnSelect && (event.target as Element).closest("button")) setIsOpen(false);
+        if (!groups && closeOnSelect && (event.target as Element).closest("button, a[href]")) setIsOpen(false);
       }}
       onKeyDown={handleMenuKeyDown}
       ref={menuRef}

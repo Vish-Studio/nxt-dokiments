@@ -1,7 +1,8 @@
-import { UsersThreeIcon } from "@phosphor-icons/react";
+import { UsersThreeIcon, WarningCircleIcon } from "@phosphor-icons/react";
 import type { Meta, StoryObj } from "@storybook/nextjs-vite";
 import { expect, within } from "storybook/test";
 
+import { Button } from "@/components/commons/button/button";
 import { iconSize } from "@/lib/icons";
 
 import { EmptyState } from "../empty-state";
@@ -60,4 +61,34 @@ export const WithoutIcon: Story = {
 
 export const Phone: Story = {
   globals: { viewport: { value: "mobile1", isRotated: false } },
+};
+
+/** The one action that gets the user out of the state sits under the text. */
+export const WithAction: Story = {
+  args: {
+    action: <Button size="sm">Add client</Button>,
+    description: "Add a client to keep their details close at hand.",
+    title: "No clients yet",
+  },
+  play: async ({ canvasElement }) => {
+    await expect(
+      within(canvasElement).getByRole("button", { name: "Add client" }),
+    ).toBeVisible();
+  },
+};
+
+/** A failed request: red, announced as an alert, with a way to retry. */
+export const ErrorTone: Story = {
+  args: {
+    action: <Button size="sm" variant="outline">Try again</Button>,
+    description: "Your clients are saved to your account. Check your connection and try again.",
+    icon: <WarningCircleIcon aria-hidden size={iconSize.feature} weight="bold" />,
+    title: "Couldn't load your clients",
+    tone: "error",
+  },
+  play: async ({ canvasElement }) => {
+    const alert = within(canvasElement).getByRole("alert");
+    await expect(alert).toHaveTextContent("Couldn't load your clients");
+    await expect(within(alert).getByRole("button", { name: "Try again" })).toBeVisible();
+  },
 };

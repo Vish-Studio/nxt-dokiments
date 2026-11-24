@@ -1,29 +1,16 @@
 "use client";
 
-import type { Icon } from "@phosphor-icons/react";
-import {
-  ArrowsClockwiseIcon,
-  BellIcon,
-  FilePlusIcon,
-  InfoIcon,
-  SealCheckIcon,
-  ShareNetworkIcon,
-} from "@phosphor-icons/react";
-import Link from "next/link";
+import { BellIcon, CheckIcon } from "@phosphor-icons/react";
 
 import { Button } from "@/components/commons/button/button";
 import { Dropdown } from "@/components/commons/dropdown/dropdown";
+import { NotificationGroup } from "@/components/dashboard/notification-group/notification-group";
+import { NotificationListSkeleton } from "@/components/dashboard/notification-list-skeleton/notification-list-skeleton";
 import { useNotifications } from "@/hooks/notifications/use-notifications";
+import { iconSize } from "@/lib/icons";
+import { groupNotifications } from "@/lib/notifications/notification-display";
 import { cn } from "@/lib/utils";
 import type { AppNotification } from "@/types/notification";
-
-/** Icon per notification `kind`; unknown kinds fall back to a generic one. */
-const kindIcons: Record<string, Icon> = {
-  "app-update": ArrowsClockwiseIcon,
-  "document-shared": ShareNetworkIcon,
-  "document-signed": SealCheckIcon,
-  template: FilePlusIcon,
-};
 
 export type NotificationBellTone = "dark" | "light" | "outline";
 
@@ -39,78 +26,24 @@ export type NotificationBellViewProps = {
   tone?: NotificationBellTone;
   isLoading?: boolean;
   notifications: AppNotification[];
+  /** Epoch milliseconds the ages are measured from; see `NotificationListItem`. */
+  now?: number;
   onMarkAllAsRead: () => void;
   unreadCount: number;
 };
 
-const formatAge = (createdAt: number, now = Date.now()) => {
-  const minutes = Math.max(0, Math.floor((now - createdAt) / 60_000));
-  if (minutes < 1) return "Just now";
-  if (minutes < 60) return `${minutes}m ago`;
-  const hours = Math.floor(minutes / 60);
-  if (hours < 24) return `${hours}h ago`;
-  return `${Math.floor(hours / 24)}d ago`;
-};
-
-const NotificationRow = ({
-  notification,
-}: {
-  notification: AppNotification;
-}) => {
-  const KindIcon = kindIcons[notification.kind] ?? InfoIcon;
-  const { action } = notification;
-
-  return (
-    <li
-      className={cn(
-        "flex gap-3 rounded-field px-3 py-3",
-        !notification.read && "bg-base-200",
-      )}
-    >
-      <KindIcon
-        aria-hidden
-        className="mt-0.5 shrink-0"
-        size={18}
-        weight="bold"
-      />
-      <div className="min-w-0 flex-1">
-        <p className="text-sm font-semibold">
-          {notification.title}
-          {!notification.read ? (
-            <span className="sr-only"> (unread)</span>
-          ) : null}
-        </p>
-        {notification.body ? (
-          <p className="mt-0.5 text-xs text-nox-noir/70">{notification.body}</p>
-        ) : null}
-        <div className="mt-1 flex items-center gap-3 text-xs text-nox-noir/50">
-          <span>{formatAge(notification.createdAt)}</span>
-          {action?.href ? (
-            <Link
-              className="font-semibold text-nox-noir underline"
-              href={action.href}
-            >
-              {action.label}
-            </Link>
-          ) : action?.onClick ? (
-            <button
-              className="font-semibold text-nox-noir underline"
-              onClick={action.onClick}
-              type="button"
-            >
-              {action.label}
-            </button>
-          ) : null}
-        </div>
-      </div>
-    </li>
-  );
-};
-
-/** Presentational bell + dropdown; `NotificationBell` wires it to live data. */
+/**
+ * Presentational bell and panel; `NotificationBell` wires it to live data.
+ *
+ * Desktop opens an anchored popover, phones a bottom sheet (the `Dropdown`
+ * `sheetTitle`) that leads with the bell icon. Both hold the same panel: a
+ * header with the unread count and "Mark all as read", then the list split into
+ * "New" and "Earlier", or a skeleton while loading, or an all-caught-up message.
+ */
 export const NotificationBellView = ({
   isLoading = false,
   notifications,
+  now,
   onMarkAllAsRead,
   tone = "light",
   unreadCount,
@@ -123,13 +56,15 @@ export const NotificationBellView = ({
       "relative !size-9 !min-h-9 shrink-0 rounded-full !px-0",
       toneClasses[tone],
     )}
-    menuClassName="w-80 max-w-[calc(100vw-2rem)] p-0"
+    // The popover is taller and wider than a plain menu: it is a feed.
+    menuClassName="w-[24rem] max-w-[calc(100vw-2rem)] max-h-[min(34rem,75dvh)]! p-0"
+    sheetIcon={BellIcon}
     sheetTitle="Notifications"
     trigger={
       <>
         <BellIcon
           aria-hidden
-          size={15}
+          size={iconSize.header}
           weight="bold"
         />
         {unreadCount > 0 ? (
@@ -143,35 +78,71 @@ export const NotificationBellView = ({
       </>
     }
   >
-    <div className="flex items-center justify-end border-b border-steel-mist/50 px-3 py-2 sm:justify-between">
-      {/* On phones the bottom sheet's own title says "Notifications". */}
-      <p className="hidden font-title text-sm font-semibold sm:block">
-        Notifications
-      </p>
-      <Button
-        className="font-medium!"
-        disabled={unreadCount === 0}
-        onClick={onMarkAllAsRead}
-        size="sm"
-        variant="ghost"
-      >
-        Mark all as read
-      </Button>
+    <div className="notification-panel">
+      <div className="sticky top-0 z-10 flex items-center justify-between gap-3 border-b border-steel-mist/60 bg-base-100 px-4 py-2.5">
+        <div className="flex min-w-0 items-center gap-2">
+          {/* On phones the sheet's own title says "Notifications". */}
+          <p className="hidden font-title text-sm font-bold text-nox-noir sm:block">
+            Notifications
+          </p>
+          {unreadCount > 0 ? (
+            <span className="inline-flex h-5 items-center rounded-field bg-golden-harvest px-2 text-xs font-bold text-nox-noir">
+              {unreadCount} new
+            </span>
+          ) : (
+            <span className="text-xs text-nox-noir/50 sm:hidden">
+              Nothing new
+            </span>
+          )}
+        </div>
+        <Button
+          className="font-medium!"
+          disabled={unreadCount === 0}
+          icon={
+            <CheckIcon
+              aria-hidden
+              size={iconSize.control}
+              weight="bold"
+            />
+          }
+          iconPosition="left"
+          onClick={onMarkAllAsRead}
+          size="sm"
+          variant="ghost"
+        >
+          Mark all as read
+        </Button>
+      </div>
+      {isLoading && notifications.length === 0 ? (
+        <NotificationListSkeleton />
+      ) : notifications.length > 0 ? (
+        <div className="pb-2">
+          {groupNotifications(notifications).map((group) => (
+            <NotificationGroup
+              group={group}
+              key={group.label}
+              now={now}
+            />
+          ))}
+        </div>
+      ) : (
+        <div className="flex flex-col items-center px-6 py-10 text-center">
+          <span className="flex size-12 items-center justify-center rounded-box bg-base-200 text-nox-noir">
+            <BellIcon
+              aria-hidden
+              size={iconSize.feature}
+              weight="bold"
+            />
+          </span>
+          <p className="mt-4 font-title text-sm font-bold text-nox-noir">
+            You&apos;re all caught up
+          </p>
+          <p className="mt-1 max-w-56 text-xs leading-5 text-nox-noir/60">
+            New templates, shared documents and signatures will show up here.
+          </p>
+        </div>
+      )}
     </div>
-    {notifications.length > 0 ? (
-      <ul className="flex flex-col gap-1 p-2">
-        {notifications.map((notification) => (
-          <NotificationRow
-            key={notification.id}
-            notification={notification}
-          />
-        ))}
-      </ul>
-    ) : (
-      <p className="px-3 py-8 text-center text-sm text-nox-noir/60">
-        {isLoading ? "Loading…" : "You're all caught up."}
-      </p>
-    )}
   </Dropdown>
 );
 

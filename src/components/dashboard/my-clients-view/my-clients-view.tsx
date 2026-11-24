@@ -1,10 +1,15 @@
 "use client";
 
-import { PlusIcon, TrashIcon } from "@phosphor-icons/react";
+import {
+  PlusIcon,
+  TrashIcon,
+  WarningCircleIcon,
+} from "@phosphor-icons/react";
 import { useMemo, useState } from "react";
 
 import { Button } from "@/components/commons/button/button";
 import CollectionToolbar from "@/components/commons/collection-toolbar/collection-toolbar";
+import { EmptyState } from "@/components/commons/empty-state/empty-state";
 import { ConfirmDialog } from "@/components/commons/confirm-dialog/confirm-dialog";
 import { FloatingActionButton } from "@/components/commons/floating-action-button/floating-action-button";
 import { SidePanel } from "@/components/commons/side-panel/side-panel";
@@ -20,6 +25,7 @@ import {
   useUpdateClientMutation,
 } from "@/hooks/queries/use-clients";
 import { useScrollContentToTopOnMobile } from "@/hooks/use-scroll-content-to-top-on-mobile";
+import { iconSize } from "@/lib/icons";
 import type { Client, ClientInput } from "@/types/client";
 
 /**
@@ -41,7 +47,12 @@ type Panel =
 const CLOSED: Panel = { kind: "none" };
 
 export const MyClientsView = () => {
-  const { data: clients = [], isError, isLoading } = useClientsQuery();
+  const {
+    data: clients = [],
+    isError,
+    isLoading,
+    refetch,
+  } = useClientsQuery();
   const { mutate: createClient } = useCreateClientMutation();
   const { mutate: deleteClient } = useDeleteClientMutation();
   const { isPending: isSaving, mutate: updateClient } =
@@ -77,17 +88,17 @@ export const MyClientsView = () => {
     });
   }, [clients, contactFilter, search, sort]);
 
+  // Reset clears search and filters, never the sort.
   const resetControls = () => {
     setSearch("");
     setContactFilter("all");
-    setSort("name");
   };
 
   const toolbar = (
     <CollectionToolbar
       ariaLabel="Search, sort, and filter clients"
       appearance="compact"
-      canReset={Boolean(search || contactFilter !== "all" || sort !== "name")}
+      canReset={Boolean(search || contactFilter !== "all")}
       endAction={
         <Button
           icon={<PlusIcon aria-hidden size={16} weight="bold" />}
@@ -99,14 +110,15 @@ export const MyClientsView = () => {
           Add client
         </Button>
       }
+      filterStyle="chips"
       filters={[
         {
           id: "contact",
-          label: "Contact details",
+          label: "Contact",
           value: contactFilter,
           defaultValue: "all",
           options: [
-            { label: "All clients", value: "all" },
+            { label: "Any contact details", value: "all" },
             { label: "With contact details", value: "with-contact" },
             { label: "Without contact details", value: "without-contact" },
           ],
@@ -117,6 +129,7 @@ export const MyClientsView = () => {
       onCollectionChange={scrollContentToTop}
       onSearch={setSearch}
       onSort={setSort}
+      resultLabel={`${visibleClients.length} ${visibleClients.length === 1 ? "client" : "clients"}`}
       search={search}
       searchLabel="Search clients"
       searchPlaceholder="Search clients…"
@@ -195,18 +208,23 @@ export const MyClientsView = () => {
       ) : isError ? (
         // Distinct from the empty state on purpose: showing "No clients yet"
         // after a failed request would tell the user their clients are gone.
-        <section className="grid min-h-72 w-full flex-1 place-items-center rounded-box border border-dashed border-error/40 bg-base-100 p-10 text-center">
-          <h2 className="font-title text-lg font-bold text-nox-noir">
-            Couldn&apos;t load your clients
-          </h2>
-          <p className="mt-2 max-w-sm text-sm leading-6 text-nox-noir/60">
-            Your clients are saved to your account — nothing has been lost.
-            Check your connection and try again.
-          </p>
-        </section>
+        <EmptyState
+          action={
+            <Button onClick={() => void refetch()} size="sm" variant="outline">
+              Try again
+            </Button>
+          }
+          description="Your clients are saved to your account, nothing has been lost. Check your connection and try again."
+          icon={<WarningCircleIcon aria-hidden size={iconSize.feature} weight="bold" />}
+          title="Couldn't load your clients"
+          tone="error"
+        />
       ) : (
         <ClientList
           clients={visibleClients}
+          hasClients={clients.length > 0}
+          onAdd={() => setPanel({ kind: "add" })}
+          onReset={resetControls}
           onDelete={setPendingDeletion}
           onEdit={(client) => setPanel({ clientId: client.id, kind: "edit" })}
           onPreview={(client) =>
