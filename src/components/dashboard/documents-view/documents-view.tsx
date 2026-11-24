@@ -50,6 +50,10 @@ import { trackEvent } from "@/lib/analytics/track";
 import { buildDuplicateDraft } from "@/lib/documents/duplicate-draft";
 import { getEmptyDocumentFields } from "@/lib/documents/empty-fields";
 import { documentSharingEnabled } from "@/lib/sharing/feature-flag";
+import {
+  senderSignatureOf,
+  withSenderSignature,
+} from "@/lib/sharing/signatures";
 import { activeRecipient } from "@/lib/sharing/share-activity";
 import { useShareDocumentMutation } from "@/hooks/queries/use-share";
 import {
@@ -68,6 +72,7 @@ import type { SharedDocument } from "@/types/sharing";
 import {
   isSignableDocument,
   RECIPIENT_SIGNATURE_KEY,
+  requiresSenderSignature,
 } from "@/lib/sharing/signable";
 import { documentBlueprints } from "@/lib/market-place/documents";
 import {
@@ -94,9 +99,9 @@ const EMPTY_SHARED_DOCUMENTS: SharedDocument[] = [];
 const templateOf = (document: UserDocument): MarketplaceTemplate | null =>
   document.templateSnapshot
     ? snapshotToMarketplaceTemplate(
-      document.templateSnapshot,
-      document.templateId,
-    )
+        document.templateSnapshot,
+        document.templateId,
+      )
     : null;
 
 /**
@@ -181,6 +186,7 @@ export const DocumentsView = () => {
     id: string;
     name: string;
     recipientEmail?: string;
+    senderSignature?: { value: string };
     signable: boolean;
   } | null>(null);
   const [listTab, setListTab] = useState<"mine" | "shared">("mine");
@@ -201,6 +207,25 @@ export const DocumentsView = () => {
       ),
     [sharedByMe],
   );
+
+  const sharedByMeBySource = useMemo(
+    () =>
+      Object.fromEntries(
+        sharedByMe.map((shared) => [shared.sourceDocumentId, shared]),
+      ),
+    [sharedByMe],
+  );
+
+  /**
+   * A document's values for display and export: once it has been shared, the
+   * sender signature is the one recorded with the share, not the editable draft.
+   */
+  const valuesWithSignedSender = (document: UserDocument) => {
+    const shared = sharedByMeBySource[document.id];
+    return shared
+      ? withSenderSignature(document.values, senderSignatureOf(shared))
+      : document.values;
+  };
 
   const activeSharedCopy = activeDocumentId
     ? sharedByMe.find((shared) => shared.sourceDocumentId === activeDocumentId)
@@ -453,7 +478,7 @@ export const DocumentsView = () => {
     setActiveDocumentId(document.id);
     setDuplicateSource(null);
     setDraftName(document.name);
-    setDraftValues(document.values);
+    setDraftValues(valuesWithSignedSender(document));
     setIsDeleteConfirmationOpen(false);
     setIsSaveConfirmationOpen(false);
     setIsEmptyFieldsHighlighted(false);
@@ -502,7 +527,10 @@ export const DocumentsView = () => {
       return;
     }
 
-    const emptyFields = getEmptyDocumentFields(activeTemplate.fields, draftValues);
+    const emptyFields = getEmptyDocumentFields(
+      activeTemplate.fields,
+      draftValues,
+    );
 
     if (!force && emptyFields.length > 0) {
       setIsEmptyFieldsHighlighted(true);
@@ -621,6 +649,9 @@ export const DocumentsView = () => {
       : undefined;
 
     const isEditorSignable = isSignableDocument(editorTemplate);
+    const editorSenderSignature = requiresSenderSignature(editorTemplate)
+      ? { value: draftValues.senderSignature ?? "" }
+      : undefined;
     // Where the owner follows the share: in place of the recipient signature
     // when the document has one, below the form for a view-only share.
     const sharedCopyStatus = activeSharedCopy ? (
@@ -669,8 +700,8 @@ export const DocumentsView = () => {
         label={
           isEditorSignable
             ? (editorTemplate.fields.find(
-              (field) => field.key === RECIPIENT_SIGNATURE_KEY,
-            )?.label ?? "Recipient signature")
+                (field) => field.key === RECIPIENT_SIGNATURE_KEY,
+              )?.label ?? "Recipient signature")
             : "Sharing"
         }
         onView={() =>
@@ -786,6 +817,7 @@ export const DocumentsView = () => {
                       id: activeDocumentId,
                       name: draftValues.title?.trim() || draftName,
                       recipientEmail: draftValues.toEmail,
+                      senderSignature: editorSenderSignature,
                       signable: isEditorSignable,
                     })
                   }
@@ -905,6 +937,7 @@ export const DocumentsView = () => {
                     id: activeDocumentId,
                     name: draftValues.title?.trim() || draftName,
                     recipientEmail: draftValues.toEmail,
+                    senderSignature: editorSenderSignature,
                     signable: isEditorSignable,
                   });
                 }
@@ -1119,12 +1152,23 @@ export const DocumentsView = () => {
           onShare={
             documentSharingEnabled
               ? (document) =>
-                setShareTarget({
-                  id: document.id,
-                  name: document.values.title?.trim() || document.name,
-                  recipientEmail: document.values.toEmail,
-                  signable: isSignableDocument(document.templateSnapshot),
-                })
+                  setShareTarget({
+                    id: document.id,
+                    name: document.values.title?.trim() || document.name,
+                    recipientEmail: document.values.toEmail,
+                    senderSignature: requiresSenderSignature(
+                      document.templateSnapshot,
+                    )
+                      ? {
+                          value:
+                            senderSignatureOf(sharedByMeBySource[document.id])
+                              ?.value ??
+                            document.values.senderSignature ??
+                            "",
+                        }
+                      : undefined,
+                    signable: isSignableDocument(document.templateSnapshot),
+                  })
               : undefined
           }
         />
@@ -1150,7 +1194,9 @@ export const DocumentsView = () => {
         }}
         template={previewDocument ? templateOf(previewDocument) : null}
         tone="purple"
-        values={previewDocument?.values}
+        values={
+          previewDocument ? valuesWithSignedSender(previewDocument) : undefined
+        }
       />
 
       <ShareDialog
@@ -1168,7 +1214,9 @@ export const DocumentsView = () => {
         onClose={() => setExportDocument(null)}
         open={Boolean(exportDocument)}
         template={exportDocument ? templateOf(exportDocument) : null}
-        values={exportDocument?.values}
+        values={
+          exportDocument ? valuesWithSignedSender(exportDocument) : undefined
+        }
       />
 
       {previewDocument || exportDocument ? null : (

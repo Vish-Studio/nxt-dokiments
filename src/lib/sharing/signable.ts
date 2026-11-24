@@ -3,6 +3,21 @@ import type { TemplateField } from "@/types/template";
 /** The field a counterparty signs; only documents with it can be signed once shared. */
 export const RECIPIENT_SIGNATURE_KEY = "recipientSignature";
 
+/** The field the owner signs when sharing; see `requiresSenderSignature`. */
+export const SENDER_SIGNATURE_KEY = "senderSignature";
+
+/**
+ * Whether sharing must carry the owner's typed signature: the layout has a
+ * sender signature field **and** a recipient signature field. A view-only share
+ * has nothing to countersign, so it never asks the owner to sign.
+ */
+export const requiresSenderSignature = (
+  template: { fields: readonly TemplateField[] } | null | undefined,
+): boolean =>
+  isSignableDocument(template) &&
+  (template?.fields.some((field) => field.key === SENDER_SIGNATURE_KEY) ??
+    false);
+
 /**
  * Whether a document has somewhere for a recipient to sign. Every document can
  * be shared; one that is not signable is shared view-only, so the recipient can

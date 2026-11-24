@@ -30,9 +30,15 @@ Top-level, because two parties read the same record. The owner's original in
 | `recipientEmails` | string[] | Normalised addresses. **Derived from `recipients`** — security rules cannot look inside an array of maps. |
 | `recipientUids` | string[] | Linked accounts. Derived from `recipients`. |
 | `views` | map | Keyed by viewer uid → `{ email, viewedAt }`. A recipient adds only their own key, once, on first open. Absent until someone opens the copy. |
-| `signatures` | map | Keyed by signer uid → `{ email, signedAt, type: "typed", value }`. |
+| `signatures` | map | Keyed by signer uid → `{ email, signedAt, type: "typed", value }`. The recipient's entry is written when they sign. The **owner's entry** (the sender signature) is written when they share, for layouts with a `senderSignature` field — see [Sender signature](#sender-signature). |
 | `locked` | bool | Once true, nobody can write or delete. |
 | `createdAt`, `updatedAt` | timestamp | |
+
+Anything that means "a recipient has signed" must ignore the owner's entry:
+use `recipientSignatures` / `recipientSignatureOf` from
+`lib/sharing/signatures.ts`, never `Object.values(signatures)`. The signed
+email, the bell (`signedDocumentNotifications`) and the status all follow that.
+The `locked` flag is only ever set by a recipient signing.
 
 A recipient's `signed` status is derived from `signatures`, not stored by them:
 rules only let a recipient write `signatures`, `locked` and `updatedAt`, so they
@@ -52,7 +58,7 @@ limit is switched on, existing usage is already known.
 
 | Actor | May |
 |---|---|
-| Owner | Read. Create (unlocked, no signatures). Edit and delete while unlocked. Never write `signatures`, `locked` or `views`; cannot change `ownerId`. |
+| Owner | Read. Create (unlocked; `signatures` empty or exactly one entry, keyed by their own uid, that passes `validSignature` with their token address). Edit and delete while unlocked; the only `signatures` key they may change is their own, and they can replace but not remove it. Never write `locked` or `views`; cannot change `ownerId`. |
 | Recipient | Read. Record their first view while unlocked: add exactly their own uid key to `views`, with their token address, touching nothing else (not even `updatedAt`). Sign while unlocked: add exactly one signature (their own uid key) **and set `locked` to true in the same write**. Nothing else. |
 | Anyone, once `locked` | Read only (owner and recipients). No update, no delete. An owner re-share is refused too, so a signed copy cannot be replaced. |
 | Anyone else | Nothing. |
@@ -173,6 +179,37 @@ view-only share) — statuses and user-safe messages in
   the API reports as `404` so existence is not leaked. The list query matches
   `recipientEmails` on the token's address; for an unverified account the rules
   refuse it and the API returns an empty list.
+
+## Sender signature
+
+When the template has a `senderSignature` field **and** a recipient signature
+field, sharing carries the owner's
+typed signature so the signed copy shows a verified record for both parties
+instead of an editable text value.
+
+- `POST /api/documents/:id/share` takes `senderSignature` (string, trimmed, at most
+  200 characters). It is **required** when the document's template snapshot has
+  both a `senderSignature` and a recipient signature field
+  (`requiresSenderSignature`): a missing or blank value is a `400` ("Sign the
+  document before sharing it."), unless the copy already carries the owner's
+  signature. A view-only share, or any document without the field, ignores the
+  value and shares as before.
+- `shareDocument` writes `signatures[ownerUid] = { email, signedAt, type: "typed", value }`
+  in the same atomic commit as the copy. `email` is the owner's normalised token
+  address, as `validSignature` requires.
+- A re-share with a newly typed signature, before the recipient signs, rewrites
+  the entry with a new `signedAt`. Once the copy is locked the share is refused
+  (`409`), so nothing changes.
+- `SharedDocumentSheet` renders the sender signature from `signatures[ownerId]`
+  (`withSenderSignature`), not `values.senderSignature`, which was editable until
+  sharing. The owner's editor, preview and PDF export do the same once the
+  document has a shared copy; before that they show the draft value.
+- The share dialog shows a **Your signature** input, prefilled from the draft
+  `values.senderSignature`, with a note that signing is binding for the shared
+  copy. Resending the invite email sends no signature, so the stored entry and its
+  `signedAt` are kept.
+- The recipient cannot write or alter the owner's entry: their signing rule only
+  accepts a change to their own uid key (see the rules tests).
 
 ## Share dialog (UI)
 

@@ -210,3 +210,27 @@ export const ViewOnlyViewed: Story = {
     await expect(canvas.getByText("Viewed")).toBeVisible();
   },
 };
+
+/** The owner's own sender signature is not a signing: the copy still waits. */
+export const SenderSignedStillWaiting: Story = {
+  args: {
+    document: {
+      ...pending,
+      signatures: {
+        "owner-1": {
+          email: "alex@example.com",
+          signedAt: 1,
+          type: "typed",
+          value: "Alex Morgan",
+        },
+      },
+    },
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await expect(
+      canvas.getByText("Waiting for sam@example.com to sign"),
+    ).toBeVisible();
+    await expect(canvas.queryByText(/Signed by/)).toBeNull();
+  },
+};

@@ -14,6 +14,7 @@ import {
   shareTimeline,
 } from "@/lib/sharing/share-activity";
 import { SHARE_EMAIL_COOLDOWN_MS } from "@/lib/sharing/share-email-limits";
+import { recipientSignatureOf } from "@/lib/sharing/signatures";
 import type { SharedDocument } from "@/types/sharing";
 
 export interface SharedCopyStatusProps {
@@ -74,7 +75,7 @@ export const SharedCopyStatus = ({
   const [clock, setClock] = useState(() => Date.now());
   const now = nowOverride ?? clock;
 
-  const signature = Object.values(document.signatures)[0];
+  const signature = recipientSignatureOf(document);
   const active = activeRecipient(document);
   const recipient = active ?? currentRecipient(document);
   const status = recipient
