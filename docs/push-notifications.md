@@ -22,6 +22,34 @@ on but a key missing, the routes answer `503`.
 
 ## Testing locally
 
+You can test against a real (nonprod) Firebase project, or entirely locally with
+the Firebase emulators (see [local-firebase.md](local-firebase.md)). The emulator
+route needs no cloud project and no `firestore.rules` deploy, because the
+emulator loads `firestore.rules` from `firebase.json`.
+
+### With the emulators (recommended)
+
+1. Generate keys with `npm run push:keys` and add the four variables from step 2
+   below to `.env.local`.
+2. In a terminal, run `npm run emulators` and leave it running. The first time
+   (or after wiping `.emulator-data/`), run `npm run emulators:seed` in another.
+3. Build and start the app against them. The flag and public key are inlined at
+   build time, so a change to either needs a rebuild:
+   ```bash
+   FIRESTORE_EMULATOR_HOST=127.0.0.1:8080 \
+   FIREBASE_AUTH_EMULATOR_HOST=127.0.0.1:9099 \
+   FIREBASE_PROJECT_ID=demo-dokiments \
+   FIREBASE_API_KEY=emulator \
+   sh -c 'npm run build && npm start'
+   ```
+4. Sign up at `http://localhost:3000` with email and password (Google sign-in
+   doesn't work in the emulator), or use `admin@dokiments.local` /
+   `localadmin123`, then continue from step 5 below.
+5. To check the stored subscription, open the emulator UI at
+   <http://127.0.0.1:4000> → Firestore → `users/<uid>/pushSubscriptions`.
+
+### With a real Firebase project
+
 Use a production build: the service worker is most reliable there, and
 `localhost` counts as a secure context, so no HTTPS is needed.
 
@@ -35,7 +63,8 @@ Use a production build: the service worker is most reliable there, and
    ```
 3. Rebuild and start. The flag and public key are inlined at build time, so a
    change to either needs a rebuild: `rm -rf .next && npm run build && npm start`.
-4. Sign in with a real Firebase account at `http://localhost:3000`.
+4. Sign in with a real Firebase account at `http://localhost:3000` (not needed if
+   you used the emulators above).
    `DEV_AUTH_BYPASS` has no real ID token, so Firestore writes would fail.
 5. Open **Settings → Notifications**, click _Turn on notifications_ and allow
    the prompt.
@@ -57,8 +86,8 @@ Tips:
   steps 5–6 in that window.
 - iOS needs a real device, the app added to the Home Screen, and an HTTPS URL;
   see "Testing on an iPhone" below.
-- Deploy `firestore.rules` to your Firebase project first, or saving the
-  subscription fails with a permission error.
+- With a real Firebase project, deploy `firestore.rules` first, or saving the
+  subscription fails with a permission error. The emulators need no deploy.
 
 ## Testing on an iPhone
 
@@ -66,17 +95,28 @@ A phone can't reach `localhost`, and iOS only allows service workers and push on
 HTTPS, so the app is served through a Cloudflare quick tunnel (no account
 needed; the `cloudflared` dev dependency downloads its own binary).
 
-1. Do steps 1–2 above (`npm run push:keys` prints a key pair).
+1. Do steps 1–2 of "With the emulators" above: keys in `.env.local`, emulators
+   running and seeded. (Or use a real Firebase project and skip the emulators.)
 2. `npm run start:phone` builds, starts the server on port 3000 and prints an
    `https://….trycloudflare.com` URL. Pass `-- --skip-build` to reuse the
    existing build, or set `PORT` if 3000 is busy. If you already run the app
-   yourself, `npm run tunnel` just opens the tunnel to port 3000.
+   yourself, `npm run tunnel` just opens the tunnel to port 3000. To use the
+   emulators, prefix the command with the four variables from step 3 above:
+   ```bash
+   FIRESTORE_EMULATOR_HOST=127.0.0.1:8080 \
+   FIREBASE_AUTH_EMULATOR_HOST=127.0.0.1:9099 \
+   FIREBASE_PROJECT_ID=demo-dokiments \
+   FIREBASE_API_KEY=emulator \
+   npm run start:phone
+   ```
 3. Open that URL in **Safari** on the iPhone and sign in with email and password.
-   Google sign-in needs the tunnel domain added under Firebase Console →
-   Authentication → Settings → Authorized domains.
+   Against the emulators, sign up there (or use the seeded admin). Against a real
+   project, Google sign-in also needs the tunnel domain added under Firebase
+   Console → Authentication → Settings → Authorized domains.
 4. Tap Share → **Add to Home Screen**, then open Dokiments **from the Home Screen
    icon**. Until you do, the Notifications card shows install instructions.
-5. Settings → Notifications → _Turn on notifications_ → allow → _Send test
+5. Sign in again inside the installed app (it has its own cookie storage), then
+   Settings → Notifications → _Turn on notifications_ → allow → _Send test
    notification_. Lock the phone and send it again to test the closed-app case.
 
 Notes:
