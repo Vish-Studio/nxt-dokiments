@@ -95,6 +95,29 @@ service cloud.firestore {
         allow read, create, update: if isOwner(uid);
       }
 
+      // --- users/{uid}/pushSubscriptions/{deviceId} — web push devices -----------
+      //
+      // One record per subscribed browser; the ID is a hash of its push endpoint, so
+      // re-subscribing overwrites rather than duplicates. The endpoint and keys are a
+      // bearer credential for pushing to that device, so only the owner may read them.
+      // Writes must carry a well-formed HTTPS endpoint and both keys, with the same
+      // length ceilings as `src/types/push.ts`.
+      match /pushSubscriptions/{deviceId} {
+        allow read, delete: if isOwner(uid);
+        allow create, update: if isOwner(uid)
+          && request.resource.data.endpoint is string
+          && request.resource.data.endpoint.matches('^https://.*')
+          && request.resource.data.endpoint.size() <= 2048
+          && request.resource.data.p256dh is string
+          && request.resource.data.p256dh.size() > 0
+          && request.resource.data.p256dh.size() <= 256
+          && request.resource.data.auth is string
+          && request.resource.data.auth.size() > 0
+          && request.resource.data.auth.size() <= 256
+          && request.resource.data.deviceLabel is string
+          && request.resource.data.deviceLabel.size() <= 100;
+      }
+
       // --- users/{uid}/clients/{clientId} — the user's own client book -------------
       //
       // Contact details a user reuses when preparing documents. Doc IDs are
