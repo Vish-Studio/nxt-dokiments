@@ -15,6 +15,9 @@
     "emulators": "npx firebase-tools@15 emulators:start --only auth,firestore --project demo-dokiments --import .emulator-data --export-on-exit",
     "dev:emulated": "FIRESTORE_EMULATOR_HOST=127.0.0.1:8080 FIREBASE_AUTH_EMULATOR_HOST=127.0.0.1:9099 FIREBASE_PROJECT_ID=demo-dokiments FIREBASE_API_KEY=emulator next dev",
     "emulators:seed": "tsc -p tsconfig.seed.json && FIRESTORE_EMULATOR_HOST=127.0.0.1:8080 FIREBASE_AUTH_EMULATOR_HOST=127.0.0.1:9099 FIREBASE_PROJECT_ID=demo-dokiments FIREBASE_API_KEY=emulator SEED_ADMIN_EMAIL=admin@dokiments.local SEED_ADMIN_PASSWORD=localadmin123 sh -c 'node .scratch-seed/scripts/seed-emulator-admin.js && node .scratch-seed/scripts/seed-templates.js'",
+    "push:keys": "web-push generate-vapid-keys",
+    "tunnel": "cloudflared tunnel --url http://localhost:3000",
+    "start:phone": "node scripts/start-phone.mjs",
     "pre-pr-check": "npm run lint && npm run build && npx vitest run"
   },
   "dependencies": {
@@ -36,6 +39,7 @@
     "react-hook-form": "^7.79.0",
     "resend": "^6.35.0",
     "serwist": "^9.5.12",
+    "web-push": "^4.0.0",
     "zod": "^4.6.7",
     "zustand": "^5.0.14"
   },
@@ -52,8 +56,10 @@
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "@types/web-push": "^3.6.4",
     "@vitest/browser-playwright": "^4.1.12",
     "@vitest/coverage-v8": "^4.1.12",
+    "cloudflared": "^0.7.3",
     "esbuild": "^0.28.2",
     "eslint": "^9",
     "eslint-config-next": "16.4.6",
