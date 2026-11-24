@@ -12,6 +12,9 @@
     "seed:templates": "tsc -p tsconfig.seed.json && node --env-file=.env.local .scratch-seed/scripts/seed-templates.js",
     "backfill:template-created-at": "tsc -p tsconfig.seed.json && node --env-file=.env.local .scratch-seed/scripts/backfill-template-created-at.js",
     "test:rules": "npx firebase-tools@15 emulators:exec --only firestore --project demo-dokiments-rules \"vitest run --config vitest.rules.config.ts\"",
+    "emulators": "npx firebase-tools@15 emulators:start --only auth,firestore --project demo-dokiments --import .emulator-data --export-on-exit",
+    "dev:emulated": "FIRESTORE_EMULATOR_HOST=127.0.0.1:8080 FIREBASE_AUTH_EMULATOR_HOST=127.0.0.1:9099 FIREBASE_PROJECT_ID=demo-dokiments FIREBASE_API_KEY=emulator next dev",
+    "emulators:seed": "tsc -p tsconfig.seed.json && FIRESTORE_EMULATOR_HOST=127.0.0.1:8080 FIREBASE_AUTH_EMULATOR_HOST=127.0.0.1:9099 FIREBASE_PROJECT_ID=demo-dokiments FIREBASE_API_KEY=emulator SEED_ADMIN_EMAIL=admin@dokiments.local SEED_ADMIN_PASSWORD=localadmin123 sh -c 'node .scratch-seed/scripts/seed-emulator-admin.js && node .scratch-seed/scripts/seed-templates.js'",
     "pre-pr-check": "npm run lint && npm run build && npx vitest run"
   },
   "dependencies": {

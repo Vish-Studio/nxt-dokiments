@@ -1,5 +1,6 @@
 import "server-only";
 
+import { resolveFirebaseEndpoints } from "@/lib/firebase/endpoints";
 import { serverFirebaseConfig } from "@/lib/firebase/server-config";
 import { ApiError } from "@/lib/api/errors";
 import { fetchUpstream } from "@/lib/http/fetch-upstream";
@@ -58,11 +59,15 @@ type FirestoreErrorBody = {
   };
 };
 
-const FIRESTORE_BASE_URL = "https://firestore.googleapis.com/v1";
+/**
+ * Firestore REST base URL: Google's cloud, or the local emulator when
+ * `FIRESTORE_EMULATOR_HOST` is set. See {@link resolveFirebaseEndpoints}.
+ */
+const firestoreBaseUrl = () => resolveFirebaseEndpoints().firestore;
 
 /** Builds the Firestore REST URL for a document path, e.g. `users/{uid}`. */
 const documentUrl = (path: string) =>
-  `${FIRESTORE_BASE_URL}/projects/${serverFirebaseConfig.projectId}/databases/(default)/documents/${path}`;
+  `${firestoreBaseUrl()}/projects/${serverFirebaseConfig.projectId}/databases/(default)/documents/${path}`;
 
 /** Summarises a JWT's non-secret claims (audience, expiry) for diagnosing rejected tokens. */
 const describeToken = (idToken: string): string => {
@@ -400,7 +405,7 @@ export const commitFirestoreWrites = async (
   const databasePath = `projects/${serverFirebaseConfig.projectId}/databases/(default)/documents`;
 
   const response = await fetchUpstream(
-    `${FIRESTORE_BASE_URL}/${databasePath}:commit`,
+    `${firestoreBaseUrl()}/${databasePath}:commit`,
     {
       body: JSON.stringify({
         writes: writes.map(({ fields, mustExist, path }) => ({
@@ -465,7 +470,7 @@ export const appendFirestoreArrayElements = async (
   const databasePath = `projects/${serverFirebaseConfig.projectId}/databases/(default)/documents`;
 
   const response = await fetchUpstream(
-    `${FIRESTORE_BASE_URL}/${databasePath}:commit`,
+    `${firestoreBaseUrl()}/${databasePath}:commit`,
     {
       body: JSON.stringify({
         writes: [
@@ -551,7 +556,7 @@ export const runFirestoreQuery = async (
   }));
 
   const response = await fetchUpstream(
-    `${FIRESTORE_BASE_URL}/projects/${serverFirebaseConfig.projectId}/databases/(default)/documents:runQuery`,
+    `${firestoreBaseUrl()}/projects/${serverFirebaseConfig.projectId}/databases/(default)/documents:runQuery`,
     {
       body: JSON.stringify({
         structuredQuery: {
