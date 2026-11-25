@@ -14,7 +14,14 @@ import {
 } from "@phosphor-icons/react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Suspense, useCallback, useEffect, useMemo, useState } from "react";
+import {
+  Suspense,
+  useCallback,
+  useEffect,
+  useEffectEvent,
+  useMemo,
+  useState,
+} from "react";
 
 import { Button } from "@/components/commons/button/button";
 import CollectionToolbar from "@/components/commons/collection-toolbar/collection-toolbar";
@@ -713,6 +720,11 @@ export const DocumentsView = () => {
   const editTarget = editId
     ? documents.find((document) => document.id === editId)
     : undefined;
+  // Always opens with the latest editor state, without re-running the effect
+  // every render just because `openDocument` is a fresh function.
+  const openEditTarget = useEffectEvent((document: UserDocument) =>
+    openDocument(document),
+  );
   useEffect(() => {
     if (!editTarget) return;
 
@@ -720,7 +732,7 @@ export const DocumentsView = () => {
     nextUrl.searchParams.delete("edit");
     window.history.replaceState(null, "", `${nextUrl.pathname}${nextUrl.search}`);
     // Deferred like the other deep links: no setState in the effect body.
-    window.setTimeout(() => openDocument(editTarget), 0);
+    window.setTimeout(() => openEditTarget(editTarget), 0);
   }, [editTarget]);
 
   // Opens the editor on an unsaved copy. No request is made here, so leaving
