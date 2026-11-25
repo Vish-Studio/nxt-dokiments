@@ -22,6 +22,7 @@ const SharedDocumentPage = async ({ params }: SharedDocumentPageProps) => {
   return (
     <AppShell
       activeItem="My Documents"
+      back={{ href: "/my-documents?tab=shared", label: "Shared with me" }}
       description="Review a document shared with you, and sign it when asked."
       title="Shared document"
     >

@@ -1,4 +1,4 @@
-import { XIcon } from "@phosphor-icons/react";
+import { SidebarSimpleIcon, XIcon } from "@phosphor-icons/react";
 import type { FunctionComponent } from "react";
 
 import { ButtonIcon } from "@/components/commons/button-icon/button-icon";
@@ -6,6 +6,7 @@ import SidebarAccount from "@/components/dashboard/sidebar-account/sidebar-accou
 import SidebarFeedback from "@/components/dashboard/sidebar-feedback/sidebar-feedback";
 import SidebarItem from "@/components/dashboard/sidebar-item/sidebar-item";
 import SidebarOnboarding from "@/components/dashboard/sidebar-onboarding/sidebar-onboarding";
+import { SidebarToggleButton } from "@/components/dashboard/sidebar-toggle-button/sidebar-toggle-button";
 import { sidebarItems, settingsNavigationItem } from "@/lib/dashboard-navigation";
 import { cn } from "@/lib/utils";
 import Image from "next/image";
@@ -45,17 +46,26 @@ const Sidebar: FunctionComponent<Props> = ({
           <button
             aria-label={isCollapsed ? "Expand sidebar" : "Dokiments home"}
             className={cn(
-              "size-8 shrink-0 items-center justify-center transition-transform hover:scale-105",
+              "group/expand relative size-9 shrink-0 items-center justify-center rounded-field text-app-nav transition-colors hover:bg-app-nav-hover hover:text-app-chrome-content",
               isCollapsed ? "hidden lg:flex" : "hidden",
             )}
             onClick={isCollapsed ? onToggleCollapse : undefined}
             type="button"
           >
+            {/* The logo mark, swapped for the sidebar icon on hover so the
+                way to expand is obvious. */}
             <Image
+              alt="Dokiments icon"
+              className="size-8 group-hover/expand:hidden"
+              height={100}
               src={"/images/svg/icon-white.svg"}
               width={100}
-              height={100}
-              alt="Dokiments icon"
+            />
+            <SidebarSimpleIcon
+              aria-hidden
+              className="hidden group-hover/expand:block"
+              size={18}
+              weight="bold"
             />
           </button>
 
@@ -67,19 +77,29 @@ const Sidebar: FunctionComponent<Props> = ({
             aria-label="Dokiments home"
             href="/"
           >
+            {/* The wordmark is 16880×2544 (≈6.6:1). Its real ratio must be
+                given here: a square 120×120 box reserved a 120px-tall gap until
+                the SVG loaded, pushing the nav down (layout shift on reload). */}
             <Image
-              className={cn("mb-1")}
+              alt="Dokiments logo"
+              className="mb-1 h-[18px] w-[120px]"
+              height={18}
+              priority
               src={"/images/svg/logo-white.svg"}
               width={120}
-              height={120}
-              alt="Dokiments logo"
             />
           </Link>
         </div>
+        {!isCollapsed && onToggleCollapse ? (
+          <SidebarToggleButton
+            isCollapsed={false}
+            onToggle={onToggleCollapse}
+          />
+        ) : null}
         {isMobileOpen ? (
           <ButtonIcon
             aria-label="Close navigation"
-            className="border-none text-app-nav hover:bg-app-nav-hover hover:text-app-chrome-content"
+            className="border-none lg:hidden text-app-nav hover:bg-app-nav-hover hover:text-app-chrome-content"
             icon={<XIcon aria-hidden size={16} weight="bold" />}
             onClick={onCloseMobile}
             size="sm"

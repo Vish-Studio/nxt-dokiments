@@ -1,12 +1,15 @@
 "use client";
 
 import {
-  ArrowLeftIcon,
+  BuildingsIcon,
   EyeIcon,
+  FileTextIcon,
+  MagnifyingGlassIcon,
+  IdentificationCardIcon,
   PlusIcon,
   ShareNetworkIcon,
   TrashIcon,
-  UserListIcon,
+  UserIcon,
   UsersThreeIcon,
 } from "@phosphor-icons/react";
 import Link from "next/link";
@@ -16,6 +19,7 @@ import { Suspense, useCallback, useEffect, useMemo, useState } from "react";
 import { Button } from "@/components/commons/button/button";
 import CollectionToolbar from "@/components/commons/collection-toolbar/collection-toolbar";
 import { ConfirmDialog } from "@/components/commons/confirm-dialog/confirm-dialog";
+import { EmptyState } from "@/components/commons/empty-state/empty-state";
 import { FloatingActionButton } from "@/components/commons/floating-action-button/floating-action-button";
 import { Input } from "@/components/commons/input/input";
 import { LoadingStatus } from "@/components/commons/loading-status/loading-status";
@@ -26,6 +30,8 @@ import { TemplateDocument } from "@/components/commons/template-document/templat
 import { TemplateForm } from "@/components/commons/template-form/template-form";
 import { TemplatePreviewDialog } from "@/components/commons/template-preview-dialog/template-preview-dialog";
 import { ClientPicker } from "@/components/dashboard/client-picker/client-picker";
+import { CompanyDocumentGroups } from "@/components/dashboard/company-document-groups/company-document-groups";
+import { CompanyDocumentGroupsSkeleton } from "@/components/dashboard/company-document-groups/company-document-groups-skeleton";
 import { DashboardListSkeleton } from "@/components/dashboard/dashboard-list-skeleton/dashboard-list-skeleton";
 import { DocumentExportDialog } from "@/components/dashboard/document-export-dialog/document-export-dialog";
 import { DocumentSavedModal } from "@/components/dashboard/document-saved-modal/document-saved-modal";
@@ -44,10 +50,25 @@ import {
   useDuplicateDocumentMutation,
   useUpdateDocumentMutation,
 } from "@/hooks/queries/use-documents";
+import { useClientsQuery } from "@/hooks/queries/use-clients";
 import { useSavedTemplatesQuery } from "@/hooks/queries/use-saved-templates";
+import { usePageHeader } from "@/hooks/use-page-header";
 import { useScrollContentToTopOnMobile } from "@/hooks/use-scroll-content-to-top-on-mobile";
 import { trackEvent } from "@/lib/analytics/track";
+import {
+  buildCompanyEntries,
+  type CompanyEntry,
+  type CompanyGroupSort,
+  type EntryStatus,
+  entryStatusLabels,
+  getDocumentCompanyName,
+  getEntryStatus,
+  getSharedCompanyName,
+  groupEntriesByCompany,
+  sortCompanyGroups,
+} from "@/lib/documents/company-groups";
 import { buildDuplicateDraft } from "@/lib/documents/duplicate-draft";
+import { getDocumentDetails } from "@/lib/documents/document-details";
 import { getEmptyDocumentFields } from "@/lib/documents/empty-fields";
 import { documentSharingEnabled } from "@/lib/sharing/feature-flag";
 import {
@@ -81,6 +102,7 @@ import {
   sharedContentPrefillValue,
 } from "@/lib/market-place/prefill";
 import { useAuthStore } from "@/stores/auth-store";
+import type { Client } from "@/types/client";
 import type { MarketplaceTemplate, UserDocument } from "@/types/template";
 import { snapshotToMarketplaceTemplate } from "@/types/template";
 import {
@@ -93,6 +115,7 @@ type Mode = "list" | "picker" | "editor";
 
 const EMPTY_DOCUMENTS: UserDocument[] = [];
 const EMPTY_SHARED_DOCUMENTS: SharedDocument[] = [];
+const EMPTY_CLIENTS: Client[] = [];
 
 /** Resolves a document's own template, using its `templateSnapshot` — never a live
  * catalog lookup — so a later template edit/deactivation can't affect an existing document. */
@@ -104,22 +127,38 @@ const templateOf = (document: UserDocument): MarketplaceTemplate | null =>
       )
     : null;
 
+type ListTab = "companies" | "cvs" | "mine" | "shared";
+
+/** CVs are about the user, not a client, so they get their own tab. */
+const isCvDocument = (document: UserDocument) =>
+  templateOf(document)?.documentType === "cv";
+
 /**
- * Switches to the "Shared with me" tab while the URL says `?tab=shared` (the bell's
- * link). Reads the router's search params rather than `window.location` so
- * following the link while already on this page still triggers it. Renders nothing.
+ * Switches tab while the URL says `?tab=shared` (the bell's link),
+ * `?tab=mine` (back from a company page) or `?tab=cvs`. Reads the router's search params
+ * rather than `window.location` so following the link while already on this
+ * page still triggers it. Renders nothing.
  */
-const SharedTabLink = ({ onOpen }: { onOpen: () => void }) => {
-  const isSharedLink = useSearchParams().get("tab") === "shared";
+const ListTabLink = ({
+  onOpen,
+}: {
+  onOpen: (tab: Exclude<ListTab, "companies">) => void;
+}) => {
+  const tab = useSearchParams().get("tab");
 
   useEffect(() => {
-    if (isSharedLink) {
-      onOpen();
+    if (tab === "shared" || tab === "mine" || tab === "cvs") {
+      onOpen(tab);
     }
-  }, [isSharedLink, onOpen]);
+  }, [tab, onOpen]);
 
   return null;
 };
+
+
+/** "1 document" / "3 documents"; pass `plural` for irregular words. */
+const pluralize = (count: number, word: string, plural = `${word}s`) =>
+  `${count} ${count === 1 ? word : plural}`;
 
 export const DocumentsView = () => {
   const router = useRouter();
@@ -129,6 +168,9 @@ export const DocumentsView = () => {
     useSavedTemplatesQuery();
   const { data: documents = EMPTY_DOCUMENTS, isLoading: isDocumentsLoading } =
     useDocumentsQuery();
+  // Same cache as My Clients and the editor's ClientPicker: matches documents
+  // to client records for the "By company" view.
+  const { data: clients = EMPTY_CLIENTS } = useClientsQuery();
   const { isPending: isCreatePending, mutate: createDocument } =
     useCreateDocumentMutation();
   const { isPending: isDuplicatePending, mutate: duplicateDocument } =
@@ -168,6 +210,8 @@ export const DocumentsView = () => {
   );
   const [isDeleteConfirmationOpen, setIsDeleteConfirmationOpen] =
     useState(false);
+  // A document whose row menu asked to delete it, awaiting confirmation.
+  const [deleteTarget, setDeleteTarget] = useState<UserDocument | null>(null);
   const [isSaveConfirmationOpen, setIsSaveConfirmationOpen] = useState(false);
   // Turned on by a save attempt with empty fields: the editor preview then
   // highlights them until they are filled or the editor closes.
@@ -189,10 +233,20 @@ export const DocumentsView = () => {
     senderSignature?: { value: string };
     signable: boolean;
   } | null>(null);
-  const [listTab, setListTab] = useState<"mine" | "shared">("mine");
+  // "Companies" (both directions, grouped) is the default way in; "My
+  // documents", "Shared with me" and "CVs" are flat lists.
+  const [listTab, setListTab] = useState<ListTab>("companies");
   const [search, setSearch] = useState("");
   const [documentType, setDocumentType] = useState("all");
   const [sort, setSort] = useState("newest");
+  // Companies tab only: where each document stands.
+  const [status, setStatus] = useState<EntryStatus | "all">("all");
+  // From the company page's "New document" (`?new=1&client=` / `&company=`):
+  // prefilled once a template is picked.
+  const [pendingPrefill, setPendingPrefill] = useState<{
+    clientId?: string;
+    companyName?: string;
+  } | null>(null);
   const scrollContentToTop = useScrollContentToTopOnMobile();
 
   const ownedTemplates = useMemo(
@@ -227,6 +281,18 @@ export const DocumentsView = () => {
       : document.values;
   };
 
+  // Each own document's status for the list rows ("Awaiting signature"…).
+  const documentStatuses = useMemo(
+    () =>
+      Object.fromEntries(
+        buildCompanyEntries(documents, [], sharedByMe).map((entry) => [
+          entry.document?.id ?? entry.id,
+          getEntryStatus(entry),
+        ]),
+      ),
+    [documents, sharedByMe],
+  );
+
   const activeSharedCopy = activeDocumentId
     ? sharedByMe.find((shared) => shared.sourceDocumentId === activeDocumentId)
     : undefined;
@@ -238,7 +304,7 @@ export const DocumentsView = () => {
           documents
             .map((document) => templateOf(document)?.documentType)
             .filter((value): value is keyof typeof documentBlueprints =>
-              Boolean(value),
+              Boolean(value && value !== "cv"),
             ),
         ),
       ]
@@ -252,7 +318,11 @@ export const DocumentsView = () => {
     const matches = documents.filter((document) => {
       const template = templateOf(document);
       return (
-        (documentType === "all" || template?.documentType === documentType) &&
+        // "My documents" leaves CVs to their own tab.
+        (listTab === "cvs") === isCvDocument(document) &&
+        (listTab === "cvs" ||
+          documentType === "all" ||
+          template?.documentType === documentType) &&
         `${document.name} ${template?.name ?? ""} ${template?.style.name ?? ""}`
           .toLocaleLowerCase()
           .includes(query)
@@ -264,19 +334,78 @@ export const DocumentsView = () => {
       if (sort === "name") return first.name.localeCompare(second.name);
       return second.createdAt - first.createdAt;
     });
-  }, [documentType, documents, search, sort]);
+  }, [documentType, documents, listTab, search, sort]);
+  const cvCount = useMemo(
+    () => documents.filter(isCvDocument).length,
+    [documents],
+  );
 
+  // Both directions, grouped by company, with the same search, type filter and
+  // sort as the list plus a status filter. Search also matches company names.
+  const companyGroups = useMemo(() => {
+    const query = search.trim().toLocaleLowerCase();
+    const entries = buildCompanyEntries(
+      documents,
+      documentSharingEnabled ? sharedDocuments : [],
+      sharedByMe,
+    ).filter((entry: CompanyEntry) => {
+      const company = entry.document
+        ? getDocumentCompanyName(entry.document)
+        : entry.shared
+          ? getSharedCompanyName(entry.shared)
+          : "";
+      return (
+        entry.documentType !== "cv" &&
+        (status === "all" || getEntryStatus(entry) === status) &&
+        (documentType === "all" || entry.documentType === documentType) &&
+        `${entry.title} ${company ?? ""}`.toLocaleLowerCase().includes(query)
+      );
+    });
+
+    return sortCompanyGroups(
+      groupEntriesByCompany(entries, clients),
+      sort as CompanyGroupSort,
+    );
+  }, [
+    clients,
+    documentType,
+    documents,
+    search,
+    sharedByMe,
+    sharedDocuments,
+    sort,
+    status,
+  ]);
+
+  // "Clear filters" clears search and filters; the sort is a preference, not
+  // a filter, so it stays.
   const resetControls = () => {
     setSearch("");
     setDocumentType("all");
-    setSort("newest");
+    setStatus("all");
   };
+  const hasActiveFilters = Boolean(
+    search || documentType !== "all" || status !== "all",
+  );
+  const isCompaniesTab = listTab === "companies";
+  const namedCompanyCount = companyGroups.filter(
+    (group) => group.name !== null,
+  ).length;
+  const companyDocumentCount = companyGroups.reduce(
+    (total, group) => total + group.entries.length,
+    0,
+  );
+
+  const showSharedTab = documentSharingEnabled && listTab === "shared";
 
   const toolbar = (
     <CollectionToolbar
       ariaLabel="Search, sort, and filter documents"
       appearance="compact"
-      canReset={Boolean(search || documentType !== "all" || sort !== "newest")}
+      canReset={hasActiveFilters}
+      // Shared with me has its own list; the controls stay (disabled) so the
+      // phone header keeps the same height on every tab.
+      disabled={showSharedTab}
       endAction={
         <Button
           icon={
@@ -294,38 +423,89 @@ export const DocumentsView = () => {
           New document
         </Button>
       }
+      filterStyle="chips"
       filters={[
-        {
+        ...(isCompaniesTab
+          ? [
+              {
+                id: "status",
+                label: "Status",
+                value: status,
+                defaultValue: "all",
+                options: [
+                  { label: "Any status", value: "all" },
+                  ...(["awaiting", "signed", "not-shared"] as const).map(
+                    (value) => ({ label: entryStatusLabels[value], value }),
+                  ),
+                  ...(documentSharingEnabled
+                    ? [{ label: entryStatusLabels.received, value: "received" }]
+                    : []),
+                ],
+                onChange: (value: string) =>
+                  setStatus(
+                    value === "awaiting" ||
+                      value === "signed" ||
+                      value === "not-shared" ||
+                      value === "received"
+                      ? value
+                      : "all",
+                  ),
+              },
+            ]
+          : []),
+        ...(listTab === "cvs"
+          ? []
+          : [{
           id: "type",
-          label: "Document type",
+          label: "Type",
           value: documentType,
           defaultValue: "all",
           options: [
-            { label: "All document types", value: "all" },
+            { label: "Any type", value: "all" },
             ...documentTypeOptions,
           ],
           onChange: setDocumentType,
-        },
+        }]),
       ]}
       onReset={resetControls}
       onCollectionChange={scrollContentToTop}
       onSearch={setSearch}
       onSort={setSort}
+      resultLabel={
+        showSharedTab
+          ? undefined
+          : isCompaniesTab
+          ? companyGroups.length > 0
+            ? `${pluralize(namedCompanyCount, "company", "companies")} · ${pluralize(companyDocumentCount, "document")}`
+            : undefined
+          : listTab === "cvs"
+            ? pluralize(visibleDocuments.length, "CV")
+            : pluralize(visibleDocuments.length, "document")
+      }
       search={search}
       searchLabel="Search documents"
       searchPlaceholder="Search documents…"
       sort={sort}
-      sortOptions={[
-        { label: "Recently created", value: "newest" },
-        { label: "Oldest created", value: "oldest" },
-        { label: "Name: A–Z", value: "name" },
-      ]}
+      sortOptions={
+        isCompaniesTab
+          ? [
+              { label: "Latest activity", value: "newest" },
+              { label: "Oldest activity", value: "oldest" },
+              { label: "Company: A–Z", value: "name" },
+            ]
+          : [
+              { label: "Recently created", value: "newest" },
+              { label: "Oldest created", value: "oldest" },
+              { label: "Name: A–Z", value: "name" },
+            ]
+      }
     />
   );
   const headerSearch = (
     <CollectionToolbar
       appearance="header-dark"
       ariaLabel="Search documents"
+      disabled={showSharedTab}
       layout="header-search"
       onReset={resetControls}
       onCollectionChange={scrollContentToTop}
@@ -341,6 +521,7 @@ export const DocumentsView = () => {
 
   const goToList = () => {
     setMode("list");
+    setPendingPrefill(null);
     setActiveTemplate(null);
     setActiveDocumentId(null);
     setDuplicateSource(null);
@@ -351,6 +532,24 @@ export const DocumentsView = () => {
     setIsEditorExportOpen(false);
     setIsEditorPreviewOpen(false);
   };
+
+  // The client details for a document started from a company page: the
+  // client-book record when there is one, else just the company's name.
+  const prefillForCompany = useCallback(
+    (template: MarketplaceTemplate): Record<string, string> => {
+      const client = pendingPrefill?.clientId
+        ? clients.find((candidate) => candidate.id === pendingPrefill.clientId)
+        : undefined;
+      if (client) return clientPrefillValues(client, template.fields);
+
+      const name = pendingPrefill?.companyName?.trim();
+      const key = template.fields.find((field) =>
+        ["toName", "partyTwo"].includes(field.key),
+      )?.key;
+      return name && key ? { [key]: name } : {};
+    },
+    [clients, pendingPrefill],
+  );
 
   const startNewDocument = useCallback(
     (template: MarketplaceTemplate) => {
@@ -364,8 +563,10 @@ export const DocumentsView = () => {
       setDraftValues({
         ...senderPrefillValues(user, template.fields),
         ...sharedContentPrefillValue(sharedContent, template.fields),
+        ...prefillForCompany(template),
       });
       setSharedContent("");
+      setPendingPrefill(null);
       setIsDeleteConfirmationOpen(false);
       setIsSaveConfirmationOpen(false);
       setIsEmptyFieldsHighlighted(false);
@@ -374,7 +575,7 @@ export const DocumentsView = () => {
       setIsEditorPreviewOpen(false);
       setMode("editor");
     },
-    [user, sharedContent],
+    [user, sharedContent, prefillForCompany],
   );
 
   // Deep link from the dashboard's floating action button, or from the
@@ -390,6 +591,8 @@ export const DocumentsView = () => {
     }
 
     const shared = params.get("shared");
+    const clientId = params.get("client");
+    const companyName = params.get("company");
 
     // Strip the params — unconditionally, before the `?template=` check below — so
     // a refresh or a back-navigation returns to the plain list instead of
@@ -397,6 +600,8 @@ export const DocumentsView = () => {
     const nextUrl = new URL(window.location.href);
     nextUrl.searchParams.delete("new");
     nextUrl.searchParams.delete("shared");
+    nextUrl.searchParams.delete("client");
+    nextUrl.searchParams.delete("company");
     window.history.replaceState(
       null,
       "",
@@ -413,6 +618,12 @@ export const DocumentsView = () => {
     window.setTimeout(() => {
       if (shared) {
         setSharedContent(shared);
+      }
+      if (clientId || companyName) {
+        setPendingPrefill({
+          clientId: clientId ?? undefined,
+          companyName: companyName ?? undefined,
+        });
       }
       setMode("picker");
     }, 0);
@@ -453,18 +664,23 @@ export const DocumentsView = () => {
     window.setTimeout(() => startNewDocument(template), 0);
   }, [authStatus, ownedTemplates, startNewDocument]);
 
-  const openSharedTab = useCallback(() => setListTab("shared"), []);
+  const openListTab = useCallback(
+    (tab: Exclude<ListTab, "companies">) =>
+      setListTab(tab === "shared" && !documentSharingEnabled ? "mine" : tab),
+    [],
+  );
 
   // Mirrors the tab into the URL so the page can remount (e.g. once auth settles)
   // without losing it, and so the bell's link changes the URL again after a manual switch.
-  const selectListTab = (tab: "mine" | "shared") => {
+  const selectListTab = (tab: ListTab) => {
     setListTab(tab);
+    if (tab !== "companies") setStatus("all");
 
     const nextUrl = new URL(window.location.href);
-    if (tab === "shared") {
-      nextUrl.searchParams.set("tab", "shared");
-    } else {
+    if (tab === "companies") {
       nextUrl.searchParams.delete("tab");
+    } else {
+      nextUrl.searchParams.set("tab", tab);
     }
     window.history.replaceState(
       null,
@@ -487,6 +703,25 @@ export const DocumentsView = () => {
     setIsEditorPreviewOpen(false);
     setMode("editor");
   };
+
+  // Deep link from a company page's "Edit": `/my-documents?edit=<id>`. Waits
+  // for the documents, then strips the param so a refresh returns to the list.
+  const editId =
+    typeof window === "undefined"
+      ? null
+      : new URLSearchParams(window.location.search).get("edit");
+  const editTarget = editId
+    ? documents.find((document) => document.id === editId)
+    : undefined;
+  useEffect(() => {
+    if (!editTarget) return;
+
+    const nextUrl = new URL(window.location.href);
+    nextUrl.searchParams.delete("edit");
+    window.history.replaceState(null, "", `${nextUrl.pathname}${nextUrl.search}`);
+    // Deferred like the other deep links: no setState in the effect body.
+    window.setTimeout(() => openDocument(editTarget), 0);
+  }, [editTarget]);
 
   // Opens the editor on an unsaved copy. No request is made here, so leaving
   // the editor discards the draft and nothing is created behind the user's back.
@@ -626,6 +861,22 @@ export const DocumentsView = () => {
     startNewDocument(template);
   };
 
+  const shareDocument = (document: UserDocument) =>
+    setShareTarget({
+      id: document.id,
+      name: document.values.title?.trim() || document.name,
+      recipientEmail: document.values.toEmail,
+      senderSignature: requiresSenderSignature(document.templateSnapshot)
+        ? {
+            value:
+              senderSignatureOf(sharedByMeBySource[document.id])?.value ??
+              document.values.senderSignature ??
+              "",
+          }
+        : undefined,
+      signable: isSignableDocument(document.templateSnapshot),
+    });
+
   const handlePrintDocument = (document: UserDocument) => {
     setExportDocument(document);
     trackEvent("pdf_export_open", {
@@ -633,6 +884,24 @@ export const DocumentsView = () => {
       template_id: document.templateId,
     });
   };
+
+  // The editor and template picker are sub-pages of My Documents: the top bar
+  // shows a back arrow and their title instead of a button in the content.
+  usePageHeader(
+    mode === "list"
+      ? null
+      : {
+          back: { label: "My Documents", onClick: goToList },
+          title:
+            mode === "picker"
+              ? "Choose a template"
+              : activeDocumentId
+                ? "Edit document"
+                : duplicateSource
+                  ? "Duplicate document"
+                  : "New document",
+        },
+  );
 
   // --- Editor ---------------------------------------------------------------
   const editorTemplate = activeTemplate;
@@ -712,25 +981,8 @@ export const DocumentsView = () => {
     ) : null;
 
     return (
-      <div className="w-full">
-        <Button
-          icon={
-            <ArrowLeftIcon
-              aria-hidden
-              size={16}
-              weight="bold"
-            />
-          }
-          iconPosition="left"
-          iconMotion="left"
-          onClick={goToList}
-          size="sm"
-          variant="outline"
-        >
-          Back to documents
-        </Button>
-
-        <div className="mt-5 grid items-start gap-4 lg:grid-cols-2">
+      <div className="w-full pt-6">
+        <div className="grid items-start gap-4 lg:grid-cols-2">
           <div className="rounded-box border border-steel-mist bg-base-100 p-6">
             <div className="border-b border-steel-mist pb-4">
               <div>
@@ -971,23 +1223,8 @@ export const DocumentsView = () => {
   // --- Template picker ------------------------------------------------------
   if (mode === "picker") {
     return (
-      <div className="w-full">
-        <button
-          className="group inline-flex items-center gap-2 font-title text-sm font-semibold text-nox-noir/60 transition-colors hover:text-nox-noir"
-          onClick={goToList}
-          type="button"
-        >
-          <ArrowLeftIcon
-            aria-hidden
-            className="arrow-cta-icon"
-            data-direction="left"
-            size={16}
-            weight="bold"
-          />
-          Back to documents
-        </button>
-
-        <div className="mt-5 border-b border-steel-mist pb-4">
+      <div className="w-full pt-6">
+        <div className="border-b border-steel-mist pb-4">
           <h3 className="font-title text-lg font-bold text-nox-noir">
             Choose a template
           </h3>
@@ -1044,67 +1281,96 @@ export const DocumentsView = () => {
   }
 
   // --- Document list --------------------------------------------------------
-  const showSharedTab = documentSharingEnabled && listTab === "shared";
 
   return (
     <div className="flex min-h-0 w-full flex-1 flex-col gap-2 pt-6">
-      {documentSharingEnabled ? (
-        <Suspense fallback={null}>
-          <SharedTabLink onOpen={openSharedTab} />
-        </Suspense>
-      ) : null}
-      {documentSharingEnabled ? (
-        <TabMenu
-          ariaLabel="Document lists"
-          className="mb-1"
-          items={[
-            {
-              icon: (isActive: boolean) => (
-                // Optical correction: Phosphor's one-person glyph fills ~13px of
-                // its box while the two-person glyph beside it fills ~10px, so
-                // it is drawn 3px smaller inside the same tab-size slot to look
-                // equal and keep the label spacing identical.
-                <span className="inline-flex size-4 items-center justify-center">
-                  <UserListIcon
-                    aria-hidden
-                    size={iconSize.tab - 3}
-                    weight={navIconWeight(isActive)}
-                  />
-                </span>
-              ),
-              id: "mine",
-              label: "My documents",
-            },
-            {
-              icon: (isActive: boolean) => (
-                <UsersThreeIcon
-                  aria-hidden
-                  size={iconSize.tab}
-                  weight={navIconWeight(isActive)}
-                />
-              ),
-              badge:
-                sharedDocuments.length > 0 ? (
-                  <span className="text-xs opacity-70">
-                    {sharedDocuments.length}
-                  </span>
-                ) : undefined,
-              id: "shared",
-              label: "Shared with me",
-            },
-          ]}
-          onChange={(id) => selectListTab(id === "shared" ? "shared" : "mine")}
-          value={listTab}
-        />
-      ) : null}
-      {showSharedTab ? null : (
-        <ResponsiveHeaderControls
-          desktopContent={toolbar}
-          desktopHeader={headerSearch}
-        >
-          {toolbar}
-        </ResponsiveHeaderControls>
-      )}
+      <Suspense fallback={null}>
+        <ListTabLink onOpen={openListTab} />
+      </Suspense>
+      <TabMenu
+        ariaLabel="Document lists"
+        className="mb-1"
+        fitOnPhones
+        items={[
+          {
+            icon: (isActive: boolean) => (
+              <BuildingsIcon
+                aria-hidden
+                size={iconSize.tab}
+                weight={navIconWeight(isActive)}
+              />
+            ),
+            id: "companies",
+            label: "Companies",
+          },
+          {
+            icon: (isActive: boolean) => (
+              <UserIcon
+                aria-hidden
+                size={iconSize.tab}
+                weight={navIconWeight(isActive)}
+              />
+            ),
+            id: "mine",
+            label: "My documents",
+          },
+          ...(documentSharingEnabled
+            ? [
+                {
+                  icon: (isActive: boolean) => (
+                    <UsersThreeIcon
+                      aria-hidden
+                      size={iconSize.tab}
+                      weight={navIconWeight(isActive)}
+                    />
+                  ),
+                  badge:
+                    sharedDocuments.length > 0 ? (
+                      <span className="text-xs opacity-70">
+                        {sharedDocuments.length}
+                      </span>
+                    ) : undefined,
+                  id: "shared",
+                  label: "Shared with me",
+                },
+              ]
+            : []),
+          // CVs are about the user, not a client: their own tab, shown once
+          // the user has one.
+          ...(cvCount > 0 || listTab === "cvs"
+            ? [
+                {
+                  icon: (isActive: boolean) => (
+                    <IdentificationCardIcon
+                      aria-hidden
+                      size={iconSize.tab}
+                      weight={navIconWeight(isActive)}
+                    />
+                  ),
+                  badge: (
+                    <span className="text-xs opacity-70">{cvCount}</span>
+                  ),
+                  id: "cvs",
+                  label: "CVs",
+                },
+              ]
+            : []),
+        ]}
+        onChange={(id) =>
+          selectListTab(
+            id === "shared" || id === "mine" || id === "cvs"
+              ? id
+              : "companies",
+          )
+        }
+        value={listTab}
+      />
+      <ResponsiveHeaderControls
+        desktopContent={showSharedTab ? null : toolbar}
+        desktopHeader={headerSearch}
+      >
+        {toolbar}
+      </ResponsiveHeaderControls>
       {showSharedTab ? (
         isSharedLoading ? (
           <DashboardListSkeleton
@@ -1123,21 +1389,84 @@ export const DocumentsView = () => {
           />
         )
       ) : isDocumentsLoading ? (
-        <DashboardListSkeleton
-          columns={documentListColumns}
-          message="Loading your documents…"
-          ordered
-          row={documentSkeletonRow}
+        listTab === "companies" ? (
+          <CompanyDocumentGroupsSkeleton />
+        ) : (
+          <DashboardListSkeleton
+            columns={documentListColumns}
+            message="Loading your documents…"
+            ordered
+            row={documentSkeletonRow}
+          />
+        )
+      ) : documents.length === 0 &&
+        (listTab === "mine" || companyGroups.length === 0) &&
+        !hasActiveFilters ? (
+        <EmptyState
+          description="Create a document from one of your saved templates to get started."
+          icon={
+            <FileTextIcon
+              aria-hidden
+              size={iconSize.feature}
+              weight="bold"
+            />
+          }
+          title="No documents yet"
         />
-      ) : documents.length === 0 ? (
-        <div className="grid min-h-72 w-full place-items-center rounded-box border border-dashed border-steel-mist bg-base-100 p-12 text-center">
-          <p className="font-title text-base font-bold text-nox-noir">
-            No documents yet
-          </p>
-          <p className="mt-1 max-w-sm text-sm text-nox-noir/60">
-            Create a document from one of your saved templates to get started.
-          </p>
-        </div>
+      ) : listTab === "companies" ? (
+        <CompanyDocumentGroups
+          groups={companyGroups}
+          onDelete={setDeleteTarget}
+          onDownload={handlePrintDocument}
+          onDuplicate={handleDuplicate}
+          onEdit={openDocument}
+          onShare={documentSharingEnabled ? shareDocument : undefined}
+          onViewShared={(document) => {
+            const sharedId = sharedCopyIds[document.id];
+            if (sharedId) router.push(`/my-documents/shared/${sharedId}`);
+          }}
+          onReset={resetControls}
+          onOpenEntry={(entry) => {
+            if (entry.document) setPreviewDocument(entry.document);
+            else if (entry.shared)
+              router.push(`/my-documents/shared/${entry.shared.id}`);
+          }}
+        />
+      ) : visibleDocuments.length === 0 ? (
+        <EmptyState
+          action={
+            hasActiveFilters ? (
+              <Button
+                onClick={resetControls}
+                size="sm"
+                variant="outline"
+              >
+                Clear filters
+              </Button>
+            ) : undefined
+          }
+          description={
+            hasActiveFilters
+              ? "Try another search, or clear the filters to see all your documents."
+              : "CVs you create from a CV template appear here."
+          }
+          icon={
+            hasActiveFilters ? (
+              <MagnifyingGlassIcon
+                aria-hidden
+                size={iconSize.feature}
+                weight="bold"
+              />
+            ) : (
+              <IdentificationCardIcon
+                aria-hidden
+                size={iconSize.feature}
+                weight="bold"
+              />
+            )
+          }
+          title={hasActiveFilters ? "No documents match" : "No CVs yet"}
+        />
       ) : (
         <DocumentList
           documents={visibleDocuments}
@@ -1148,33 +1477,19 @@ export const DocumentsView = () => {
           onViewShared={(sharedId) =>
             router.push(`/my-documents/shared/${sharedId}`)
           }
+          onDelete={setDeleteTarget}
           sharedCopyIds={sharedCopyIds}
-          onShare={
-            documentSharingEnabled
-              ? (document) =>
-                  setShareTarget({
-                    id: document.id,
-                    name: document.values.title?.trim() || document.name,
-                    recipientEmail: document.values.toEmail,
-                    senderSignature: requiresSenderSignature(
-                      document.templateSnapshot,
-                    )
-                      ? {
-                          value:
-                            senderSignatureOf(sharedByMeBySource[document.id])
-                              ?.value ??
-                            document.values.senderSignature ??
-                            "",
-                        }
-                      : undefined,
-                    signable: isSignableDocument(document.templateSnapshot),
-                  })
-              : undefined
-          }
+          statuses={documentStatuses}
+          onShare={documentSharingEnabled ? shareDocument : undefined}
         />
       )}
 
       <TemplatePreviewDialog
+        details={
+          previewDocument
+            ? getDocumentDetails(previewDocument, sharedByMe)
+            : undefined
+        }
         documentName={
           previewDocument?.values.title?.trim() || previewDocument?.name
         }
@@ -1197,6 +1512,20 @@ export const DocumentsView = () => {
         values={
           previewDocument ? valuesWithSignedSender(previewDocument) : undefined
         }
+      />
+
+      <ConfirmDialog
+        confirmLabel="Delete document"
+        confirmVariant="danger"
+        description={`Delete "${deleteTarget?.values.title?.trim() || deleteTarget?.name || "this document"}"? This action cannot be undone.`}
+        icon={TrashIcon}
+        onClose={() => setDeleteTarget(null)}
+        onConfirm={() => {
+          if (deleteTarget) handleRemove(deleteTarget.id);
+          setDeleteTarget(null);
+        }}
+        open={Boolean(deleteTarget)}
+        title="Delete document?"
       />
 
       <ShareDialog

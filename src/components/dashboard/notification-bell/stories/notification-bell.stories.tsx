@@ -5,7 +5,7 @@ import { mockPhoneViewport } from "@/lib/storybook/mock-phone-viewport";
 
 import { NotificationBellView } from "../notification-bell";
 
-const now = Date.now();
+const now = new Date("2026-11-24T12:00:00").getTime();
 
 const meta = {
   title: "Dashboard/Notification Bell",
@@ -63,8 +63,9 @@ const meta = {
         title: "New template: NDA",
       },
     ],
+    now,
     onMarkAllAsRead: fn(),
-    unreadCount: 2,
+    unreadCount: 4,
   },
   decorators: [
     (Story) => (
@@ -80,15 +81,75 @@ type Story = StoryObj<typeof meta>;
 
 export const Visual: Story = {};
 
+/** Nothing yet: say so, and say what will show up here. */
 export const Empty: Story = {
   args: { notifications: [], unreadCount: 0 },
+  play: async ({ canvasElement }) => {
+    const page = within(canvasElement.ownerDocument.body);
+    await userEvent.click(page.getByRole("button", { name: "Notifications" }));
+    // The popover fades in, so wait for it rather than asserting at once.
+    await waitFor(async () => {
+      await expect(await page.findByText("You're all caught up")).toBeVisible();
+    });
+    await expect(
+      page.getByRole("button", { name: "Mark all as read" }),
+    ).toBeDisabled();
+  },
+};
+
+/** First fetch in flight: skeleton rows, not a bare "Loading…". */
+export const Loading: Story = {
+  args: { isLoading: true, notifications: [], unreadCount: 0 },
+  play: async ({ canvasElement }) => {
+    const page = within(canvasElement.ownerDocument.body);
+    await userEvent.click(page.getByRole("button", { name: "Notifications" }));
+    await expect(
+      await page.findByRole("status", { name: /loading notifications/i }),
+    ).toBeInTheDocument();
+  },
+};
+
+/** Unread items are grouped under "New", read ones under "Earlier". */
+export const GroupsNewAndEarlier: Story = {
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await userEvent.click(
+      canvas.getByRole("button", { name: "Notifications, 4 unread" }),
+    );
+    const fresh = await canvas.findByRole("region", {
+      name: "New, 4 notifications",
+    });
+    await expect(within(fresh).getAllByRole("listitem")).toHaveLength(4);
+    await waitFor(() => {
+      expect(
+        canvas.getByRole("region", { name: "Earlier, 1 notification" }),
+      ).toBeVisible();
+      expect(canvas.getByText("4 new")).toBeVisible();
+    });
+  },
+};
+
+/** An action link closes the panel, so it never lingers over the next page. */
+export const ActionClosesPanel: Story = {
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await userEvent.click(
+      canvas.getByRole("button", { name: "Notifications, 4 unread" }),
+    );
+    await userEvent.click(
+      await canvas.findByRole("button", { name: "Update now" }),
+    );
+    await waitFor(() => {
+      expect(canvas.queryByText("Update available")).toBeNull();
+    });
+  },
 };
 
 export const ShowsUnreadCountAndOpens: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     const bell = canvas.getByRole("button", {
-      name: "Notifications, 2 unread",
+      name: "Notifications, 4 unread",
     });
 
     await userEvent.click(bell);
@@ -104,7 +165,7 @@ export const MarkAllAsRead: Story = {
     const canvas = within(canvasElement);
 
     await userEvent.click(
-      canvas.getByRole("button", { name: "Notifications, 2 unread" }),
+      canvas.getByRole("button", { name: "Notifications, 4 unread" }),
     );
     await userEvent.click(
       canvas.getByRole("button", { name: "Mark all as read" }),
@@ -113,17 +174,20 @@ export const MarkAllAsRead: Story = {
   },
 };
 
-/** On phones the list opens in a bottom sheet whose title says "Notifications". */
+/** On phones the list opens in a bottom sheet whose title leads with the bell. */
 export const OnPhone: Story = {
   beforeEach: mockPhoneViewport,
   play: async ({ args, canvasElement }) => {
     const page = within(canvasElement.ownerDocument.body);
 
     await userEvent.click(
-      page.getByRole("button", { name: "Notifications, 2 unread" }),
+      page.getByRole("button", { name: "Notifications, 4 unread" }),
     );
     const sheet = await page.findByRole("dialog", { name: "Notifications" });
     await expect(sheet).toHaveAttribute("data-layout", "sheet");
+    await expect(
+      within(sheet).getByRole("heading", { name: "Notifications" }).querySelector("svg"),
+    ).not.toBeNull();
     await expect(
       within(sheet).getByText("New template: Invoice"),
     ).toBeVisible();

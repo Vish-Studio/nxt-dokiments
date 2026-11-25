@@ -1,4 +1,4 @@
-import { CrownIcon } from "@phosphor-icons/react";
+import { CrownIcon, FunnelIcon } from "@phosphor-icons/react";
 import type { Meta, StoryObj } from "@storybook/nextjs-vite";
 import { expect, fn, userEvent, within } from "storybook/test";
 
@@ -140,5 +140,22 @@ export const KeepsFocusInside: Story = {
     await expect(
       within(modal).getByRole("button", { name: "Continue" }),
     ).toHaveFocus();
+  },
+};
+
+/** A menu sheet with `titleIcon`: the icon leads the title, which stays the name. */
+export const TitleIcon: Story = {
+  args: {
+    description: undefined,
+    title: "Filters",
+    titleIcon: FunnelIcon,
+    tone: undefined,
+  },
+  beforeEach: mockPhoneViewport,
+  play: async ({ canvasElement }) => {
+    const page = within(canvasElement.ownerDocument.body);
+    const heading = page.getByRole("heading", { name: "Filters" });
+    await expect(heading.firstElementChild?.tagName.toLowerCase()).toBe("svg");
+    await expect(page.getByRole("dialog", { name: "Filters" })).toBeVisible();
   },
 };

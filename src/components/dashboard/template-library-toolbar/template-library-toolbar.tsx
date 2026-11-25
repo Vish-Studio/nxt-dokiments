@@ -1,3 +1,5 @@
+import type { ReactNode } from "react";
+
 import CollectionToolbar from "@/components/commons/collection-toolbar/collection-toolbar";
 import type { SelectOption } from "@/components/commons/select/select";
 
@@ -6,6 +8,10 @@ export type TemplateSort = "newest" | "oldest" | "name" | "style";
 interface Props {
   appearance?: "default" | "header-dark" | "compact";
   embedded?: boolean;
+  /** The page's one primary action, shown at the right of the toolbar from `lg`. */
+  endAction?: ReactNode;
+  /** Plain-English count of what matches ("12 templates"). Hidden on phones. */
+  resultLabel?: string;
   layout?: "standard" | "header" | "header-search";
   search: string;
   documentType: string;
@@ -22,7 +28,7 @@ interface Props {
 }
 
 const TemplateLibraryToolbar = ({
-  appearance, embedded = false, layout, search, documentType, style, sort, typeOptions, styleOptions,
+  appearance, embedded = false, endAction, layout, resultLabel, search, documentType, style, sort, typeOptions, styleOptions,
   onSearch, onDocumentType, onStyle, onSort, onCollectionChange, onReset,
 }: Props) => (
   <CollectionToolbar
@@ -30,6 +36,9 @@ const TemplateLibraryToolbar = ({
     appearance={appearance}
     layout={layout}
     ariaLabel="Filter and sort templates"
+    endAction={endAction}
+    filterStyle="chips"
+    resultLabel={resultLabel}
     searchLabel="Search templates"
     searchPlaceholder="Search templates…"
     search={search}
@@ -44,10 +53,10 @@ const TemplateLibraryToolbar = ({
       { label: "Style: A–Z", value: "style" },
     ]}
     filters={[
-      { id: "type", label: "Document type", value: documentType, defaultValue: "all", options: [{ label: "All document types", value: "all" }, ...typeOptions], onChange: onDocumentType },
-      { id: "style", label: "Style", value: style, defaultValue: "all", options: [{ label: "All styles", value: "all" }, ...styleOptions], onChange: onStyle },
+      { id: "type", label: "Type", value: documentType, defaultValue: "all", options: [{ label: "Any type", value: "all" }, ...typeOptions], onChange: onDocumentType },
+      { id: "style", label: "Style", value: style, defaultValue: "all", options: [{ label: "Any style", value: "all" }, ...styleOptions], onChange: onStyle },
     ]}
-    canReset={Boolean(search || documentType !== "all" || style !== "all" || sort !== "newest")}
+    canReset={Boolean(search || documentType !== "all" || style !== "all")}
     onReset={onReset}
   />
 );
