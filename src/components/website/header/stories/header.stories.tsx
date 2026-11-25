@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from "@storybook/nextjs-vite";
-import { expect } from "storybook/test";
+import { expect, within } from "storybook/test";
 
 import { useAuthStore } from "@/stores/auth-store";
 
@@ -17,9 +17,24 @@ const meta = {
 export default meta;
 type Story = StoryObj<typeof meta>;
 
+/** Five section links in page order; the bar shows from `lg` up. */
 export const Default: Story = {
   play: async ({ canvas }) => {
-    await expect(canvas.getByRole("link", { name: /dokiments home/i })).toBeVisible();
+    const nav = canvas.getByRole("navigation", { name: "Website navigation" });
+    await expect(
+      within(nav)
+        .getAllByRole("link")
+        .map((link) => [link.textContent, link.getAttribute("href")]),
+    ).toEqual([
+      ["How it works", "/#workflow"],
+      ["Features", "/#overview"],
+      ["CVs", "/#cvs"],
+      ["Templates", "/#marketplace"],
+      ["FAQ", "/#faq"],
+    ]);
+    await expect(
+      canvas.getByRole("link", { name: /dokiments home/i }),
+    ).toBeVisible();
     await expect(canvas.getByRole("link", { name: /sign up/i })).toBeVisible();
   },
 };
@@ -29,7 +44,9 @@ export const AuthChrome: Story = {
     showAuthActions: false,
   },
   play: async ({ canvas }) => {
-    await expect(canvas.getByRole("link", { name: /dokiments home/i })).toBeVisible();
+    await expect(
+      canvas.getByRole("link", { name: /dokiments home/i }),
+    ).toBeVisible();
   },
 };
 
@@ -50,9 +67,8 @@ export const Authenticated: Story = {
     },
   ],
   play: async ({ canvas }) => {
-    await expect(canvas.getByRole("link", { name: "Dashboard" })).toHaveAttribute(
-      "href",
-      "/dashboard",
-    );
+    await expect(
+      canvas.getByRole("link", { name: "Dashboard" }),
+    ).toHaveAttribute("href", "/dashboard");
   },
 };

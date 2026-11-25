@@ -9,6 +9,7 @@
     "lint": "eslint",
     "storybook": "storybook dev -p 6006",
     "build-storybook": "storybook build",
+    "capture:marketing": "node scripts/capture-marketing-screens.mjs",
     "seed:templates": "tsc -p tsconfig.seed.json && node --env-file=.env.local .scratch-seed/scripts/seed-templates.js",
     "backfill:template-created-at": "tsc -p tsconfig.seed.json && node --env-file=.env.local .scratch-seed/scripts/backfill-template-created-at.js",
     "test:rules": "npx firebase-tools@15 emulators:exec --only firestore --project demo-dokiments-rules \"vitest run --config vitest.rules.config.ts\"",

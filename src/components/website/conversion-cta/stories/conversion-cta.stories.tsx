@@ -2,6 +2,7 @@ import type { Meta, StoryObj } from "@storybook/nextjs-vite";
 import { expect } from "storybook/test";
 
 import { useAuthStore } from "@/stores/auth-store";
+import { ConversionCtaDocuments } from "@/components/website/conversion-cta-documents/conversion-cta-documents";
 
 import { ConversionCta } from "../conversion-cta";
 
@@ -30,10 +31,9 @@ export const Default: Story = {
     },
   ],
   play: async ({ canvas }) => {
-    await expect(canvas.getByRole("link", { name: /sign in/i })).toHaveAttribute(
-      "href",
-      "/sign-in",
-    );
+    await expect(
+      canvas.getByRole("link", { name: /sign in/i }),
+    ).toHaveAttribute("href", "/sign-in");
   },
 };
 
@@ -57,5 +57,25 @@ export const Authenticated: Story = {
     await expect(
       canvas.getByRole("link", { name: "Go to my dashboard" }),
     ).toHaveAttribute("href", "/dashboard");
+  },
+};
+
+/**
+ * With a `visual` (the documents fan): buttons under the text, and signed-out
+ * visitors also get "Create a free account". The fan shows from `lg`.
+ */
+export const WithDocuments: Story = {
+  args: {
+    title: "Already know which template you need? Sign in and keep moving.",
+    visual: <ConversionCtaDocuments className="hidden lg:block" />,
+  },
+  decorators: Default.decorators,
+  play: async ({ canvas }) => {
+    await expect(
+      canvas.getByRole("link", { name: /sign in/i }),
+    ).toHaveAttribute("href", "/sign-in");
+    await expect(
+      canvas.getByRole("link", { name: "Create a free account" }),
+    ).toHaveAttribute("href", "/sign-up");
   },
 };
