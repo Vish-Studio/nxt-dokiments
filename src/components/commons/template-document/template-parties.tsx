@@ -1,6 +1,7 @@
 import { cn } from "@/lib/utils";
 import type { TemplateField } from "@/types/template";
 import { withPartyContacts } from "@/lib/market-place/party-fields";
+import { missingFieldClassName } from "./missing-field-class-name";
 
 export const partyFieldKeys = new Set([
   "fromName", "fromPhone", "fromEmail", "fromAddress", "toName", "toAddress", "toEmail", "toPhone", "toBrn",
@@ -9,12 +10,16 @@ export const partyFieldKeys = new Set([
 
 interface Props {
   fields: TemplateField[];
+  /** Party keys to mark with the yellow "not filled in" highlight. */
+  highlightedFields?: ReadonlySet<string>;
   values: Record<string, string>;
   compact: boolean;
   labelClassName: string;
+  /** Editor preview only: show placeholders for empty names and addresses. Otherwise they are left out. */
+  showPlaceholders?: boolean;
 }
 
-export const TemplateParties = ({ fields, values, compact, labelClassName }: Props) => {
+export const TemplateParties = ({ fields, highlightedFields, values, compact, labelClassName, showPlaceholders = false }: Props) => {
   const contactFields = withPartyContacts(fields);
   const parties = [
     { label: "From", keys: ["fromName", "fromPhone", "fromEmail", "fromAddress"] },
@@ -37,9 +42,12 @@ export const TemplateParties = ({ fields, values, compact, labelClassName }: Pro
               const value = values[key]?.trim();
               // Optional contact details must not look like real sample data when empty.
               if (key !== party.keys[0] && !key.endsWith("Address") && !value) return null;
+              // Saved and printed documents leave an empty name or address blank.
+              if (!value && !showPlaceholders) return null;
+              const text = `${key === "toBrn" ? "BRN: " : ""}${value || field.placeholder || "—"}`;
               return (
                 <p className={cn(index === 0 ? "font-semibold" : "text-nox-noir/70", !value && "italic text-nox-noir/35")} key={key}>
-                  {key === "toBrn" ? "BRN: " : ""}{value || field.placeholder || "—"}
+                  {!value && highlightedFields?.has(key) ? <mark className={missingFieldClassName}>{text}</mark> : text}
                 </p>
               );
             })}

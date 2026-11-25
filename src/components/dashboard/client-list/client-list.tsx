@@ -1,38 +1,106 @@
-import { UsersThreeIcon } from "@phosphor-icons/react";
+import {
+  MagnifyingGlassIcon,
+  PlusIcon,
+  UsersThreeIcon,
+} from "@phosphor-icons/react";
 
+import { Button } from "@/components/commons/button/button";
+import { EmptyState } from "@/components/commons/empty-state/empty-state";
 import { ClientListItem } from "@/components/dashboard/client-list-item/client-list-item";
+import { iconSize } from "@/lib/icons";
 import type { Client } from "@/types/client";
 
 interface Props {
   clients: Client[];
+  /**
+   * Whether the user has any clients at all, before search and filters. Tells
+   * "No clients yet" (offer Add client) apart from "No clients match" (offer
+   * Clear filters). Defaults to `false`.
+   */
+  hasClients?: boolean;
+  /** The first-time empty state's action. Omit to show no button. */
+  onAdd?: () => void;
   onDelete: (client: Client) => void;
   onEdit: (client: Client) => void;
   onPreview: (client: Client) => void;
+  /** The filtered-empty state's "Clear filters" action. */
+  onReset?: () => void;
 }
 
 /** Card grid, shared with `ClientListSkeleton` so the layout doesn't shift on load. */
 export const clientGridClassName =
   "grid w-full grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3";
 
-export const ClientList = ({ clients, onDelete, onEdit, onPreview }: Props) => {
-  if (clients.length === 0) {
+export const ClientList = ({
+  clients,
+  hasClients = false,
+  onAdd,
+  onDelete,
+  onEdit,
+  onPreview,
+  onReset,
+}: Props) => {
+  if (clients.length === 0 && hasClients) {
     return (
-      <section className="client-list grid min-h-72 w-full place-items-center rounded-box border border-dashed border-steel-mist bg-base-100 p-10 text-center">
-        <span className="flex size-12 items-center justify-center rounded-box bg-base-200 text-nox-noir">
-          <UsersThreeIcon
+      <EmptyState
+        action={
+          onReset ? (
+            <Button
+              onClick={onReset}
+              size="sm"
+              variant="outline"
+            >
+              Clear filters
+            </Button>
+          ) : undefined
+        }
+        className="client-list"
+        description="Try another search, or clear the filters to see all your clients."
+        icon={
+          <MagnifyingGlassIcon
             aria-hidden
-            size={23}
+            size={iconSize.feature}
             weight="bold"
           />
-        </span>
-        <h2 className="mt-4 font-title text-lg font-bold text-nox-noir">
-          No clients yet
-        </h2>
-        <p className="mt-2 max-w-sm text-sm leading-6 text-nox-noir/60">
-          Add a client to keep the contact details you use while preparing
-          documents close at hand.
-        </p>
-      </section>
+        }
+        title="No clients match"
+      />
+    );
+  }
+
+  if (clients.length === 0) {
+    return (
+      <EmptyState
+        action={
+          onAdd ? (
+            <Button
+              icon={
+                <PlusIcon
+                  aria-hidden
+                  size={iconSize.control}
+                  weight="bold"
+                />
+              }
+              iconPosition="left"
+              onClick={onAdd}
+              size="sm"
+              variant="accent"
+            >
+              Add client
+            </Button>
+          ) : undefined
+        }
+        className="client-list"
+        description="Add a client to keep the contact details you use while preparing documents close at hand."
+        icon={
+          <UsersThreeIcon
+            aria-hidden
+            size={iconSize.feature}
+            weight="bold"
+          />
+        }
+        title="No clients yet"
+      />
     );
   }
 

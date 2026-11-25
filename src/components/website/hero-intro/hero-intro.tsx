@@ -34,13 +34,22 @@ const revealStyle = (delay: number) =>
 const headlineClassName =
   "mx-auto mt-5 max-w-xl font-title text-4xl font-bold leading-[1.05] tracking-tight text-nox-noir sm:text-5xl lg:mx-0 lg:mt-4";
 
-export const HeroIntro = () => {
+export interface HeroIntroProps {
+  /**
+   * Called with the new step's index whenever the step changes (autoplay or a
+   * click), so `HeroShowcase` can switch the device scene beside the card.
+   */
+  onStepChange?: (index: number) => void;
+}
+
+export const HeroIntro = ({ onStepChange }: HeroIntroProps) => {
   const [activeIndex, setActiveIndex] = useState(0);
   // The first step lingers a few seconds after load before autoplay starts; any advance or click ends it.
   const [isFirstRun, setIsFirstRun] = useState(true);
   const goTo = (index: number) => {
     setIsFirstRun(false);
     setActiveIndex(index);
+    onStepChange?.(index);
   };
   const activeStep = heroIntroSteps[activeIndex];
   const typeStart = isFirstRun ? loadTypeStart : stepTypeStart;

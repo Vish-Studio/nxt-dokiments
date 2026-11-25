@@ -20,11 +20,25 @@ import {
 } from "@/hooks/queries/use-share";
 import { shareEmailSchema } from "@/lib/sharing/email-schema";
 
-type ShareValues = { email: string };
+type ShareValues = { email: string; senderSignature: string };
 
 export interface ShareDialogProps {
-  /** The document being shared; `recipientEmail` is the one named on it, offered first. */
-  document: { id: string; name: string; recipientEmail?: string };
+  /**
+   * The document being shared; `recipientEmail` is the one named on it, offered
+   * first. `signable: false` marks a view-only share, so the copy drops "sign".
+   */
+  document: {
+    id: string;
+    name: string;
+    recipientEmail?: string;
+    signable?: boolean;
+    /**
+     * The owner's signature field. Present when the layout has one: the dialog
+     * then asks for the signature (prefilled with `value`, the draft in the
+     * document) and sends it with the share.
+     */
+    senderSignature?: { value: string };
+  };
   onClose: () => void;
   open: boolean;
 }
@@ -54,8 +68,13 @@ export const ShareDialog = ({
     register,
     reset,
     setValue,
-  } = useForm<ShareValues>({ defaultValues: { email: "" } });
+  } = useForm<ShareValues>({
+    defaultValues: { email: "", senderSignature: "" },
+  });
   const typedEmail = useWatch({ control, name: "email" });
+  const senderDraft = target.senderSignature?.value;
+  const needsSenderSignature = senderDraft !== undefined;
+  const action = target.signable === false ? "view" : "view and sign";
   const documentRecipient = shareEmailSchema.safeParse(
     target.recipientEmail ?? "",
   );
@@ -101,12 +120,15 @@ export const ShareDialog = ({
     }));
   }, [clients, documentRecipientEmail, recipients, typedEmail]);
 
-  // Pre-fill the address named on the document each time the dialog opens.
+  // Pre-fill the address and the signature draft named on the document each time the dialog opens.
   useEffect(() => {
     if (open) {
-      reset({ email: documentRecipientEmail ?? "" });
+      reset({
+        email: documentRecipientEmail ?? "",
+        senderSignature: senderDraft ?? "",
+      });
     }
-  }, [open, documentRecipientEmail, reset]);
+  }, [open, documentRecipientEmail, senderDraft, reset]);
 
   useEffect(() => {
     if (!open) {
@@ -134,7 +156,7 @@ export const ShareDialog = ({
 
   /** Closes and clears everything, so reopening starts fresh. */
   const close = () => {
-    reset({ email: "" });
+    reset({ email: "", senderSignature: "" });
     setErrorMessage(null);
     setSharedWith(null);
     setIsUpgradeOpen(false);
@@ -145,7 +167,13 @@ export const ShareDialog = ({
     setErrorMessage(null);
 
     share(
-      { documentId: target.id, email: shareEmailSchema.parse(values.email) },
+      {
+        documentId: target.id,
+        email: shareEmailSchema.parse(values.email),
+        senderSignature: needsSenderSignature
+          ? values.senderSignature.trim()
+          : undefined,
+      },
       {
         onError: (error) => {
           if (error instanceof ShareLimitReachedError) {
@@ -191,7 +219,7 @@ export const ShareDialog = ({
             Document shared
           </h3>
           <p className="mt-2 text-sm leading-6 text-nox-noir/65">
-            {sharedWith} can now view and sign{" "}
+            {sharedWith} can now {action}{" "}
             <span className="font-semibold text-nox-noir">{target.name}</span>{" "}
             once they sign in with a verified email.
           </p>
@@ -217,7 +245,7 @@ export const ShareDialog = ({
           <p className="mt-2 text-sm leading-6 text-nox-noir/65">
             Send{" "}
             <span className="font-semibold text-nox-noir">{target.name}</span>{" "}
-            to someone who needs to view and sign it.
+            to someone who needs to {action} it.
           </p>
 
           {errorMessage ? (
@@ -254,6 +282,28 @@ export const ShareDialog = ({
               selected={typedEmail}
             />
           </div>
+
+          {needsSenderSignature ? (
+            <div className="mt-5">
+              <Input
+                autoComplete="off"
+                disabled={isPending}
+                error={errors.senderSignature?.message}
+                id="share-sender-signature"
+                label="Your signature"
+                maxLength={200}
+                placeholder="Type your full name"
+                {...register("senderSignature", {
+                  validate: (value) =>
+                    value.trim().length > 0 || "Sign the document to share it.",
+                })}
+              />
+              <p className="mt-2 text-xs leading-5 text-nox-noir/65">
+                Typing your name signs this document. Your signature is binding
+                for the shared copy, and it is locked once the recipient signs.
+              </p>
+            </div>
+          ) : null}
 
           <div className="mt-6 flex justify-end gap-2">
             <Button

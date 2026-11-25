@@ -10,13 +10,7 @@ import { InstallAppButton } from "@/components/commons/install-app-button/instal
 import { LinkButton } from "@/components/commons/link-button/link-button";
 import { NewsletterForm } from "@/components/commons/newsletter-form/newsletter-form";
 import { CookieSettingsButton } from "@/components/website/cookie-settings-button/cookie-settings-button";
-
-const productLinks = [
-  { href: "/#overview", label: "Overview" },
-  { href: "/#marketplace", label: "Marketplace" },
-  { href: "/#use-cases", label: "Use cases" },
-  { href: "/#workflow", label: "How it works" },
-];
+import { footerProductLinks } from "@/lib/website/navigation";
 
 const accountLinks = [
   { href: "/sign-up", label: "Create account" },
@@ -113,7 +107,7 @@ export const Footer = () => {
                   Product
                 </h3>
                 <div className="mt-5 grid gap-3">
-                  {productLinks.map((item) => (
+                  {footerProductLinks.map((item) => (
                     <Link
                       className="text-sm text-white/62 transition-colors hover:text-white"
                       href={item.href}

@@ -13,6 +13,8 @@ import type {
 } from "serwist";
 import { NetworkOnly, Serwist } from "serwist";
 
+import { parsePushPayload, safeNotificationPath } from "@/lib/push/payload";
+
 declare global {
   interface WorkerGlobalScope extends SerwistGlobalConfig {
     // Populated by the Serwist build plugin with the list of assets to precache.
@@ -72,6 +74,61 @@ const apiNetworkOnly: RuntimeCaching = {
  */
 self.addEventListener("activate", (event) => {
   event.waitUntil(caches.delete(STALE_API_CACHE_NAME));
+});
+
+/**
+ * Shows a push as a system notification, even when every tab is closed.
+ *
+ * Always shows something: `parsePushPayload` falls back to a generic message,
+ * because a worker that receives a push and displays nothing risks having its
+ * permission revoked by the browser. `waitUntil` keeps the worker alive until the
+ * notification is displayed.
+ */
+self.addEventListener("push", (event) => {
+  const { body, tag, title, url } = parsePushPayload(event.data?.text());
+
+  event.waitUntil(
+    self.registration.showNotification(title, {
+      body,
+      data: { url },
+      icon: "/icons/icon-192.png",
+      tag,
+    }),
+  );
+});
+
+/**
+ * Opens the notification's target. Focuses and navigates an existing window of
+ * the app when there is one, so the user is not left with duplicate tabs;
+ * otherwise opens a new one (the installed PWA window when installed).
+ */
+self.addEventListener("notificationclick", (event) => {
+  event.notification.close();
+
+  const target = new URL(
+    safeNotificationPath(event.notification.data?.url),
+    self.location.origin,
+  ).href;
+
+  event.waitUntil(
+    (async () => {
+      const windows = await self.clients.matchAll({
+        includeUncontrolled: true,
+        type: "window",
+      });
+      const existing = windows.find((client) =>
+        client.url.startsWith(self.location.origin),
+      );
+
+      if (existing) {
+        await existing.focus();
+        await existing.navigate(target).catch(() => undefined);
+        return;
+      }
+
+      await self.clients.openWindow(target);
+    })(),
+  );
 });
 
 const serwist = new Serwist({

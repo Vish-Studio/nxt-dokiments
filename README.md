@@ -74,7 +74,8 @@ See [`docs/`](./docs) for the full design writeups referenced below.
 
 - Node **24.12.0** (see [`.nvmrc`](./.nvmrc) — `nvm use`)
 - A Firebase project with **Authentication** (Email/Password, and optionally
-  Google) and **Firestore** enabled
+  Google) and **Firestore** enabled. No project? Run Firebase locally instead,
+  see [`docs/local-firebase.md`](./docs/local-firebase.md).
 
 ### 1. Install dependencies
 

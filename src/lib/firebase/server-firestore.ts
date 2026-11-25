@@ -1,5 +1,6 @@
 import "server-only";
 
+import { resolveFirebaseEndpoints } from "@/lib/firebase/endpoints";
 import { serverFirebaseConfig } from "@/lib/firebase/server-config";
 import { ApiError } from "@/lib/api/errors";
 import { fetchUpstream } from "@/lib/http/fetch-upstream";
@@ -58,11 +59,15 @@ type FirestoreErrorBody = {
   };
 };
 
-const FIRESTORE_BASE_URL = "https://firestore.googleapis.com/v1";
+/**
+ * Firestore REST base URL: Google's cloud, or the local emulator when
+ * `FIRESTORE_EMULATOR_HOST` is set. See {@link resolveFirebaseEndpoints}.
+ */
+const firestoreBaseUrl = () => resolveFirebaseEndpoints().firestore;
 
 /** Builds the Firestore REST URL for a document path, e.g. `users/{uid}`. */
 const documentUrl = (path: string) =>
-  `${FIRESTORE_BASE_URL}/projects/${serverFirebaseConfig.projectId}/databases/(default)/documents/${path}`;
+  `${firestoreBaseUrl()}/projects/${serverFirebaseConfig.projectId}/databases/(default)/documents/${path}`;
 
 /** Summarises a JWT's non-secret claims (audience, expiry) for diagnosing rejected tokens. */
 const describeToken = (idToken: string): string => {
@@ -169,8 +174,7 @@ export const listFirestoreCollection = async (
     });
 
     const page = (await response.json().catch(() => null)) as
-      | (FirestoreListResponse & FirestoreErrorBody)
-      | null;
+      (FirestoreListResponse & FirestoreErrorBody) | null;
 
     if (!response.ok) {
       throw toFirestoreError(
@@ -194,22 +198,27 @@ export const listFirestoreCollection = async (
  * @param path - Document path relative to the database root, e.g. `users/{uid}`.
  * @param idToken - Firebase ID token used to authorise the request (Firestore Security Rules
  *   are evaluated against this token's `uid` claim, not a service-account credential).
+ *   Omit it for an unauthenticated read, which only succeeds where the rules
+ *   allow a public `get` (the invite preview).
  * @returns The parsed document, or `null` when it does not exist (404).
  * @throws When the request fails for any reason other than a 404.
  */
 export const getFirestoreDocument = async (
   path: string,
-  idToken: string,
+  idToken?: string,
 ): Promise<FirestoreDocument | null> => {
   const response = await fetchUpstream(documentUrl(path), {
-    headers: { Authorization: `Bearer ${idToken}` },
+    headers: idToken
+      ? { Authorization: `Bearer ${idToken}` }
+      : serverFirebaseConfig.apiKey
+        ? { "X-Goog-Api-Key": serverFirebaseConfig.apiKey }
+        : {},
   });
 
   if (response.status === 404) return null;
 
   const document = (await response.json().catch(() => null)) as
-    | (FirestoreDocument & FirestoreErrorBody)
-    | null;
+    (FirestoreDocument & FirestoreErrorBody) | null;
 
   if (!response.ok) {
     throw toFirestoreError(
@@ -253,8 +262,7 @@ const writeDocument = async (
   });
 
   const body = (await response.json().catch(() => null)) as
-    | (FirestoreDocument & FirestoreErrorBody)
-    | null;
+    (FirestoreDocument & FirestoreErrorBody) | null;
 
   return { body, response };
 };
@@ -397,7 +405,7 @@ export const commitFirestoreWrites = async (
   const databasePath = `projects/${serverFirebaseConfig.projectId}/databases/(default)/documents`;
 
   const response = await fetchUpstream(
-    `${FIRESTORE_BASE_URL}/${databasePath}:commit`,
+    `${firestoreBaseUrl()}/${databasePath}:commit`,
     {
       body: JSON.stringify({
         writes: writes.map(({ fields, mustExist, path }) => ({
@@ -435,6 +443,82 @@ export const commitFirestoreWrites = async (
   );
 };
 
+/**
+ * Writes some fields of an existing document and appends values to one of its
+ * arrays in a single commit, like the client SDK's `arrayUnion`.
+ *
+ * Exists for a caller that cannot read the document first (so cannot rebuild the
+ * whole array) but whose rules require the new array to contain the old one: the
+ * server applies the append to whatever the array holds when the write lands.
+ *
+ * @param path - Document path relative to the database root.
+ * @param arrayField - Field that receives `values`; created when absent.
+ * @param values - Elements to append; ones already present are not repeated.
+ * @param fields - Other fields to write. Only these are touched.
+ * @param idToken - Firebase ID token used to authorise the request.
+ * @returns `true` when written, `false` when the document does not exist.
+ * @throws A `FirestorePermissionDeniedError` when the rules refuse, and an
+ *   `Error` for any other failure.
+ */
+export const appendFirestoreArrayElements = async (
+  path: string,
+  arrayField: string,
+  values: FirestoreValue[],
+  fields: FirestoreFields,
+  idToken: string,
+): Promise<boolean> => {
+  const databasePath = `projects/${serverFirebaseConfig.projectId}/databases/(default)/documents`;
+
+  const response = await fetchUpstream(
+    `${firestoreBaseUrl()}/${databasePath}:commit`,
+    {
+      body: JSON.stringify({
+        writes: [
+          {
+            currentDocument: { exists: true },
+            update: { fields, name: `${databasePath}/${path}` },
+            updateMask: { fieldPaths: Object.keys(fields) },
+            updateTransforms: [
+              {
+                appendMissingElements: { values },
+                fieldPath: arrayField,
+              },
+            ],
+          },
+        ],
+      }),
+      headers: {
+        "Content-Type": "application/json",
+        ...(serverFirebaseConfig.apiKey
+          ? { "X-Goog-Api-Key": serverFirebaseConfig.apiKey }
+          : {}),
+        Authorization: `Bearer ${idToken}`,
+      },
+      method: "POST",
+    },
+  );
+
+  if (response.ok) return true;
+
+  const body = (await response
+    .json()
+    .catch(() => null)) as FirestoreErrorBody | null;
+
+  if (
+    body?.error?.status === "NOT_FOUND" ||
+    body?.error?.status === "FAILED_PRECONDITION"
+  ) {
+    return false;
+  }
+
+  throw toFirestoreError(
+    response,
+    body?.error?.message,
+    "Unable to update the requested document.",
+    idToken,
+  );
+};
+
 /** A single-field filter for `runFirestoreQuery`. */
 export type FirestoreQueryFilter = {
   field: string;
@@ -443,13 +527,15 @@ export type FirestoreQueryFilter = {
 };
 
 /**
- * Runs a single-filter query over a top-level collection via `documents:runQuery`.
+ * Runs a query over a top-level collection via `documents:runQuery`. One filter
+ * is applied as is; several are combined with AND.
  *
  * Security rules are evaluated against the query itself, so a caller can only
- * run a query the rules would allow for every document it could match.
+ * run a query the rules would allow for every document it could match. Equality
+ * filters on several fields need no composite index.
  *
  * @param collectionId - Top-level collection name, e.g. `sharedDocuments`.
- * @param filter - The one condition documents must meet.
+ * @param filter - The condition documents must meet, or a list that all must meet.
  * @param idToken - Firebase ID token used to authorise the request.
  * @param limit - Maximum documents to return.
  * @returns The matching documents, in server-returned order.
@@ -457,24 +543,29 @@ export type FirestoreQueryFilter = {
  */
 export const runFirestoreQuery = async (
   collectionId: string,
-  filter: FirestoreQueryFilter,
+  filter: FirestoreQueryFilter | FirestoreQueryFilter[],
   idToken: string,
   limit = 200,
 ): Promise<FirestoreDocument[]> => {
+  const filters = (Array.isArray(filter) ? filter : [filter]).map((entry) => ({
+    fieldFilter: {
+      field: { fieldPath: entry.field },
+      op: entry.op,
+      value: entry.value,
+    },
+  }));
+
   const response = await fetchUpstream(
-    `${FIRESTORE_BASE_URL}/projects/${serverFirebaseConfig.projectId}/databases/(default)/documents:runQuery`,
+    `${firestoreBaseUrl()}/projects/${serverFirebaseConfig.projectId}/databases/(default)/documents:runQuery`,
     {
       body: JSON.stringify({
         structuredQuery: {
           from: [{ collectionId }],
           limit,
-          where: {
-            fieldFilter: {
-              field: { fieldPath: filter.field },
-              op: filter.op,
-              value: filter.value,
-            },
-          },
+          where:
+            filters.length === 1
+              ? filters[0]
+              : { compositeFilter: { filters, op: "AND" } },
         },
       }),
       headers: {

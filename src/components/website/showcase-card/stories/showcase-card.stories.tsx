@@ -2,6 +2,8 @@ import { Receipt } from "@phosphor-icons/react/dist/ssr";
 import type { Meta, StoryObj } from "@storybook/nextjs-vite";
 import { expect } from "storybook/test";
 
+import { ShowcaseDocument } from "@/components/website/showcase-document/showcase-document";
+
 import { ShowcaseCard } from "../showcase-card";
 
 const meta = {
@@ -41,4 +43,21 @@ export const Default: Story = {
 
 export const WithoutTag: Story = {
   args: { tag: undefined },
+};
+
+/** A real document in the tile instead of the icon; decorative and inert. */
+export const WithDocument: Story = {
+  args: {
+    visual: (
+      <ShowcaseDocument
+        className="absolute left-1/2 top-[12%] w-3/5 -translate-x-1/2 -rotate-3"
+        templateId="classic-quotation"
+      />
+    ),
+  },
+  play: async ({ canvasElement }) => {
+    const tile = canvasElement.querySelector("[inert]");
+    await expect(tile).toHaveAttribute("aria-hidden", "true");
+    await expect(tile?.querySelector(".showcase-document")).not.toBeNull();
+  },
 };

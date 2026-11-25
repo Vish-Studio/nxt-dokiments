@@ -38,7 +38,7 @@ export const Documents: Story = {
     await expect(
       canvas.getByRole("status", { name: /loading your documents/i }),
     ).toBeInTheDocument();
-    await expect(canvas.getByText("Date created")).toBeInTheDocument();
+    await expect(canvas.getByText("Created")).toBeInTheDocument();
 
     // `ordered` must match the loaded list, which renders an <ol>.
     await expect(canvasElement.querySelector("ol")).toBeInTheDocument();

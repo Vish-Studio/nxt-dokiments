@@ -12,6 +12,7 @@ const refreshableRoots: ReadonlySet<unknown> = new Set([
   queryKeys.clients.all()[0],
   queryKeys.savedTemplates.all()[0],
   queryKeys.notifications.all()[0],
+  queryKeys.sharedDocuments.all()[0],
 ]);
 
 export const isRefreshableQuery = (query: Pick<Query, "queryKey">) =>

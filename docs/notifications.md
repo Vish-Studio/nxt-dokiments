@@ -4,6 +4,25 @@ The bell in the dashboard header (`NotificationBell`) renders one merged list of
 `AppNotification`s (`src/types/notification.ts`). It does not know where an item
 comes from, so new kinds plug in without touching the UI.
 
+## The panel
+
+`NotificationBell` opens an anchored popover on desktop and a bottom sheet on
+phones (titled with the bell icon). Both hold the same panel:
+
+- **Header:** "Notifications", a golden "N new" count, and "Mark all as read"
+  (disabled when nothing is unread). On phones the sheet's own title replaces the
+  heading.
+- **List:** split by `groupNotifications` into **New** (unread) and **Earlier**
+  (read), each with its count; an empty section is not shown. Each
+  `NotificationListItem` has a tinted icon tile (purple template, blue shared,
+  green signed, golden update), the title with an unread dot (also announced as
+  "(unread)"), a two-line body, the age (`dd mmm yyyy` on hover) and one action
+  button. A persistent notification's action is golden.
+- **States:** a skeleton while the first fetch is in flight, and "You're all
+  caught up" with what will show up here when there is nothing.
+- Using an action link or button closes the panel, so it never lingers over the
+  next page. "Mark all as read" also closes it.
+
 ## Existing sources
 
 | Kind | Where it runs | Read state |
@@ -52,7 +71,7 @@ The client polls every 60 seconds and on window focus.
 1. Add a `ServerNotificationSource` to `serverNotificationSources` in
    `src/lib/notifications/server-sources.ts`. Return items with a unique
    `id` (`"<kind>:<key>"`) and `createdAt`; `read` is decided by the route.
-2. Optionally add an icon for the `kind` in `kindIcons` (`notification-bell.tsx`).
+2. Optionally give the `kind` an icon in `kindIcons` (`notification-list-item.tsx`) and a colour in `accents` (`src/lib/notifications/notification-display.ts`). An unknown kind gets a generic icon on a neutral tile.
 
 **Client-only** (browser state, like app updates):
 1. Write a hook returning `AppNotification[]` (see `use-app-update-notifications.ts`).

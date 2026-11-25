@@ -8,6 +8,7 @@ import {
   sidebarRowLabelClassName,
 } from "@/components/dashboard/sidebar-item/sidebar-item";
 import { useUiStore } from "@/stores/ui-store";
+import { iconSize } from "@/lib/icons";
 
 interface Props {
   isCollapsed?: boolean;
@@ -46,7 +47,7 @@ const SidebarOnboarding: FunctionComponent<Props> = ({
       <CompassIcon
         aria-hidden
         className="shrink-0"
-        size={19}
+        size={iconSize.nav}
         weight="bold"
       />
       <span className={sidebarRowLabelClassName(isCollapsed)}>{LABEL}</span>

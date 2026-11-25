@@ -41,7 +41,9 @@ export const useSharedByMeQuery = ({
     enabled,
     queryKey: queryKeys.sharedDocuments.byMe(),
     queryFn: () => fetchSharedDocuments("me"),
-    // Changes when a recipient signs, so refetching on focus keeps the row action current.
+    // Changes when a recipient views or signs. There is no client SDK to push
+    // those, so poll while the tab is visible (TanStack pauses it in the background).
+    refetchInterval: 5 * 60_000,
     refetchOnWindowFocus: true,
   });
 
@@ -121,6 +123,50 @@ export const useSignSharedDocumentMutation = () => {
 
   return useMutation({
     mutationFn: postSignature,
+    onSuccess: (document) => {
+      queryClient.setQueryData(
+        queryKeys.sharedDocuments.detail(document.id),
+        document,
+      );
+      return queryClient.invalidateQueries({
+        queryKey: queryKeys.sharedDocuments.all(),
+      });
+    },
+  });
+};
+
+const postRevoke = async (id: string): Promise<SharedDocument> => {
+  const response = await fetch(
+    `/api/documents/shared/${encodeURIComponent(id)}/revoke`,
+    { method: "POST" },
+  );
+
+  if (response.status === 401) {
+    throw new UnauthorizedError();
+  }
+
+  const data = (await response.json()) as {
+    document?: SharedDocument;
+    error?: string;
+  };
+
+  if (!response.ok || !data.document) {
+    throw new Error(data.error ?? "Unable to revoke access right now.");
+  }
+
+  return data.document;
+};
+
+/**
+ * Takes the recipient's access to a shared document away (owner only, before
+ * it is signed). Refreshes every shared-document list so the recipient's copy
+ * disappears and the owner's status updates.
+ */
+export const useRevokeSharedDocumentMutation = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: postRevoke,
     onSuccess: (document) => {
       queryClient.setQueryData(
         queryKeys.sharedDocuments.detail(document.id),

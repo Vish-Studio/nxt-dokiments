@@ -7,6 +7,7 @@ import {
 
 import { SectionHeading } from "@/components/website/section-heading/section-heading";
 import { ShowcaseCard } from "@/components/website/showcase-card/showcase-card";
+import { ShowcaseDocument } from "@/components/website/showcase-document/showcase-document";
 
 const useCases = [
   {
@@ -15,6 +16,7 @@ const useCases = [
       "Turn quotes, proposals, and invoices around faster without leaving details scattered across files.",
     icon: Receipt,
     tag: "Invoices + quotes",
+    templateId: "classic-quotation",
     title: "Freelancers",
   },
   {
@@ -23,6 +25,7 @@ const useCases = [
       "Keep contracts, NDAs, and client documents consistent by reusing the same saved templates every time.",
     icon: Briefcase,
     tag: "Contracts + NDAs",
+    templateId: "classic-nda",
     title: "Small businesses",
   },
   {
@@ -31,6 +34,7 @@ const useCases = [
       "Give clients polished documents without rebuilding the same structure for every engagement.",
     icon: Handshake,
     tag: "Proposals",
+    templateId: "classic-proposal",
     title: "Studios",
   },
   {
@@ -39,6 +43,7 @@ const useCases = [
       "Create operational documents from guided fields so repeat admin work stays predictable.",
     icon: FileText,
     tag: "Operations",
+    templateId: "classic-purchase-order",
     title: "Operators",
   },
 ];
@@ -68,6 +73,12 @@ export const UseCases = () => {
               linkLabel="Browse templates"
               tag={item.tag}
               title={item.title}
+              visual={
+                <ShowcaseDocument
+                  className="absolute left-1/2 top-[12%] w-3/5 -translate-x-1/2 -rotate-3"
+                  templateId={item.templateId}
+                />
+              }
             />
           ))}
         </div>

@@ -26,16 +26,25 @@ Top-level, because two parties read the same record. The owner's original in
 | `ownerId`, `ownerName`, `ownerEmail` | string | Immutable `ownerId`. |
 | `name`, `templateId`, `values`, `templateSnapshot?` | | Copied from the source document. |
 | `sourceDocumentId` | string | The document the share was made from. |
-| `recipients` | array of map | `{ email, invitedAt, status, signedAt?, uid?, emailedAt? }`. `emailedAt` is a list of recent share-email send times (24h), used for the email cooldown and daily cap. Informational; the API is its only writer. |
+| `recipients` | array of map | `{ email, invitedAt, status, revokedAt?, signedAt?, uid?, emailedAt? }`. `emailedAt` is a list of recent share-email send times (24h), used for the email cooldown and daily cap. Informational; the API is its only writer. |
 | `recipientEmails` | string[] | Normalised addresses. **Derived from `recipients`** — security rules cannot look inside an array of maps. |
 | `recipientUids` | string[] | Linked accounts. Derived from `recipients`. |
-| `signatures` | map | Keyed by signer uid → `{ email, signedAt, type: "typed", value }`. |
+| `views` | map | Keyed by viewer uid → `{ email, viewedAt }`. A recipient adds only their own key, once, on first open. Absent until someone opens the copy. |
+| `signatures` | map | Keyed by signer uid → `{ email, signedAt, type: "typed", value }`. The recipient's entry is written when they sign. The **owner's entry** (the sender signature) is written when they share, for layouts with a `senderSignature` field — see [Sender signature](#sender-signature). |
 | `locked` | bool | Once true, nobody can write or delete. |
 | `createdAt`, `updatedAt` | timestamp | |
 
+Anything that means "a recipient has signed" must ignore the owner's entry:
+use `recipientSignatures` / `recipientSignatureOf` from
+`lib/sharing/signatures.ts`, never `Object.values(signatures)`. The signed
+email, the bell (`signedDocumentNotifications`) and the status all follow that.
+The `locked` flag is only ever set by a recipient signing.
+
 A recipient's `signed` status is derived from `signatures`, not stored by them:
 rules only let a recipient write `signatures`, `locked` and `updatedAt`, so they
-cannot alter `recipients`. `parseSharedDocument` applies that derivation.
+cannot alter `recipients`. `parseSharedDocument` applies that derivation. The
+same goes for `viewed`, derived from `views`. Only `revoked` is stored on the
+recipient, because only the owner can revoke.
 
 ### `users/{uid}/shareRecipients/{normalisedEmail}` — sharing ledger
 
@@ -49,8 +58,8 @@ limit is switched on, existing usage is already known.
 
 | Actor | May |
 |---|---|
-| Owner | Read. Create (unlocked, no signatures). Edit and delete while unlocked. Never write `signatures` or `locked`; cannot change `ownerId`. |
-| Recipient | Read. Sign while unlocked: add exactly one signature (their own uid key) **and set `locked` to true in the same write**. Nothing else. |
+| Owner | Read. Create (unlocked; `signatures` empty or exactly one entry, keyed by their own uid, that passes `validSignature` with their token address). Edit and delete while unlocked; the only `signatures` key they may change is their own, and they can replace but not remove it. Never write `locked` or `views`; cannot change `ownerId`. |
+| Recipient | Read. Record their first view while unlocked: add exactly their own uid key to `views`, with their token address, touching nothing else (not even `updatedAt`). Sign while unlocked: add exactly one signature (their own uid key) **and set `locked` to true in the same write**. Nothing else. |
 | Anyone, once `locked` | Read only (owner and recipients). No update, no delete. An owner re-share is refused too, so a signed copy cannot be replaced. |
 | Anyone else | Nothing. |
 
@@ -62,10 +71,68 @@ nudges unverified users to confirm it — see
 [`firebase-auth.md`](./firebase-auth.md#email-verification). A signature must
 carry the signer's own token address, so nobody can sign as someone else.
 
-**Open point for the invite story:** with no admin SDK, the server cannot look up
-a uid from an email, and cannot write another user's profile. Linking a
-password-registered recipient with an unverified address therefore needs a proof
-of address ownership (the emailed invite token) and a rule that accepts it.
+Someone who has no account, or an unverified one, is linked through the
+[invite flow](#invite-links-ds-7) instead.
+
+## Invite links (DS-7)
+
+The share email links to `/shared/<token>` rather than the dashboard, so a
+person without an account can see what was sent and sign up to sign it. For a
+view-only share the preview endpoint returns `signable: false`, so the page, its
+sign-up button ("Sign up to view"), the accept toast and the email ask the
+visitor to view rather than sign. The page heading is neutral because it renders
+before the invite is looked up.
+
+- **Token:** 32 random bytes, base64url. Only its SHA-256 hash is stored, as the
+  document ID of `sharedInvites/{tokenHash}`. It is valid for 14 days.
+- **Snapshot:** the invite holds a preview (name, values, template, sender) so the
+  public page needs no access to `sharedDocuments`. The public API returns only
+  the document name and the sender's name and address. The share route refreshes
+  the snapshot on every re-share.
+- **Lifecycle:** minted only once the email is actually going out. A new invite
+  replaces older ones after a successful send, and revoking deletes them all.
+  A replaced, revoked or unknown link is `invalid`; a link past 14 days is
+  `expired`. The two are never told apart further, so nothing leaks.
+- **Accepting:** a signed-in user whose address matches the invite is linked by
+  appending their uid to `recipientUids` (a REST `appendMissingElements`
+  transform, because an unverified user cannot read the document to rebuild the
+  array). The token plus a matching account address stands in for address
+  verification. The rules allow this single write only while the invite exists, is
+  unexpired and names the same address, and it cannot touch any other field.
+- **Wrong account:** answers `403` with the invited address masked
+  (`j***@example.com`); the page offers to sign out.
+- **Shared tab:** `listSharedWithMe` also queries by `recipientUids`, which is
+  what an unverified account can read.
+
+| Method and path | Auth | Purpose |
+| --- | --- | --- |
+| `GET /api/shared-invites/:token` | none | Preview, `valid`, `expired` or `invalid`. Never cached. |
+| `POST /api/shared-invites/:token/accept` | session | Link the account. `403` mismatch, `404` invalid, `410` expired. |
+
+Both answer `404` while the `documentSharing` flag is off.
+
+## Which documents can be shared
+
+**Every document can be shared.** What the recipient can do depends on the
+layout (`isSignableDocument`, `src/lib/sharing/signable.ts`):
+
+- **Signable** — the template has a `recipientSignature` field (contract, NDA,
+  statement of work, change order, contract addendum). The recipient signs it,
+  as described under [Signing](#signing-ds-5).
+- **View-only** — any other template (invoice, quotation, proposal, CV, …). The
+  recipient can open it and the owner can see it was viewed, but there is
+  nothing to sign: `viewed` is as far as the share goes and the copy never
+  locks. The sign route refuses it with `400 SHARE_NOT_SIGNABLE`. Until the
+  recipient opens it, `ShareStatusBadge` (`signable={false}`) labels it
+  **Not opened** rather than **Pending**, which would suggest a signature is
+  outstanding. `isViewOnlyShare` decides this for a shared copy: the layout
+  must be known and lack the field, so a copy with a missing layout keeps the
+  usual labels.
+
+Resend, revoke, view tracking and the timeline work the same for both. The
+share email, the share dialog and `SharedCopyStatus` drop the mention of
+signing for a view-only share; the route passes `signable` (from
+`shareDocument`) to `notifyDocumentShared` for the email.
 
 ## Share policy
 
@@ -84,7 +151,8 @@ in the server route only, not in the rules, so changing it needs no rules deploy
 ## Error codes
 
 `SHARE_LIMIT_REACHED` (403), `SHARE_SELF_NOT_ALLOWED` (400), `DOCUMENT_LOCKED` (409),
-`NOT_A_RECIPIENT` (404), `SHARE_ALREADY_WITH_ANOTHER` (409) — statuses and user-safe messages in
+`NOT_A_RECIPIENT` (404), `SHARE_ALREADY_WITH_ANOTHER` (409), `SHARE_NOT_SIGNABLE` (400, signing a
+view-only share) — statuses and user-safe messages in
 `src/lib/sharing/server-guard.ts`.
 
 ## Share API
@@ -112,12 +180,45 @@ in the server route only, not in the rules, so changing it needs no rules deploy
   `recipientEmails` on the token's address; for an unverified account the rules
   refuse it and the API returns an empty list.
 
+## Sender signature
+
+When the template has a `senderSignature` field **and** a recipient signature
+field, sharing carries the owner's
+typed signature so the signed copy shows a verified record for both parties
+instead of an editable text value.
+
+- `POST /api/documents/:id/share` takes `senderSignature` (string, trimmed, at most
+  200 characters). It is **required** when the document's template snapshot has
+  both a `senderSignature` and a recipient signature field
+  (`requiresSenderSignature`): a missing or blank value is a `400` ("Sign the
+  document before sharing it."), unless the copy already carries the owner's
+  signature. A view-only share, or any document without the field, ignores the
+  value and shares as before.
+- `shareDocument` writes `signatures[ownerUid] = { email, signedAt, type: "typed", value }`
+  in the same atomic commit as the copy. `email` is the owner's normalised token
+  address, as `validSignature` requires.
+- A re-share with a newly typed signature, before the recipient signs, rewrites
+  the entry with a new `signedAt`. Once the copy is locked the share is refused
+  (`409`), so nothing changes.
+- `SharedDocumentSheet` renders the sender signature from `signatures[ownerId]`
+  (`withSenderSignature`), not `values.senderSignature`, which was editable until
+  sharing. The owner's editor, preview and PDF export do the same once the
+  document has a shared copy; before that they show the draft value.
+- The share dialog shows a **Your signature** input, prefilled from the draft
+  `values.senderSignature`, with a note that signing is binding for the shared
+  copy. Resending the invite email sends no signature, so the stored entry and its
+  `signedAt` are kept.
+- The recipient cannot write or alter the owner's entry: their signing rule only
+  accepts a change to their own uid key (see the rules tests).
+
 ## Share dialog (UI)
 
 `ShareDialog` (`components/dashboard/share-dialog`) shares a document by email.
 It is reachable from the three-dot menu on each My Documents row and from a
-**Share** button in the document editor (saved documents only), and both are
-hidden while `NEXT_PUBLIC_DOCUMENT_SHARING_ENABLED` is off.
+**Share** button in the document editor (saved documents only), for every
+document type, and both are hidden while `NEXT_PUBLIC_DOCUMENT_SHARING_ENABLED`
+is off. For a view-only document the dialog says the recipient can "view" it
+rather than "view and sign".
 
 - The address is validated with `shareEmailSchema` (`lib/sharing/email-schema.ts`),
   the same schema the route uses, so the dialog and the API agree.
@@ -162,7 +263,8 @@ account name. One masked write sets `signatures.{uid}`, `locked = true` and
 `updatedAt`, so the signature and the lock land together and the rules can
 require both. Errors: `404 NOT_A_RECIPIENT` (owners, strangers and absent
 documents alike), `409 DOCUMENT_LOCKED` (already signed, or refused by the
-rules), `400` for a bad signature, `401` without a session.
+rules), `400 SHARE_NOT_SIGNABLE` for a view-only share, `400` for a bad
+signature, `401` without a session.
 
 After a successful sign the route emails the owner in the background
 (`after()`), which doesn't change the response — see
@@ -182,12 +284,53 @@ same page for both parties and is flag-gated (`notFound()` when off):
   signature, signer address and time).
 - **Owner** — read-only. The owner reaches it from the **View shared copy** row
   action, shown only for documents in their `?by=me` list.
+- **Recipient, view-only** — no signing controls; a note says the document was
+  shared to view and there is nothing to sign.
+- **Export** — once signed (locked, with a signature, and a template snapshot),
+  both parties get **Download signed PDF**, which opens `DocumentExportDialog`
+  with `SignedSignature` passed through its `fieldSlots`. The owner's original,
+  exported from My Documents, stays unsigned because the signature is never
+  merged into it. No new API is involved: the PDF is built in the browser from
+  the shared copy both parties can already read.
 
 The signature script font is `--font-signature` (Dancing Script via
 `next/font`, utility `font-signature`). It is reserved for typed signatures.
 
 When a recipient signs, the owner gets a `document-signed` notification in the
 bell, linking to the shared copy (see `docs/notifications.md`).
+## Managing a share (DS-10)
+
+The owner's `SharedCopyStatus` panel (in the document editor) shows the status
+badge (pending, viewed, signed, revoked), the activity timeline, and while the
+copy is unsigned, **Resend email** and **Revoke access**. For a signable
+document it takes the place of the recipient signature input; for a view-only
+one (`signable={false}`) it sits below the form, labelled "Sharing", and reads
+"Waiting for … to view" / "Viewed by … on …".
+
+- **Revoke** — `POST /api/documents/shared/:id/revoke`. Owner only, unlocked
+  copies only (`409` once signed, or when nobody is active). The recipient is
+  kept in `recipients` with `status: "revoked"` and `revokedAt`, but their
+  address and uid are removed from `recipientEmails` and `recipientUids`, which
+  is what ends their access at once. The copy stays, so the audit trail does
+  too. The owner can share again afterwards: the same address is reactivated as
+  a fresh `pending` entry (keeping its `emailedAt`, so revoke and re-share cannot
+  skip the email cooldown), and a different address is accepted because only
+  *active* recipients count. A revoke never hands a plan slot back: the ledger is
+  never decremented.
+- **Resend** — the existing share route, called again with the active
+  recipient's address. The 10-minute cooldown and 20-a-day cap still apply; the
+  button is disabled with a countdown inside the cooldown. The daily cap is not
+  visible to the client, so the server skips that email silently.
+- **Viewed** — `GET /api/documents/shared/:id` records the caller's first view in
+  `after()` (a failure never changes the response). It is a no-op for the owner,
+  non-recipients, revoked recipients, locked copies and accounts that already
+  viewed.
+- **Audit trail** — no log collection. `shareTimeline` (`src/lib/sharing/
+  share-activity.ts`) derives *shared*, *viewed*, *signed* and *revoked* events
+  from `invitedAt`, `views`, `signatures` and `revokedAt`. Once the copy is
+  locked, both parties see it on the shared copy. Known limit: re-sharing a
+  revoked address clears its `revokedAt`, so the earlier revoke is not listed.
+
 ## Monthly document quota
 
 The app currently has no monthly document quota (the plan list says "Create

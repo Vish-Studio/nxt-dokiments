@@ -1,11 +1,11 @@
 "use client";
 
 import { DownloadSimpleIcon } from "@phosphor-icons/react";
-import { useEffect, useState } from "react";
-import { createPortal } from "react-dom";
+import { useState } from "react";
 
 import type { ButtonProps } from "@/components/commons/button/button";
 import { Button } from "@/components/commons/button/button";
+import { Modal } from "@/components/commons/modal/modal";
 import { useInstallPrompt } from "@/hooks/use-install-prompt";
 import type { AnalyticsEventMap } from "@/lib/analytics/events";
 import { trackEvent } from "@/lib/analytics/track";
@@ -82,102 +82,61 @@ export type InstallInstructionsDialogProps = {
 };
 
 /**
- * The manual instructions, for browsers with no install API.
+ * The manual instructions, for browsers with no install API: an info-toned
+ * {@link Modal} with the numbered steps as its body, centred on desktop and a
+ * bottom sheet on phones (like the OS's own install sheets).
  *
- * Owns its Escape handler and scroll lock rather than borrowing `ConfirmDialog`,
- * which every other dialog in the app does too — this one needs an ordered list
- * where `ConfirmDialog` takes a single string.
- *
- * Unlike those, it renders through a portal, because it is the only dialog in the
- * app opened from a button whose position is not fixed by design: the point of
- * `InstallAppButton` is that it drops into any surface. The footer is already such
- * a surface — its columns carry `.website-reveal`, whose reveal animation leaves a
- * residual `transform`, and a transformed ancestor becomes the containing block
- * for `position: fixed`. Without the portal the backdrop covers that column
- * instead of the viewport, the panel lands wherever the column happens to be, and
- * the footer's two `overflow-hidden` ancestors clip what is left.
+ * `Modal` renders through a portal, which matters here more than anywhere: this
+ * is the only dialog opened from a button whose position is not fixed by design.
+ * The footer is such a surface: its columns carry `.website-reveal`, whose
+ * reveal animation leaves a residual `transform`, and a transformed ancestor
+ * becomes the containing block for `position: fixed`. Without the portal the
+ * backdrop would cover that column instead of the viewport and the footer's
+ * `overflow-hidden` ancestors would clip the panel.
  */
 export const InstallInstructionsDialog = ({
   guide,
   onClose,
   open,
 }: InstallInstructionsDialogProps) => {
-  useEffect(() => {
-    if (!open) {
-      return;
-    }
-
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape") {
-        onClose();
-      }
-    };
-
-    document.addEventListener("keydown", handleKeyDown);
-    document.body.style.overflow = "hidden";
-
-    return () => {
-      document.removeEventListener("keydown", handleKeyDown);
-      document.body.style.overflow = "";
-    };
-  }, [open, onClose]);
-
-  if (!open) {
-    return null;
-  }
-
   const { steps, title } = INSTALL_GUIDES[guide];
 
-  return createPortal(
-    <div
-      aria-label={title}
-      aria-modal="true"
-      className="fixed inset-0 z-50 flex items-center justify-center p-4"
-      role="dialog"
+  return (
+    <Modal
+      actions={
+        <Button
+          onClick={onClose}
+          size="sm"
+          variant="primary"
+        >
+          Got it
+        </Button>
+      }
+      className="install-instructions-dialog"
+      description="Installed, Dokiments opens in its own window and keeps working when you lose signal."
+      icon={DownloadSimpleIcon}
+      onClose={onClose}
+      open={open}
+      title={title}
+      tone="info"
     >
-      <button
-        aria-label="Close"
-        className="absolute inset-0 bg-nox-noir/55"
-        onClick={onClose}
-        type="button"
-      />
-
-      <div className="relative z-10 w-full max-w-sm rounded-box border border-steel-mist bg-base-100 p-6">
-        <h3 className="font-title text-lg font-bold text-nox-noir">{title}</h3>
-        <p className="mt-2 text-sm leading-6 text-nox-noir/65">
-          Installed, Dokiments opens in its own window and keeps working when
-          you lose signal.
-        </p>
-
-        <ol className="mt-5 grid gap-3">
-          {steps.map((step, index) => (
-            <li
-              className="flex gap-3 text-sm leading-6 text-nox-noir/75"
-              key={step}
-            >
-              <span
-                aria-hidden
-                className="mt-0.5 flex size-6 shrink-0 items-center justify-center rounded-full bg-base-200 font-title text-xs font-bold text-nox-noir"
-              >
-                {index + 1}
-              </span>
-              {step}
-            </li>
-          ))}
-        </ol>
-
-        <div className="mt-6 flex justify-end">
-          <Button
-            onClick={onClose}
-            size="sm"
-            variant="ghost"
+      <ol className="grid gap-3">
+        {steps.map((step, index) => (
+          <li
+            className="flex gap-3 text-sm leading-6 text-nox-noir/75"
+            key={step}
           >
-            Got it
-          </Button>
-        </div>
-      </div>
-    </div>,
-    document.body,
+            <span
+              aria-hidden
+              className="mt-0.5 flex size-6 shrink-0 items-center justify-center rounded-full bg-base-200 font-title text-xs font-bold text-nox-noir"
+            >
+              {index + 1}
+            </span>
+            {step}
+          </li>
+        ))}
+      </ol>
+    </Modal>
   );
 };
 

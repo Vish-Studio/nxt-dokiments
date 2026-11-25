@@ -1,0 +1,9 @@
+{
+  "servers": {
+    "hookify": {
+      "type": "stdio",
+      "command": "npx",
+      "args": ["-y", "@altalyst/hookify-mcp@0.1.1"]
+    }
+  }
+}

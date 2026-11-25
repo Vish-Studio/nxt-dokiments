@@ -7,14 +7,8 @@ import { useState } from "react";
 
 import { LinkButton } from "@/components/commons/link-button/link-button";
 import { MobileNav } from "@/components/website/mobile-nav/mobile-nav";
+import { headerNavItems as navItems } from "@/lib/website/navigation";
 import { useAuthStore } from "@/stores/auth-store";
-
-const navItems = [
-  { href: "/#overview", label: "Overview" },
-  { href: "/#marketplace", label: "Marketplace" },
-  { href: "/#use-cases", label: "Use cases" },
-  { href: "/#workflow", label: "Workflow" },
-];
 
 export interface HeaderProps {
   showAuthActions?: boolean;
