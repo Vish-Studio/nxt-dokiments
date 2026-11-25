@@ -12,11 +12,20 @@ import { Button } from "@/components/commons/button/button";
 import type { SidePanelTone } from "@/components/commons/side-panel/side-panel";
 import { SidePanel } from "@/components/commons/side-panel/side-panel";
 import { TemplateDocument } from "@/components/commons/template-document/template-document";
+import type { DocumentDetail } from "@/lib/documents/document-details";
 import { getSampleValues, tierLabels } from "@/lib/market-place";
 import type { MarketplaceTemplate } from "@/types/template";
 import { getTemplateDisplayName } from "@/lib/market-place/document-labels";
 
+import { DocumentInfoTabs } from "./document-info-tabs";
+
 export type TemplatePreviewDialogProps = {
+  /**
+   * Facts about the user's document (client, amount, status, dates), from
+   * `getDocumentDetails`. When set, the header card gets "Document" and
+   * "Template" tabs; otherwise it shows the template summary only.
+   */
+  details?: DocumentDetail[];
   documentName?: string;
   locked?: boolean;
   mode?: "document" | "marketplace" | "library";
@@ -35,6 +44,7 @@ export type TemplatePreviewDialogProps = {
 };
 
 export const TemplatePreviewDialog = ({
+  details,
   documentName,
   locked = false,
   mode = "marketplace",
@@ -190,16 +200,27 @@ export const TemplatePreviewDialog = ({
     >
       {template && resolvedValues ? (
         <div className="template-preview-document bg-base-200 p-3">
-          <section className="mb-4 rounded-box border border-steel-mist bg-base-100 p-4">
-            <div className="flex flex-wrap items-center gap-2">
-              <Badge variant={template.tier}>{tierLabels[template.tier]}</Badge>
-              <Badge variant="neutral">{template.style.name} style</Badge>
-              <Badge variant="neutral">{template.documentType}</Badge>
+          {details ? (
+            <div className="mb-4">
+              <DocumentInfoTabs
+                details={details}
+                template={template}
+              />
             </div>
-            <p className="mt-3 text-sm leading-6 text-nox-noir/65">
-              {template.description}
-            </p>
-          </section>
+          ) : (
+            <section className="mb-4 rounded-box border border-steel-mist bg-base-100 p-4">
+              <div className="flex flex-wrap items-center gap-2">
+                <Badge variant={template.tier}>
+                  {tierLabels[template.tier]}
+                </Badge>
+                <Badge variant="neutral">{template.style.name} style</Badge>
+                <Badge variant="neutral">{template.documentType}</Badge>
+              </div>
+              <p className="mt-3 text-sm leading-6 text-nox-noir/65">
+                {template.description}
+              </p>
+            </section>
+          )}
 
           <TemplateDocument
             className="template-preview-paper"

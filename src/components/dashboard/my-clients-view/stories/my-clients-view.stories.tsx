@@ -71,9 +71,10 @@ export const Empty: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     await expect(await canvas.findByText("No clients yet")).toBeVisible();
-    await expect(
-      await canvas.findByRole("button", { name: "Add client" }),
-    ).toBeVisible();
+    // The empty state carries its own "Add client" action, the page's primary
+    // action in the toolbar is the same one.
+    const empty = canvas.getByText("No clients yet").closest(".empty-state") as HTMLElement;
+    await expect(within(empty).getByRole("button", { name: "Add client" })).toBeVisible();
   },
 };
 
@@ -185,7 +186,8 @@ export const AddClient: Story = {
     const canvas = within(canvasElement);
 
     await expect(await canvas.findByText("No clients yet")).toBeVisible();
-    await userEvent.click(await canvas.findByRole("button", { name: "Add client" }));
+    const empty = canvas.getByText("No clients yet").closest(".empty-state") as HTMLElement;
+    await userEvent.click(within(empty).getByRole("button", { name: "Add client" }));
 
     // Scoped to the panel: the floating action button and the panel's submit
     // button share the accessible name "Add client" while the panel is open.
@@ -339,11 +341,50 @@ export const DeleteFromPanel: Story = {
     );
 
     await waitFor(() => {
-      expect(canvas.getByText("Delete client?")).toBeVisible();
+      expect(
+        canvas.getByRole("dialog", { name: "Delete client?" }),
+      ).toBeVisible();
     });
+    const confirm = canvas.getByRole("dialog", { name: "Delete client?" });
+    // A destructive decision: centred, with the consequence spelled out.
+    await expect(confirm).toHaveAttribute("data-layout", "centered");
+    await expect(confirm).toHaveAccessibleDescription(
+      /Delete Maya Chen from your clients\? This cannot be undone\./,
+    );
+    await expect(
+      within(confirm).getByRole("button", { name: "Delete client" }),
+    ).toBeVisible();
     // Two overlays at once would leave both competing for the Escape key.
     await expect(
       canvas.queryByRole("dialog", { name: "Maya Chen details" }),
     ).not.toBeInTheDocument();
+  },
+};
+
+/** A failed request is an error state with a retry, never "No clients yet". */
+export const LoadFailedRetry: Story = {
+  ...LoadFailed,
+  play: async ({ canvasElement }) => {
+    const alert = await within(canvasElement).findByRole("alert");
+    await expect(alert).toHaveTextContent("Couldn't load your clients");
+    await expect(within(alert).getByRole("button", { name: "Try again" })).toBeVisible();
+    await expect(within(canvasElement).queryByText("No clients yet")).toBeNull();
+  },
+};
+
+/** Filters that match nobody say so, and offer to clear them. */
+export const NoClientMatches: Story = {
+  ...WithClients,
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await canvas.findByText("Maya Chen");
+    // Maya has an email, so "Without contact details" matches nobody.
+    await userEvent.click(canvas.getByRole("button", { name: "Contact: Any" }));
+    await userEvent.click(
+      canvas.getByRole("menuitemradio", { name: "Without contact details" }),
+    );
+    await expect(await canvas.findByText("No clients match")).toBeVisible();
+    await userEvent.click(canvas.getByRole("button", { name: "Clear filters" }));
+    await expect(await canvas.findByText("Maya Chen")).toBeVisible();
   },
 };

@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 
-import { ClientsShowcaseMockup } from "@/components/website/clients-showcase-mockup/clients-showcase-mockup";
 import { FeatureTabButton } from "@/components/website/feature-tab-button/feature-tab-button";
 import { FeatureTabVisual } from "@/components/website/feature-tab-visual/feature-tab-visual";
 import { featureTabs } from "@/components/website/feature-tabs/feature-tabs-data";
@@ -19,7 +18,7 @@ export const FeatureTabs = () => {
       <div className="mx-auto max-w-7xl">
         <SectionHeading
           align="center"
-          description="Browse the marketplace, save the templates you trust, prefill your clients, and create documents from the same account."
+          description="Your dashboard, documents, CVs, saved templates, clients and the marketplace, in the same account and the same order as the app."
           highlight="in one place."
           title="Your whole document workspace, in one place."
         />
@@ -36,9 +35,7 @@ export const FeatureTabs = () => {
                 key={tab.id}
                 linkLabel={tab.linkLabel}
                 onProgressEnd={() =>
-                  setActiveId(
-                    featureTabs[(index + 1) % featureTabs.length].id,
-                  )
+                  setActiveId(featureTabs[(index + 1) % featureTabs.length].id)
                 }
                 onSelect={() => setActiveId(tab.id)}
                 step={index + 1}
@@ -50,18 +47,13 @@ export const FeatureTabs = () => {
           <div className="relative aspect-square overflow-hidden rounded-box bg-white sm:aspect-4/3">
             {featureTabs.map((tab, index) => (
               <FeatureTabVisual
-                accent={tab.accent}
-                fit={tab.fit}
-                imageAlt={tab.imageAlt}
-                imageSrc={tab.imageSrc}
+                background={tab.panel ?? tab.accent}
                 isActive={tab.id === activeId}
                 key={tab.id}
                 priority={index === 0}
-              >
-                {tab.id === "clients" ? (
-                  <ClientsShowcaseMockup className="w-full max-w-md bg-transparent p-0 sm:p-0" />
-                ) : null}
-              </FeatureTabVisual>
+                screen={tab.screen}
+                tone={tab.tone}
+              />
             ))}
           </div>
         </div>

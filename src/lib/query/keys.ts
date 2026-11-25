@@ -49,6 +49,11 @@ export const queryKeys = {
     detail: (id: string) => ["shared-documents", "detail", id] as const,
   },
 
+  sharedInvites: {
+    /** The public preview behind one invite link. */
+    detail: (token: string) => ["shared-invites", token] as const,
+  },
+
   shareRecipients: {
     /** People the signed-in user has shared documents with. There is only ever one list — no filters. */
     all: () => ["share-recipients"] as const,

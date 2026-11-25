@@ -1,8 +1,12 @@
+import { UsersThreeIcon } from "@phosphor-icons/react";
+
+import { EmptyState } from "@/components/commons/empty-state/empty-state";
 import {
   DashboardList,
   type DashboardListColumn,
 } from "@/components/dashboard/dashboard-list/dashboard-list";
 import { SharedDocumentListItem } from "@/components/dashboard/shared-document-list-item/shared-document-list-item";
+import { iconSize } from "@/lib/icons";
 import { recipientStatusFor } from "@/lib/sharing/recipient-status";
 import type { SharedDocument } from "@/types/sharing";
 
@@ -52,15 +56,17 @@ export const SharedDocumentList = ({
 }: SharedDocumentListProps) => {
   if (documents.length === 0) {
     return (
-      <div className="grid min-h-72 w-full place-items-center rounded-box border border-dashed border-steel-mist bg-base-100 p-12 text-center">
-        <p className="font-title text-base font-bold text-nox-noir">
-          Nothing shared with you yet
-        </p>
-        <p className="mt-1 max-w-sm text-sm text-nox-noir/60">
-          Documents other people share with you appear here once you sign in
-          with the email address they used.
-        </p>
-      </div>
+      <EmptyState
+        description="Documents other people share with you appear here once you sign in with the email address they used."
+        icon={
+          <UsersThreeIcon
+            aria-hidden
+            size={iconSize.feature}
+            weight="bold"
+          />
+        }
+        title="Nothing shared with you yet"
+      />
     );
   }
 

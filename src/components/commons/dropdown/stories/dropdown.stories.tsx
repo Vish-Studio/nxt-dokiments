@@ -1,5 +1,7 @@
 import type { Meta, StoryObj } from "@storybook/nextjs-vite";
-import { expect, fn } from "storybook/test";
+import { expect, fn, userEvent, within } from "storybook/test";
+
+import { mockPhoneViewport } from "@/lib/storybook/mock-phone-viewport";
 
 import { Dropdown } from "../dropdown";
 
@@ -74,5 +76,53 @@ export const SelectionMenu: Story = {
     await expect(canvas.getByRole("menuitemradio", { name: "Oldest first" })).toHaveFocus();
     await userEvent.keyboard("{Escape}");
     await expect(trigger).toHaveFocus();
+  },
+};
+
+/**
+ * With `sheetTitle`, phones get the menu in a bottom sheet instead of the
+ * anchored popover; choosing an option still closes it.
+ */
+export const PhoneSheet: Story = {
+  args: {
+    ariaLabel: "Sort",
+    children: null,
+    groups: [
+      {
+        label: "Sort by",
+        onChange: fn(),
+        options: [
+          { label: "Recently added", value: "recent" },
+          { label: "Name", value: "name" },
+        ],
+        value: "recent",
+      },
+    ],
+    sheetTitle: "Sort",
+    trigger: "Sort",
+  },
+  beforeEach: mockPhoneViewport,
+  play: async ({ args, canvasElement }) => {
+    const page = within(canvasElement.ownerDocument.body);
+    await userEvent.click(page.getByRole("button", { name: "Sort" }));
+    const sheet = await page.findByRole("dialog", { name: "Sort" });
+    await expect(sheet).toHaveAttribute("data-layout", "sheet");
+    await userEvent.click(within(sheet).getByRole("menuitemradio", { name: "Name" }));
+    await expect(args.groups?.[0]?.onChange).toHaveBeenCalledWith("name");
+    await expect(page.queryByRole("dialog", { name: "Sort" })).toBeNull();
+  },
+};
+
+/** The same `sheetTitle` menu on desktop keeps the anchored popover: no modal. */
+export const SheetTitleOnDesktop: Story = {
+  args: PhoneSheet.args,
+  play: async ({ args, canvasElement }) => {
+    const page = within(canvasElement.ownerDocument.body);
+    await userEvent.click(page.getByRole("button", { name: "Sort" }));
+    await expect(page.queryByRole("dialog", { name: "Sort" })).toBeNull();
+    await userEvent.click(
+      within(canvasElement).getByRole("menuitemradio", { name: "Name" }),
+    );
+    await expect(args.groups?.[0]?.onChange).toHaveBeenCalledWith("name");
   },
 };

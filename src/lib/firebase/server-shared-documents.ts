@@ -32,9 +32,15 @@ import { normaliseEmail } from "@/lib/sharing/email";
 import { canShareWith } from "@/lib/sharing/policy";
 import {
   isSignableDocument,
+  requiresSenderSignature,
   RECIPIENT_SIGNATURE_KEY,
 } from "@/lib/sharing/signable";
+import { senderSignatureOf } from "@/lib/sharing/signatures";
 import { shareApiError } from "@/lib/sharing/server-guard";
+import {
+  activeRecipient,
+  resolveRecipientStatus,
+} from "@/lib/sharing/share-activity";
 import type { AuthSession } from "@/types/auth";
 import {
   shareRecipientStatuses,
@@ -42,6 +48,7 @@ import {
   type ShareRecipient,
   type ShareRecipientStatus,
   type ShareSignature,
+  type ShareView,
   type SharedDocument,
 } from "@/types/sharing";
 
@@ -70,7 +77,7 @@ const toMillis = (value: FirestoreValue | undefined) =>
 const toStringArray = (values: string[]) =>
   toArrayValue(values.map(toStringValue));
 
-/** Serialises one recipient; `signedAt` and `uid` are omitted until known. */
+/** Serialises one recipient; `revokedAt`, `signedAt` and `uid` are omitted until known. */
 const serialiseRecipient = (recipient: ShareRecipient) =>
   toMapValue({
     email: toStringValue(recipient.email),
@@ -83,6 +90,9 @@ const serialiseRecipient = (recipient: ShareRecipient) =>
           ),
         }
       : {}),
+    ...(recipient.revokedAt === undefined
+      ? {}
+      : { revokedAt: toTimestampValue(new Date(recipient.revokedAt)) }),
     ...(recipient.signedAt === undefined
       ? {}
       : { signedAt: toTimestampValue(new Date(recipient.signedAt)) }),
@@ -100,6 +110,7 @@ const parseRecipient = (value: FirestoreValue): ShareRecipient => {
     email: readString(fields.email) ?? "",
     emailedAt: emailedAt.length ? emailedAt : undefined,
     invitedAt: toMillis(fields.invitedAt),
+    revokedAt: fields.revokedAt ? toMillis(fields.revokedAt) : undefined,
     signedAt: fields.signedAt ? toMillis(fields.signedAt) : undefined,
     status: shareRecipientStatuses.includes(status as ShareRecipientStatus)
       ? (status as ShareRecipientStatus)
@@ -139,13 +150,72 @@ const parseSignature = (value: FirestoreValue): ShareSignature => {
   };
 };
 
+/** Serialises the `views` map, keyed by the viewer's uid. */
+const serialiseViews = (views: Record<string, ShareView>) =>
+  toMapValue(
+    Object.fromEntries(
+      Object.entries(views).map(([uid, view]) => [
+        uid,
+        toMapValue({
+          email: toStringValue(normaliseEmail(view.email)),
+          viewedAt: toTimestampValue(new Date(view.viewedAt)),
+        }),
+      ]),
+    ),
+  );
+
+/** Deserialises the `views` map. */
+const parseViews = (value: FirestoreValue | undefined) =>
+  Object.fromEntries(
+    Object.entries(readMap(value)).map(([uid, entry]) => {
+      const fields = readMap(entry);
+      return [
+        uid,
+        {
+          email: readString(fields.email) ?? "",
+          viewedAt: toMillis(fields.viewedAt),
+        },
+      ];
+    }),
+  );
+
+/**
+ * The recipients who still have access, i.e. everyone who is not revoked.
+ * Revoking removes a recipient from the flat arrays the rules read, which is
+ * what ends their access immediately.
+ */
+const withAccess = (recipients: ShareRecipient[]) =>
+  recipients.filter((recipient) => recipient.status !== "revoked");
+
+/**
+ * The uids written to `recipientUids`: those already stored (a recipient who
+ * accepted an invite link added their own) plus any known on `recipients`. Empty
+ * once nobody has access, so a revoke always clears the list.
+ */
+const linkedUids = (
+  document: Pick<SharedDocument, "recipientUids" | "recipients">,
+): string[] => {
+  const active = withAccess(document.recipients);
+  if (!active.length) return [];
+
+  return [
+    ...new Set([
+      ...(document.recipientUids ?? []),
+      ...active.flatMap((recipient) => (recipient.uid ? [recipient.uid] : [])),
+    ]),
+  ];
+};
+
 /**
  * Serialises a shared document for a Firestore write.
  *
  * Besides `recipients`, it writes `recipientEmails` and `recipientUids` as flat
  * string arrays. Security rules cannot look inside an array of maps, so they
- * authorise against these two; they are always derived from `recipients` here so
- * the three can never disagree.
+ * authorise against these two. `recipientEmails` is always derived from
+ * `recipients`; `recipientUids` is too, plus the uids already stored, because a
+ * recipient who accepts an invite link adds their own and an owner write must not
+ * undo it. Revoked recipients stay in `recipients` for the audit trail but are
+ * left out of both arrays.
  *
  * `templateSnapshot` is passed in already serialised, since the document module
  * that owns that format is the one that knows how to build it.
@@ -161,13 +231,9 @@ export const toSharedDocumentFields = (
   ownerId: toStringValue(document.ownerId),
   ownerName: toStringValue(document.ownerName),
   recipientEmails: toStringArray(
-    document.recipients.map((recipient) => recipient.email),
+    withAccess(document.recipients).map((recipient) => recipient.email),
   ),
-  recipientUids: toStringArray(
-    document.recipients.flatMap((recipient) =>
-      recipient.uid ? [recipient.uid] : [],
-    ),
-  ),
+  recipientUids: toStringArray(linkedUids(document)),
   recipients: toArrayValue(document.recipients.map(serialiseRecipient)),
   signatures: serialiseSignatures(document.signatures),
   sourceDocumentId: toStringValue(document.sourceDocumentId),
@@ -181,13 +247,17 @@ export const toSharedDocumentFields = (
       ]),
     ),
   ),
+  ...(Object.keys(document.views ?? {}).length
+    ? { views: serialiseViews(document.views ?? {}) }
+    : {}),
   ...(templateSnapshot ? { templateSnapshot } : {}),
 });
 
 /**
- * Deserialises a `sharedDocuments/{id}` document. A recipient who has a
- * signature is reported as `signed` whatever their stored status says — the
- * signature is the source of truth, because recipients cannot write `recipients`.
+ * Deserialises a `sharedDocuments/{id}` document. A recipient's status comes
+ * from `resolveRecipientStatus`: a signature means `signed` and a view means
+ * `viewed` whatever the stored status says, because recipients cannot write
+ * `recipients`. Only `revoked` is read from the stored value.
  *
  * `templateSnapshot` is left to the caller (it shares its parser with
  * `UserDocument`); only the sharing-specific fields are handled here.
@@ -204,6 +274,8 @@ export const parseSharedDocument = (
     ]),
   );
 
+  const views = parseViews(fields?.views);
+
   return {
     createdAt: toMillis(fields?.createdAt),
     id: knownId ?? getDocumentId(document),
@@ -214,20 +286,14 @@ export const parseSharedDocument = (
     ownerName: readString(fields?.ownerName) ?? "",
     recipients: readArray(fields?.recipients)
       .map(parseRecipient)
-      .map((recipient) => {
-        const signature =
-          (recipient.uid ? signatures[recipient.uid] : undefined) ??
-          Object.values(signatures).find(
-            (candidate) => candidate.email === recipient.email,
-          );
-        return signature
-          ? {
-              ...recipient,
-              signedAt: signature.signedAt,
-              status: "signed" as const,
-            }
-          : recipient;
-      }),
+      .map((recipient) => ({
+        ...recipient,
+        ...resolveRecipientStatus(recipient, { signatures, views }),
+      })),
+    recipientUids: readArray(fields?.recipientUids).flatMap((value) => {
+      const uid = readString(value);
+      return uid ? [uid] : [];
+    }),
     signatures,
     sourceDocumentId: readString(fields?.sourceDocumentId) ?? "",
     templateId: readString(fields?.templateId) ?? "",
@@ -238,6 +304,7 @@ export const parseSharedDocument = (
         readString(value) ?? "",
       ]),
     ),
+    views,
   };
 };
 
@@ -297,7 +364,11 @@ export const readSharedDocument = (
 
 /** The outcome of `shareDocument`. */
 export type ShareDocumentResult = {
-  /** `true` on the first share of this document, `false` when re-sharing. */
+  /**
+   * `true` when this share gives the recipient access they did not have: the
+   * first share of the document, a new recipient after a revoke, or a revoked
+   * recipient shared with again. `false` when refreshing a live share.
+   */
   created: boolean;
   /** Title of the shared copy, for the notification email. */
   documentName: string;
@@ -305,15 +376,26 @@ export type ShareDocumentResult = {
   /** Epoch milliseconds of this share; unique per explicit share or re-share. */
   sharedAt: number;
   sharedDocumentId: string;
+  /**
+   * Whether the recipient can sign the copy (its layout has a recipient
+   * signature). `false` means a view-only share.
+   */
+  signable: boolean;
 };
 
 /**
  * Shares one of the signed-in user's documents with `rawEmail`.
  *
+ * Any document can be shared. One whose layout has a recipient signature is
+ * shared for signing; any other is shared view-only (see `isSignableDocument`).
+ *
  * Copies the document (name, values, template snapshot) into `sharedDocuments`
  * and records the address in the owner's ledger, in one atomic commit. Sharing
  * again with the same address is idempotent and refreshes the copy while the
- * document is unlocked. The first share is limited to one recipient per document.
+ * document is unlocked. A document has one active recipient at a time: another
+ * address is refused until the current recipient has been revoked, and a revoked
+ * recipient shared with again is reactivated (their send history is kept, so
+ * the email cooldown still applies).
  *
  * The recipient's account is not looked up: the server cannot read another
  * user's profile, and the rules recognise a recipient by verified address.
@@ -321,13 +403,20 @@ export type ShareDocumentResult = {
  * @param session - Active session of the owner.
  * @param sourceDocumentId - ID of the owner's document to share.
  * @param rawEmail - Recipient address, in any casing.
- * @throws `ApiError` 404 for an unknown document; the sharing errors in
+ * @param senderSignature - The owner's typed signature. Required when the
+ *   layout has both a sender and a recipient signature field (see
+ *   `requiresSenderSignature`), unless the copy already carries one, which a
+ *   resend keeps untouched. A given value is stored under the owner's uid in
+ *   `signatures` with a new `signedAt`; for any other layout it is ignored.
+ * @throws `ApiError` 404 for an unknown document, 400 when the sender
+ *   signature is required and missing; the sharing errors in
  *   `shareApiError` for self-share, locked, second recipient and plan limit.
  */
 export const shareDocument = async (
   session: AuthSession,
   sourceDocumentId: string,
   rawEmail: string,
+  senderSignature?: string,
 ): Promise<ShareDocumentResult> => {
   const { uid } = session.user;
   const email = normaliseEmail(rawEmail);
@@ -337,9 +426,10 @@ export const shareDocument = async (
     throw new ApiError(404, "Document not found.");
   }
 
-  if (!isSignableDocument(source.templateSnapshot)) {
-    throw shareApiError("SHARE_NOT_SIGNABLE");
-  }
+  // Only a layout that asks for one takes a sender signature; for any other
+  // the value is ignored rather than stored.
+  const needsSignature = requiresSenderSignature(source.templateSnapshot);
+  const signatureValue = needsSignature ? senderSignature?.trim() : undefined;
 
   const sharedDocumentId = sharedDocumentIdFor(uid, sourceDocumentId);
   const [existing, ledger] = await Promise.all([
@@ -351,10 +441,18 @@ export const shareDocument = async (
     throw shareApiError("DOCUMENT_LOCKED");
   }
 
-  const otherRecipient = existing?.recipients.find(
-    (recipient) => recipient.email !== email,
-  );
-  if (otherRecipient) {
+  // A share that already carries the owner's signature (a resend) keeps it,
+  // including its `signedAt`; only a newly typed value replaces it.
+  if (
+    needsSignature &&
+    !signatureValue &&
+    !senderSignatureOf(existing ?? undefined)
+  ) {
+    throw new ApiError(400, "Sign the document before sharing it.");
+  }
+
+  const current = existing ? activeRecipient(existing) : undefined;
+  if (current && current.email !== email) {
     throw shareApiError("SHARE_ALREADY_WITH_ANOTHER");
   }
 
@@ -372,11 +470,25 @@ export const shareDocument = async (
   }
 
   const now = Date.now();
-  const recipient: ShareRecipient = existing?.recipients[0] ?? {
-    email,
-    invitedAt: now,
-    status: "pending",
-  };
+  const previous = existing?.recipients.find(
+    (candidate) => candidate.email === email,
+  );
+  // A re-share starts a new invitation, so the earlier view must not count for it.
+  const regainsAccess = previous?.status === "revoked";
+  const recipient: ShareRecipient =
+    previous && !regainsAccess
+      ? previous
+      : {
+          email,
+          emailedAt: previous?.emailedAt,
+          invitedAt: now,
+          status: "pending",
+        };
+  const recipients = previous
+    ? (existing?.recipients ?? []).map((candidate) =>
+        candidate.email === email ? recipient : candidate,
+      )
+    : [...(existing?.recipients ?? []), recipient];
   const ledgerEntry = ledger.find(
     (entry) => normaliseEmail(getDocumentId(entry)) === email,
   );
@@ -392,8 +504,24 @@ export const shareDocument = async (
             ownerEmail: session.user.email,
             ownerId: uid,
             ownerName: session.user.displayName,
-            recipients: [recipient],
-            signatures: existing?.signatures ?? {},
+            recipientUids: regainsAccess ? [] : existing?.recipientUids,
+            recipients,
+            // Recorded in the same write as the copy, so a shared copy never
+            // exists without the owner's signature. A re-share before the
+            // recipient signs replaces it, with a new `signedAt`.
+            signatures: {
+              ...existing?.signatures,
+              ...(signatureValue
+                ? {
+                    [uid]: {
+                      email: normaliseEmail(session.user.email),
+                      signedAt: now,
+                      type: "typed" as const,
+                      value: signatureValue,
+                    },
+                  }
+                : {}),
+            },
             sourceDocumentId,
             templateId: source.templateId,
             updatedAt: now,
@@ -403,6 +531,14 @@ export const shareDocument = async (
                 ([key]) => key !== RECIPIENT_SIGNATURE_KEY,
               ),
             ),
+            views: regainsAccess
+              ? Object.fromEntries(
+                  Object.entries(existing?.views ?? {}).filter(
+                    ([viewerUid, view]) =>
+                      view.email !== email && viewerUid !== previous?.uid,
+                  ),
+                )
+              : existing?.views,
           },
           source.templateSnapshot
             ? toTemplateSnapshotValue(source.templateSnapshot)
@@ -434,11 +570,12 @@ export const shareDocument = async (
   }
 
   return {
-    created: existing === null,
+    created: existing === null || !previous || regainsAccess,
     documentName: source.name,
     recipient,
     sharedAt: now,
     sharedDocumentId,
+    signable: isSignableDocument(source.templateSnapshot),
   };
 };
 
@@ -469,29 +606,27 @@ export const getSharedDocument = async (
 /**
  * Lists the documents shared with the signed-in user, newest first.
  *
- * Matches on the verified address in the token, so an unverified account
- * receives an empty list rather than an error.
+ * Runs two queries and merges them: one on the verified address in the token, and
+ * one on the user's uid, which is how an account that accepted an invite link is
+ * found before its address is verified. Each is refused by the rules when it does
+ * not apply, and a refusal is read as "nothing here" rather than an error.
  *
- * @throws When the Firestore query fails for any other reason.
+ * @throws When a Firestore query fails for any other reason.
  */
 export const listSharedWithMe = async (
   session: AuthSession,
 ): Promise<SharedDocument[]> => {
-  try {
-    const documents = await runFirestoreQuery(
-      sharedDocumentsPath,
-      {
-        field: "recipientEmails",
-        op: "ARRAY_CONTAINS",
-        value: toStringValue(normaliseEmail(session.user.email)),
-      },
-      session.idToken,
-    );
-
-    return documents
-      .map((document) => readSharedDocument(document))
-      .sort((a, b) => b.updatedAt - a.updatedAt);
-  } catch (error) {
+  const byEmail = runFirestoreQuery(
+    sharedDocumentsPath,
+    {
+      field: "recipientEmails",
+      op: "ARRAY_CONTAINS",
+      value: toStringValue(normaliseEmail(session.user.email)),
+    },
+    session.idToken,
+  ).catch((error: unknown) => {
+    // The rules only honour a verified address, so for anyone else this query
+    // is refused by design. A refusal for a verified account is a real failure.
     if (
       error instanceof FirestorePermissionDeniedError &&
       session.user.emailVerified !== true
@@ -499,7 +634,27 @@ export const listSharedWithMe = async (
       return [];
     }
     throw error;
-  }
+  });
+
+  const byUid = runFirestoreQuery(
+    sharedDocumentsPath,
+    {
+      field: "recipientUids",
+      op: "ARRAY_CONTAINS",
+      value: toStringValue(session.user.uid),
+    },
+    session.idToken,
+  );
+
+  const documents = new Map(
+    (await Promise.all([byEmail, byUid]))
+      .flat()
+      .map((document) => [getDocumentId(document), document]),
+  );
+
+  return [...documents.values()]
+    .map((document) => readSharedDocument(document))
+    .sort((a, b) => b.updatedAt - a.updatedAt);
 };
 
 /**
@@ -529,7 +684,9 @@ export const listSharedByMe = async (
 /**
  * Signs a document shared with the signed-in user and locks it, in one write.
  * Only a recipient can sign (not the owner), and only while the document is
- * unlocked. With one recipient per document, their signature completes it.
+ * unlocked, and only when its layout has a recipient signature: a view-only
+ * share cannot be signed. With one recipient per document, their signature
+ * completes it.
  *
  * The rules re-check every condition on the write itself, so a request that
  * races a lock or a second signature is refused there too.
@@ -539,7 +696,8 @@ export const listSharedByMe = async (
  * @param value - The typed signature, already validated.
  * @returns The signed, locked document.
  * @throws `NOT_A_RECIPIENT` (404) when the document is unknown or not shared
- *   with the caller; `DOCUMENT_LOCKED` (409) when it is already signed.
+ *   with the caller; `DOCUMENT_LOCKED` (409) when it is already signed;
+ *   `SHARE_NOT_SIGNABLE` (400) when it is a view-only share.
  */
 export const signSharedDocument = async (
   session: AuthSession,
@@ -551,13 +709,18 @@ export const signSharedDocument = async (
 
   const document = await getSharedDocument(session, id);
   const isRecipient = document?.recipients.some(
-    (recipient) => recipient.uid === uid || recipient.email === email,
+    (recipient) =>
+      recipient.status !== "revoked" &&
+      (recipient.uid === uid || recipient.email === email),
   );
   if (!document || !isRecipient) {
     throw shareApiError("NOT_A_RECIPIENT");
   }
   if (document.locked) {
     throw shareApiError("DOCUMENT_LOCKED");
+  }
+  if (!isSignableDocument(document.templateSnapshot)) {
+    throw shareApiError("SHARE_NOT_SIGNABLE");
   }
 
   const now = Date.now();
@@ -635,6 +798,118 @@ export const recordShareEmail = async (
       { recipients: toArrayValue(recipients.map(serialiseRecipient)) },
       session.idToken,
       ["recipients"],
+    );
+    return true;
+  } catch (error) {
+    if (error instanceof FirestorePermissionDeniedError) {
+      return false;
+    }
+    throw error;
+  }
+};
+
+/**
+ * Revokes the active recipient's access to a shared document. The recipient
+ * stays in `recipients` as `revoked` (with `revokedAt`) for the audit trail, and
+ * is dropped from `recipientEmails` and `recipientUids`, so the rules stop
+ * letting them read it at once. The copy itself is kept, and the owner can share
+ * it again later. Only the fields that change are written.
+ *
+ * @param session - Active session of the owner.
+ * @param id - ID of the shared document.
+ * @returns The updated document.
+ * @throws `ApiError` 404 when the document is unknown or not the caller's;
+ *   `DOCUMENT_LOCKED` (409) once it is signed; 409 when nobody has access.
+ */
+export const revokeSharedDocument = async (
+  session: AuthSession,
+  id: string,
+): Promise<SharedDocument> => {
+  const document = await getSharedDocument(session, id);
+  if (!document || document.ownerId !== session.user.uid) {
+    throw new ApiError(404, "Document not found.");
+  }
+  if (document.locked) {
+    throw shareApiError("DOCUMENT_LOCKED");
+  }
+
+  const target = activeRecipient(document);
+  if (!target) {
+    throw new ApiError(409, "This document is not shared with anyone.");
+  }
+
+  const now = Date.now();
+  const recipients = document.recipients.map((recipient) =>
+    recipient === target
+      ? { ...recipient, revokedAt: now, status: "revoked" as const }
+      : recipient,
+  );
+  const fields = toSharedDocumentFields({
+    ...document,
+    recipientUids: [],
+    recipients,
+    updatedAt: now,
+  });
+
+  try {
+    const written = await patchFirestoreDocument(
+      sharedDocumentPath(id),
+      {
+        recipientEmails: fields.recipientEmails,
+        recipientUids: fields.recipientUids,
+        recipients: fields.recipients,
+        updatedAt: fields.updatedAt,
+      },
+      session.idToken,
+      ["recipientEmails", "recipientUids", "recipients", "updatedAt"],
+    );
+    return readSharedDocument(written, id);
+  } catch (error) {
+    if (error instanceof FirestorePermissionDeniedError) {
+      throw shareApiError("DOCUMENT_LOCKED");
+    }
+    throw error;
+  }
+};
+
+/**
+ * Records the signed-in recipient's first view of a shared document, so the
+ * owner can see it was opened. Does nothing for the owner, for someone who is
+ * not a recipient, for a document that is already locked, or when this account
+ * has already viewed it.
+ *
+ * It writes only the caller's own `views` entry, and leaves `updatedAt` alone,
+ * so opening a document never looks like an edit.
+ *
+ * @param session - Active session of the viewer.
+ * @param document - The shared document they just opened.
+ * @returns `true` when a view was recorded.
+ * @throws When the Firestore request fails for a reason other than a refused write.
+ */
+export const recordSharedDocumentView = async (
+  session: AuthSession,
+  document: SharedDocument,
+): Promise<boolean> => {
+  const { uid } = session.user;
+  const email = normaliseEmail(session.user.email);
+
+  const isRecipient = document.recipients.some(
+    (recipient) =>
+      recipient.status !== "revoked" &&
+      (recipient.uid === uid || recipient.email === email),
+  );
+  if (!isRecipient || document.locked || document.views?.[uid]) {
+    return false;
+  }
+
+  const views = { ...document.views, [uid]: { email, viewedAt: Date.now() } };
+
+  try {
+    await patchFirestoreDocument(
+      sharedDocumentPath(document.id),
+      { views: serialiseViews(views) },
+      session.idToken,
+      ["views"],
     );
     return true;
   } catch (error) {

@@ -1,5 +1,7 @@
 import type { QueryClient } from "@tanstack/react-query";
 
+import { dropPushSubscription } from "@/lib/push/client";
+import { pushNotificationsEnabled } from "@/lib/push/feature-flag";
 import { queryKeys } from "@/lib/query/keys";
 
 /**
@@ -9,6 +11,11 @@ import { queryKeys } from "@/lib/query/keys";
  * `useSessionTimeout`, so both paths leave exactly the same state behind: no
  * session cookie, no cached session query, and an auth store that reads as
  * signed out.
+ *
+ * While push notifications are enabled, this browser's push subscription is
+ * removed first (it needs the session cookie, so it must precede the sign-out
+ * request). It belongs to the device, so it would otherwise keep delivering this
+ * user's notifications to whoever signs in next.
  *
  * A hard `window.location.assign` rather than a router push is deliberate — it
  * guarantees every cached Server Component payload and in-memory store is
@@ -24,6 +31,8 @@ export const signOutAndRedirect = async (
   clearSession: () => void,
   redirectTo = "/sign-in",
 ): Promise<void> => {
+  if (pushNotificationsEnabled) await dropPushSubscription();
+
   try {
     await fetch("/api/auth/sign-out", { method: "POST" });
   } catch {

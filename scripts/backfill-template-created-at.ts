@@ -21,8 +21,10 @@
  *                           together with BACKFILL_TEMPLATE_IDS; for re-testing)
  */
 
-const FIRESTORE_BASE_URL = "https://firestore.googleapis.com/v1";
-const AUTH_BASE_URL = "https://identitytoolkit.googleapis.com/v1";
+import { resolveFirebaseEndpoints } from "../src/lib/firebase/endpoints";
+
+const { firestore: FIRESTORE_BASE_URL, identity: AUTH_BASE_URL } =
+  resolveFirebaseEndpoints();
 
 type FirestoreDocument = {
   fields?: Record<string, unknown>;

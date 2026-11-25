@@ -36,6 +36,7 @@ const input = {
   recipientEmail: "bob@example.com",
   sharedAt: 1_800_000_000_000,
   sharedDocumentId: "owner-uid_doc_1",
+  signable: true,
 };
 
 const share = (emailedAt: number[] = []): SharedDocument => ({

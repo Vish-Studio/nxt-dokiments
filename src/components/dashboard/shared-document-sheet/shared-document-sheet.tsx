@@ -1,16 +1,35 @@
 "use client";
 
-import { ArrowLeftIcon, LockSimpleIcon } from "@phosphor-icons/react";
-import { useRouter } from "next/navigation";
-import { useState } from "react";
+import {
+  EyeIcon,
+  LockSimpleIcon,
+  PrinterIcon,
+} from "@phosphor-icons/react";
+import { useMemo, useState } from "react";
 
 import { Button } from "@/components/commons/button/button";
 import { ConfirmDialog } from "@/components/commons/confirm-dialog/confirm-dialog";
 import { TemplateDocument } from "@/components/commons/template-document/template-document";
+import { DocumentExportDialog } from "@/components/dashboard/document-export-dialog/document-export-dialog";
+import { ShareTimeline } from "@/components/dashboard/share-timeline/share-timeline";
 import { ShareStatusBadge } from "@/components/dashboard/share-status-badge/share-status-badge";
 import { SignatureField } from "@/components/dashboard/signature-field/signature-field";
 import { SignedSignature } from "@/components/dashboard/signed-signature/signed-signature";
-import { RECIPIENT_SIGNATURE_KEY } from "@/lib/sharing/signable";
+import {
+  currentRecipient,
+  resolveRecipientStatus,
+  shareTimeline,
+} from "@/lib/sharing/share-activity";
+import {
+  recipientSignatureOf,
+  senderSignatureOf,
+  withSenderSignature,
+} from "@/lib/sharing/signatures";
+import {
+  isViewOnlyShare,
+  RECIPIENT_SIGNATURE_KEY,
+} from "@/lib/sharing/signable";
+import { usePageHeader } from "@/hooks/use-page-header";
 import { snapshotToMarketplaceTemplate } from "@/types/template";
 import type { SharedDocument } from "@/types/sharing";
 
@@ -22,7 +41,7 @@ export interface SharedDocumentSheetProps {
   isSigning?: boolean;
   /** Called with the trimmed signature once the recipient confirms. */
   onSign: (signature: string) => void;
-  /** The owner only watches; a recipient can sign while the copy is unlocked. */
+  /** The owner only watches; a recipient can sign while a signable copy is unlocked. */
   viewer: "owner" | "recipient";
 }
 
@@ -30,6 +49,9 @@ export interface SharedDocumentSheetProps {
  * A shared copy of a document, read-only for everyone. A recipient signs it in
  * place of the signature field; once signed the copy is locked and both parties
  * see the signature, who signed and when.
+ *
+ * A copy whose layout has no recipient signature is view-only: there is nothing
+ * to sign, so the recipient gets a note instead of the signing controls.
  */
 export const SharedDocumentSheet = ({
   document,
@@ -38,16 +60,39 @@ export const SharedDocumentSheet = ({
   onSign,
   viewer,
 }: SharedDocumentSheetProps) => {
-  const router = useRouter();
   const [typed, setTyped] = useState("");
   const [isConfirming, setIsConfirming] = useState(false);
+  const [isExporting, setIsExporting] = useState(false);
+
+  const { templateSnapshot, templateId } = document;
+  const template = useMemo(
+    () =>
+      templateSnapshot
+        ? snapshotToMarketplaceTemplate(templateSnapshot, templateId)
+        : null,
+    [templateSnapshot, templateId],
+  );
 
   const title = document.values.title?.trim() || document.name;
-  const signature = Object.values(document.signatures)[0];
-  const canSign = viewer === "recipient" && !document.locked;
+  const signature = recipientSignatureOf(document);
+  const values = withSenderSignature(
+    document.values,
+    senderSignatureOf(document),
+  );
+  const canExportSigned = document.locked && Boolean(signature) && template;
+  const headerRecipient = currentRecipient(document);
+  const isViewOnly = isViewOnlyShare(document);
+  const canSign = viewer === "recipient" && !document.locked && !isViewOnly;
   const trimmed = typed.trim();
   const backHref =
     viewer === "recipient" ? "/my-documents?tab=shared" : "/my-documents";
+  // The top bar's back arrow, instead of a button in the content.
+  usePageHeader({
+    back: {
+      href: backHref,
+      label: viewer === "recipient" ? "Shared with me" : "My Documents",
+    },
+  });
 
   const fieldSlots = signature
     ? { [RECIPIENT_SIGNATURE_KEY]: <SignedSignature signature={signature} /> }
@@ -65,26 +110,8 @@ export const SharedDocumentSheet = ({
 
   return (
     <div className="shared-document-sheet w-full">
-      <Button
-        icon={
-          <ArrowLeftIcon
-            aria-hidden
-            size={16}
-            weight="bold"
-          />
-        }
-        iconMotion="left"
-        iconPosition="left"
-        onClick={() => router.push(backHref)}
-        size="sm"
-        variant="outline"
-      >
-        {viewer === "recipient"
-          ? "Back to shared with me"
-          : "Back to documents"}
-      </Button>
 
-      <div className="mx-auto mt-5 flex w-full max-w-3xl flex-col gap-4">
+      <div className="mx-auto flex w-full max-w-3xl flex-col gap-4 pt-6">
         <div className="flex items-start justify-between gap-3">
           <div>
             <h2 className="font-title text-xl font-bold text-nox-noir">
@@ -93,12 +120,38 @@ export const SharedDocumentSheet = ({
             <p className="mt-1 text-sm text-nox-noir/60">
               {viewer === "recipient"
                 ? `Shared by ${document.ownerName || document.ownerEmail}`
-                : `Shared copy of your document — ${document.recipients
-                    .map((recipient) => recipient.email)
-                    .join(", ")}`}
+                : `Shared copy of your document — ${headerRecipient?.email ?? ""}`}
             </p>
           </div>
-          <ShareStatusBadge status={document.locked ? "signed" : "pending"} />
+          <div className="flex shrink-0 flex-col items-end gap-2">
+            <ShareStatusBadge
+              signable={!isViewOnly}
+              status={
+                document.locked
+                  ? "signed"
+                  : headerRecipient
+                    ? resolveRecipientStatus(headerRecipient, document).status
+                    : "pending"
+              }
+            />
+            {canExportSigned ? (
+              <Button
+                icon={
+                  <PrinterIcon
+                    aria-hidden
+                    size={16}
+                    weight="bold"
+                  />
+                }
+                iconPosition="left"
+                onClick={() => setIsExporting(true)}
+                size="sm"
+                variant="outline"
+              >
+                Download signed PDF
+              </Button>
+            ) : null}
+          </div>
         </div>
 
         {document.locked ? (
@@ -113,15 +166,33 @@ export const SharedDocumentSheet = ({
           </p>
         ) : null}
 
-        {document.templateSnapshot ? (
+        {isViewOnly && viewer === "recipient" ? (
+          <p className="flex items-start gap-2 rounded-box border border-steel-mist bg-base-100 p-3 text-sm text-nox-noir/70">
+            <EyeIcon
+              aria-hidden
+              className="mt-0.5 shrink-0"
+              size={16}
+              weight="bold"
+            />
+            This document was shared with you to view. There is nothing to sign.
+          </p>
+        ) : null}
+
+        {document.locked ? (
+          <section
+            aria-label="Activity"
+            className="rounded-box border border-steel-mist bg-base-100 p-3"
+          >
+            <ShareTimeline events={shareTimeline(document)} />
+          </section>
+        ) : null}
+
+        {template ? (
           <TemplateDocument
             className="rounded-box border border-steel-mist"
             fieldSlots={fieldSlots}
-            template={snapshotToMarketplaceTemplate(
-              document.templateSnapshot,
-              document.templateId,
-            )}
-            values={document.values}
+            template={template}
+            values={values}
           />
         ) : (
           <p className="rounded-box border border-dashed border-steel-mist bg-base-100 p-6 text-center text-sm text-nox-noir/60">
@@ -150,6 +221,8 @@ export const SharedDocumentSheet = ({
 
         <ConfirmDialog
           confirmLabel="Sign and lock"
+          icon={LockSimpleIcon}
+          tone="warning"
           confirmLoading={isSigning}
           description="Signing locks this document for everyone. This can't be undone."
           onClose={() => setIsConfirming(false)}
@@ -160,6 +233,21 @@ export const SharedDocumentSheet = ({
           open={isConfirming}
           title="Sign this document?"
         />
+
+        {canExportSigned && signature ? (
+          <DocumentExportDialog
+            documentName={`${title} (signed)`}
+            fieldSlots={{
+              [RECIPIENT_SIGNATURE_KEY]: (
+                <SignedSignature signature={signature} />
+              ),
+            }}
+            onClose={() => setIsExporting(false)}
+            open={isExporting}
+            template={template}
+            values={values}
+          />
+        ) : null}
       </div>
     </div>
   );

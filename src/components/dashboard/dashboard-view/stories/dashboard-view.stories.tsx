@@ -118,6 +118,10 @@ export const Default: Story = {
     await expect(await canvas.findByText("Saved templates")).toBeVisible();
     await expect(await canvas.findByText("1 client")).toBeVisible();
     await expect(await canvas.findByText("Acme Contract")).toBeVisible();
+    // "Open document" goes straight to the editor for that document.
+    await expect(
+      canvas.getByRole("link", { name: "Open document" }),
+    ).toHaveAttribute("href", "/my-documents?edit=doc-1");
 
     const newDocumentFab = canvas.getByRole("link", { name: "New document" });
     await expect(newDocumentFab).toBeVisible();

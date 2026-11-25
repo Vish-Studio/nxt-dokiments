@@ -54,6 +54,42 @@ describe("signedDocumentNotifications", () => {
     ]);
   });
 
+  it("does not notify for the owner's own sender signature", () => {
+    const ownerEntry = {
+      email: "alex@example.com",
+      signedAt: 2_000,
+      type: "typed" as const,
+      value: "Alex Morgan",
+    };
+
+    expect(
+      signedDocumentNotifications(
+        [
+          makeDocument({
+            locked: false,
+            signatures: { "owner-1": ownerEntry },
+          }),
+        ],
+        "owner-1",
+      ),
+    ).toEqual([]);
+
+    const notifications = signedDocumentNotifications(
+      [
+        makeDocument({
+          signatures: {
+            ...makeDocument().signatures,
+            "owner-1": ownerEntry,
+          },
+        }),
+      ],
+      "owner-1",
+    );
+    expect(notifications.map(({ id }) => id)).toEqual([
+      "document-signed:share-1:signer-1",
+    ]);
+  });
+
   it("prefers the document title over the stored name", () => {
     const [notification] = signedDocumentNotifications(
       [makeDocument({ values: { title: " Q3 NDA " } })],

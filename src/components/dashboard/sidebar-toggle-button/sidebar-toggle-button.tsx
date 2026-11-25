@@ -1,6 +1,6 @@
 "use client";
 
-import { ListIcon } from "@phosphor-icons/react";
+import { SidebarSimpleIcon } from "@phosphor-icons/react";
 
 import { ButtonIcon } from "@/components/commons/button-icon/button-icon";
 import { cn } from "@/lib/utils";
@@ -11,6 +11,10 @@ interface SidebarToggleButtonProps {
   onToggle: () => void;
 }
 
+/**
+ * Desktop-only sidebar collapse control. It lives in the sidebar itself, next
+ * to the logo (never in the top bar), styled like the sidebar's nav items.
+ */
 export const SidebarToggleButton = ({
   className,
   isCollapsed,
@@ -20,13 +24,13 @@ export const SidebarToggleButton = ({
     <ButtonIcon
       aria-label={isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
       className={cn(
-        "sidebar-toggle-button hidden size-9! min-h-9! lg:inline-flex",
+        "sidebar-toggle-button hidden size-9! min-h-9! border-none bg-transparent text-app-nav hover:bg-app-nav-hover hover:text-app-chrome-content lg:inline-flex",
         className,
       )}
       icon={
-        <ListIcon
+        <SidebarSimpleIcon
           aria-hidden
-          size={15}
+          size={18}
           weight="bold"
         />
       }

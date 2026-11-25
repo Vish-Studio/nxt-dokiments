@@ -95,6 +95,29 @@ service cloud.firestore {
         allow read, create, update: if isOwner(uid);
       }
 
+      // --- users/{uid}/pushSubscriptions/{deviceId} — web push devices -----------
+      //
+      // One record per subscribed browser; the ID is a hash of its push endpoint, so
+      // re-subscribing overwrites rather than duplicates. The endpoint and keys are a
+      // bearer credential for pushing to that device, so only the owner may read them.
+      // Writes must carry a well-formed HTTPS endpoint and both keys, with the same
+      // length ceilings as `src/types/push.ts`.
+      match /pushSubscriptions/{deviceId} {
+        allow read, delete: if isOwner(uid);
+        allow create, update: if isOwner(uid)
+          && request.resource.data.endpoint is string
+          && request.resource.data.endpoint.matches('^https://.*')
+          && request.resource.data.endpoint.size() <= 2048
+          && request.resource.data.p256dh is string
+          && request.resource.data.p256dh.size() > 0
+          && request.resource.data.p256dh.size() <= 256
+          && request.resource.data.auth is string
+          && request.resource.data.auth.size() > 0
+          && request.resource.data.auth.size() <= 256
+          && request.resource.data.deviceLabel is string
+          && request.resource.data.deviceLabel.size() <= 100;
+      }
+
       // --- users/{uid}/clients/{clientId} — the user's own client book -------------
       //
       // Contact details a user reuses when preparing documents. Doc IDs are
@@ -154,9 +177,10 @@ service cloud.firestore {
     // See docs/document-sharing.md for the data model.
     //
     // Who can do what:
-    //   owner      — read; create; edit and delete while unlocked. Never writes
-    //                `signatures` or `locked`, so they cannot forge a signature.
-    //   recipient  — read; sign once, which locks the document. The signature and
+    //   owner      — read; create; edit and delete while unlocked. Writes only their
+    //                own entry in `signatures` (their sender signature) and never
+    //                `locked`, so they cannot forge a recipient's signature.
+    //   recipient  — read; record their first view; sign once, which locks the document. The signature and
     //                `locked = true` must be written together.
     //   everybody  — nothing at all once `locked` is true (no update, no delete).
     //
@@ -165,13 +189,15 @@ service cloud.firestore {
     // never enough: this app does not verify email at sign-up, so anyone could
     // register an account under an address someone else shared a document with.
     // Linking such a person is done by adding their uid (DS-7), not by trusting
-    // their claimed address.
+    // their claimed address: they present the invite link's token hash, and the
+    // invite (see sharedInvites below) names their address and this document.
 
     function sharedDocumentKeys() {
       return [
         'createdAt', 'locked', 'name', 'ownerEmail', 'ownerId', 'ownerName',
         'recipientEmails', 'recipientUids', 'recipients', 'signatures',
-        'sourceDocumentId', 'templateId', 'templateSnapshot', 'updatedAt', 'values'
+        'sourceDocumentId', 'templateId', 'templateSnapshot', 'updatedAt', 'values',
+        'views', 'acceptedInvite'
       ];
     }
 
@@ -199,6 +225,25 @@ service cloud.firestore {
         && signature.email == request.auth.token.email.lower();
     }
 
+    // The owner signs when sharing, so a copy may start with exactly one entry,
+    // keyed by the owner's uid. It is the only signature the owner can write: a
+    // re-share before the recipient signs may replace it, but never remove it or
+    // add another key.
+    function validOwnerSignatures(doc) {
+      return doc.signatures.size() == 0
+        || (doc.signatures.size() == 1
+            && doc.ownerId in doc.signatures
+            && validSignature(doc.signatures[doc.ownerId]));
+    }
+
+    function ownerSignatureUnchangedOrReplaced(before, after) {
+      return after.signatures.diff(before.signatures).affectedKeys()
+          .hasOnly([before.ownerId])
+        && (before.ownerId in after.signatures
+            ? validSignature(after.signatures[before.ownerId])
+            : !(before.ownerId in before.signatures));
+    }
+
     match /sharedDocuments/{docId} {
       allow read: if isSharedOwner(resource.data) || isSharedRecipient(resource.data);
 
@@ -211,7 +256,7 @@ service cloud.firestore {
           'sourceDocumentId', 'templateId', 'updatedAt', 'values'
         ])
         && request.resource.data.locked == false
-        && request.resource.data.signatures.size() == 0
+        && validOwnerSignatures(request.resource.data)
         && request.resource.data.name is string
         && request.resource.data.name.size() > 0
         && request.resource.data.name.size() <= 500
@@ -227,8 +272,28 @@ service cloud.firestore {
         && request.resource.data.keys().hasOnly(sharedDocumentKeys())
         && request.resource.data.ownerId == resource.data.ownerId
         && request.resource.data.locked == false
-        && request.resource.data.signatures == resource.data.signatures
+        && ownerSignatureUnchangedOrReplaced(resource.data, request.resource.data)
+        // The owner can clear a view (a re-share starts afresh) but never add or alter one.
+        && request.resource.data.get('views', {}).keys()
+          .hasOnly(resource.data.get('views', {}).keys())
+        && request.resource.data.get('views', {})
+          .diff(resource.data.get('views', {})).changedKeys().size() == 0
         && request.resource.data.recipientEmails.size() <= 100;
+
+      // A recipient records that they opened the document, once, under their
+      // own uid. `updatedAt` stays untouched so a view never reorders lists.
+      allow update: if isSharedRecipient(resource.data)
+        && resource.data.locked == false
+        && request.resource.data.diff(resource.data).affectedKeys()
+          .hasOnly(['views'])
+        && !(request.auth.uid in resource.data.get('views', {}))
+        && request.resource.data.views.diff(resource.data.get('views', {}))
+          .affectedKeys().hasOnly([request.auth.uid])
+        && request.resource.data.views[request.auth.uid].keys()
+          .hasOnly(['email', 'viewedAt'])
+        && request.resource.data.views[request.auth.uid].viewedAt is timestamp
+        && request.resource.data.views[request.auth.uid].email
+          == request.auth.token.email.lower();
 
       allow update: if isSharedRecipient(resource.data)
         && resource.data.locked == false
@@ -241,7 +306,84 @@ service cloud.firestore {
         && request.auth.uid in request.resource.data.signatures
         && validSignature(request.resource.data.signatures[request.auth.uid]);
 
+      // A person who holds an invite link links their own account: they add their
+      // uid to `recipientUids`, naming the invite as proof they own the address.
+      // The invite must be live, for this document, from this owner, and sent to
+      // the address on the caller's own token. Revoking removes the address from
+      // `recipientEmails`, which closes this door too.
+      allow update: if signedIn()
+        && resource.data.locked == false
+        && request.auth.token.email.lower() in resource.data.recipientEmails
+        && request.resource.data.diff(resource.data).affectedKeys()
+          .hasOnly(['recipientUids', 'acceptedInvite'])
+        && request.resource.data.recipientUids.toSet()
+          .difference(resource.data.recipientUids.toSet())
+          == [request.auth.uid].toSet()
+        && resource.data.recipientUids.toSet()
+          .difference(request.resource.data.recipientUids.toSet()).size() == 0
+        && request.resource.data.acceptedInvite is string
+        && validInviteFor(request.resource.data.acceptedInvite, docId, resource.data);
+
       allow delete: if isSharedOwner(resource.data) && resource.data.locked == false;
+    }
+
+    // --- sharedInvites/{tokenHash} — emailed invite links (DS-7) -----------------
+    //
+    // The document ID is the SHA-256 of the token in the emailed link, so knowing
+    // the ID is the same as holding the link. `get` is therefore open, to let the
+    // public preview page read it, while `list` is the owner's alone so nobody can
+    // enumerate invites. The record carries a snapshot of what the preview shows,
+    // because an unauthenticated visitor cannot read `sharedDocuments`.
+    //
+    // Only the owner of the shared document writes invites, and never one for a
+    // document that is not theirs, so an invite cannot be forged to link an
+    // account to someone else's document.
+
+    function validInviteFor(tokenHash, docId, sharedDoc) {
+      let invite = get(/databases/$(database)/documents/sharedInvites/$(tokenHash)).data;
+      return invite.sharedDocumentId == docId
+        && invite.ownerId == sharedDoc.ownerId
+        && invite.email == request.auth.token.email.lower()
+        && invite.expiresAt > request.time;
+    }
+
+    function inviteKeys() {
+      return [
+        'createdAt', 'email', 'expiresAt', 'name', 'ownerEmail', 'ownerId',
+        'ownerName', 'sharedDocumentId', 'templateId', 'templateSnapshot', 'values'
+      ];
+    }
+
+    match /sharedInvites/{tokenHash} {
+      allow get: if true;
+      allow list: if signedIn() && resource.data.ownerId == request.auth.uid;
+
+      allow create: if signedIn()
+        && request.resource.data.ownerId == request.auth.uid
+        && request.resource.data.keys().hasOnly(inviteKeys())
+        && request.resource.data.keys().hasAll([
+          'createdAt', 'email', 'expiresAt', 'name', 'ownerEmail', 'ownerId',
+          'ownerName', 'sharedDocumentId', 'values'
+        ])
+        && request.resource.data.email is string
+        && request.resource.data.createdAt is timestamp
+        && request.resource.data.expiresAt is timestamp
+        && request.resource.data.expiresAt > request.time
+        && get(/databases/$(database)/documents/sharedDocuments/$(request.resource.data.sharedDocumentId))
+          .data.ownerId == request.auth.uid;
+
+      // The owner refreshes the snapshot when the shared copy changes, but can
+      // neither retarget an invite nor extend it.
+      allow update: if signedIn()
+        && resource.data.ownerId == request.auth.uid
+        && request.resource.data.keys().hasOnly(inviteKeys())
+        && request.resource.data.ownerId == resource.data.ownerId
+        && request.resource.data.sharedDocumentId == resource.data.sharedDocumentId
+        && request.resource.data.email == resource.data.email
+        && request.resource.data.expiresAt == resource.data.expiresAt
+        && request.resource.data.createdAt == resource.data.createdAt;
+
+      allow delete: if signedIn() && resource.data.ownerId == request.auth.uid;
     }
 
     // --- templates/{templateId} — marketplace catalog ---------------------------

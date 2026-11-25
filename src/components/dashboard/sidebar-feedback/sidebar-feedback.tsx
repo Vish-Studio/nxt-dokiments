@@ -10,6 +10,7 @@ import {
   sidebarRowClassName,
   sidebarRowLabelClassName,
 } from "@/components/dashboard/sidebar-item/sidebar-item";
+import { iconSize } from "@/lib/icons";
 
 interface Props {
   isCollapsed?: boolean;
@@ -59,7 +60,7 @@ const SidebarFeedback: FunctionComponent<Props> = ({
         <LightbulbIcon
           aria-hidden
           className="shrink-0"
-          size={19}
+          size={iconSize.nav}
           weight="bold"
         />
         <span className={sidebarRowLabelClassName(isCollapsed)}>{LABEL}</span>

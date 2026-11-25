@@ -4,7 +4,9 @@ import { expect, userEvent, within } from "storybook/test";
 
 import { getTemplateById } from "@/lib/market-place";
 import { makeStoryQueryClient } from "@/lib/query/story-query-client";
+import { documentSharingEnabled } from "@/lib/sharing/feature-flag";
 import { useAuthStore } from "@/stores/auth-store";
+import { useUiStore } from "@/stores/ui-store";
 import type { Client } from "@/types/client";
 import type { TemplateSnapshot, UserDocument } from "@/types/template";
 
@@ -77,6 +79,30 @@ const mockDocumentsApi = (
       return new Response(JSON.stringify({ documents }), { status: 200 });
     }
 
+    if (method === "POST" && idMatch && url.endsWith("/duplicate")) {
+      const source = documents.find((document) => document.id === idMatch[1]);
+      if (!source?.templateSnapshot) {
+        return new Response(JSON.stringify({ error: "Document not found." }), {
+          status: 404,
+        });
+      }
+      const body = JSON.parse((init?.body as string) ?? "{}") as {
+        name: string;
+        values: Record<string, string>;
+      };
+      const now = Date.now();
+      const copy: UserDocument = {
+        ...source,
+        createdAt: now,
+        id: `doc-copy-${now}`,
+        name: body.name,
+        updatedAt: now,
+        values: body.values,
+      };
+      documents = [...documents, copy];
+      return new Response(JSON.stringify({ document: copy }), { status: 201 });
+    }
+
     if (method === "POST") {
       const body = JSON.parse((init?.body as string) ?? "{}") as {
         name: string;
@@ -143,6 +169,13 @@ const seedUser = () => {
   });
 };
 
+/** These stories exercise the flat list, which sits on the "My documents" tab. */
+const showAllDocuments = async (canvasElement: HTMLElement) => {
+  await userEvent.click(
+    await within(canvasElement).findByRole("tab", { name: "My documents" }),
+  );
+};
+
 const meta = {
   title: "Dashboard/Documents View",
   component: DocumentsView,
@@ -161,6 +194,26 @@ const meta = {
 
 export default meta;
 type Story = StoryObj<typeof meta>;
+
+/**
+ * Rows keep their actions in the ⋮ menu (a popover on desktop, a sheet on
+ * phones): opens the menu for `title` and clicks `action`.
+ */
+const openRowAction = async (
+  canvasElement: HTMLElement,
+  title: string,
+  action: string,
+) => {
+  const canvas = within(canvasElement);
+  await userEvent.click(
+    await canvas.findByRole("button", { name: `More actions for ${title}` }),
+  );
+  await userEvent.click(
+    await within(canvasElement.ownerDocument.body).findByRole("button", {
+      name: action,
+    }),
+  );
+};
 
 export const Empty: Story = {
   decorators: [
@@ -231,12 +284,16 @@ export const WithDocuments: Story = {
     },
   ],
   play: async ({ canvasElement }) => {
+    await showAllDocuments(canvasElement);
     const canvas = within(canvasElement);
     await expect(
       await canvas.findByText("Lumina Events Invoice"),
     ).toBeVisible();
     await expect(canvas.getByText("Invoice")).toBeVisible();
-    await expect(canvas.getByText("18 Jun 2026")).toBeVisible();
+    await expect(canvas.getByText("18/06/26")).toBeVisible();
+    // The row shows who it is for, not the template style.
+    await expect(canvas.queryByText("Classic designs")).toBeNull();
+    await expect(canvas.getAllByText("Not shared")[0]).toBeVisible();
     await userEvent.click(
       canvas.getByRole("button", {
         name: "Open preview for Lumina Events Invoice",
@@ -251,12 +308,9 @@ export const WithDocuments: Story = {
 export const PrintableDocuments: Story = {
   decorators: WithDocuments.decorators,
   play: async ({ canvasElement }) => {
+    await showAllDocuments(canvasElement);
     const canvas = within(canvasElement);
-    await userEvent.click(
-      await canvas.findByRole("button", {
-        name: "Print Lumina Events Invoice",
-      }),
-    );
+    await openRowAction(canvasElement, "Lumina Events Invoice", "Download PDF");
     await expect(
       canvas.getByRole("dialog", { name: "Prepare Lumina Events Invoice" }),
     ).toBeVisible();
@@ -273,35 +327,104 @@ export const PrintableDocuments: Story = {
 export const EditDocument: Story = {
   decorators: WithDocuments.decorators,
   play: async ({ canvasElement }) => {
+    await showAllDocuments(canvasElement);
     const canvas = within(canvasElement);
-    await userEvent.click(
-      await canvas.findByRole("button", { name: "Edit Lumina Events Invoice" }),
-    );
+    await openRowAction(canvasElement, "Lumina Events Invoice", "Edit");
     await expect(
       canvas.getByRole("heading", { name: "Edit document" }),
     ).toBeVisible();
-    await expect(
-      canvas.getByRole("button", { name: "Back to documents" }),
-    ).toBeVisible();
+    // The editor is a sub-page: the top bar gets its title and back arrow.
+    await expect(useUiStore.getState().pageHeader).toMatchObject({
+      back: { label: "My Documents" },
+      title: "Edit document",
+    });
     await expect(canvas.getByRole("button", { name: "Delete" })).toBeVisible();
     await userEvent.click(canvas.getByRole("button", { name: "Save changes" }));
+    // The sample invoice has empty fields, so save goes through the warning.
+    await userEvent.click(
+      await canvas.findByRole("button", { name: "Save anyway" }),
+    );
     await expect(
-      await canvas.findByRole("dialog", { name: "Document saved" }),
+      await within(canvasElement.ownerDocument.body).findByRole("dialog", {
+        name: "Document saved",
+      }),
     ).toBeVisible();
-    await userEvent.click(canvas.getByRole("button", { name: "Continue" }));
+    await userEvent.click(
+      within(canvasElement.ownerDocument.body).getByRole("button", {
+        name: "Done",
+      }),
+    );
     await expect(
       await canvas.findByText("Lumina Events Invoice"),
     ).toBeVisible();
   },
 };
 
+export const DuplicateDocument: Story = {
+  decorators: WithDocuments.decorators,
+  play: async ({ canvasElement }) => {
+    await showAllDocuments(canvasElement);
+    const canvas = within(canvasElement);
+    const openDraft = async () => {
+      await userEvent.click(
+        await canvas.findByRole("button", {
+          name: "More actions for Lumina Events Invoice",
+        }),
+      );
+      await userEvent.click(canvas.getByRole("button", { name: "Duplicate" }));
+      await expect(
+        await canvas.findByDisplayValue("Copy of March Invoice"),
+      ).toBeVisible();
+    };
+
+    await openDraft();
+    await expect(
+      await canvas.findByDisplayValue("Copy of Lumina Events Invoice"),
+    ).toBeVisible();
+
+    // Leaving without confirming must not create anything.
+    await expect(useUiStore.getState().pageHeader?.title).toBe(
+      "Duplicate document",
+    );
+    // The top bar's back arrow (rendered by AppShell, not in this story).
+    useUiStore.getState().pageHeader?.back?.onClick?.();
+    await expect(
+      await canvas.findByText("Lumina Events Invoice"),
+    ).toBeVisible();
+    await expect(
+      canvas.queryByText("Copy of Lumina Events Invoice"),
+    ).toBeNull();
+
+    await openDraft();
+    await userEvent.click(
+      canvas.getByRole("button", { name: "Duplicate document" }),
+    );
+    await userEvent.click(
+      await canvas.findByRole("button", { name: "Save anyway" }),
+    );
+    await expect(
+      await within(canvasElement.ownerDocument.body).findByRole("dialog", {
+        name: "Document saved",
+      }),
+    ).toBeVisible();
+    await userEvent.click(
+      within(canvasElement.ownerDocument.body).getByRole("button", {
+        name: "Done",
+      }),
+    );
+    await expect(
+      await canvas.findByText("Copy of Lumina Events Invoice"),
+    ).toBeVisible();
+    await expect(canvas.getByText("Lumina Events Invoice")).toBeVisible();
+  },
+};
+
 export const DeleteDocument: Story = {
   decorators: WithDocuments.decorators,
   play: async ({ canvasElement }) => {
+    await showAllDocuments(canvasElement);
     const canvas = within(canvasElement);
-    await userEvent.click(
-      await canvas.findByRole("button", { name: "Edit Lumina Events Invoice" }),
-    );
+    await openRowAction(canvasElement, "Lumina Events Invoice", "Edit");
     await userEvent.click(canvas.getByRole("button", { name: "Delete" }));
     await expect(
       canvas.getByRole("dialog", { name: "Delete document?" }),
@@ -319,42 +442,160 @@ export const DeleteDocument: Story = {
 export const SavedConfirmation: Story = {
   decorators: WithDocuments.decorators,
   play: async ({ canvasElement }) => {
+    await showAllDocuments(canvasElement);
     const canvas = within(canvasElement);
-    await userEvent.click(
-      await canvas.findByRole("button", { name: "Edit Lumina Events Invoice" }),
-    );
+    await openRowAction(canvasElement, "Lumina Events Invoice", "Edit");
     await userEvent.click(canvas.getByRole("button", { name: "Save changes" }));
+    // The sample invoice has empty fields, so save goes through the warning.
+    await userEvent.click(
+      await canvas.findByRole("button", { name: "Save anyway" }),
+    );
+    const saved = await within(canvasElement.ownerDocument.body).findByRole(
+      "dialog",
+      { name: "Document saved" },
+    );
+    await expect(saved).toBeVisible();
+    // Desktop is always a centred modal, never a bottom sheet.
+    await expect(saved).toHaveAttribute("data-layout", "centered");
+    // The warning closed before the confirmation opened.
     await expect(
-      await canvas.findByRole("dialog", { name: "Document saved" }),
+      canvas.queryByRole("dialog", { name: "Some fields are empty" }),
+    ).toBeNull();
+  },
+};
+
+/**
+ * Saving with empty fields highlights them in the preview, shows a warning
+ * toast and asks to save anyway or fix the document first.
+ */
+export const EmptyFieldsWarning: Story = {
+  decorators: WithDocuments.decorators,
+  play: async ({ canvasElement }) => {
+    await showAllDocuments(canvasElement);
+    const canvas = within(canvasElement);
+    const page = within(canvasElement.ownerDocument.body);
+    await openRowAction(canvasElement, "Lumina Events Invoice", "Edit");
+    await expect(
+      canvasElement.querySelector(".template-document-missing"),
+    ).toBeNull();
+
+    await userEvent.click(canvas.getByRole("button", { name: "Save changes" }));
+    const warning = await canvas.findByRole("dialog", {
+      name: "Some fields are empty",
+    });
+    await expect(warning).toBeVisible();
+    // A decision, so centred even though it sits in the editor (never a sheet).
+    await expect(warning).toHaveAttribute("data-layout", "centered");
+    await expect(warning).toHaveAccessibleDescription(
+      /these fields stay blank in the document/,
+    );
+    const toast = await page.findByText(/highlighted in the preview/);
+    await expect(toast).toBeVisible();
+    await expect(
+      canvasElement.querySelector(".template-document-missing"),
+    ).not.toBeNull();
+
+    // The dialog names each empty field as a chip, and agrees with the toast's count.
+    const chips = within(
+      within(warning).getByRole("list", { name: "Empty fields" }),
+    ).getAllByRole("listitem");
+    const toastCount = /^(\d+) fields/.exec(toast.textContent ?? "")?.[1];
+    await expect(chips.length).toBe(toastCount ? Number(toastCount) : 1);
+    for (const chip of chips) {
+      await expect(chip.textContent?.trim()).not.toBe("");
+    }
+    await expect(
+      within(warning).getByRole("button", { name: "Save anyway" }),
+    ).toBeEnabled();
+
+    // "Fix document" keeps the user in the editor with the highlights on.
+    await userEvent.click(canvas.getByRole("button", { name: "Fix document" }));
+    await expect(
+      canvas.queryByRole("dialog", { name: "Some fields are empty" }),
+    ).toBeNull();
+    await expect(
+      canvas.getByRole("heading", { name: "Edit document" }),
     ).toBeVisible();
+    await expect(
+      canvasElement.querySelector(".template-document-missing"),
+    ).not.toBeNull();
+  },
+};
+
+/** After a save, "Download PDF" opens the export for the document just saved, without leaving the editor. */
+export const SavedNextStepDownload: Story = {
+  decorators: WithDocuments.decorators,
+  play: async ({ canvasElement }) => {
+    await showAllDocuments(canvasElement);
+    const canvas = within(canvasElement);
+    await openRowAction(canvasElement, "Lumina Events Invoice", "Edit");
+    await userEvent.click(canvas.getByRole("button", { name: "Save changes" }));
+    await userEvent.click(
+      await canvas.findByRole("button", { name: "Save anyway" }),
+    );
+    const saved = await within(canvasElement.ownerDocument.body).findByRole("dialog", {
+        name: "Document saved",
+      });
+    // "Share" is offered only when document sharing is switched on (CI runs
+    // with it off, like `.env.example`).
+    const share = within(saved).queryByRole("button", { name: "Share" });
+    if (documentSharingEnabled) await expect(share).toBeVisible();
+    else await expect(share).toBeNull();
+
+    await userEvent.click(
+      within(saved).getByRole("button", { name: "Download PDF" }),
+    );
+    await expect(
+      within(canvasElement.ownerDocument.body).queryByRole("dialog", {
+        name: "Document saved",
+      }),
+    ).toBeNull();
+    await expect(
+      await canvas.findByRole("dialog", {
+        name: "Prepare Lumina Events Invoice",
+      }),
+    ).toBeVisible();
+    await expect(
+      canvas.getByRole("heading", { name: "Edit document" }),
+    ).toBeInTheDocument();
   },
 };
 
 export const DeleteConfirmation: Story = {
   decorators: WithDocuments.decorators,
   play: async ({ canvasElement }) => {
+    await showAllDocuments(canvasElement);
     const canvas = within(canvasElement);
-    await userEvent.click(
-      await canvas.findByRole("button", { name: "Edit Lumina Events Invoice" }),
-    );
+    await openRowAction(canvasElement, "Lumina Events Invoice", "Edit");
     await userEvent.click(canvas.getByRole("button", { name: "Delete" }));
-    await expect(
-      canvas.getByRole("dialog", { name: "Delete document?" }),
-    ).toBeVisible();
+    const dialog = canvas.getByRole("dialog", { name: "Delete document?" });
+    await expect(dialog).toBeVisible();
+    await expect(dialog).toHaveAttribute("data-layout", "centered");
+    await expect(dialog).toHaveAccessibleDescription(
+      'Delete "Lumina Events Invoice"? This action cannot be undone.',
+    );
   },
 };
 
 export const EditorReady: Story = {
   decorators: WithDocuments.decorators,
   play: async ({ canvasElement }) => {
+    await showAllDocuments(canvasElement);
     const canvas = within(canvasElement);
-    await userEvent.click(
-      await canvas.findByRole("button", { name: "Edit Lumina Events Invoice" }),
-    );
+    await openRowAction(canvasElement, "Lumina Events Invoice", "Edit");
     await expect(
       canvas.getByRole("heading", { name: "Edit document" }),
     ).toBeVisible();
   },
+};
+
+/**
+ * Phones have no Edit button on the row: Edit is in the ⋮ actions sheet.
+ * Opens the editor that way.
+ */
+const openEditorOnPhone = async (canvasElement: HTMLElement) => {
+  await showAllDocuments(canvasElement);
+  await openRowAction(canvasElement, "Lumina Events Invoice", "Edit");
 };
 
 export const MobileEditorReady: Story = {
@@ -362,7 +603,12 @@ export const MobileEditorReady: Story = {
   globals: {
     viewport: { value: "mobile1", isRotated: false },
   },
-  play: EditorReady.play,
+  play: async ({ canvasElement }) => {
+    await openEditorOnPhone(canvasElement);
+    await expect(
+      within(canvasElement).getByRole("heading", { name: "Edit document" }),
+    ).toBeVisible();
+  },
 };
 
 export const MobileEditorPreview: Story = {
@@ -371,10 +617,8 @@ export const MobileEditorPreview: Story = {
     viewport: { value: "mobile1", isRotated: false },
   },
   play: async ({ canvasElement }) => {
+    await openEditorOnPhone(canvasElement);
     const canvas = within(canvasElement);
-    await userEvent.click(
-      await canvas.findByRole("button", { name: "Edit Lumina Events Invoice" }),
-    );
     const previewButton = canvas.getByRole("button", {
       name: "Preview document",
     });
@@ -530,5 +774,239 @@ export const PrefillWithNoClients: Story = {
     await expect(
       canvas.queryByLabelText("Prefill from client (optional)"),
     ).not.toBeInTheDocument();
+  },
+};
+
+const at = (value: string) => new Date(value).getTime();
+
+const companyDocument = (
+  id: string,
+  templateId: string,
+  createdAt: string,
+  values: Record<string, string>,
+): UserDocument => ({
+  createdAt: at(createdAt),
+  id,
+  name: values.title ?? id,
+  templateId,
+  templateSnapshot: toSnapshot(templateId),
+  updatedAt: at(createdAt),
+  values,
+});
+
+/** Documents for three companies (one in the client book) and one with no client. */
+const byCompanyFixture: UserDocument[] = [
+  companyDocument("nl-1", "classic-invoice", "2026-06-18T09:30:00", { title: "June retainer invoice", toName: "Northline Studio", total: "1250" }),
+  companyDocument("nl-2", "classic-quotation", "2026-06-02T14:10:00", { title: "Brand refresh quotation", toName: "Northline Studio" }),
+  companyDocument("nl-3", "classic-contract", "2026-05-12T11:00:00", { title: "Design services contract", toName: "Maya Chen" }),
+  companyDocument("nl-4", "classic-invoice", "2026-04-28T08:45:00", { title: "April retainer invoice", toName: "Northline Studio" }),
+  companyDocument("lu-1", "classic-invoice", "2026-06-10T10:00:00", { title: "Lumina Events invoice", toName: "Lumina Events" }),
+  companyDocument("lu-2", "classic-nda", "2026-03-03T16:20:00", { partyTwo: "Lumina Events", title: "Event planning NDA" }),
+  companyDocument("ha-1", "classic-proposal", "2026-05-20T12:00:00", { title: "Harbour fit-out proposal", toName: "Harbour Cafe" }),
+  companyDocument("no-1", "classic-proposal", "2026-06-15T09:00:00", { title: "Website proposal draft" }),
+  // A CV: lives in its own tab, never under a company.
+  companyDocument("cv-1", "classic-cv", "2026-06-12T09:00:00", { title: "Product designer CV" }),
+];
+
+/**
+ * The default "Companies" tab: every document grouped by company (newest
+ * activity first), with Status and Type filter chips.
+ */
+export const ByCompany: Story = {
+  decorators: [
+    (Story) => {
+      seedUser();
+      mockDocumentsApi(byCompanyFixture);
+      return <Story />;
+    },
+  ],
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const northline = await canvas.findByRole("region", {
+      name: "Northline Studio",
+    });
+    // Northline groups documents by company name and by contact name.
+    await expect(
+      within(northline).getAllByRole("button", { name: /^Preview / }),
+    ).toHaveLength(4);
+    await expect(
+      canvas.getByRole("region", { name: "No client yet" }),
+    ).toBeVisible();
+    // The toolbar renders once for phones and once for desktop.
+    await expect(
+      canvas.getAllByText("3 companies · 8 documents").length,
+    ).toBeGreaterThan(0);
+    await expect(
+      within(northline).getByRole("link", {
+        name: "View company Northline Studio",
+      }),
+    ).toHaveAttribute(
+      "href",
+      "/my-documents/companies/client-client_northline_01",
+    );
+    await expect(
+      within(northline).getByRole("link", {
+        name: "New document for Northline Studio",
+      }),
+    ).toHaveAttribute("href", "/my-documents?new=1&client=client_northline_01");
+
+    // Collapse and reopen a company.
+    const toggle = within(northline).getByRole("button", {
+      name: "Hide documents for Northline Studio",
+    });
+    await userEvent.click(toggle);
+    await expect(toggle).toHaveAttribute("aria-expanded", "false");
+    await userEvent.click(toggle);
+    await expect(toggle).toHaveAttribute("aria-expanded", "true");
+
+    // Amounts at a glance; CVs stay out of the company groups.
+    await expect(within(northline).getByText("1,250.00")).toBeVisible();
+    await expect(canvas.queryByText("Product designer CV")).toBeNull();
+
+    // Each row has a vertical menu.
+    await expect(
+      within(northline).getByRole("button", {
+        name: "More actions for June retainer invoice",
+      }),
+    ).toBeVisible();
+
+    // Filter chips: Status is its own chip, and the sort is not a filter.
+    await expect(
+      canvas.getAllByRole("button", { name: "Status: Any" }).length,
+    ).toBeGreaterThan(0);
+    await expect(
+      canvas.queryAllByRole("button", { name: "Reset filters" }),
+    ).toHaveLength(0);
+  },
+};
+
+/**
+ * Rows show the creation date as dd/mm/yy. Opening a row shows the preview
+ * with a "Document" tab (client, amount, status, created) and a "Template" tab.
+ */
+export const ByCompanyPreviewDetails: Story = {
+  decorators: ByCompany.decorators,
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const northline = await canvas.findByRole("region", {
+      name: "Northline Studio",
+    });
+    const date = within(northline).getByText("18/06/26");
+    await expect(date.tagName).toBe("TIME");
+    await expect(date).toHaveAttribute("title", "18 Jun 2026");
+
+    await userEvent.click(
+      within(northline).getByRole("button", {
+        name: "Preview June retainer invoice",
+      }),
+    );
+    const body = within(canvasElement.ownerDocument.body);
+    const details = await body.findByRole("tabpanel", {
+      name: "Document details",
+    });
+    await expect(within(details).getByText("Northline Studio")).toBeVisible();
+    await expect(within(details).getByText("1,250.00")).toBeVisible();
+    await expect(within(details).getByText("Not shared")).toBeVisible();
+    await expect(within(details).getByText("18/06/26, 09:30")).toBeVisible();
+
+    await userEvent.click(body.getByRole("tab", { name: "Template" }));
+    const template = body.getByRole("tabpanel", { name: "Template details" });
+    await expect(within(template).getByText("Invoice")).toBeVisible();
+    await expect(
+      body.getByRole("tab", { name: "Template" }),
+    ).toHaveAttribute("aria-selected", "true");
+  },
+};
+
+/** CVs have their own tab after "Shared with me", without a Type filter. */
+export const CvsTab: Story = {
+  decorators: ByCompany.decorators,
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await canvas.findByRole("region", { name: "Northline Studio" });
+    await userEvent.click(canvas.getByRole("tab", { name: /CVs/ }));
+    await expect(await canvas.findByText("Product designer CV")).toBeVisible();
+    await expect(canvas.queryByText("June retainer invoice")).toBeNull();
+    await expect(
+      canvas.queryAllByRole("button", { name: /^Type:/ }),
+    ).toHaveLength(0);
+
+    // And "My documents" leaves the CV out.
+    await userEvent.click(canvas.getByRole("tab", { name: /My documents/ }));
+    await expect(await canvas.findByText("June retainer invoice")).toBeVisible();
+    await expect(canvas.queryByText("Product designer CV")).toBeNull();
+  },
+};
+
+/** Status filter: picking "Signed" leaves no unsigned documents and offers "Clear filters". */
+export const ByCompanyStatusFilter: Story = {
+  decorators: ByCompany.decorators,
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await canvas.findByRole("region", { name: "Northline Studio" });
+    const [statusChip] = canvas
+      .getAllByRole("button", { name: "Status: Any" })
+      .filter((element) => element.checkVisibility());
+    await userEvent.click(statusChip);
+    await userEvent.click(
+      await within(canvasElement.ownerDocument.body).findByRole("menuitemradio", {
+        name: "Signed",
+      }),
+    );
+    await expect(
+      await canvas.findByText("No documents match"),
+    ).toBeVisible();
+    await expect(
+      canvas
+        .getAllByRole("button", { name: "Reset filters" })
+        .filter((element) => element.checkVisibility()).length,
+    ).toBeGreaterThan(0);
+  },
+};
+
+/**
+ * The toolbar never leaves the page: on "Shared with me" its search, filter
+ * and sort stay in place but disabled, so the header keeps its height.
+ */
+export const SharedTabKeepsToolbar: Story = {
+  decorators: ByCompany.decorators,
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await canvas.findByRole("region", { name: "Northline Studio" });
+    // The phone toolbar is CSS-hidden at the test runner's width.
+    const [search] = canvas.getAllByRole("searchbox", {
+      hidden: true,
+      name: "Search documents",
+    });
+    await expect(search).toBeEnabled();
+    if (!documentSharingEnabled) return;
+
+    await userEvent.click(canvas.getByRole("tab", { name: /Shared with me/ }));
+    await expect(
+      await canvas.findByText("Nothing shared with you yet"),
+    ).toBeVisible();
+    for (const box of canvas.getAllByRole("searchbox", {
+      hidden: true,
+      name: "Search documents",
+    })) {
+      await expect(box).toBeDisabled();
+    }
+  },
+};
+
+/** Delete from a row's ⋮ menu asks first; Cancel keeps the document. */
+export const DeleteFromRowMenu: Story = {
+  decorators: WithDocuments.decorators,
+  play: async ({ canvasElement }) => {
+    await showAllDocuments(canvasElement);
+    await openRowAction(canvasElement, "Lumina Events Invoice", "Delete");
+    const page = within(canvasElement.ownerDocument.body);
+    const dialog = await page.findByRole("dialog", { name: "Delete document?" });
+    await expect(dialog).toHaveTextContent('Delete "Lumina Events Invoice"?');
+    await userEvent.click(within(dialog).getByRole("button", { name: "Cancel" }));
+    await expect(page.queryByRole("dialog", { name: "Delete document?" })).toBeNull();
+    await expect(
+      within(canvasElement).getByText("Lumina Events Invoice"),
+    ).toBeVisible();
   },
 };

@@ -1,9 +1,14 @@
 "use client";
 
-import Link from "next/link";
+import { MagnifyingGlassIcon, StackIcon, StorefrontIcon } from "@phosphor-icons/react";
+import { useRouter } from "next/navigation";
 import { useState } from "react";
 
 import { AppShell } from "@/components/dashboard/app-shell/app-shell";
+import { Button } from "@/components/commons/button/button";
+import { EmptyState } from "@/components/commons/empty-state/empty-state";
+import { FloatingActionButton } from "@/components/commons/floating-action-button/floating-action-button";
+import { LinkButton } from "@/components/commons/link-button/link-button";
 import { LoadingStatus } from "@/components/commons/loading-status/loading-status";
 import { TemplateCardSkeletonGrid } from "@/components/commons/template-card-skeleton/template-card-skeleton";
 import TemplateLibraryToolbar, { type TemplateSort } from "@/components/dashboard/template-library-toolbar/template-library-toolbar";
@@ -12,6 +17,7 @@ import TemplateTypeGroup from "@/components/dashboard/template-type-group/templa
 import { TemplatePreviewDialog } from "@/components/commons/template-preview-dialog/template-preview-dialog";
 import { useSavedTemplatesQuery } from "@/hooks/queries/use-saved-templates";
 import { useScrollContentToTopOnMobile } from "@/hooks/use-scroll-content-to-top-on-mobile";
+import { iconSize } from "@/lib/icons";
 import type { DocumentType, MarketplaceTemplate } from "@/types/template";
 import { getDocumentTypeLabel, getTemplateDisplayName } from "@/lib/market-place/document-labels";
 
@@ -58,12 +64,27 @@ export const MyTemplatesView = ({ withShell = false }: Props) => {
     setSearch("");
     setDocumentType("all");
     setStyle("all");
-    setSort("newest");
   };
+  const router = useRouter();
+  const countLabel = `${sorted.length} ${sorted.length === 1 ? "template" : "templates"}`;
+  // The page's one primary action: find more templates.
+  const browseMarketplace = (
+    <LinkButton
+      href="/marketplace"
+      icon={<StorefrontIcon aria-hidden size={iconSize.control} weight="bold" />}
+      iconPosition="left"
+      size="sm"
+      variant="accent"
+    >
+      Browse marketplace
+    </LinkButton>
+  );
 
   const toolbar = (
     <TemplateLibraryToolbar
       appearance="compact"
+      endAction={browseMarketplace}
+      resultLabel={countLabel}
       search={search} documentType={documentType} style={style} sort={sort}
       typeOptions={typeOptions} styleOptions={styleOptions}
       onSearch={setSearch} onDocumentType={setDocumentType} onStyle={setStyle} onSort={setSort} onCollectionChange={scrollContentToTop} onReset={resetFilters}
@@ -85,34 +106,27 @@ export const MyTemplatesView = ({ withShell = false }: Props) => {
       <TemplateCardSkeletonGrid className="grid-cols-2 gap-x-6 gap-y-8 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6" />
     </div>
   ) : saved.length === 0 ? (
-    <div className="grid min-h-72 w-full flex-1 place-items-center rounded-box border border-dashed border-steel-mist bg-base-100 p-12 text-center">
-      <p className="font-title text-base font-bold text-nox-noir">
-        No templates yet
-      </p>
-      <p className="mt-1 max-w-sm text-sm text-nox-noir/60">
-        Save templates from the marketplace and they will appear here, ready
-        to use in your documents.
-      </p>
-      <Link
-        className="btn btn-sm btn-primary mt-5 font-title font-semibold tracking-normal"
-        href="/marketplace"
-      >
-        Browse marketplace
-      </Link>
-    </div>
+    <EmptyState
+      action={browseMarketplace}
+      description="Save templates from the marketplace and they will appear here, ready to use in your documents."
+      icon={<StackIcon aria-hidden size={iconSize.feature} weight="bold" />}
+      title="No templates yet"
+    />
   ) : (
     <section className="my-templates-view grid w-full min-w-0 gap-6">
       {recent.length > 0 ? (
         <TemplateTypeGroup title="Recently Added" templates={recent.map(({ template }) => template)} onPreview={setPreview} />
       ) : (
-        <section className="grid min-h-72 w-full place-items-center rounded-box border border-dashed border-steel-mist bg-base-100 p-10 text-center">
-          <h2 className="font-title text-lg font-bold text-nox-noir">
-            No matching templates
-          </h2>
-          <p className="mt-2 max-w-sm text-sm leading-6 text-nox-noir/60">
-            Try another search or reset the filters to see your saved templates.
-          </p>
-        </section>
+        <EmptyState
+          action={
+            <Button onClick={resetFilters} size="sm" variant="outline">
+              Clear filters
+            </Button>
+          }
+          description="Try another search, or clear the filters to see all your saved templates."
+          icon={<MagnifyingGlassIcon aria-hidden size={iconSize.feature} weight="bold" />}
+          title="No templates match"
+        />
       )}
       <div className="grid gap-6">
         {sortedGroups.map(([documentType, templates]) => (
@@ -149,6 +163,14 @@ export const MyTemplatesView = ({ withShell = false }: Props) => {
           {toolbar}
         </ResponsiveHeaderControls>
         {content}
+        {saved.length > 0 ? (
+          <FloatingActionButton
+            className="lg:hidden"
+            icon={<StorefrontIcon aria-hidden size={18} weight="bold" />}
+            label="Browse marketplace"
+            onClick={() => router.push("/marketplace")}
+          />
+        ) : null}
       </div>
     </AppShell>
   ) : (

@@ -39,6 +39,13 @@ export type ShareRecipient = {
   /** Epoch milliseconds. */
   invitedAt: number;
   status: ShareRecipientStatus;
+  /**
+   * Epoch milliseconds, set when the owner revokes access. A revoked recipient
+   * stays in `recipients` for the audit trail but is dropped from the flat
+   * `recipientEmails` and `recipientUids` arrays the rules authorise against, so
+   * they lose access immediately. Re-sharing with the same address clears it.
+   */
+  revokedAt?: number;
   /** Epoch milliseconds, set once the recipient has signed. */
   signedAt?: number;
   /** Known once the recipient has an account that is linked to this share. */
@@ -55,8 +62,16 @@ export type ShareSignature = {
   value: string;
 };
 
+/** The first time a recipient opened a shared document. */
+export type ShareView = {
+  /** The viewer's normalised address, taken from their auth token. */
+  email: string;
+  /** Epoch milliseconds. */
+  viewedAt: number;
+};
+
 /**
- * A document that has been shared for signature. Lives at `sharedDocuments/{id}`
+ * A document that has been shared (for signature, or view-only). Lives at `sharedDocuments/{id}`
  * rather than under `users/{uid}` so that both the owner and the recipients can
  * read it; the owner's original in `users/{uid}/documents` is left untouched.
  */
@@ -71,6 +86,13 @@ export type SharedDocument = {
   ownerId: string;
   ownerName: string;
   recipients: ShareRecipient[];
+  /**
+   * Accounts that can read the document by uid, as stored in `recipientUids`.
+   * A recipient who accepted an invite link adds their own uid here, so the
+   * list is read back and carried through owner writes rather than rebuilt from
+   * `recipients`. Absent on documents parsed before it existed.
+   */
+  recipientUids?: string[];
   /** Keyed by the signer's uid. */
   signatures: Record<string, ShareSignature>;
   /** The document the share was made from. */
@@ -78,6 +100,13 @@ export type SharedDocument = {
   templateId: string;
   updatedAt: number;
   values: Record<string, string>;
+  /**
+   * Keyed by the viewer's uid. A recipient adds only their own entry, once, when
+   * they first open the document; it is how `viewed` is derived, because
+   * recipients cannot write `recipients`. Absent on documents shared before it
+   * existed.
+   */
+  views?: Record<string, ShareView>;
   templateSnapshot?: TemplateSnapshot;
 };
 
@@ -93,4 +122,29 @@ export type ShareLedgerEntry = {
   email: string;
   /** Epoch milliseconds. */
   lastSharedAt: number;
+};
+
+/**
+ * A single-purpose invitation to one shared document, stored at
+ * `sharedInvites/{tokenHash}` where the ID is the SHA-256 of the token that was
+ * emailed. The raw token is never stored, so a leaked database cannot be used to
+ * open anyone's link.
+ *
+ * It carries a snapshot of what the public preview shows, because the rules do
+ * not let an unauthenticated visitor read `sharedDocuments`.
+ */
+export type SharedInvite = {
+  /** Epoch milliseconds after which the link no longer works (14 days). */
+  expiresAt: number;
+  /** Normalised address the invitation was sent to. */
+  email: string;
+  /** Epoch milliseconds. */
+  createdAt: number;
+  name: string;
+  ownerEmail: string;
+  ownerId: string;
+  ownerName: string;
+  sharedDocumentId: string;
+  templateSnapshot?: TemplateSnapshot;
+  values: Record<string, string>;
 };

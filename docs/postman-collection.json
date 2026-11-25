@@ -391,6 +391,23 @@
           }
         },
         {
+          "name": "Duplicate a document",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Copy of Acme service contract\",\n  \"values\": {\n    \"title\": \"Copy of Acme service contract\"\n  }\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/documents/{{documentId}}/duplicate",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "documents", "{{documentId}}", "duplicate"]
+            },
+            "description": "POST /api/documents/:id/duplicate — body { name, values } (the draft the user reviewed). 201 { document } is a new document with that name and values and the original's templateId/templateSnapshot. Send {} to confirm 400. Try a nonexistent or another user's id -> 404 { error: \"Document not found.\" }; run \"Get one document\" on the original to confirm it is unchanged."
+          }
+        },
+        {
           "name": "Share a document",
           "request": {
             "method": "POST",

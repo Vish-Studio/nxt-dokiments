@@ -3,6 +3,7 @@ import {
   type DashboardListColumn,
 } from "@/components/dashboard/dashboard-list/dashboard-list";
 import { DocumentListItem } from "@/components/dashboard/document-list-item/document-list-item";
+import type { EntryStatus } from "@/lib/documents/company-groups";
 import type { UserDocument } from "@/types/template";
 
 export interface DocumentListProps {
@@ -10,18 +11,25 @@ export interface DocumentListProps {
   onEdit: (document: UserDocument) => void;
   onPreview: (document: UserDocument) => void;
   onPrint: (document: UserDocument) => void;
+  onDuplicate?: (document: UserDocument) => void;
   onShare?: (document: UserDocument) => void;
+  /** Adds "Delete" to each row's menu. The caller confirms before deleting. */
+  onDelete?: (document: UserDocument) => void;
   /** Opens a document's shared copy, by its shared-document ID. Needs `sharedCopyIds`. */
   onViewShared?: (sharedDocumentId: string) => void;
   /** Shared-document ID of each document that has been shared, keyed by the document's ID. */
   sharedCopyIds?: Readonly<Record<string, string>>;
+  /** Each document's status (from `getEntryStatus`), keyed by its ID. Missing means "Not shared". */
+  statuses?: Readonly<Record<string, EntryStatus>>;
 }
 
 /** Exported so the loading skeleton renders the same header and column widths. */
 export const documentListColumns: DashboardListColumn[] = [
-  { className: "col-span-5", label: "Title" },
+  { className: "col-span-3", label: "Title" },
   { className: "col-span-2", label: "Type" },
-  { className: "col-span-3", label: "Date created" },
+  { className: "col-span-2 pr-4 text-right", label: "Amount" },
+  { className: "col-span-2", label: "Status" },
+  { className: "col-span-1", label: "Created" },
   { className: "col-span-2 text-right", label: "Actions" },
 ];
 
@@ -31,7 +39,7 @@ export const documentListColumns: DashboardListColumn[] = [
  */
 export const documentSkeletonRow = (
   <>
-    <div className="flex min-w-0 items-center gap-3 sm:col-span-5">
+    <div className="flex min-w-0 items-center gap-3 sm:col-span-3">
       <div className="skeleton size-10 shrink-0 rounded-field" />
       <div className="min-w-0 flex-1 space-y-2">
         <div className="skeleton h-4 w-2/3 rounded-field" />
@@ -39,12 +47,20 @@ export const documentSkeletonRow = (
       </div>
     </div>
 
+    <div className="max-sm:hidden sm:col-span-2">
+      <div className="skeleton h-6 w-20 rounded-field" />
+    </div>
+
+    <div className="flex justify-end sm:col-span-2 sm:pr-4">
+      <div className="skeleton h-4 w-16 rounded-field" />
+    </div>
+
     <div className="sm:col-span-2">
       <div className="skeleton h-6 w-20 rounded-field" />
     </div>
 
-    <div className="sm:col-span-3">
-      <div className="skeleton h-4 w-24 rounded-field" />
+    <div className="max-sm:hidden sm:col-span-1">
+      <div className="skeleton h-4 w-14 rounded-field" />
     </div>
 
     <div className="flex justify-end gap-2 sm:col-span-2">
@@ -59,9 +75,12 @@ export const DocumentList = ({
   onEdit,
   onPreview,
   onPrint,
+  onDuplicate,
   onShare,
+  onDelete,
   onViewShared,
   sharedCopyIds,
+  statuses,
 }: DocumentListProps) => {
   return (
     <DashboardList
@@ -76,9 +95,12 @@ export const DocumentList = ({
             document={document}
             key={document.id}
             onEdit={onEdit}
+            onDuplicate={onDuplicate}
             onPreview={onPreview}
             onPrint={onPrint}
+            onDelete={onDelete}
             onShare={onShare}
+            status={statuses?.[document.id]}
             onViewShared={
               onViewShared && sharedCopyId
                 ? () => onViewShared(sharedCopyId)

@@ -20,12 +20,13 @@
  * NOT executed directly with `node scripts/seed-templates.ts`.
  */
 
+import { resolveFirebaseEndpoints } from "../src/lib/firebase/endpoints";
 import { documentBlueprints } from "../src/lib/market-place/documents";
 import { templateStyles } from "../src/lib/market-place/styles";
 import type { DocumentMeta, TemplateStyle } from "../src/types/template";
 
-const FIRESTORE_BASE_URL = "https://firestore.googleapis.com/v1";
-const AUTH_BASE_URL = "https://identitytoolkit.googleapis.com/v1";
+const { firestore: FIRESTORE_BASE_URL, identity: AUTH_BASE_URL } =
+  resolveFirebaseEndpoints();
 
 const requireEnv = (name: string): string => {
   const value = process.env[name];

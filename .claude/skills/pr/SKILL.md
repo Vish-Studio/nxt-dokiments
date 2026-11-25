@@ -187,6 +187,10 @@ by a blank line. The skill never runs these itself.
 
 - Every pending file, including untracked ones, appears in exactly one commit.
   List files explicitly in `git add`; never `git add .` or `-A`.
+- Wrap every path that contains `[`, `]`, `(`, `)` or a space in double quotes
+  (for example `"src/app/api/documents/[id]/share/route.ts"`). The user's shell
+  is zsh, which treats `[id]` as a glob and fails with `no matches found`, so
+  the commit is silently skipped. Next.js dynamic route folders hit this often.
 - Each commit is self-contained and in dependency order, so every commit builds
   and its tests pass: a module comes before the code that uses it, and its tests
   travel with it. Docs come last.

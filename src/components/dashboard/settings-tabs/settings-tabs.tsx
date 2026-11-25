@@ -1,6 +1,7 @@
 "use client";
 
 import {
+  BellIcon,
   CrownSimpleIcon,
   GiftIcon,
   LockKeyIcon,
@@ -13,16 +14,19 @@ import { useState } from "react";
 import { PasswordSettings } from "@/components/dashboard/password-settings/password-settings";
 import { PlanAccessCard } from "@/components/dashboard/plan-access-card/plan-access-card";
 import { ProfileSettings } from "@/components/dashboard/profile-settings/profile-settings";
+import { PushNotificationSettings } from "@/components/dashboard/push-notification-settings/push-notification-settings";
 import { PromoCodeCard } from "@/components/dashboard/promo-code-card/promo-code-card";
 import {
   type SettingsNavItem,
   SettingsNav,
 } from "@/components/dashboard/settings-nav/settings-nav";
 import { signOutAndRedirect } from "@/lib/auth/sign-out";
+import { pushNotificationsEnabled } from "@/lib/push/feature-flag";
 import { useAuthStore } from "@/stores/auth-store";
 import type { AuthUser } from "@/types/auth";
 
-type SettingsTabId = "plan" | "profile" | "promotions" | "security";
+type SettingsTabId =
+  "notifications" | "plan" | "profile" | "promotions" | "security";
 
 type SettingsSection = SettingsNavItem & {
   description: string;
@@ -31,7 +35,7 @@ type SettingsSection = SettingsNavItem & {
   panel: ReactNode | ((user: AuthUser | null) => ReactNode);
 };
 
-const sections: SettingsSection[] = [
+const allSections: SettingsSection[] = [
   {
     description: "Your account and the details added to your documents.",
     icon: UserCircleIcon,
@@ -54,6 +58,13 @@ const sections: SettingsSection[] = [
     panel: <PasswordSettings />,
   },
   {
+    description: "Choose how Dokiments alerts you on this device.",
+    icon: BellIcon,
+    id: "notifications",
+    label: "Notifications",
+    panel: <PushNotificationSettings />,
+  },
+  {
     description: "Offers and promo codes on your account.",
     icon: GiftIcon,
     id: "promotions",
@@ -61,6 +72,11 @@ const sections: SettingsSection[] = [
     panel: <PromoCodeCard />,
   },
 ];
+
+/** The Notifications section only exists while push notifications are switched on. */
+const sections = allSections.filter(
+  (section) => section.id !== "notifications" || pushNotificationsEnabled,
+);
 
 export type SettingsTabsProps = {
   defaultTab?: SettingsTabId;
@@ -76,7 +92,8 @@ export const SettingsTabs = ({ defaultTab = "profile" }: SettingsTabsProps) => {
   const queryClient = useQueryClient();
   const clearSession = useAuthStore((state) => state.clearSession);
   const user = useAuthStore((state) => state.user);
-  const active = sections.find((section) => section.id === activeTab) ?? sections[0];
+  const active =
+    sections.find((section) => section.id === activeTab) ?? sections[0];
 
   return (
     // Desktop: fills the rest of the content area down to the shell's bottom
@@ -113,7 +130,9 @@ export const SettingsTabs = ({ defaultTab = "profile" }: SettingsTabsProps) => {
               {active.description}
             </p>
           </div>
-          {typeof active.panel === "function" ? active.panel(user) : active.panel}
+          {typeof active.panel === "function"
+            ? active.panel(user)
+            : active.panel}
         </div>
       </div>
 
