@@ -1,3 +1,7 @@
+"use client";
+
+// A client component: it uses Phosphor's client entry, and the marketing
+// homepage renders it inside server components.
 import type { Icon } from "@phosphor-icons/react";
 import {
   ArrowRightIcon,
