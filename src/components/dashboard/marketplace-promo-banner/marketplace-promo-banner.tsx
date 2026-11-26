@@ -1,8 +1,12 @@
-import {
-  type MarketplacePromoSlideProps,
-} from "./marketplace-promo-slide";
+import { type MarketplacePromoSlideProps } from "./marketplace-promo-slide";
 import { MarketplacePromoCarousel } from "./marketplace-promo-carousel";
 
+/**
+ * The four slides. Each image is a real app screen composed by
+ * `npm run compose:banners` (`scripts/compose-marketplace-banners.mjs`): My
+ * Documents with a company on a phone, My Clients, the dashboard's plan with
+ * notifications on a phone, and My Templates.
+ */
 const marketplacePromoSlides: MarketplacePromoSlideProps[] = [
   {
     actionHref: "/my-documents",
@@ -11,7 +15,7 @@ const marketplacePromoSlides: MarketplacePromoSlideProps[] = [
     detail:
       "Create professional quotations, invoices, contracts and more with ready-to-go templates.",
     // eyebrow: "Dokiments",
-    imageSrc: "/images/mockups/marketplace/home-mockup.svg",
+    imageSrc: "/images/marketplace/promo-documents.webp",
     title: "Business documents, without the blank page.",
   },
   {
@@ -20,7 +24,7 @@ const marketplacePromoSlides: MarketplacePromoSlideProps[] = [
     backgroundClassName: "bg-play-blue",
     detail:
       "Manage client details in one place and keep them connected to the documents you create.",
-    imageSrc: "/images/mockups/marketplace/home-mockup.svg",
+    imageSrc: "/images/marketplace/promo-clients.webp",
     title: "Keep your clients organized.",
   },
   {
@@ -29,7 +33,7 @@ const marketplacePromoSlides: MarketplacePromoSlideProps[] = [
     backgroundClassName: "bg-play-purple",
     detail:
       "Use the launch promo code in Settings to unlock our offer and get access to more templates.",
-    imageSrc: "/images/marketplace/marketplace-promo-placeholder.png",
+    imageSrc: "/images/marketplace/promo-templates-offer.webp",
     title: "More templates. More possibilities.",
   },
   {
@@ -38,7 +42,7 @@ const marketplacePromoSlides: MarketplacePromoSlideProps[] = [
     backgroundClassName: "bg-play-pink",
     detail:
       "Browse professionally designed templates and customise them to fit your business.",
-    imageSrc: "/images/marketplace/marketplace-promo-placeholder.png",
+    imageSrc: "/images/marketplace/promo-templates.webp",
     title: "Template made for your business.",
   },
 ];

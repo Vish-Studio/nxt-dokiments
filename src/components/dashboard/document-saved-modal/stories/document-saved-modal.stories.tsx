@@ -47,9 +47,12 @@ export const Default: Story = {
     await userEvent.click(download);
     await expect(args.onDownload).toHaveBeenCalledOnce();
 
-    await userEvent.click(
-      within(sheet).getByRole("button", { name: "Back to documents" }),
-    );
+    // A filled grey button, so it reads as an action rather than text.
+    const back = within(sheet).getByRole("button", {
+      name: "Back to documents",
+    });
+    await expect(back).toHaveClass("bg-base-200");
+    await userEvent.click(back);
     await expect(args.onDone).toHaveBeenCalledOnce();
 
     // Closing keeps the user in the editor instead of going to the list.

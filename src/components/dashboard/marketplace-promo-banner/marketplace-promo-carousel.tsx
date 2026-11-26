@@ -53,7 +53,7 @@ export const MarketplacePromoCarousel = ({
     <div
       aria-label="Marketplace updates"
       aria-roledescription="carousel"
-      className="marketplace-promo-carousel relative h-96"
+      className="marketplace-promo-carousel relative h-[37rem] sm:h-96"
       role="region"
     >
       <MarketplacePromoSlide
@@ -74,7 +74,11 @@ export const MarketplacePromoCarousel = ({
               aria-label="Previous marketplace update"
               className="border-nox-noir/25 bg-base-100/70 !text-nox-noir hover:bg-base-100"
               icon={
-                <CaretLeftIcon aria-hidden size={14} weight="bold" />
+                <CaretLeftIcon
+                  aria-hidden
+                  size={14}
+                  weight="bold"
+                />
               }
               onClick={selectPrevious}
               shape="square"
@@ -85,7 +89,11 @@ export const MarketplacePromoCarousel = ({
               aria-label="Next marketplace update"
               className="border-nox-noir bg-nox-noir !text-base-100 hover:bg-nox-noir/85"
               icon={
-                <CaretRightIcon aria-hidden size={14} weight="bold" />
+                <CaretRightIcon
+                  aria-hidden
+                  size={14}
+                  weight="bold"
+                />
               }
               onClick={selectNext}
               shape="square"
@@ -95,7 +103,10 @@ export const MarketplacePromoCarousel = ({
           </div>
         </div>
       ) : null}
-      <p aria-live="polite" className="sr-only">
+      <p
+        aria-live="polite"
+        className="sr-only"
+      >
         Update {activeIndex + 1} of {slideCount}: {activeSlide.title}
       </p>
     </div>

@@ -104,7 +104,7 @@ When the identifying parts can be long (addresses, ids), build the key with `has
 Build it on `EmailLayout` and keep to what mail clients support:
 
 - Inline styles only. The font stack is Urbanist (loaded via a Google Fonts link where supported) with an Arial fallback.
-- No SVG for the logo, as many clients block it. The layout uses the hosted PNG `/icons/icon-192.png` on a gold tile, served from the public site origin (production when `NEXT_PUBLIC_SITE_URL` is localhost).
+- No SVG for the logo, as many clients block it. The layout uses the hosted PNG `/icons/mark-192.png` (the black mark on transparent, not the yellow app icon) on a gold tile, served from the public site origin (production when `NEXT_PUBLIC_SITE_URL` is localhost).
 - The layout sets `color-scheme: light` so clients don't invert colours automatically.
 - Absolute URLs built from `siteUrl` (`src/lib/seo/site.ts`).
 

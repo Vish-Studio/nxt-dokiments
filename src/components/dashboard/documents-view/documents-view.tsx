@@ -2,12 +2,10 @@
 
 import {
   BuildingsIcon,
-  EyeIcon,
   FileTextIcon,
   MagnifyingGlassIcon,
   IdentificationCardIcon,
   PlusIcon,
-  ShareNetworkIcon,
   TrashIcon,
   UserIcon,
   UsersThreeIcon,
@@ -41,6 +39,7 @@ import { CompanyDocumentGroups } from "@/components/dashboard/company-document-g
 import { CompanyDocumentGroupsSkeleton } from "@/components/dashboard/company-document-groups/company-document-groups-skeleton";
 import { DashboardListSkeleton } from "@/components/dashboard/dashboard-list-skeleton/dashboard-list-skeleton";
 import { DocumentExportDialog } from "@/components/dashboard/document-export-dialog/document-export-dialog";
+import { DocumentEditorActions } from "@/components/dashboard/document-editor-actions/document-editor-actions";
 import { DocumentSavedModal } from "@/components/dashboard/document-saved-modal/document-saved-modal";
 import {
   DocumentList,
@@ -162,7 +161,6 @@ const ListTabLink = ({
   return null;
 };
 
-
 /** "1 document" / "3 documents"; pass `plural` for irregular words. */
 const pluralize = (count: number, word: string, plural = `${word}s`) =>
   `${count} ${count === 1 ? word : plural}`;
@@ -215,8 +213,6 @@ export const DocumentsView = () => {
   const [exportDocument, setExportDocument] = useState<UserDocument | null>(
     null,
   );
-  const [isDeleteConfirmationOpen, setIsDeleteConfirmationOpen] =
-    useState(false);
   // A document whose row menu asked to delete it, awaiting confirmation.
   const [deleteTarget, setDeleteTarget] = useState<UserDocument | null>(null);
   const [isSaveConfirmationOpen, setIsSaveConfirmationOpen] = useState(false);
@@ -462,17 +458,19 @@ export const DocumentsView = () => {
           : []),
         ...(listTab === "cvs"
           ? []
-          : [{
-          id: "type",
-          label: "Type",
-          value: documentType,
-          defaultValue: "all",
-          options: [
-            { label: "Any type", value: "all" },
-            ...documentTypeOptions,
-          ],
-          onChange: setDocumentType,
-        }]),
+          : [
+              {
+                id: "type",
+                label: "Type",
+                value: documentType,
+                defaultValue: "all",
+                options: [
+                  { label: "Any type", value: "all" },
+                  ...documentTypeOptions,
+                ],
+                onChange: setDocumentType,
+              },
+            ]),
       ]}
       onReset={resetControls}
       onCollectionChange={scrollContentToTop}
@@ -482,12 +480,12 @@ export const DocumentsView = () => {
         showSharedTab
           ? undefined
           : isCompaniesTab
-          ? companyGroups.length > 0
-            ? `${pluralize(namedCompanyCount, "company", "companies")} · ${pluralize(companyDocumentCount, "document")}`
-            : undefined
-          : listTab === "cvs"
-            ? pluralize(visibleDocuments.length, "CV")
-            : pluralize(visibleDocuments.length, "document")
+            ? companyGroups.length > 0
+              ? `${pluralize(namedCompanyCount, "company", "companies")} · ${pluralize(companyDocumentCount, "document")}`
+              : undefined
+            : listTab === "cvs"
+              ? pluralize(visibleDocuments.length, "CV")
+              : pluralize(visibleDocuments.length, "document")
       }
       search={search}
       searchLabel="Search documents"
@@ -532,7 +530,6 @@ export const DocumentsView = () => {
     setActiveTemplate(null);
     setActiveDocumentId(null);
     setDuplicateSource(null);
-    setIsDeleteConfirmationOpen(false);
     setIsSaveConfirmationOpen(false);
     setIsEmptyFieldsHighlighted(false);
     setIsEmptyFieldsDialogOpen(false);
@@ -574,7 +571,6 @@ export const DocumentsView = () => {
       });
       setSharedContent("");
       setPendingPrefill(null);
-      setIsDeleteConfirmationOpen(false);
       setIsSaveConfirmationOpen(false);
       setIsEmptyFieldsHighlighted(false);
       setIsEmptyFieldsDialogOpen(false);
@@ -702,7 +698,6 @@ export const DocumentsView = () => {
     setDuplicateSource(null);
     setDraftName(document.name);
     setDraftValues(valuesWithSignedSender(document));
-    setIsDeleteConfirmationOpen(false);
     setIsSaveConfirmationOpen(false);
     setIsEmptyFieldsHighlighted(false);
     setIsEmptyFieldsDialogOpen(false);
@@ -730,7 +725,11 @@ export const DocumentsView = () => {
 
     const nextUrl = new URL(window.location.href);
     nextUrl.searchParams.delete("edit");
-    window.history.replaceState(null, "", `${nextUrl.pathname}${nextUrl.search}`);
+    window.history.replaceState(
+      null,
+      "",
+      `${nextUrl.pathname}${nextUrl.search}`,
+    );
     // Deferred like the other deep links: no setState in the effect body.
     window.setTimeout(() => openEditTarget(editTarget), 0);
   }, [editTarget]);
@@ -751,7 +750,6 @@ export const DocumentsView = () => {
     setDuplicateSource(document);
     setDraftName(draft.name);
     setDraftValues(draft.values);
-    setIsDeleteConfirmationOpen(false);
     setIsSaveConfirmationOpen(false);
     setIsEmptyFieldsHighlighted(false);
     setIsEmptyFieldsDialogOpen(false);
@@ -847,17 +845,6 @@ export const DocumentsView = () => {
 
   const handleSavedContinue = () => {
     setIsSaveConfirmationOpen(false);
-    goToList();
-    router.replace("/my-documents");
-  };
-
-  const handleDeleteConfirm = () => {
-    if (!activeDocumentId) {
-      return;
-    }
-
-    handleRemove(activeDocumentId);
-    setIsDeleteConfirmationOpen(false);
     goToList();
     router.replace("/my-documents");
   };
@@ -992,8 +979,10 @@ export const DocumentsView = () => {
       />
     ) : null;
 
+    // Fills the page height, so the action bar (mt-auto) sits at the bottom
+    // even when every section is collapsed.
     return (
-      <div className="w-full pt-6">
+      <div className="flex w-full flex-1 flex-col pt-6">
         <div className="grid items-start gap-4 lg:grid-cols-2">
           <div className="rounded-box border border-steel-mist bg-base-100 p-6">
             <div className="border-b border-steel-mist pb-4">
@@ -1046,67 +1035,6 @@ export const DocumentsView = () => {
               />
               {isEditorSignable ? null : sharedCopyStatus}
             </div>
-
-            <div className="mt-6 flex items-center gap-3">
-              <Button
-                disabled={
-                  !activeDocumentId && (isCreatePending || isDuplicatePending)
-                }
-                onClick={() => handleSave()}
-                type="button"
-                variant="accent"
-              >
-                {activeDocumentId
-                  ? "Save changes"
-                  : duplicateSource
-                    ? isDuplicatePending
-                      ? "Duplicating…"
-                      : "Duplicate document"
-                    : isCreatePending
-                      ? "Creating…"
-                      : "Create document"}
-              </Button>
-              {activeDocumentId && documentSharingEnabled ? (
-                <Button
-                  icon={
-                    <ShareNetworkIcon
-                      aria-hidden
-                      size={16}
-                      weight="bold"
-                    />
-                  }
-                  iconPosition="left"
-                  onClick={() =>
-                    setShareTarget({
-                      id: activeDocumentId,
-                      name: draftValues.title?.trim() || draftName,
-                      recipientEmail: draftValues.toEmail,
-                      senderSignature: editorSenderSignature,
-                      signable: isEditorSignable,
-                    })
-                  }
-                  variant="outline"
-                >
-                  Share
-                </Button>
-              ) : null}
-              {activeDocumentId ? (
-                <Button
-                  icon={
-                    <TrashIcon
-                      aria-hidden
-                      size={16}
-                      weight="bold"
-                    />
-                  }
-                  iconPosition="left"
-                  onClick={() => setIsDeleteConfirmationOpen(true)}
-                  variant="danger"
-                >
-                  Delete
-                </Button>
-              ) : null}
-            </div>
           </div>
 
           <div className="hidden lg:sticky lg:top-2 lg:block">
@@ -1119,6 +1047,39 @@ export const DocumentsView = () => {
             />
           </div>
         </div>
+
+        <DocumentEditorActions
+          className="mt-auto pt-6"
+          onDownload={() => setIsEditorExportOpen(true)}
+          onPreview={() => setIsEditorPreviewOpen(true)}
+          onSave={() => handleSave()}
+          onShare={
+            activeDocumentId && documentSharingEnabled
+              ? () =>
+                  setShareTarget({
+                    id: activeDocumentId,
+                    name: draftValues.title?.trim() || draftName,
+                    recipientEmail: draftValues.toEmail,
+                    senderSignature: editorSenderSignature,
+                    signable: isEditorSignable,
+                  })
+              : undefined
+          }
+          saveDisabled={
+            !activeDocumentId && (isCreatePending || isDuplicatePending)
+          }
+          saveLabel={
+            activeDocumentId
+              ? "Save changes"
+              : duplicateSource
+                ? isDuplicatePending
+                  ? "Duplicating…"
+                  : "Duplicate document"
+                : isCreatePending
+                  ? "Creating…"
+                  : "Create document"
+          }
+        />
 
         <ShareDialog
           document={shareTarget ?? { id: "", name: "" }}
@@ -1144,21 +1105,6 @@ export const DocumentsView = () => {
             />
           </div>
         </SidePanel>
-
-        {isEditorPreviewOpen || isEditorExportOpen ? null : (
-          <FloatingActionButton
-            className="lg:hidden"
-            icon={
-              <EyeIcon
-                aria-hidden
-                size={20}
-                weight="bold"
-              />
-            }
-            label="Preview document"
-            onClick={() => setIsEditorPreviewOpen(true)}
-          />
-        )}
 
         <ConfirmDialog
           cancelLabel="Fix document"
@@ -1216,17 +1162,6 @@ export const DocumentsView = () => {
           open={isEditorExportOpen}
           template={editorTemplate}
           values={draftValues}
-        />
-
-        <ConfirmDialog
-          confirmLabel="Delete document"
-          confirmVariant="danger"
-          icon={TrashIcon}
-          description={`Delete "${draftValues.title?.trim() || draftName || "this document"}"? This action cannot be undone.`}
-          onClose={() => setIsDeleteConfirmationOpen(false)}
-          onConfirm={handleDeleteConfirm}
-          open={isDeleteConfirmationOpen}
-          title="Delete document?"
         />
       </div>
     );
@@ -1294,14 +1229,19 @@ export const DocumentsView = () => {
 
   // --- Document list --------------------------------------------------------
 
+  // Grows with its content (no `min-h-0`): the pinned tabs can only stick
+  // while their parent is still on screen, so it must span every card.
   return (
-    <div className="flex min-h-0 w-full flex-1 flex-col gap-2 pt-6">
+    <div className="flex w-full flex-1 flex-col gap-2 pt-6">
       <Suspense fallback={null}>
         <ListTabLink onOpen={openListTab} />
       </Suspense>
+      {/* Phones: pinned right under the sticky page header, so the tabs stay
+          while only the cards scroll. Its panel-coloured band hides the cards
+          passing underneath. */}
       <TabMenu
         ariaLabel="Document lists"
-        className="mb-1"
+        className="mb-1 max-lg:sticky max-lg:top-[var(--mobile-page-header-height,4rem)] max-lg:z-40 max-lg:-mx-4 max-lg:bg-app-panel max-lg:px-4 max-lg:pt-3 max-lg:pb-2"
         fitOnPhones
         items={[
           {
@@ -1359,9 +1299,7 @@ export const DocumentsView = () => {
                       weight={navIconWeight(isActive)}
                     />
                   ),
-                  badge: (
-                    <span className="text-xs opacity-70">{cvCount}</span>
-                  ),
+                  badge: <span className="text-xs opacity-70">{cvCount}</span>,
                   id: "cvs",
                   label: "CVs",
                 },
@@ -1370,9 +1308,7 @@ export const DocumentsView = () => {
         ]}
         onChange={(id) =>
           selectListTab(
-            id === "shared" || id === "mine" || id === "cvs"
-              ? id
-              : "companies",
+            id === "shared" || id === "mine" || id === "cvs" ? id : "companies",
           )
         }
         value={listTab}

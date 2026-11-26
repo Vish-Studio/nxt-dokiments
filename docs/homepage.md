@@ -86,6 +86,19 @@ The three device photos are only sources for the scenes; keep them in
 If you change a size or add a screen, update `src/lib/website/app-screens.ts` in
 the same change. Recapture after any visible dashboard change.
 
+The Marketplace promo banner reuses these screens. `npm run compose:banners`
+(`scripts/compose-marketplace-banners.mjs`) writes
+`public/images/marketplace/promo-*.webp`: transparent 1400 × 1080 images of a
+dark browser window bleeding off the bottom-right, with an iPhone in front on
+two of them. Run it after `capture:marketing`.
+
+| Banner image | Desktop screen | Phone screen |
+| --- | --- | --- |
+| `promo-documents.webp` | My Documents | company page |
+| `promo-clients.webp` | My Clients | none |
+| `promo-templates-offer.webp` | Dashboard (plan, free slots) | notifications |
+| `promo-templates.webp` | My Templates | none |
+
 ## Server and client boundaries
 
 - Website components import Phosphor from `@phosphor-icons/react/dist/ssr` so

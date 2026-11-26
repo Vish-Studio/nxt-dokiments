@@ -10,8 +10,9 @@ const meta = {
     actionHref: "/my-clients",
     actionLabel: "Explore client portal",
     backgroundClassName: "bg-play-blue",
-    detail: "Manage client details in one place and keep them connected to the documents you create.",
-    imageSrc: "/images/marketplace/marketplace-promo-placeholder.png",
+    detail:
+      "Manage client details in one place and keep them connected to the documents you create.",
+    imageSrc: "/images/marketplace/promo-templates-offer.webp",
     title: "Keep your clients organized.",
   },
 } satisfies Meta<typeof MarketplacePromoSlide>;

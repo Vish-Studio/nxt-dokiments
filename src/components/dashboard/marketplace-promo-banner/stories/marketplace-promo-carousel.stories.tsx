@@ -7,17 +7,19 @@ const slides = [
     actionHref: "/my-documents",
     actionLabel: "Explore Dokiments",
     backgroundClassName: "bg-golden-harvest",
-    detail: "Create professional quotations, invoices, contracts and more with ready-to-go templates.",
+    detail:
+      "Create professional quotations, invoices, contracts and more with ready-to-go templates.",
     eyebrow: "Dokiments",
-    imageSrc: "/images/mockups/marketplace/home-mockup.svg",
+    imageSrc: "/images/marketplace/promo-documents.webp",
     title: "Business documents, without the blank page.",
   },
   {
     actionHref: "/my-clients",
     actionLabel: "Explore client portal",
     backgroundClassName: "bg-play-blue",
-    detail: "Manage client details in one place and keep them connected to the documents you create.",
-    imageSrc: "/images/marketplace/marketplace-promo-placeholder.png",
+    detail:
+      "Manage client details in one place and keep them connected to the documents you create.",
+    imageSrc: "/images/marketplace/promo-templates-offer.webp",
     title: "Keep your clients organized.",
   },
 ];

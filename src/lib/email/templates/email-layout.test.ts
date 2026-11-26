@@ -40,7 +40,7 @@ describe("EmailLayout", () => {
       createElement(EmailLayout, { preview: "p", heading: "h" }),
     );
 
-    expect(html).toMatch(/src="https:\/\/[^"]+\/icons\/icon-192\.png"/);
+    expect(html).toMatch(/src="https:\/\/[^"]+\/icons\/mark-192\.png"/);
     expect(html).not.toContain("localhost");
   });
 });

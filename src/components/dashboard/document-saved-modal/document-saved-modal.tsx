@@ -35,7 +35,8 @@ export interface DocumentSavedModalProps {
  *
  * 1. **Share** (black, main): the step most people take after saving.
  * 2. **Download PDF** (outline), beside it.
- * 3. **Back to documents** (ghost, full width) to leave the editor.
+ * 3. **Back to documents** (secondary, full width) to leave the editor: a
+ *    filled grey button, so it reads as an action and not as text.
  *
  * The close X, Escape and the backdrop keep the user in the editor. Share and
  * Download close this first, so overlays never stack.
@@ -54,7 +55,7 @@ export const DocumentSavedModal = ({
         className="w-full"
         onClick={onDone}
         size="sm"
-        variant="ghost"
+        variant="secondary"
       >
         Back to documents
       </Button>

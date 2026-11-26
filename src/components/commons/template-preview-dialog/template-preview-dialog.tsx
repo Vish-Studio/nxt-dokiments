@@ -4,6 +4,7 @@ import {
   BookmarkSimpleIcon,
   PrinterIcon,
   SpinnerGapIcon,
+  TrashIcon,
 } from "@phosphor-icons/react";
 import Link from "next/link";
 
@@ -13,6 +14,7 @@ import type { SidePanelTone } from "@/components/commons/side-panel/side-panel";
 import { SidePanel } from "@/components/commons/side-panel/side-panel";
 import { TemplateDocument } from "@/components/commons/template-document/template-document";
 import type { DocumentDetail } from "@/lib/documents/document-details";
+import { iconSize } from "@/lib/icons";
 import { getSampleValues, tierLabels } from "@/lib/market-place";
 import type { MarketplaceTemplate } from "@/types/template";
 import { getTemplateDisplayName } from "@/lib/market-place/document-labels";
@@ -77,9 +79,17 @@ export const TemplatePreviewDialog = ({
             <div className="grid w-full grid-cols-[0.8fr_1.2fr] gap-2">
               <Button
                 className="w-full"
+                icon={
+                  <TrashIcon
+                    aria-hidden
+                    size={iconSize.control}
+                    weight="bold"
+                  />
+                }
+                iconPosition="left"
                 onClick={onDelete}
                 size="sm"
-                variant="outline"
+                variant="danger-outline"
               >
                 Delete
               </Button>

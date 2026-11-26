@@ -338,7 +338,14 @@ export const EditDocument: Story = {
       back: { label: "My Documents" },
       title: "Edit document",
     });
-    await expect(canvas.getByRole("button", { name: "Delete" })).toBeVisible();
+    // The bottom bar: actions on the draft, never Delete (that's in the row menu).
+    const bar = canvas.getByRole("toolbar", { name: "Document actions" });
+    await expect(
+      within(bar).getByRole("button", { name: "Download PDF" }),
+    ).toBeInTheDocument();
+    await expect(
+      within(bar).queryByRole("button", { name: /Delete/ }),
+    ).toBeNull();
     await userEvent.click(canvas.getByRole("button", { name: "Save changes" }));
     // The sample invoice has empty fields, so save goes through the warning.
     await userEvent.click(
@@ -416,26 +423,6 @@ export const DuplicateDocument: Story = {
       await canvas.findByText("Copy of Lumina Events Invoice"),
     ).toBeVisible();
     await expect(canvas.getByText("Lumina Events Invoice")).toBeVisible();
-  },
-};
-
-export const DeleteDocument: Story = {
-  decorators: WithDocuments.decorators,
-  play: async ({ canvasElement }) => {
-    await showAllDocuments(canvasElement);
-    const canvas = within(canvasElement);
-    await openRowAction(canvasElement, "Lumina Events Invoice", "Edit");
-    await userEvent.click(canvas.getByRole("button", { name: "Delete" }));
-    await expect(
-      canvas.getByRole("dialog", { name: "Delete document?" }),
-    ).toBeVisible();
-    await expect(
-      canvas.getByRole("button", { name: "Delete document" }),
-    ).toBeVisible();
-    await userEvent.click(canvas.getByRole("button", { name: "Cancel" }));
-    await expect(
-      canvas.getByRole("heading", { name: "Edit document" }),
-    ).toBeVisible();
   },
 };
 
@@ -566,22 +553,6 @@ export const SavedNextStepDownload: Story = {
   },
 };
 
-export const DeleteConfirmation: Story = {
-  decorators: WithDocuments.decorators,
-  play: async ({ canvasElement }) => {
-    await showAllDocuments(canvasElement);
-    const canvas = within(canvasElement);
-    await openRowAction(canvasElement, "Lumina Events Invoice", "Edit");
-    await userEvent.click(canvas.getByRole("button", { name: "Delete" }));
-    const dialog = canvas.getByRole("dialog", { name: "Delete document?" });
-    await expect(dialog).toBeVisible();
-    await expect(dialog).toHaveAttribute("data-layout", "centered");
-    await expect(dialog).toHaveAccessibleDescription(
-      'Delete "Lumina Events Invoice"? This action cannot be undone.',
-    );
-  },
-};
-
 export const EditorReady: Story = {
   decorators: WithDocuments.decorators,
   play: async ({ canvasElement }) => {
@@ -624,9 +595,8 @@ export const MobileEditorPreview: Story = {
   play: async ({ canvasElement }) => {
     await openEditorOnPhone(canvasElement);
     const canvas = within(canvasElement);
-    const previewButton = canvas.getByRole("button", {
-      name: "Preview document",
-    });
+    // The round eye button beside the editor's bottom bar.
+    const previewButton = canvas.getByRole("button", { name: "Preview" });
     await expect(previewButton).toBeVisible();
     await userEvent.click(previewButton);
     await expect(

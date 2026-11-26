@@ -115,8 +115,10 @@ export const AppShell = ({
 
   return (
     <AuthGuard>
-      <main className="min-h-dvh bg-app-chrome text-nox-noir">
-        <div className="flex min-h-dvh w-full overflow-hidden bg-app-chrome">
+      {/* Exactly one screen tall, never taller: only ContentContainer scrolls,
+          so the page itself can't scroll as well (two scrolls on phones). */}
+      <main className="h-dvh overflow-hidden bg-app-chrome text-nox-noir">
+        <div className="flex h-dvh w-full overflow-hidden bg-app-chrome">
           <Sidebar
             activeItem={activeItem}
             isCollapsed={isSidebarCollapsed}

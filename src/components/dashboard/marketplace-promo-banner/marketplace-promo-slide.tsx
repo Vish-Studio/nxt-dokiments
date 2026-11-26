@@ -35,7 +35,10 @@ export const MarketplacePromoSlide = ({
           backgroundClassName,
         )}
       />
-      <div aria-hidden className="absolute -left-48 top-0 size-96 opacity-10">
+      <div
+        aria-hidden
+        className="absolute -left-48 top-0 size-96 opacity-10"
+      >
         <Image
           alt=""
           className="object-contain brightness-0"
@@ -53,12 +56,14 @@ export const MarketplacePromoSlide = ({
           className="marketplace-promo-mockup object-contain object-right-bottom"
           fill
           priority
-          sizes="(max-width: 640px) 0vw, 50vw"
+          sizes="(max-width: 639px) 1px, 50vw"
           src={imageSrc}
         />
       </div>
 
-      <div className="relative z-10 flex w-full flex-col justify-center gap-4 p-5 pb-24 sm:gap-6 sm:p-8 sm:pb-28 lg:p-10 lg:pb-28">
+      {/* Phones stack the copy over the picture; from `sm` up the copy is
+          centred on the left and the picture fills the right half. */}
+      <div className="relative z-10 flex w-full flex-col gap-4 p-5 pb-20 sm:justify-center sm:gap-6 sm:p-8 sm:pb-28 lg:p-10 lg:pb-28">
         <div className="max-w-xl">
           <div className="marketplace-promo-title-enter">
             {eyebrow ? (
@@ -84,6 +89,19 @@ export const MarketplacePromoSlide = ({
         >
           {actionLabel}
         </LinkButton>
+
+        <div
+          aria-hidden
+          className="marketplace-promo-visual-enter relative -mx-5 -mb-2 mt-auto min-h-44 flex-1 overflow-hidden sm:hidden"
+        >
+          <Image
+            alt=""
+            className="marketplace-promo-mockup object-contain object-right-bottom"
+            fill
+            sizes="(min-width: 640px) 1px, 100vw"
+            src={imageSrc}
+          />
+        </div>
       </div>
     </article>
   );
