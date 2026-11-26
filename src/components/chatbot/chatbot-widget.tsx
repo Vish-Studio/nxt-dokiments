@@ -22,10 +22,6 @@ import {
   type ChatIntent,
 } from "@/lib/chatbot/intents";
 import { matchIntent } from "@/lib/chatbot/match-intent";
-import {
-  clampToCharacters,
-  MAX_UNANSWERED_LENGTH,
-} from "@/lib/chatbot/unanswered";
 import { documentSharingEnabled } from "@/lib/sharing/feature-flag";
 import { useAuthStore } from "@/stores/auth-store";
 
@@ -88,19 +84,6 @@ const readStoredMessages = (): ChatMessage[] => {
   } catch {
     return [];
   }
-};
-
-/** Fire-and-forget: a lost log entry must never get in the user's way. */
-const reportUnanswered = (message: string) => {
-  void fetch("/api/chatbot/unanswered", {
-    body: JSON.stringify({
-      message: clampToCharacters(message, MAX_UNANSWERED_LENGTH),
-      path: window.location.pathname,
-    }),
-    headers: { "Content-Type": "application/json" },
-    keepalive: true,
-    method: "POST",
-  }).catch(() => {});
 };
 
 function ChatIcon({ close = false }: { close?: boolean }) {
@@ -212,7 +195,6 @@ export function ChatbotWidget() {
 
     replyTimerRef.current = window.setTimeout(() => {
       const match = intent ?? matchIntent(text, chatIntents);
-      if (!match) reportUnanswered(text);
       setMessages((current) => [
         ...current,
         {
