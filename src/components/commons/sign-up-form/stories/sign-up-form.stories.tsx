@@ -23,7 +23,9 @@ export const Default: Story = {
     onSubmit: async () => undefined,
   },
   play: async ({ canvas }) => {
-    await expect(canvas.getByRole("button", { name: /create account/i })).toBeVisible();
+    await expect(
+      canvas.getByRole("button", { name: /create account/i }),
+    ).toBeVisible();
   },
 };
 
@@ -32,23 +34,37 @@ export const Validation: Story = {
     onSubmit: async () => undefined,
   },
   play: async ({ canvas, userEvent }) => {
-    await userEvent.click(canvas.getByRole("button", { name: /create account/i }));
-    await expect(await canvas.findByText("Full name is required.")).toBeVisible();
+    await userEvent.click(
+      canvas.getByRole("button", { name: /create account/i }),
+    );
+    await expect(
+      await canvas.findByText("Full name is required."),
+    ).toBeVisible();
     await expect(await canvas.findByText("Email is required.")).toBeVisible();
-    await expect(await canvas.findByText("Password is required.")).toBeVisible();
+    await expect(
+      await canvas.findByText("Password is required."),
+    ).toBeVisible();
     // The promo field is optional, so an empty one must never block sign-up.
     await expect(canvas.queryByText(/promo code is required/i)).toBeNull();
   },
 };
 
-/** The launch offer is advertised alongside the credentials, with an optional field for it. */
-export const WithPromoCallout: Story = {
+/**
+ * Like sign-in, the optional promo field stays collapsed under "Create
+ * account"; opening "Have a promo code?" reveals the field and the launch offer.
+ */
+export const WithPromoCode: Story = {
   args: {
     onSubmit: async () => undefined,
   },
-  play: async ({ canvas }) => {
+  play: async ({ canvas, userEvent }) => {
+    const promoField = canvas.getByLabelText(/promo code \(optional\)/i);
+    await expect(promoField).not.toBeVisible();
+    await expect(canvas.queryByText("ViSHDOK2026!")).not.toBeVisible();
+
+    await userEvent.click(canvas.getByText("Have a promo code?"));
+    await expect(promoField).toBeVisible();
     await expect(canvas.getByText("Launch Promo")).toBeVisible();
     await expect(canvas.getByText("ViSHDOK2026!")).toBeVisible();
-    await expect(canvas.getByLabelText(/promo code \(optional\)/i)).toBeVisible();
   },
 };

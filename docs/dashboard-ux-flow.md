@@ -25,8 +25,9 @@ than five steps is a design bug.
 
 **A. First document.** Dashboard "Explore templates" → Marketplace (browse by
 category, preview) → Save template → My Templates → "Use document" → editor
-(client prefilled if chosen) → Save → saved sheet offers Download, Share, or
-Back to documents.
+(client prefilled if chosen; a dark bar at the bottom centre keeps Preview on
+phones, Download PDF, Share and Save in reach; Delete stays in the row menu) → Save → the saved dialog offers Share (main)
+and Download PDF, plus Back to documents (closing it keeps editing).
 
 **B. Repeat client.** Dashboard "Continue work", or My Documents → Companies →
 company → "New document for {company}" → editor with the client prefilled.

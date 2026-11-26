@@ -12,7 +12,8 @@ type ButtonVariant =
   | "neutral"
   | "ghost"
   | "outline"
-  | "danger";
+  | "danger"
+  | "danger-outline";
 type ButtonSize = "sm" | "md" | "lg";
 type ButtonIconMotion = "left" | "right" | "up-right";
 
@@ -37,6 +38,9 @@ const variantClasses: Record<ButtonVariant, string> = {
   outline:
     "border border-steel-mist bg-transparent text-nox-noir hover:bg-base-200",
   danger: "btn-error",
+  // A delete beside a main action: red, but quieter than the solid `danger`.
+  "danger-outline":
+    "border border-error/50 bg-transparent text-error hover:border-error hover:bg-error/10",
 };
 
 const sizeClasses: Record<ButtonSize, string> = {
@@ -75,7 +79,10 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
         ref={ref}
         type={type}
         className={cn(
-          "btn group rounded-field font-title font-semibold transition-all duration-200",
+          "btn group rounded-field font-title transition-all duration-200",
+          // Accent is a page's main action: bold, like the accent LinkButton
+          // ("Browse marketplace"), so the two read as the same button.
+          variant === "accent" ? "font-bold" : "font-semibold",
           variantClasses[variant],
           sizeClasses[size],
           className,

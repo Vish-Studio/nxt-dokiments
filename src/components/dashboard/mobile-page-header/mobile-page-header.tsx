@@ -1,6 +1,7 @@
 "use client";
 
 import type { ReactNode } from "react";
+import { useEffect, useRef } from "react";
 
 import { ListIcon, UserIcon } from "@phosphor-icons/react";
 import Link from "next/link";
@@ -116,9 +117,33 @@ export const MobilePageHeader = ({
   // Same treatment as the notification bell, so every header control's hover matches.
   const controlClassName =
     notificationToneClasses[tone === "noir" ? "dark" : "light"];
+  const headerRef = useRef<HTMLElement>(null);
+
+  // Publishes the header's height as `--mobile-page-header-height`, so a page
+  // can pin its own bar (the My Documents tabs) right under this sticky header,
+  // whatever its height on that page.
+  useEffect(() => {
+    const header = headerRef.current;
+    if (!header || typeof ResizeObserver === "undefined") return;
+
+    const root = document.documentElement;
+    const observer = new ResizeObserver(([entry]) => {
+      root.style.setProperty(
+        "--mobile-page-header-height",
+        `${Math.round(entry.borderBoxSize?.[0]?.blockSize ?? header.offsetHeight)}px`,
+      );
+    });
+    observer.observe(header);
+
+    return () => {
+      observer.disconnect();
+      root.style.removeProperty("--mobile-page-header-height");
+    };
+  }, []);
 
   return (
     <header
+      ref={headerRef}
       className={cn(
         "mobile-page-header shrink-0 sticky top-0 z-50 min-h-16 rounded-box p-2 px-4 shadow-[0_12px_30px_rgb(20_20_20/0.10)] lg:hidden",
         style.container[variant],

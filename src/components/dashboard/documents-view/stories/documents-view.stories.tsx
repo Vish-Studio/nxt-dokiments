@@ -338,7 +338,14 @@ export const EditDocument: Story = {
       back: { label: "My Documents" },
       title: "Edit document",
     });
-    await expect(canvas.getByRole("button", { name: "Delete" })).toBeVisible();
+    // The bottom bar: actions on the draft, never Delete (that's in the row menu).
+    const bar = canvas.getByRole("toolbar", { name: "Document actions" });
+    await expect(
+      within(bar).getByRole("button", { name: "Download PDF" }),
+    ).toBeInTheDocument();
+    await expect(
+      within(bar).queryByRole("button", { name: /Delete/ }),
+    ).toBeNull();
     await userEvent.click(canvas.getByRole("button", { name: "Save changes" }));
     // The sample invoice has empty fields, so save goes through the warning.
     await userEvent.click(
@@ -351,7 +358,7 @@ export const EditDocument: Story = {
     ).toBeVisible();
     await userEvent.click(
       within(canvasElement.ownerDocument.body).getByRole("button", {
-        name: "Done",
+        name: "Back to documents",
       }),
     );
     await expect(
@@ -409,33 +416,13 @@ export const DuplicateDocument: Story = {
     ).toBeVisible();
     await userEvent.click(
       within(canvasElement.ownerDocument.body).getByRole("button", {
-        name: "Done",
+        name: "Back to documents",
       }),
     );
     await expect(
       await canvas.findByText("Copy of Lumina Events Invoice"),
     ).toBeVisible();
     await expect(canvas.getByText("Lumina Events Invoice")).toBeVisible();
-  },
-};
-
-export const DeleteDocument: Story = {
-  decorators: WithDocuments.decorators,
-  play: async ({ canvasElement }) => {
-    await showAllDocuments(canvasElement);
-    const canvas = within(canvasElement);
-    await openRowAction(canvasElement, "Lumina Events Invoice", "Edit");
-    await userEvent.click(canvas.getByRole("button", { name: "Delete" }));
-    await expect(
-      canvas.getByRole("dialog", { name: "Delete document?" }),
-    ).toBeVisible();
-    await expect(
-      canvas.getByRole("button", { name: "Delete document" }),
-    ).toBeVisible();
-    await userEvent.click(canvas.getByRole("button", { name: "Cancel" }));
-    await expect(
-      canvas.getByRole("heading", { name: "Edit document" }),
-    ).toBeVisible();
   },
 };
 
@@ -533,12 +520,17 @@ export const SavedNextStepDownload: Story = {
     await userEvent.click(
       await canvas.findByRole("button", { name: "Save anyway" }),
     );
-    const saved = await within(canvasElement.ownerDocument.body).findByRole("dialog", {
+    const saved = await within(canvasElement.ownerDocument.body).findByRole(
+      "dialog",
+      {
         name: "Document saved",
-      });
+      },
+    );
     // "Share" is offered only when document sharing is switched on (CI runs
     // with it off, like `.env.example`).
-    const share = within(saved).queryByRole("button", { name: "Share" });
+    const share = within(saved).queryByRole("button", {
+      name: "Share",
+    });
     if (documentSharingEnabled) await expect(share).toBeVisible();
     else await expect(share).toBeNull();
 
@@ -558,22 +550,6 @@ export const SavedNextStepDownload: Story = {
     await expect(
       canvas.getByRole("heading", { name: "Edit document" }),
     ).toBeInTheDocument();
-  },
-};
-
-export const DeleteConfirmation: Story = {
-  decorators: WithDocuments.decorators,
-  play: async ({ canvasElement }) => {
-    await showAllDocuments(canvasElement);
-    const canvas = within(canvasElement);
-    await openRowAction(canvasElement, "Lumina Events Invoice", "Edit");
-    await userEvent.click(canvas.getByRole("button", { name: "Delete" }));
-    const dialog = canvas.getByRole("dialog", { name: "Delete document?" });
-    await expect(dialog).toBeVisible();
-    await expect(dialog).toHaveAttribute("data-layout", "centered");
-    await expect(dialog).toHaveAccessibleDescription(
-      'Delete "Lumina Events Invoice"? This action cannot be undone.',
-    );
   },
 };
 
@@ -619,9 +595,8 @@ export const MobileEditorPreview: Story = {
   play: async ({ canvasElement }) => {
     await openEditorOnPhone(canvasElement);
     const canvas = within(canvasElement);
-    const previewButton = canvas.getByRole("button", {
-      name: "Preview document",
-    });
+    // The round eye button beside the editor's bottom bar.
+    const previewButton = canvas.getByRole("button", { name: "Preview" });
     await expect(previewButton).toBeVisible();
     await userEvent.click(previewButton);
     await expect(
@@ -796,16 +771,42 @@ const companyDocument = (
 
 /** Documents for three companies (one in the client book) and one with no client. */
 const byCompanyFixture: UserDocument[] = [
-  companyDocument("nl-1", "classic-invoice", "2026-06-18T09:30:00", { title: "June retainer invoice", toName: "Northline Studio", total: "1250" }),
-  companyDocument("nl-2", "classic-quotation", "2026-06-02T14:10:00", { title: "Brand refresh quotation", toName: "Northline Studio" }),
-  companyDocument("nl-3", "classic-contract", "2026-05-12T11:00:00", { title: "Design services contract", toName: "Maya Chen" }),
-  companyDocument("nl-4", "classic-invoice", "2026-04-28T08:45:00", { title: "April retainer invoice", toName: "Northline Studio" }),
-  companyDocument("lu-1", "classic-invoice", "2026-06-10T10:00:00", { title: "Lumina Events invoice", toName: "Lumina Events" }),
-  companyDocument("lu-2", "classic-nda", "2026-03-03T16:20:00", { partyTwo: "Lumina Events", title: "Event planning NDA" }),
-  companyDocument("ha-1", "classic-proposal", "2026-05-20T12:00:00", { title: "Harbour fit-out proposal", toName: "Harbour Cafe" }),
-  companyDocument("no-1", "classic-proposal", "2026-06-15T09:00:00", { title: "Website proposal draft" }),
+  companyDocument("nl-1", "classic-invoice", "2026-06-18T09:30:00", {
+    title: "June retainer invoice",
+    toName: "Northline Studio",
+    total: "1250",
+  }),
+  companyDocument("nl-2", "classic-quotation", "2026-06-02T14:10:00", {
+    title: "Brand refresh quotation",
+    toName: "Northline Studio",
+  }),
+  companyDocument("nl-3", "classic-contract", "2026-05-12T11:00:00", {
+    title: "Design services contract",
+    toName: "Maya Chen",
+  }),
+  companyDocument("nl-4", "classic-invoice", "2026-04-28T08:45:00", {
+    title: "April retainer invoice",
+    toName: "Northline Studio",
+  }),
+  companyDocument("lu-1", "classic-invoice", "2026-06-10T10:00:00", {
+    title: "Lumina Events invoice",
+    toName: "Lumina Events",
+  }),
+  companyDocument("lu-2", "classic-nda", "2026-03-03T16:20:00", {
+    partyTwo: "Lumina Events",
+    title: "Event planning NDA",
+  }),
+  companyDocument("ha-1", "classic-proposal", "2026-05-20T12:00:00", {
+    title: "Harbour fit-out proposal",
+    toName: "Harbour Cafe",
+  }),
+  companyDocument("no-1", "classic-proposal", "2026-06-15T09:00:00", {
+    title: "Website proposal draft",
+  }),
   // A CV: lives in its own tab, never under a company.
-  companyDocument("cv-1", "classic-cv", "2026-06-12T09:00:00", { title: "Product designer CV" }),
+  companyDocument("cv-1", "classic-cv", "2026-06-12T09:00:00", {
+    title: "Product designer CV",
+  }),
 ];
 
 /**
@@ -912,9 +913,10 @@ export const ByCompanyPreviewDetails: Story = {
     await userEvent.click(body.getByRole("tab", { name: "Template" }));
     const template = body.getByRole("tabpanel", { name: "Template details" });
     await expect(within(template).getByText("Invoice")).toBeVisible();
-    await expect(
-      body.getByRole("tab", { name: "Template" }),
-    ).toHaveAttribute("aria-selected", "true");
+    await expect(body.getByRole("tab", { name: "Template" })).toHaveAttribute(
+      "aria-selected",
+      "true",
+    );
   },
 };
 
@@ -933,7 +935,9 @@ export const CvsTab: Story = {
 
     // And "My documents" leaves the CV out.
     await userEvent.click(canvas.getByRole("tab", { name: /My documents/ }));
-    await expect(await canvas.findByText("June retainer invoice")).toBeVisible();
+    await expect(
+      await canvas.findByText("June retainer invoice"),
+    ).toBeVisible();
     await expect(canvas.queryByText("Product designer CV")).toBeNull();
   },
 };
@@ -949,13 +953,14 @@ export const ByCompanyStatusFilter: Story = {
       .filter((element) => element.checkVisibility());
     await userEvent.click(statusChip);
     await userEvent.click(
-      await within(canvasElement.ownerDocument.body).findByRole("menuitemradio", {
-        name: "Signed",
-      }),
+      await within(canvasElement.ownerDocument.body).findByRole(
+        "menuitemradio",
+        {
+          name: "Signed",
+        },
+      ),
     );
-    await expect(
-      await canvas.findByText("No documents match"),
-    ).toBeVisible();
+    await expect(await canvas.findByText("No documents match")).toBeVisible();
     await expect(
       canvas
         .getAllByRole("button", { name: "Reset filters" })
@@ -1001,10 +1006,16 @@ export const DeleteFromRowMenu: Story = {
     await showAllDocuments(canvasElement);
     await openRowAction(canvasElement, "Lumina Events Invoice", "Delete");
     const page = within(canvasElement.ownerDocument.body);
-    const dialog = await page.findByRole("dialog", { name: "Delete document?" });
+    const dialog = await page.findByRole("dialog", {
+      name: "Delete document?",
+    });
     await expect(dialog).toHaveTextContent('Delete "Lumina Events Invoice"?');
-    await userEvent.click(within(dialog).getByRole("button", { name: "Cancel" }));
-    await expect(page.queryByRole("dialog", { name: "Delete document?" })).toBeNull();
+    await userEvent.click(
+      within(dialog).getByRole("button", { name: "Cancel" }),
+    );
+    await expect(
+      page.queryByRole("dialog", { name: "Delete document?" }),
+    ).toBeNull();
     await expect(
       within(canvasElement).getByText("Lumina Events Invoice"),
     ).toBeVisible();

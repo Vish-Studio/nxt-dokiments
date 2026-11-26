@@ -9,15 +9,25 @@ interface Props {
   value: "all" | DocumentType;
 }
 
-export const MarketplaceCategoryNav = ({ categories, onChange, value }: Props) => (
-  <section aria-label="Browse by category" className="marketplace-category-nav min-w-0 rounded-box border border-steel-mist bg-base-100 p-4 lg:border-0 lg:bg-transparent lg:p-0">
+/**
+ * The category rail: a bordered card at every width, like the template
+ * sections below it, with `mt-4` so it sits clear of the promo banner's
+ * controls (40px in all with the page's `gap-6`).
+ */
+export const MarketplaceCategoryNav = ({
+  categories,
+  onChange,
+  value,
+}: Props) => (
+  <section
+    aria-label="Browse by category"
+    className="marketplace-category-nav mt-4 min-w-0 rounded-box border border-steel-mist bg-base-100 p-4 sm:p-6"
+  >
     <div className="lg:hidden">
       <Carousel
         ariaLabel="Document categories"
         header={
-          <h2
-            className="font-title text-xl font-bold text-nox-noir"
-          >
+          <h2 className="font-title text-xl font-bold text-nox-noir">
             Browse by category
           </h2>
         }
@@ -26,7 +36,10 @@ export const MarketplaceCategoryNav = ({ categories, onChange, value }: Props) =
         viewportClassName="mt-0 py-0"
       >
         {(["all", ...categories] as const).map((documentType) => (
-          <div className="shrink-0" key={documentType}>
+          <div
+            className="shrink-0"
+            key={documentType}
+          >
             <MarketplaceCategoryTile
               compact
               documentType={documentType}
@@ -42,9 +55,7 @@ export const MarketplaceCategoryNav = ({ categories, onChange, value }: Props) =
       <Carousel
         ariaLabel="Document categories"
         header={
-          <h2
-            className="font-title text-xl font-bold text-nox-noir"
-          >
+          <h2 className="font-title text-xl font-bold text-nox-noir">
             Browse by category
           </h2>
         }
@@ -60,7 +71,10 @@ export const MarketplaceCategoryNav = ({ categories, onChange, value }: Props) =
           />
         </div>
         {categories.map((documentType) => (
-          <div className="shrink-0" key={documentType}>
+          <div
+            className="shrink-0"
+            key={documentType}
+          >
             <MarketplaceCategoryTile
               documentType={documentType}
               isActive={value === documentType}

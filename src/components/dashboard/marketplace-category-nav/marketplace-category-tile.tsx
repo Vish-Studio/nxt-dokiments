@@ -13,9 +13,18 @@ interface Props {
   onSelect: (documentType: "all" | DocumentType) => void;
 }
 
-export const MarketplaceCategoryTile = ({ compact = false, documentType, isActive, onSelect }: Props) => {
-  const Icon = documentType === "all" ? SquaresFourIcon : documentIcons[documentType];
-  const label = documentType === "all" ? "All templates" : getDocumentTypeLabel(documentType);
+export const MarketplaceCategoryTile = ({
+  compact = false,
+  documentType,
+  isActive,
+  onSelect,
+}: Props) => {
+  const Icon =
+    documentType === "all" ? SquaresFourIcon : documentIcons[documentType];
+  const label =
+    documentType === "all"
+      ? "All templates"
+      : getDocumentTypeLabel(documentType);
 
   return (
     <Button
@@ -28,7 +37,13 @@ export const MarketplaceCategoryTile = ({ compact = false, documentType, isActiv
           ? "border-nox-noir bg-nox-noir text-base-100 hover:bg-nox-noir hover:text-base-100"
           : "border-steel-mist bg-base-100 text-nox-noir hover:border-nox-noir hover:bg-base-200",
       )}
-      icon={<Icon aria-hidden size={compact ? 18 : 20} weight={isActive ? "fill" : "regular"} />}
+      icon={
+        <Icon
+          aria-hidden
+          size={compact ? 18 : 20}
+          weight={isActive ? "fill" : "regular"}
+        />
+      }
       iconPosition="left"
       onClick={() => onSelect(documentType)}
       variant="ghost"
