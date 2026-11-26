@@ -17,6 +17,7 @@
     "dev:emulated": "FIRESTORE_EMULATOR_HOST=127.0.0.1:8080 FIREBASE_AUTH_EMULATOR_HOST=127.0.0.1:9099 FIREBASE_PROJECT_ID=demo-dokiments FIREBASE_API_KEY=emulator next dev",
     "emulators:seed": "tsc -p tsconfig.seed.json && FIRESTORE_EMULATOR_HOST=127.0.0.1:8080 FIREBASE_AUTH_EMULATOR_HOST=127.0.0.1:9099 FIREBASE_PROJECT_ID=demo-dokiments FIREBASE_API_KEY=emulator SEED_ADMIN_EMAIL=admin@dokiments.local SEED_ADMIN_PASSWORD=localadmin123 sh -c 'node .scratch-seed/scripts/seed-emulator-admin.js && node .scratch-seed/scripts/seed-templates.js'",
     "push:keys": "web-push generate-vapid-keys",
+    "push:setup": "node scripts/setup-push-keys.mjs",
     "tunnel": "cloudflared tunnel --url http://localhost:3000",
     "start:phone": "node scripts/start-phone.mjs",
     "pre-pr-check": "npm run lint && npm run build && npx vitest run"

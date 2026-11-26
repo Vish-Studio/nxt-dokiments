@@ -16,9 +16,13 @@ Pushing share and signature events is the follow-up. The bell
 | `VAPID_PRIVATE_KEY` | Server only | Signs every push. Never commit or log it. |
 | `VAPID_SUBJECT` | Server only | Contact (`mailto:` or `https:`) for the push services. Optional. |
 
-Generate the key pair once per environment with `npm run push:keys`. **Changing the public key invalidates every
-existing subscription**; users must turn notifications on again. With the flag
-on but a key missing, the routes answer `503`.
+Generate the key pair once per environment with `npm run push:setup`. It adds
+the public and private keys to `.env.local` without changing other settings;
+it refuses to replace existing keys or complete an incomplete pair. The
+print-only `npm run push:keys` command remains available for manual setup.
+**Changing the public key invalidates every existing subscription**; users
+must turn notifications on again. With the flag on but a key missing, the
+routes answer `503`.
 
 ## Testing locally
 
@@ -29,8 +33,9 @@ emulator loads `firestore.rules` from `firebase.json`.
 
 ### With the emulators (recommended)
 
-1. Generate keys with `npm run push:keys` and add the four variables from step 2
-   below to `.env.local`.
+1. Run `npm run push:setup` to add the public and private VAPID keys to
+   `.env.local`. Set `NEXT_PUBLIC_PUSH_NOTIFICATIONS_ENABLED=true` and
+   `VAPID_SUBJECT=mailto:you@example.com` there as well.
 2. In a terminal, run `npm run emulators` and leave it running. The first time
    (or after wiping `.emulator-data/`), run `npm run emulators:seed` in another.
 3. Build and start the app against them. The flag and public key are inlined at
@@ -53,12 +58,11 @@ emulator loads `firestore.rules` from `firebase.json`.
 Use a production build: the service worker is most reliable there, and
 `localhost` counts as a secure context, so no HTTPS is needed.
 
-1. Generate keys: `npm run push:keys`.
-2. Add to `.env.local`:
+1. Run `npm run push:setup` to add the public and private VAPID keys to
+   `.env.local`.
+2. Set the feature flag and contact address in `.env.local`:
    ```
    NEXT_PUBLIC_PUSH_NOTIFICATIONS_ENABLED=true
-   NEXT_PUBLIC_VAPID_PUBLIC_KEY=<public key>
-   VAPID_PRIVATE_KEY=<private key>
    VAPID_SUBJECT=mailto:you@example.com
    ```
 3. Rebuild and start. The flag and public key are inlined at build time, so a
