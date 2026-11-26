@@ -1,12 +1,15 @@
 "use client";
 
-import { CheckIcon } from "@phosphor-icons/react";
+import { useMediaQuery } from "@altalyst/hookify";
+import { CheckIcon, type Icon } from "@phosphor-icons/react";
 import type { KeyboardEvent, ReactNode } from "react";
 import { useEffect, useId, useRef, useState } from "react";
 
+import { Modal } from "@/components/commons/modal/modal";
 import { Button } from "@/components/commons/button/button";
 import { ButtonIcon, type ButtonIconShape } from "@/components/commons/button-icon/button-icon";
 import type { SelectOption } from "@/components/commons/select/select";
+import { phoneMediaQuery } from "@/hooks/use-media-query";
 import { cn } from "@/lib/utils";
 
 /**
@@ -38,16 +41,36 @@ export interface DropdownProps {
   iconTriggerShape?: ButtonIconShape;
   groups?: DropdownGroup[];
   closeOnSelect?: boolean;
+  /** Disables the trigger, so the menu can't open. Keeps the control in place (no layout shift). */
+  disabled?: boolean;
   align?: "start" | "end";
   buttonClassName?: string;
   className?: string;
+  /** Popover classes (width, position). Not applied in the phone sheet. */
   menuClassName?: string;
+  /**
+   * Opt in to a bottom-sheet {@link Modal} on phones (below `sm`): the open menu
+   * renders in a sheet titled with this text instead of the anchored popover,
+   * so actions and filters get thumb-friendly targets. Desktop keeps the
+   * popover. Leave it unset for pickers that belong to a form field.
+   */
+  sheetTitle?: string;
+  /** Icon shown before `sheetTitle` in the phone sheet ("⧩ Filters"). */
+  sheetIcon?: Icon;
+  /**
+   * An extra button shown before "Done" in the phone sheet of a multi-select
+   * menu (`closeOnSelect={false}`), such as "Clear filters". Disabled rather
+   * than hidden when there is nothing to do, so the footer doesn't jump.
+   */
+  sheetSecondaryAction?: { disabled?: boolean; label: string; onClick: () => void };
 }
 
 export const Dropdown = ({
   align = "end", ariaLabel, buttonClassName, children, className,
-  closeOnSelect = true, groups, iconTrigger, iconTriggerShape = "circle", menuClassName, trigger,
+  closeOnSelect = true, disabled = false, groups, iconTrigger, iconTriggerShape = "circle", menuClassName, sheetIcon, sheetSecondaryAction, sheetTitle, trigger,
 }: DropdownProps) => {
+  const isPhone = useMediaQuery(phoneMediaQuery);
+  const isSheet = Boolean(sheetTitle) && isPhone;
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const triggerRef = useRef<HTMLButtonElement>(null);
@@ -63,6 +86,8 @@ export const Dropdown = ({
       const target = initialFocus.current === "last" ? items?.[items.length - 1] : items?.[0];
       target?.focus();
     }
+    // The sheet owns its backdrop, Escape and focus return.
+    if (isSheet) return;
     const handlePointerDown = (event: PointerEvent) => {
       if (!dropdownRef.current?.contains(event.target as Node)) setIsOpen(false);
     };
@@ -84,7 +109,7 @@ export const Dropdown = ({
       document.removeEventListener("focusin", handleFocusIn);
       document.removeEventListener("keydown", handleKeyDown);
     };
-  }, [isOpen, hasMenu]);
+  }, [isOpen, hasMenu, isSheet]);
 
   const handleMenuKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
     if (!groups) return;
@@ -113,6 +138,57 @@ export const Dropdown = ({
     }
   };
 
+  // One menu body, shown in the anchored popover or, on phones, in the sheet,
+  // where every item grows to a 44px touch target.
+  const menu = (
+    <div
+      aria-label={ariaLabel}
+      className={isSheet ? "-mx-2 [&_button]:h-11 [&_button]:min-h-11" : cn("dropdown-content z-50 mt-2 max-h-80 overflow-y-auto rounded-box border border-steel-mist bg-base-100 p-2 text-nox-noir shadow-sm", menuClassName)}
+      id={menuId}
+      // Custom action menus (children) close once one of their buttons or links
+      // is used; a link would otherwise leave the sheet open over the next page.
+      onClick={(event) => {
+        if (!groups && closeOnSelect && (event.target as Element).closest("button, a[href]")) setIsOpen(false);
+      }}
+      onKeyDown={handleMenuKeyDown}
+      ref={menuRef}
+      role={groups ? "menu" : undefined}
+    >
+      {groups?.map((group) => (
+        <div aria-label={group.label} className="border-t border-steel-mist/50 py-1 first:border-0" key={group.label} role="group">
+          <p className="px-3 py-2 font-title text-xs font-semibold text-nox-noir/50">{group.label}</p>
+          {group.options.map((option) => (
+            <Button
+              aria-checked={group.value === option.value}
+              className={cn("w-full justify-start gap-3 rounded-field border-0 px-3 text-left font-medium! focus-visible:bg-base-200 focus-visible:outline-none", group.value === option.value && "bg-base-200")}
+              disabled={option.disabled}
+              key={option.value}
+              onClick={() => {
+                group.onChange(option.value);
+                if (closeOnSelect) { setIsOpen(false); triggerRef.current?.focus(); }
+              }}
+              role="menuitemradio"
+              tabIndex={-1}
+              size="sm"
+              variant="ghost"
+            >
+              <span className="min-w-0 flex-1">
+                <span className="block truncate">{option.label}</span>
+                {option.description ? (
+                  <span className="block truncate text-xs font-normal text-nox-noir/55">
+                    {option.description}
+                  </span>
+                ) : null}
+              </span>
+              <CheckIcon aria-hidden className={group.value === option.value ? "opacity-100" : "opacity-0"} size={16} weight="bold" />
+            </Button>
+          ))}
+        </div>
+      ))}
+      {children}
+    </div>
+  );
+
   return (
     <div className={cn("dropdown", align === "end" ? "dropdown-end" : "dropdown-start", isOpen && "dropdown-open", className)} ref={dropdownRef}>
       {iconTrigger ? (
@@ -122,6 +198,7 @@ export const Dropdown = ({
           aria-haspopup={groups || children ? "menu" : undefined}
           aria-label={ariaLabel}
           className={buttonClassName}
+          disabled={disabled}
           icon={iconTrigger}
           onClick={toggleMenu}
           onKeyDown={openWithKeyboard}
@@ -137,6 +214,7 @@ export const Dropdown = ({
           aria-haspopup={groups || children ? "menu" : undefined}
           aria-label={ariaLabel}
           className={cn(dropdownControlClassName, buttonClassName)}
+          disabled={disabled}
           onClick={toggleMenu}
           onKeyDown={openWithKeyboard}
           ref={triggerRef}
@@ -146,52 +224,36 @@ export const Dropdown = ({
           {trigger}
         </Button>
       )}
-      {isOpen ? (
-        <div
-          aria-label={ariaLabel}
-          className={cn("dropdown-content z-50 mt-2 max-h-80 overflow-y-auto rounded-box border border-steel-mist bg-base-100 p-2 text-nox-noir shadow-sm", menuClassName)}
-          id={menuId}
-          // Custom action menus (children) close once one of their buttons is used.
-          onClick={(event) => {
-            if (!groups && closeOnSelect && (event.target as Element).closest("button")) setIsOpen(false);
-          }}
-          onKeyDown={handleMenuKeyDown}
-          ref={menuRef}
-          role={groups ? "menu" : undefined}
+      {isOpen && !isSheet ? menu : null}
+      {sheetTitle ? (
+        <Modal
+          actions={
+            isSheet && !closeOnSelect ? (
+              sheetSecondaryAction ? (
+                <div className="grid w-full grid-cols-2 gap-2">
+                  <Button
+                    className="w-full"
+                    disabled={sheetSecondaryAction.disabled}
+                    onClick={sheetSecondaryAction.onClick}
+                    size="sm"
+                    variant="outline"
+                  >
+                    {sheetSecondaryAction.label}
+                  </Button>
+                  <Button className="w-full" onClick={() => setIsOpen(false)} size="sm">Done</Button>
+                </div>
+              ) : (
+                <Button onClick={() => setIsOpen(false)} size="sm">Done</Button>
+              )
+            ) : undefined
+          }
+          onClose={() => setIsOpen(false)}
+          open={isOpen && isSheet}
+          title={sheetTitle}
+          titleIcon={sheetIcon}
         >
-          {groups?.map((group) => (
-            <div aria-label={group.label} className="border-t border-steel-mist/50 py-1 first:border-0" key={group.label} role="group">
-              <p className="px-3 py-2 font-title text-xs font-semibold text-nox-noir/50">{group.label}</p>
-              {group.options.map((option) => (
-                <Button
-                  aria-checked={group.value === option.value}
-                  className={cn("w-full justify-start gap-3 rounded-field border-0 px-3 text-left font-medium! focus-visible:bg-base-200 focus-visible:outline-none", group.value === option.value && "bg-base-200")}
-                  disabled={option.disabled}
-                  key={option.value}
-                  onClick={() => {
-                    group.onChange(option.value);
-                    if (closeOnSelect) { setIsOpen(false); triggerRef.current?.focus(); }
-                  }}
-                  role="menuitemradio"
-                  tabIndex={-1}
-                  size="sm"
-                  variant="ghost"
-                >
-                  <span className="min-w-0 flex-1">
-                    <span className="block truncate">{option.label}</span>
-                    {option.description ? (
-                      <span className="block truncate text-xs font-normal text-nox-noir/55">
-                        {option.description}
-                      </span>
-                    ) : null}
-                  </span>
-                  <CheckIcon aria-hidden className={group.value === option.value ? "opacity-100" : "opacity-0"} size={16} weight="bold" />
-                </Button>
-              ))}
-            </div>
-          ))}
-          {children}
-        </div>
+          {menu}
+        </Modal>
       ) : null}
     </div>
   );

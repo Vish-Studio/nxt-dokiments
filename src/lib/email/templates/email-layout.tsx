@@ -36,8 +36,12 @@ const publicOrigin = /^https?:\/\/(localhost|127\.0\.0\.1)/.test(siteUrl)
   ? "https://www.dokiments.com"
   : siteUrl;
 
-/** Hosted PNG of the "D" mark, from `public/icons`. Must stay publicly reachable. */
-const logoSrc = `${publicOrigin}/icons/icon-192.png`;
+/**
+ * Hosted PNG of the black "D" mark on transparent, from `public/icons`. Not the
+ * app icon (`icon-192.png`), which has its own yellow tile. Must stay publicly
+ * reachable.
+ */
+const logoSrc = `${publicOrigin}/icons/mark-192.png`;
 
 /** Loads Urbanist (body) and Raleway (logo) where supported, e.g. Apple Mail and iOS Mail. */
 const fontsHref =

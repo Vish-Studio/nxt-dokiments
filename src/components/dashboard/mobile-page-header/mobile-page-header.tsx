@@ -1,6 +1,7 @@
 "use client";
 
 import type { ReactNode } from "react";
+import { useEffect, useRef } from "react";
 
 import { ListIcon, UserIcon } from "@phosphor-icons/react";
 import Link from "next/link";
@@ -13,9 +14,14 @@ import type {
   PageBannerTone,
   PageBannerVariant,
 } from "@/components/dashboard/page-banner/page-banner";
+import { toneClasses as notificationToneClasses } from "@/components/dashboard/notification-bell/notification-bell";
+import { PageBackButton } from "@/components/dashboard/page-back-button/page-back-button";
 import { cn } from "@/lib/utils";
+import type { PageBack } from "@/stores/ui-store";
 
 export interface MobilePageHeaderProps {
+  /** Sub-pages: replaces the menu button with a back arrow (see `usePageHeader`). */
+  back?: PageBack;
   /** Rendered beside the settings link, e.g. the notification bell. */
   actions?: ReactNode;
   onOpenNavigation: () => void;
@@ -100,6 +106,7 @@ const toneStyles: Record<PageBannerTone, ToneStyle> = {
 
 export const MobilePageHeader = ({
   actions,
+  back,
   onOpenNavigation,
   showSettingsLink = false,
   title,
@@ -107,13 +114,36 @@ export const MobilePageHeader = ({
   variant = "solid",
 }: MobilePageHeaderProps) => {
   const style = toneStyles[tone];
+  // Same treatment as the notification bell, so every header control's hover matches.
   const controlClassName =
-    tone === "noir"
-      ? "border-none bg-white/10 text-white hover:bg-white/20"
-      : "border-none bg-white/45 text-nox-noir hover:bg-white/65";
+    notificationToneClasses[tone === "noir" ? "dark" : "light"];
+  const headerRef = useRef<HTMLElement>(null);
+
+  // Publishes the header's height as `--mobile-page-header-height`, so a page
+  // can pin its own bar (the My Documents tabs) right under this sticky header,
+  // whatever its height on that page.
+  useEffect(() => {
+    const header = headerRef.current;
+    if (!header || typeof ResizeObserver === "undefined") return;
+
+    const root = document.documentElement;
+    const observer = new ResizeObserver(([entry]) => {
+      root.style.setProperty(
+        "--mobile-page-header-height",
+        `${Math.round(entry.borderBoxSize?.[0]?.blockSize ?? header.offsetHeight)}px`,
+      );
+    });
+    observer.observe(header);
+
+    return () => {
+      observer.disconnect();
+      root.style.removeProperty("--mobile-page-header-height");
+    };
+  }, []);
 
   return (
     <header
+      ref={headerRef}
       className={cn(
         "mobile-page-header shrink-0 sticky top-0 z-50 min-h-16 rounded-box p-2 px-4 shadow-[0_12px_30px_rgb(20_20_20/0.10)] lg:hidden",
         style.container[variant],
@@ -121,20 +151,28 @@ export const MobilePageHeader = ({
       data-variant={variant}
     >
       <div className="flex min-h-12 items-center gap-3">
-        <ButtonIcon
-          aria-label="Open navigation"
-          className={cn("size-9! min-h-9! shrink-0", controlClassName)}
-          icon={
-            <ListIcon
-              aria-hidden
-              size={15}
-              weight="bold"
-            />
-          }
-          onClick={onOpenNavigation}
-          size="sm"
-          variant="ghost"
-        />
+        {/* On a sub-page the back arrow takes the menu's place, as in native apps. */}
+        {back ? (
+          <PageBackButton
+            back={back}
+            className={controlClassName}
+          />
+        ) : (
+          <ButtonIcon
+            aria-label="Open navigation"
+            className={cn("size-9! min-h-9! shrink-0", controlClassName)}
+            icon={
+              <ListIcon
+                aria-hidden
+                size={15}
+                weight="bold"
+              />
+            }
+            onClick={onOpenNavigation}
+            size="sm"
+            variant="ghost"
+          />
+        )}
 
         <div className="min-w-0 flex-1">
           <div className="flex min-w-0 items-center">

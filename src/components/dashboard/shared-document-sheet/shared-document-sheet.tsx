@@ -1,11 +1,10 @@
 "use client";
 
 import {
-  ArrowLeftIcon,
+  EyeIcon,
   LockSimpleIcon,
   PrinterIcon,
 } from "@phosphor-icons/react";
-import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
 
 import { Button } from "@/components/commons/button/button";
@@ -21,7 +20,16 @@ import {
   resolveRecipientStatus,
   shareTimeline,
 } from "@/lib/sharing/share-activity";
-import { RECIPIENT_SIGNATURE_KEY } from "@/lib/sharing/signable";
+import {
+  recipientSignatureOf,
+  senderSignatureOf,
+  withSenderSignature,
+} from "@/lib/sharing/signatures";
+import {
+  isViewOnlyShare,
+  RECIPIENT_SIGNATURE_KEY,
+} from "@/lib/sharing/signable";
+import { usePageHeader } from "@/hooks/use-page-header";
 import { snapshotToMarketplaceTemplate } from "@/types/template";
 import type { SharedDocument } from "@/types/sharing";
 
@@ -33,7 +41,7 @@ export interface SharedDocumentSheetProps {
   isSigning?: boolean;
   /** Called with the trimmed signature once the recipient confirms. */
   onSign: (signature: string) => void;
-  /** The owner only watches; a recipient can sign while the copy is unlocked. */
+  /** The owner only watches; a recipient can sign while a signable copy is unlocked. */
   viewer: "owner" | "recipient";
 }
 
@@ -41,6 +49,9 @@ export interface SharedDocumentSheetProps {
  * A shared copy of a document, read-only for everyone. A recipient signs it in
  * place of the signature field; once signed the copy is locked and both parties
  * see the signature, who signed and when.
+ *
+ * A copy whose layout has no recipient signature is view-only: there is nothing
+ * to sign, so the recipient gets a note instead of the signing controls.
  */
 export const SharedDocumentSheet = ({
   document,
@@ -49,7 +60,6 @@ export const SharedDocumentSheet = ({
   onSign,
   viewer,
 }: SharedDocumentSheetProps) => {
-  const router = useRouter();
   const [typed, setTyped] = useState("");
   const [isConfirming, setIsConfirming] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
@@ -64,13 +74,25 @@ export const SharedDocumentSheet = ({
   );
 
   const title = document.values.title?.trim() || document.name;
-  const signature = Object.values(document.signatures)[0];
+  const signature = recipientSignatureOf(document);
+  const values = withSenderSignature(
+    document.values,
+    senderSignatureOf(document),
+  );
   const canExportSigned = document.locked && Boolean(signature) && template;
   const headerRecipient = currentRecipient(document);
-  const canSign = viewer === "recipient" && !document.locked;
+  const isViewOnly = isViewOnlyShare(document);
+  const canSign = viewer === "recipient" && !document.locked && !isViewOnly;
   const trimmed = typed.trim();
   const backHref =
     viewer === "recipient" ? "/my-documents?tab=shared" : "/my-documents";
+  // The top bar's back arrow, instead of a button in the content.
+  usePageHeader({
+    back: {
+      href: backHref,
+      label: viewer === "recipient" ? "Shared with me" : "My Documents",
+    },
+  });
 
   const fieldSlots = signature
     ? { [RECIPIENT_SIGNATURE_KEY]: <SignedSignature signature={signature} /> }
@@ -88,26 +110,8 @@ export const SharedDocumentSheet = ({
 
   return (
     <div className="shared-document-sheet w-full">
-      <Button
-        icon={
-          <ArrowLeftIcon
-            aria-hidden
-            size={16}
-            weight="bold"
-          />
-        }
-        iconMotion="left"
-        iconPosition="left"
-        onClick={() => router.push(backHref)}
-        size="sm"
-        variant="outline"
-      >
-        {viewer === "recipient"
-          ? "Back to shared with me"
-          : "Back to documents"}
-      </Button>
 
-      <div className="mx-auto mt-5 flex w-full max-w-3xl flex-col gap-4">
+      <div className="mx-auto flex w-full max-w-3xl flex-col gap-4 pt-6">
         <div className="flex items-start justify-between gap-3">
           <div>
             <h2 className="font-title text-xl font-bold text-nox-noir">
@@ -121,6 +125,7 @@ export const SharedDocumentSheet = ({
           </div>
           <div className="flex shrink-0 flex-col items-end gap-2">
             <ShareStatusBadge
+              signable={!isViewOnly}
               status={
                 document.locked
                   ? "signed"
@@ -161,6 +166,18 @@ export const SharedDocumentSheet = ({
           </p>
         ) : null}
 
+        {isViewOnly && viewer === "recipient" ? (
+          <p className="flex items-start gap-2 rounded-box border border-steel-mist bg-base-100 p-3 text-sm text-nox-noir/70">
+            <EyeIcon
+              aria-hidden
+              className="mt-0.5 shrink-0"
+              size={16}
+              weight="bold"
+            />
+            This document was shared with you to view. There is nothing to sign.
+          </p>
+        ) : null}
+
         {document.locked ? (
           <section
             aria-label="Activity"
@@ -175,7 +192,7 @@ export const SharedDocumentSheet = ({
             className="rounded-box border border-steel-mist"
             fieldSlots={fieldSlots}
             template={template}
-            values={document.values}
+            values={values}
           />
         ) : (
           <p className="rounded-box border border-dashed border-steel-mist bg-base-100 p-6 text-center text-sm text-nox-noir/60">
@@ -204,6 +221,8 @@ export const SharedDocumentSheet = ({
 
         <ConfirmDialog
           confirmLabel="Sign and lock"
+          icon={LockSimpleIcon}
+          tone="warning"
           confirmLoading={isSigning}
           description="Signing locks this document for everyone. This can't be undone."
           onClose={() => setIsConfirming(false)}
@@ -226,7 +245,7 @@ export const SharedDocumentSheet = ({
             onClose={() => setIsExporting(false)}
             open={isExporting}
             template={template}
-            values={document.values}
+            values={values}
           />
         ) : null}
       </div>

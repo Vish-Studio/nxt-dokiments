@@ -187,6 +187,45 @@ describe("sharedDocuments — create", () => {
     );
   });
 
+  it("lets the owner create a share carrying their own signature", async () => {
+    await assertSucceeds(
+      setDoc(
+        ref(ownerDb()),
+        sharedDoc({
+          signatures: {
+            [OWNER]: signature({ email: "alice@example.com", value: "Alice" }),
+          },
+        }),
+      ),
+    );
+  });
+
+  it("refuses an owner signature that is not the owner's own", async () => {
+    const owned = (overrides: Record<string, unknown>) =>
+      sharedDoc({
+        signatures: {
+          [OWNER]: signature({ email: "alice@example.com", ...overrides }),
+        },
+      });
+
+    await assertFails(
+      setDoc(ref(ownerDb()), owned({ email: "bob@example.com" })),
+    );
+    await assertFails(setDoc(ref(ownerDb()), owned({ value: "" })));
+    await assertFails(setDoc(ref(ownerDb()), owned({ type: "drawn" })));
+    await assertFails(
+      setDoc(
+        ref(ownerDb()),
+        sharedDoc({
+          signatures: {
+            [OWNER]: signature({ email: "alice@example.com" }),
+            [BOB]: signature(),
+          },
+        }),
+      ),
+    );
+  });
+
   it("refuses unknown fields and missing required fields", async () => {
     await assertFails(setDoc(ref(ownerDb()), sharedDoc({ extra: 1 })));
     const withoutValues: Record<string, unknown> = sharedDoc();
@@ -216,6 +255,44 @@ describe("sharedDocuments — owner update and delete", () => {
     );
     await assertFails(
       updateDoc(doc(ownerDb(), "sharedDocuments/s1"), { locked: true }),
+    );
+  });
+
+  it("lets the owner replace their own signature while unlocked", async () => {
+    await seed(
+      sharedDoc({
+        signatures: {
+          [OWNER]: signature({ email: "alice@example.com", value: "Alice" }),
+        },
+      }),
+    );
+    await assertSucceeds(
+      updateDoc(doc(ownerDb(), "sharedDocuments/s1"), {
+        signatures: {
+          [OWNER]: signature({ email: "alice@example.com", value: "A. Smith" }),
+        },
+      }),
+    );
+  });
+
+  it("stops the owner removing their signature or signing for the recipient", async () => {
+    await seed(
+      sharedDoc({
+        signatures: {
+          [OWNER]: signature({ email: "alice@example.com", value: "Alice" }),
+        },
+      }),
+    );
+    await assertFails(
+      updateDoc(doc(ownerDb(), "sharedDocuments/s1"), { signatures: {} }),
+    );
+    await assertFails(
+      updateDoc(doc(ownerDb(), "sharedDocuments/s1"), {
+        signatures: {
+          [OWNER]: signature({ email: "alice@example.com", value: "Alice" }),
+          [BOB]: signature(),
+        },
+      }),
     );
   });
 
@@ -257,6 +334,52 @@ describe("sharedDocuments — recipient signing", () => {
 
   it("lets the recipient add their own signature and lock", async () => {
     await assertSucceeds(sign(bobDb()));
+  });
+
+  it("keeps the owner's signature when the recipient signs, and never lets them alter it", async () => {
+    const ownerSignature = signature({
+      email: "alice@example.com",
+      value: "Alice",
+    });
+    await seed(sharedDoc({ signatures: { [OWNER]: ownerSignature } }));
+
+    await assertSucceeds(
+      updateDoc(doc(bobDb(), "sharedDocuments/s1"), {
+        locked: true,
+        signatures: { [OWNER]: ownerSignature, [BOB]: signature() },
+        updatedAt: now(),
+      }),
+    );
+  });
+
+  it("refuses a recipient altering or replacing the owner's signature", async () => {
+    await seed(
+      sharedDoc({
+        signatures: {
+          [OWNER]: signature({ email: "alice@example.com", value: "Alice" }),
+        },
+      }),
+    );
+
+    await assertFails(
+      updateDoc(doc(bobDb(), "sharedDocuments/s1"), {
+        locked: true,
+        signatures: {
+          [OWNER]: signature({ email: "alice@example.com", value: "Forged" }),
+          [BOB]: signature(),
+        },
+        updatedAt: now(),
+      }),
+    );
+    await assertFails(
+      updateDoc(doc(bobDb(), "sharedDocuments/s1"), {
+        locked: true,
+        signatures: {
+          [OWNER]: signature({ email: "bob@example.com", value: "Forged" }),
+        },
+        updatedAt: now(),
+      }),
+    );
   });
 
   it("refuses signing as someone else's email", async () => {

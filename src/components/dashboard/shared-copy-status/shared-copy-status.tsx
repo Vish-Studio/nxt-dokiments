@@ -1,6 +1,6 @@
 "use client";
 
-import { LockSimpleIcon } from "@phosphor-icons/react";
+import { EyeIcon, LinkBreakIcon, LockSimpleIcon } from "@phosphor-icons/react";
 import { useEffect, useState } from "react";
 
 import { Button } from "@/components/commons/button/button";
@@ -14,6 +14,7 @@ import {
   shareTimeline,
 } from "@/lib/sharing/share-activity";
 import { SHARE_EMAIL_COOLDOWN_MS } from "@/lib/sharing/share-email-limits";
+import { recipientSignatureOf } from "@/lib/sharing/signatures";
 import type { SharedDocument } from "@/types/sharing";
 
 export interface SharedCopyStatusProps {
@@ -33,6 +34,11 @@ export interface SharedCopyStatusProps {
   onResend?: () => void;
   /** Opens the shared copy, where the signature lives. */
   onView: () => void;
+  /**
+   * `false` for a view-only share (no recipient signature): the summary then
+   * tracks whether the recipient has opened it instead of signed it.
+   */
+  signable?: boolean;
 }
 
 const dateFormatter = new Intl.DateTimeFormat("en-GB", {
@@ -50,6 +56,9 @@ const dateFormatter = new Intl.DateTimeFormat("en-GB", {
  * Resend is disabled during the same cooldown the server applies, so the owner
  * is told to wait instead of getting a silent no-op. Revoke asks for
  * confirmation because it cannot be undone, only replaced by a new share.
+ *
+ * For a view-only share it sits below the owner's form instead, and "viewed" is
+ * as far as the share goes.
  */
 export const SharedCopyStatus = ({
   document,
@@ -60,12 +69,13 @@ export const SharedCopyStatus = ({
   onResend,
   onRevoke,
   onView,
+  signable = true,
 }: SharedCopyStatusProps) => {
   const [isConfirmingRevoke, setIsConfirmingRevoke] = useState(false);
   const [clock, setClock] = useState(() => Date.now());
   const now = nowOverride ?? clock;
 
-  const signature = Object.values(document.signatures)[0];
+  const signature = recipientSignatureOf(document);
   const active = activeRecipient(document);
   const recipient = active ?? currentRecipient(document);
   const status = recipient
@@ -90,11 +100,22 @@ export const SharedCopyStatus = ({
     return () => clearTimeout(timer);
   }, [inCooldown, lastEmailed, nowOverride]);
 
+  const firstView = active
+    ? shareTimeline(document).find(
+        (event) => event.kind === "viewed" && event.email === active.email,
+      )
+    : undefined;
+
   const summary = signature
     ? `Signed by ${signature.email} on ${dateFormatter.format(signature.signedAt)}`
-    : active
-      ? `Waiting for ${active.email} to sign`
-      : `Access revoked for ${recipient?.email}. Share again to invite someone.`;
+    : !active
+      ? `Access revoked for ${recipient?.email}. Share again to invite someone.`
+      : signable
+        ? `Waiting for ${active.email} to sign`
+        : firstView
+          ? `Viewed by ${active.email} on ${dateFormatter.format(firstView.at)}`
+          : `Waiting for ${active.email} to view`;
+  const SummaryIcon = signable ? LockSimpleIcon : EyeIcon;
 
   return (
     <div className="shared-copy-status grid gap-2">
@@ -104,7 +125,7 @@ export const SharedCopyStatus = ({
       <div className="grid gap-3 rounded-field border border-steel-mist bg-base-200 px-3 py-2.5">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <p className="flex min-w-0 items-center gap-2 text-sm text-nox-noir/70">
-            <LockSimpleIcon
+            <SummaryIcon
               aria-hidden
               className="shrink-0"
               size={16}
@@ -112,7 +133,10 @@ export const SharedCopyStatus = ({
             />
             <span className="min-w-0 wrap-break-word">{summary}</span>
           </p>
-          <ShareStatusBadge status={status} />
+          <ShareStatusBadge
+            signable={signable}
+            status={status}
+          />
         </div>
 
         <ShareTimeline events={shareTimeline(document)} />
@@ -158,9 +182,10 @@ export const SharedCopyStatus = ({
 
       <ConfirmDialog
         confirmLabel="Revoke access"
+        icon={LinkBreakIcon}
         confirmLoading={isRevoking}
         confirmVariant="danger"
-        description={`${active?.email ?? "The recipient"} will no longer be able to open or sign this document. You can share it again later.`}
+        description={`${active?.email ?? "The recipient"} will no longer be able to open${signable ? " or sign" : ""} this document. You can share it again later.`}
         onClose={() => setIsConfirmingRevoke(false)}
         onConfirm={() => {
           onRevoke?.();

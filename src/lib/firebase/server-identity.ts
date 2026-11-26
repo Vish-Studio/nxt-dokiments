@@ -4,6 +4,7 @@ import {
   hasServerFirebaseConfig,
   serverFirebaseConfig,
 } from "@/lib/firebase/server-config";
+import { resolveFirebaseEndpoints } from "@/lib/firebase/endpoints";
 import { googleRedirectUri } from "@/lib/google/server-oauth";
 import { fetchUpstream } from "@/lib/http/fetch-upstream";
 
@@ -65,11 +66,6 @@ export type AuthRequest = {
   password: string;
 };
 
-/** Firebase Identity Toolkit base URL. */
-const AUTH_BASE_URL = "https://identitytoolkit.googleapis.com/v1";
-/** Firebase Secure Token Service base URL (used for token refresh). */
-const TOKEN_BASE_URL = "https://securetoken.googleapis.com/v1";
-
 /**
  * Throws if the required Firebase env vars are absent.
  * Called before every URL builder so callers receive a clear error rather than
@@ -86,13 +82,13 @@ const ensureFirebaseConfig = () => {
 /** Builds a Firebase Identity Toolkit endpoint URL with the API key appended. */
 const authUrl = (path: string) => {
   ensureFirebaseConfig();
-  return `${AUTH_BASE_URL}/${path}?key=${serverFirebaseConfig.apiKey}`;
+  return `${resolveFirebaseEndpoints().identity}/${path}?key=${serverFirebaseConfig.apiKey}`;
 };
 
 /** Builds the Firebase Secure Token Service token-refresh URL. */
 const tokenUrl = () => {
   ensureFirebaseConfig();
-  return `${TOKEN_BASE_URL}/token?key=${serverFirebaseConfig.apiKey}`;
+  return `${resolveFirebaseEndpoints().token}/token?key=${serverFirebaseConfig.apiKey}`;
 };
 
 /**
@@ -181,8 +177,7 @@ const requestIdentityJson = async <TResponse>(
   });
 
   const data = (await response.json().catch(() => null)) as
-    | (TResponse & { error?: { message?: string } })
-    | null;
+    (TResponse & { error?: { message?: string } }) | null;
 
   if (!response.ok) {
     if (data?.error?.message?.startsWith("CREDENTIAL_TOO_OLD_LOGIN_AGAIN")) {

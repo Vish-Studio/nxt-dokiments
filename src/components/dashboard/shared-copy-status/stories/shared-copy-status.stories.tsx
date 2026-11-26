@@ -141,7 +141,14 @@ export const Revoke: Story = {
       canvas.getByRole("button", { name: "Revoke access" }),
     );
     await expect(args.onRevoke).not.toHaveBeenCalled();
-    const dialog = within(await within(document.body).findByRole("dialog"));
+    const confirm = await within(canvasElement).findByRole("dialog", {
+      name: /revoke/i,
+    });
+    await expect(confirm).toHaveAttribute("data-layout", "centered");
+    await expect(confirm).toHaveAccessibleDescription(
+      /will no longer be able to open/,
+    );
+    const dialog = within(confirm);
     await userEvent.click(
       dialog.getByRole("button", { name: "Revoke access" }),
     );
@@ -165,5 +172,65 @@ export const Revoked: Story = {
     await expect(
       canvas.queryByRole("button", { name: "Revoke access" }),
     ).toBeNull();
+  },
+};
+
+/** View-only share, not opened yet: waits on a view rather than a signature. */
+export const ViewOnlyWaiting: Story = {
+  args: { label: "Sharing", signable: false },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await expect(
+      canvas.getByText("Waiting for sam@example.com to view"),
+    ).toBeVisible();
+    await expect(canvas.getByText("Not opened")).toBeVisible();
+  },
+};
+
+/** View-only share once opened: says who viewed it and when. */
+export const ViewOnlyViewed: Story = {
+  args: {
+    document: {
+      ...pending,
+      views: {
+        "recipient-1": {
+          email: "sam@example.com",
+          viewedAt: new Date("2026-10-21T14:05:00Z").getTime(),
+        },
+      },
+    },
+    label: "Sharing",
+    signable: false,
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await expect(
+      canvas.getByText("Viewed by sam@example.com on 21 Oct 2026"),
+    ).toBeVisible();
+    await expect(canvas.getByText("Viewed")).toBeVisible();
+  },
+};
+
+/** The owner's own sender signature is not a signing: the copy still waits. */
+export const SenderSignedStillWaiting: Story = {
+  args: {
+    document: {
+      ...pending,
+      signatures: {
+        "owner-1": {
+          email: "alex@example.com",
+          signedAt: 1,
+          type: "typed",
+          value: "Alex Morgan",
+        },
+      },
+    },
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await expect(
+      canvas.getByText("Waiting for sam@example.com to sign"),
+    ).toBeVisible();
+    await expect(canvas.queryByText(/Signed by/)).toBeNull();
   },
 };

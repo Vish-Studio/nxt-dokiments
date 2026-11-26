@@ -1,6 +1,6 @@
 "use client";
 
-import { PencilSimpleIcon } from "@phosphor-icons/react";
+import { PencilSimpleIcon, TrashIcon } from "@phosphor-icons/react";
 import { useCallback, useState } from "react";
 
 import { Avatar } from "@/components/commons/avatar/avatar";
@@ -8,6 +8,7 @@ import { Badge } from "@/components/commons/badge/badge";
 import { Button } from "@/components/commons/button/button";
 import { SidePanel } from "@/components/commons/side-panel/side-panel";
 import { ClientForm } from "@/components/dashboard/client-form/client-form";
+import { iconSize } from "@/lib/icons";
 import { cn } from "@/lib/utils";
 import type { Client, ClientInput } from "@/types/client";
 
@@ -74,13 +75,13 @@ export const ClientDetailPanel = ({
   // bottom. `name` is omitted: it's already the panel title.
   const details: { label: string; value: string }[] = client
     ? [
-      { label: "Company", value: client.companyName },
-      { label: "Email", value: client.email },
-      { label: "Phone", value: client.phone },
-      { label: "National ID", value: client.nationalId },
-      { label: "BRN", value: client.brn },
-      { label: "Address", value: client.address },
-    ]
+        { label: "Company", value: client.companyName },
+        { label: "Email", value: client.email },
+        { label: "Phone", value: client.phone },
+        { label: "National ID", value: client.nationalId },
+        { label: "BRN", value: client.brn },
+        { label: "Address", value: client.address },
+      ]
     : [];
 
   return (
@@ -130,9 +131,17 @@ export const ClientDetailPanel = ({
             >
               <Button
                 className="w-full"
+                icon={
+                  <TrashIcon
+                    aria-hidden
+                    size={iconSize.control}
+                    weight="bold"
+                  />
+                }
+                iconPosition="left"
                 onClick={onDelete}
                 size="sm"
-                variant="outline"
+                variant="danger-outline"
               >
                 Delete
               </Button>

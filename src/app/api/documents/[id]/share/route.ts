@@ -14,12 +14,19 @@ type Context = { params: Promise<{ id: string }> };
 
 const ShareDocumentSchema = z.object({
   email: shareEmailSchema,
+  /** The owner's typed signature; required for layouts with a sender signature field. */
+  senderSignature: z.string().trim().max(200).optional(),
 });
 
 /**
  * `POST /api/documents/:id/share`
  *
- * Shares one of the caller's documents with `email` for signature. Idempotent:
+ * Shares one of the caller's documents with `email`: for signature when its
+ * layout has a recipient signature, view-only otherwise. When the layout has a
+ * sender signature field, the body must carry the owner's typed
+ * `senderSignature`; it is stored under the owner's uid in the copy's
+ * `signatures`, in the same write, and a re-share replaces it with a new
+ * `signedAt` until the recipient signs. Idempotent:
  * sharing again with the same address updates the shared copy (while it is
  * unlocked) instead of creating a second one. A document has one recipient for
  * now. Answers `404` while the `documentSharing` flag is off.
@@ -31,8 +38,8 @@ const ShareDocumentSchema = z.object({
  *
  * @returns `{ sharedDocumentId, recipient: { email, status } }` with status `201`
  *   on the first share and `200` on a repeat.
- * @returns `{ error: string }` with status `400` for a malformed body or when
- *   sharing with yourself.
+ * @returns `{ error: string }` with status `400` for a malformed body, a missing
+ *   required sender signature, or when sharing with yourself.
  * @returns `{ error: string }` with status `401` when no session is present.
  * @returns `{ error: string }` with status `403` when the plan's recipient limit is reached.
  * @returns `{ error: string }` with status `404` when the document is not found
@@ -44,9 +51,18 @@ export const POST = withSession<Context>(async (request, context, session) => {
   assertDocumentSharingEnabled();
 
   const { id } = await context.params;
-  const { email } = await parseBody(request, ShareDocumentSchema);
-  const { created, documentName, recipient, sharedAt, sharedDocumentId } =
-    await shareDocument(session, id, email);
+  const { email, senderSignature } = await parseBody(
+    request,
+    ShareDocumentSchema,
+  );
+  const {
+    created,
+    documentName,
+    recipient,
+    sharedAt,
+    sharedDocumentId,
+    signable,
+  } = await shareDocument(session, id, email, senderSignature);
 
   after(async () => {
     // Older links keep working until a new email replaces them, so their
@@ -65,6 +81,7 @@ export const POST = withSession<Context>(async (request, context, session) => {
       recipientEmail: recipient.email,
       sharedAt,
       sharedDocumentId,
+      signable,
     });
   });
 

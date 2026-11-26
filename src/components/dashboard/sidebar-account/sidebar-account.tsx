@@ -8,6 +8,7 @@ import { Avatar } from "@/components/commons/avatar/avatar";
 import { ButtonIcon } from "@/components/commons/button-icon/button-icon";
 import { InstallAppButton } from "@/components/commons/install-app-button/install-app-button";
 import { signOutAndRedirect } from "@/lib/auth/sign-out";
+import { iconSize } from "@/lib/icons";
 import { cn } from "@/lib/utils";
 import { useAuthStore } from "@/stores/auth-store";
 
@@ -15,6 +16,23 @@ interface Props {
   isCollapsed?: boolean;
 }
 
+const logOutClassName =
+  "shrink-0 border-none text-app-nav hover:bg-red-500/15 hover:text-red-300";
+
+/**
+ * The signed-in user at the foot of the sidebar: one quiet row with the
+ * avatar, name and email, and a small log-out icon button at its end.
+ *
+ * - **Install app** sits above it as a plain sidebar row, and only when this
+ *   browser can install the app (`InstallAppButton` renders nothing
+ *   otherwise).
+ * - **Collapsed (desktop):** the avatar, named by its `title`, above the
+ *   log-out icon.
+ *
+ * Log out is an icon, not a red full-width button: it is rarely used, so it
+ * should not be the loudest thing in the sidebar. It still turns red on hover
+ * and carries an accessible name.
+ */
 const SidebarAccount: FunctionComponent<Props> = ({ isCollapsed = false }) => {
   const user = useAuthStore((state) => state.user);
   const clearSession = useAuthStore((state) => state.clearSession);
@@ -24,21 +42,34 @@ const SidebarAccount: FunctionComponent<Props> = ({ isCollapsed = false }) => {
 
   const handleSignOut = () => signOutAndRedirect(queryClient, clearSession);
 
+  const logOutIcon = (
+    <SignOutIcon
+      aria-hidden
+      size={iconSize.control}
+      weight="bold"
+    />
+  );
+
   return (
     <div className="sidebar-account min-w-0">
-      <div
-        className={cn(
-          "rounded-box border border-white/10 bg-app-control p-3",
-          isCollapsed && "lg:hidden",
-        )}
-      >
-        <div className="flex items-center gap-3">
+      <div className={cn(isCollapsed && "lg:hidden")}>
+        {/*
+          `ghost` brings no colour utilities of its own, so the sidebar row
+          colours below win regardless of stylesheet order.
+        */}
+        <InstallAppButton
+          className="mb-2 h-10! min-h-0! w-full justify-start! gap-3 rounded-lg border-0 px-3! font-title text-sm! font-semibold text-app-nav hover:bg-app-nav-hover hover:text-app-chrome-content"
+          surface="sidebar"
+          variant="ghost"
+        />
+
+        <div className="flex items-center gap-3 border-t border-white/10 pt-3">
           <Avatar
-            className="bg-white/70 text-app-brand-content"
+            className="shrink-0 bg-white/70 text-app-brand-content"
             name={user?.displayName}
           />
 
-          <div className="min-w-0">
+          <div className="min-w-0 flex-1">
             <p className="truncate font-title text-sm font-bold text-app-chrome-content">
               {name}
             </p>
@@ -46,53 +77,34 @@ const SidebarAccount: FunctionComponent<Props> = ({ isCollapsed = false }) => {
               <p className="truncate text-xs text-app-nav">{user.email}</p>
             ) : null}
           </div>
-        </div>
-        {/*
-          Renders nothing unless this browser can actually install the app, so the
-          card usually looks exactly as it did. Only offered in the expanded card:
-          the collapsed rail keeps to one icon, and installing is not the action a
-          user reaches for often enough to earn that space.
-        */}
-        {/*
-          `ghost` rather than the button's own default: the `outline` variant ships
-          its own `bg-transparent` and `text-nox-noir`, which are the same
-          specificity as the overrides below and would win or lose by stylesheet
-          order alone. `ghost` brings no colour utilities to argue with.
-        */}
-        <InstallAppButton
-          className="mt-3 h-auto! min-h-0! w-full justify-center gap-2 rounded-lg bg-app-nav-hover px-3! py-2! text-xs! text-app-chrome-content hover:bg-white/15 hover:text-white"
-          surface="sidebar"
-          variant="ghost"
-        />
 
-        <button
-          className="mt-3 flex w-full items-center justify-center gap-2 rounded-lg bg-app-nav-hover px-3 py-2 font-title text-xs font-semibold text-red-400 transition-colors hover:bg-red-500/15 hover:text-red-300"
-          onClick={handleSignOut}
-          type="button"
-        >
-          <SignOutIcon
-            aria-hidden
-            size={15}
-            weight="bold"
+          <ButtonIcon
+            aria-label="Log out"
+            className={logOutClassName}
+            icon={logOutIcon}
+            onClick={handleSignOut}
+            size="sm"
+            title="Log out"
+            variant="ghost"
           />
-          Log out
-        </button>
+        </div>
       </div>
 
       {isCollapsed ? (
-        <div className="hidden flex-col items-center gap-2 lg:flex">
+        <div className="hidden flex-col items-center gap-2 border-t border-white/10 pt-3 lg:flex">
+          <span title={name}>
+            <Avatar
+              className="bg-white/70 text-app-brand-content"
+              name={user?.displayName}
+            />
+          </span>
           <ButtonIcon
             aria-label="Log out"
-            className="border-none text-red-400 hover:bg-red-500/15 hover:text-red-300"
-            icon={
-              <SignOutIcon
-                aria-hidden
-                size={16}
-                weight="bold"
-              />
-            }
+            className={logOutClassName}
+            icon={logOutIcon}
             onClick={handleSignOut}
             size="sm"
+            title="Log out"
             variant="ghost"
           />
         </div>

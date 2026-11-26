@@ -1,6 +1,7 @@
 import { handleApiError } from "@/lib/api/errors";
 import { getInviteByToken } from "@/lib/firebase/server-shared-invites";
 import { assertDocumentSharingEnabled } from "@/lib/sharing/server-guard";
+import { isViewOnlyShare } from "@/lib/sharing/signable";
 
 interface Context {
   params: Promise<{ token: string }>;
@@ -18,9 +19,10 @@ interface Context {
  * Unknown, deleted and malformed tokens are all `invalid`, so the response does
  * not reveal whether a token ever existed.
  *
- * @returns `{ state: "valid", invite }` with only the document name and the
- *   sender's name and address. The recipient's address
- *   is never included.
+ * @returns `{ state: "valid", invite }` with only the document name, the
+ *   sender's name and address, and `signable` (`false` for a view-only share,
+ *   so the page does not ask the visitor to sign). The recipient's address is
+ *   never included.
  * @returns `{ state: "expired" }` or `{ state: "invalid" }` with status `200`,
  *   so the page can show a tailored message.
  * @returns `{ error: string }` with status `404` when sharing is off.
@@ -46,6 +48,7 @@ export const GET = async (_request: Request, context: Context) => {
           name: invite.name,
           ownerEmail: invite.ownerEmail,
           ownerName: invite.ownerName,
+          signable: !isViewOnlyShare(invite),
         },
         state: "valid",
       },

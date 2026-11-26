@@ -23,16 +23,22 @@ export type ShareDocumentResult = {
   sharedDocumentId: string;
 };
 
-type ShareDocumentVariables = { documentId: string; email: string };
+type ShareDocumentVariables = {
+  documentId: string;
+  email: string;
+  /** The owner's typed signature; required by the server for layouts with a sender signature field. */
+  senderSignature?: string;
+};
 
 const postShare = async ({
   documentId,
   email,
+  senderSignature,
 }: ShareDocumentVariables): Promise<ShareDocumentResult> => {
   const response = await fetch(
     `/api/documents/${encodeURIComponent(documentId)}/share`,
     {
-      body: JSON.stringify({ email }),
+      body: JSON.stringify({ email, senderSignature }),
       headers: { "Content-Type": "application/json" },
       method: "POST",
     },

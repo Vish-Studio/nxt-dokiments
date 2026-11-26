@@ -44,9 +44,9 @@ export const Filled: Story = {
   },
 };
 
-/** A filled sender signature uses the script font; an empty one keeps the muted placeholder. */
+/** A filled sender signature uses the script font; in the editor an empty one keeps the muted placeholder. */
 export const SenderSignature: Story = {
-  args: { values: { senderSignature: "John Smith" } },
+  args: { showPlaceholders: true, values: { senderSignature: "John Smith" } },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     await expect(canvas.getByText("John Smith")).toHaveClass("font-signature");
@@ -84,5 +84,32 @@ export const InvoiceOrder: Story = {
     const total = canvas.getByText("$100");
     await expect(canvas.getByText("Design services — 1 — $100").compareDocumentPosition(total) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
     await expect(total.compareDocumentPosition(canvas.getByText("Bank transfer")) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+  },
+};
+
+/** Saved, shared and exported renders leave empty fields blank: no placeholder text. */
+export const SavedLeavesEmptyFieldsBlank: Story = {
+  args: { values: { toName: "Acme Co." } },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await expect(canvas.getByText("Acme Co.")).toBeVisible();
+    await expect(canvas.queryByText("Name / signature")).toBeNull();
+    await expect(canvas.queryByText("—")).toBeNull();
+  },
+};
+
+/** The editor preview after a save attempt: empty fields show their placeholder in a yellow highlight. */
+export const HighlightsEmptyFields: Story = {
+  args: {
+    highlightedFields: new Set(["senderSignature"]),
+    showPlaceholders: true,
+    values: { toName: "Acme Co." },
+  },
+  play: async ({ canvasElement }) => {
+    const marks = canvasElement.querySelectorAll("mark.template-document-missing");
+    // Only the listed field is highlighted, even though other empty fields
+    // share its placeholder text.
+    await expect(marks).toHaveLength(1);
+    await expect(marks[0]).toHaveTextContent("Name / signature");
   },
 };

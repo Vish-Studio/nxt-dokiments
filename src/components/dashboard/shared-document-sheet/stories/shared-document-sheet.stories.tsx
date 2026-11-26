@@ -65,6 +65,37 @@ const signedDocument: SharedDocument = {
   },
 };
 
+const senderSignedDocument: SharedDocument = {
+  ...baseDocument,
+  signatures: {
+    "owner-1": {
+      email: "alex@example.com",
+      signedAt: new Date("2026-10-20T09:30:00Z").getTime(),
+      type: "typed",
+      value: "Alex Morgan",
+    },
+  },
+  templateSnapshot: baseDocument.templateSnapshot && {
+    ...baseDocument.templateSnapshot,
+    fields: [
+      ...baseDocument.templateSnapshot.fields,
+      { key: "senderSignature", label: "Sender signature", type: "text" },
+    ],
+  },
+  values: { ...baseDocument.values, senderSignature: "An editable draft" },
+};
+
+/** A layout with no recipient signature, so it was shared view-only. */
+const viewOnlyDocument: SharedDocument = {
+  ...baseDocument,
+  templateSnapshot: baseDocument.templateSnapshot && {
+    ...baseDocument.templateSnapshot,
+    fields: baseDocument.templateSnapshot.fields.filter(
+      (field) => field.key !== "recipientSignature",
+    ),
+  },
+};
+
 const meta = {
   title: "Dashboard/Shared Document Sheet",
   component: SharedDocumentSheet,
@@ -99,10 +130,15 @@ export const RecipientSigns: Story = {
       "  Sam Rivera  ",
     );
     await userEvent.click(signButton);
-    await expect(canvas.getByText("Sign this document?")).toBeVisible();
+    const confirm = canvas.getByRole("dialog", { name: "Sign this document?" });
+    await expect(confirm).toBeVisible();
+    await expect(confirm).toHaveAttribute("data-layout", "centered");
+    await expect(confirm).toHaveAccessibleDescription(
+      "Signing locks this document for everyone. This can't be undone.",
+    );
 
     await userEvent.click(
-      canvas.getByRole("button", { name: "Sign and lock" }),
+      within(confirm).getByRole("button", { name: "Sign and lock" }),
     );
     await expect(args.onSign).toHaveBeenCalledWith("Sam Rivera");
   },
@@ -176,5 +212,52 @@ export const OwnerSigned: Story = {
       activity.getByText(/Shared with sam@example.com/),
     ).toBeVisible();
     await expect(activity.getByText(/Signed by sam@example.com/)).toBeVisible();
+  },
+};
+
+/** View-only: the recipient is told there is nothing to sign, and gets no signing controls. */
+export const RecipientViewOnly: Story = {
+  args: { document: viewOnlyDocument },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await expect(canvas.getByText(/shared with you to view/i)).toBeVisible();
+    await expect(canvas.getByText("Not opened")).toBeVisible();
+    await expect(
+      canvas.queryByRole("button", { name: "Sign document" }),
+    ).not.toBeInTheDocument();
+  },
+};
+
+/** The sender's signature comes from the record, and does not mark the copy signed. */
+export const SenderSignedRecipientPending: Story = {
+  args: { document: senderSignedDocument },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await expect(canvas.getByText("Alex Morgan")).toBeVisible();
+    await expect(canvas.queryByText("An editable draft")).toBeNull();
+    await expect(canvas.queryByText(/signed and locked/i)).toBeNull();
+    await expect(
+      canvas.getByRole("button", { name: "Sign document" }),
+    ).toBeDisabled();
+  },
+};
+
+/** Once the recipient signs, both signatures show. */
+export const BothSigned: Story = {
+  args: {
+    document: {
+      ...senderSignedDocument,
+      locked: true,
+      signatures: {
+        ...senderSignedDocument.signatures,
+        ...signedDocument.signatures,
+      },
+    },
+    viewer: "owner",
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await expect(canvas.getByText("Alex Morgan")).toBeVisible();
+    await expect(canvas.getByText("Sam Rivera")).toBeVisible();
   },
 };

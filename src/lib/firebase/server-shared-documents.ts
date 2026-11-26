@@ -32,8 +32,10 @@ import { normaliseEmail } from "@/lib/sharing/email";
 import { canShareWith } from "@/lib/sharing/policy";
 import {
   isSignableDocument,
+  requiresSenderSignature,
   RECIPIENT_SIGNATURE_KEY,
 } from "@/lib/sharing/signable";
+import { senderSignatureOf } from "@/lib/sharing/signatures";
 import { shareApiError } from "@/lib/sharing/server-guard";
 import {
   activeRecipient,
@@ -374,10 +376,18 @@ export type ShareDocumentResult = {
   /** Epoch milliseconds of this share; unique per explicit share or re-share. */
   sharedAt: number;
   sharedDocumentId: string;
+  /**
+   * Whether the recipient can sign the copy (its layout has a recipient
+   * signature). `false` means a view-only share.
+   */
+  signable: boolean;
 };
 
 /**
  * Shares one of the signed-in user's documents with `rawEmail`.
+ *
+ * Any document can be shared. One whose layout has a recipient signature is
+ * shared for signing; any other is shared view-only (see `isSignableDocument`).
  *
  * Copies the document (name, values, template snapshot) into `sharedDocuments`
  * and records the address in the owner's ledger, in one atomic commit. Sharing
@@ -393,13 +403,20 @@ export type ShareDocumentResult = {
  * @param session - Active session of the owner.
  * @param sourceDocumentId - ID of the owner's document to share.
  * @param rawEmail - Recipient address, in any casing.
- * @throws `ApiError` 404 for an unknown document; the sharing errors in
+ * @param senderSignature - The owner's typed signature. Required when the
+ *   layout has both a sender and a recipient signature field (see
+ *   `requiresSenderSignature`), unless the copy already carries one, which a
+ *   resend keeps untouched. A given value is stored under the owner's uid in
+ *   `signatures` with a new `signedAt`; for any other layout it is ignored.
+ * @throws `ApiError` 404 for an unknown document, 400 when the sender
+ *   signature is required and missing; the sharing errors in
  *   `shareApiError` for self-share, locked, second recipient and plan limit.
  */
 export const shareDocument = async (
   session: AuthSession,
   sourceDocumentId: string,
   rawEmail: string,
+  senderSignature?: string,
 ): Promise<ShareDocumentResult> => {
   const { uid } = session.user;
   const email = normaliseEmail(rawEmail);
@@ -409,9 +426,10 @@ export const shareDocument = async (
     throw new ApiError(404, "Document not found.");
   }
 
-  if (!isSignableDocument(source.templateSnapshot)) {
-    throw shareApiError("SHARE_NOT_SIGNABLE");
-  }
+  // Only a layout that asks for one takes a sender signature; for any other
+  // the value is ignored rather than stored.
+  const needsSignature = requiresSenderSignature(source.templateSnapshot);
+  const signatureValue = needsSignature ? senderSignature?.trim() : undefined;
 
   const sharedDocumentId = sharedDocumentIdFor(uid, sourceDocumentId);
   const [existing, ledger] = await Promise.all([
@@ -421,6 +439,16 @@ export const shareDocument = async (
 
   if (existing?.locked) {
     throw shareApiError("DOCUMENT_LOCKED");
+  }
+
+  // A share that already carries the owner's signature (a resend) keeps it,
+  // including its `signedAt`; only a newly typed value replaces it.
+  if (
+    needsSignature &&
+    !signatureValue &&
+    !senderSignatureOf(existing ?? undefined)
+  ) {
+    throw new ApiError(400, "Sign the document before sharing it.");
   }
 
   const current = existing ? activeRecipient(existing) : undefined;
@@ -478,7 +506,22 @@ export const shareDocument = async (
             ownerName: session.user.displayName,
             recipientUids: regainsAccess ? [] : existing?.recipientUids,
             recipients,
-            signatures: existing?.signatures ?? {},
+            // Recorded in the same write as the copy, so a shared copy never
+            // exists without the owner's signature. A re-share before the
+            // recipient signs replaces it, with a new `signedAt`.
+            signatures: {
+              ...existing?.signatures,
+              ...(signatureValue
+                ? {
+                    [uid]: {
+                      email: normaliseEmail(session.user.email),
+                      signedAt: now,
+                      type: "typed" as const,
+                      value: signatureValue,
+                    },
+                  }
+                : {}),
+            },
             sourceDocumentId,
             templateId: source.templateId,
             updatedAt: now,
@@ -532,6 +575,7 @@ export const shareDocument = async (
     recipient,
     sharedAt: now,
     sharedDocumentId,
+    signable: isSignableDocument(source.templateSnapshot),
   };
 };
 
@@ -640,7 +684,9 @@ export const listSharedByMe = async (
 /**
  * Signs a document shared with the signed-in user and locks it, in one write.
  * Only a recipient can sign (not the owner), and only while the document is
- * unlocked. With one recipient per document, their signature completes it.
+ * unlocked, and only when its layout has a recipient signature: a view-only
+ * share cannot be signed. With one recipient per document, their signature
+ * completes it.
  *
  * The rules re-check every condition on the write itself, so a request that
  * races a lock or a second signature is refused there too.
@@ -650,7 +696,8 @@ export const listSharedByMe = async (
  * @param value - The typed signature, already validated.
  * @returns The signed, locked document.
  * @throws `NOT_A_RECIPIENT` (404) when the document is unknown or not shared
- *   with the caller; `DOCUMENT_LOCKED` (409) when it is already signed.
+ *   with the caller; `DOCUMENT_LOCKED` (409) when it is already signed;
+ *   `SHARE_NOT_SIGNABLE` (400) when it is a view-only share.
  */
 export const signSharedDocument = async (
   session: AuthSession,
@@ -671,6 +718,9 @@ export const signSharedDocument = async (
   }
   if (document.locked) {
     throw shareApiError("DOCUMENT_LOCKED");
+  }
+  if (!isSignableDocument(document.templateSnapshot)) {
+    throw shareApiError("SHARE_NOT_SIGNABLE");
   }
 
   const now = Date.now();

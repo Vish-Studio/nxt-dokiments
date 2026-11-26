@@ -57,3 +57,22 @@ export const Dashboard: Story = {
     ).toHaveAttribute("href", "/settings");
   },
 };
+
+/** A sub-page: the back arrow takes the menu button's place. */
+export const WithBack: Story = {
+  args: {
+    back: { href: "/my-documents", label: "Companies" },
+    title: "Northline Studio",
+    tone: "purple",
+  },
+  parameters: { nextjs: { appDirectory: true } },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await expect(
+      canvas.getByRole("link", { name: "Back to Companies" }),
+    ).toHaveAttribute("href", "/my-documents");
+    await expect(
+      canvas.queryByRole("button", { name: "Open navigation" }),
+    ).toBeNull();
+  },
+};

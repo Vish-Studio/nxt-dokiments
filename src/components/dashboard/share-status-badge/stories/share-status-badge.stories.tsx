@@ -20,6 +20,16 @@ export const Pending: Story = {
   },
 };
 
+/** A view-only share not opened yet: nothing waits on a signature, so it is not "Pending". */
+export const NotOpenedViewOnly: Story = {
+  args: { signable: false, status: "pending" },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await expect(canvas.getByText("Not opened")).toBeVisible();
+    await expect(canvas.queryByText("Pending")).not.toBeInTheDocument();
+  },
+};
+
 /** The recipient has opened the document. */
 export const Viewed: Story = {
   args: { status: "viewed" },

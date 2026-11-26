@@ -1,24 +1,32 @@
+import { ClockIcon, GiftIcon } from "@phosphor-icons/react";
 import type { Meta, StoryObj } from "@storybook/nextjs-vite";
 
 import { MarketplacePromoCarousel } from "../marketplace-promo-carousel";
+import type { MarketplacePromoSlideProps } from "../marketplace-promo-slide";
 
-const slides = [
+const slides: MarketplacePromoSlideProps[] = [
   {
-    actionHref: "/my-documents",
-    actionLabel: "Explore Dokiments",
+    actionHref: "/marketplace#marketplace-template-sections",
+    actionLabel: "Browse all templates",
     backgroundClassName: "bg-golden-harvest",
-    detail: "Create professional quotations, invoices, contracts and more with ready-to-go templates.",
-    eyebrow: "Dokiments",
-    imageSrc: "/images/mockups/marketplace/home-mockup.svg",
-    title: "Business documents, without the blank page.",
+    detail: "Silver and Gold included. Save the ones your business reuses.",
+    eyebrow: "Launch offer",
+    eyebrowIcon: GiftIcon,
+    imageSrc: "/images/marketplace/promo-templates.webp",
+    points: ["60 templates", "15 document types", "4 design styles"],
+    title: "Every template is free during launch.",
   },
   {
     actionHref: "/my-clients",
-    actionLabel: "Explore client portal",
+    actionLabel: "Add a client",
     backgroundClassName: "bg-play-blue",
-    detail: "Manage client details in one place and keep them connected to the documents you create.",
-    imageSrc: "/images/marketplace/marketplace-promo-placeholder.png",
-    title: "Keep your clients organized.",
+    detail:
+      "Their name, email and address fill every invoice, quote and contract.",
+    eyebrow: "Save time",
+    eyebrowIcon: ClockIcon,
+    imageSrc: "/images/marketplace/promo-clients.webp",
+    points: ["Prefilled details", "Grouped by company", "Every document type"],
+    title: "Add a client once. Reuse them everywhere.",
   },
 ];
 

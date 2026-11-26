@@ -9,8 +9,10 @@ import {
   ButtonIcon,
   buttonIconClasses,
 } from "@/components/commons/button-icon/button-icon";
-import { SidebarToggleButton } from "@/components/dashboard/sidebar-toggle-button/sidebar-toggle-button";
+import { toneClasses as notificationToneClasses } from "@/components/dashboard/notification-bell/notification-bell";
+import { PageBackButton } from "@/components/dashboard/page-back-button/page-back-button";
 import { cn } from "@/lib/utils";
+import type { PageBack } from "@/stores/ui-store";
 
 export type PageBannerTone =
   | "golden"
@@ -23,11 +25,11 @@ export type PageBannerTone =
 export type PageBannerVariant = "solid" | "soft" | "outline";
 
 export type PageBannerProps = {
+  /** Sub-pages: a back arrow before the title (see `usePageHeader`). */
+  back?: PageBack;
   className?: string;
   footer?: ReactNode;
   onOpenNavigation?: () => void;
-  isSidebarCollapsed?: boolean;
-  onToggleSidebar?: () => void;
   /** Rendered beside the settings link, e.g. the notification bell. */
   actions?: ReactNode;
   showSettingsLink?: boolean;
@@ -111,21 +113,20 @@ const toneStyles: Record<PageBannerTone, ToneStyle> = {
 
 export const PageBanner = ({
   actions,
+  back,
   className,
   footer,
-  isSidebarCollapsed = false,
   onOpenNavigation,
-  onToggleSidebar,
   showSettingsLink = false,
   title,
   tone = "golden",
   variant = "solid",
 }: PageBannerProps) => {
   const style = toneStyles[tone];
+  // Every top-bar control (menu, back, settings) wears exactly the
+  // notification bell's treatment, so their hover states always match.
   const desktopControlClassName =
-    tone === "noir"
-      ? "bg-white/10 text-white hover:bg-white/20"
-      : "border-none bg-white/45 text-nox-noir hover:bg-white/65";
+    notificationToneClasses[tone === "noir" ? "dark" : "light"];
 
   return (
     <section
@@ -136,7 +137,8 @@ export const PageBanner = ({
       )}
       data-variant={variant}
     >
-      {onOpenNavigation ? (
+      {/* Sub-pages show only the back arrow: no menu button. */}
+      {onOpenNavigation && !back ? (
         <ButtonIcon
           aria-label="Open navigation"
           className={cn("bg-transparent lg:hidden", style.toggle)}
@@ -153,14 +155,13 @@ export const PageBanner = ({
       ) : null}
 
       <div className="flex min-w-0 items-center gap-3 lg:col-start-1 lg:row-start-1">
-        {onToggleSidebar ? (
-          <SidebarToggleButton
+        {back ? (
+          <PageBackButton
+            back={back}
             className={desktopControlClassName}
-            isCollapsed={isSidebarCollapsed}
-            onToggle={onToggleSidebar}
           />
         ) : null}
-        <h2 className={cn("font-title text-2xl font-bold", style.title)}>
+        <h2 className={cn("truncate font-title text-2xl font-bold", style.title)}>
           {title}
         </h2>
       </div>

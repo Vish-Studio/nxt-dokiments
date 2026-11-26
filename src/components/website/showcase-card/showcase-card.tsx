@@ -1,4 +1,5 @@
 import type { Icon } from "@phosphor-icons/react";
+import type { ReactNode } from "react";
 import { ArrowRight } from "@phosphor-icons/react/dist/ssr";
 import Link from "next/link";
 
@@ -10,10 +11,17 @@ export interface ShowcaseCardProps {
   className?: string;
   description: string;
   href: string;
-  icon: Icon;
+  /** Shown in the illustration tile when there is no `visual`. */
+  icon?: Icon;
   linkLabel: string;
   tag?: string;
   title: string;
+  /**
+   * Replaces the icon with an illustration (for example a real document,
+   * `ShowcaseDocument`), clipped to the tile. Decorative: it is `inert` and
+   * hidden from assistive tech.
+   */
+  visual?: ReactNode;
 }
 
 export const ShowcaseCard = ({
@@ -25,6 +33,7 @@ export const ShowcaseCard = ({
   linkLabel,
   tag,
   title,
+  visual,
 }: ShowcaseCardProps) => {
   return (
     <article
@@ -35,16 +44,26 @@ export const ShowcaseCard = ({
     >
       <div
         className={cn(
-          "flex aspect-4/3 items-center justify-center rounded-box",
+          "relative flex aspect-4/3 items-center justify-center overflow-hidden rounded-box",
           accent,
         )}
       >
-        <IconComponent
-          aria-hidden
-          className="text-nox-noir transition-transform duration-500 group-hover:scale-110 group-hover:-rotate-3 motion-reduce:transition-none motion-reduce:group-hover:transform-none"
-          size={72}
-          weight="duotone"
-        />
+        {visual ? (
+          <div
+            aria-hidden
+            className="absolute inset-0 transition-transform duration-500 group-hover:-translate-y-1 motion-reduce:transition-none motion-reduce:group-hover:translate-y-0"
+            inert
+          >
+            {visual}
+          </div>
+        ) : IconComponent ? (
+          <IconComponent
+            aria-hidden
+            className="text-nox-noir transition-transform duration-500 group-hover:scale-110 group-hover:-rotate-3 motion-reduce:transition-none motion-reduce:group-hover:transform-none"
+            size={72}
+            weight="duotone"
+          />
+        ) : null}
       </div>
 
       <div className="flex flex-1 flex-col px-3 pb-3 pt-6">

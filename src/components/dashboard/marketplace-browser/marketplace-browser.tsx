@@ -1,8 +1,11 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { MagnifyingGlassIcon } from "@phosphor-icons/react";
+import { useEffect, useEffectEvent, useMemo, useState } from "react";
 
+import { Button } from "@/components/commons/button/button";
 import { ConfirmDialog } from "@/components/commons/confirm-dialog/confirm-dialog";
+import { EmptyState } from "@/components/commons/empty-state/empty-state";
 import { LoadingStatus } from "@/components/commons/loading-status/loading-status";
 import { TemplateCardSkeletonGrid } from "@/components/commons/template-card-skeleton/template-card-skeleton";
 import { TemplatePreviewDialog } from "@/components/commons/template-preview-dialog/template-preview-dialog";
@@ -21,17 +24,19 @@ import {
 } from "@/hooks/queries/use-saved-templates";
 import { useTemplatesQuery } from "@/hooks/queries/use-templates";
 import { useScrollContentToTopOnMobile } from "@/hooks/use-scroll-content-to-top-on-mobile";
-import {
-  canUseTier,
-  getSavedTemplateLimit,
-} from "@/lib/market-place";
+import { iconSize } from "@/lib/icons";
+import { canUseTier, getSavedTemplateLimit } from "@/lib/market-place";
 import { useAuthStore } from "@/stores/auth-store";
 import type {
   DocumentType,
   MarketplaceTemplate,
   TemplateStyle,
 } from "@/types/template";
-import { getDocumentTypeLabel, getTemplateDisplayName } from "@/lib/market-place/document-labels";
+import {
+  getDocumentTypeLabel,
+  getTemplateDisplayName,
+  sortDocumentTypes,
+} from "@/lib/market-place/document-labels";
 
 const NO_STYLES: TemplateStyle[] = [];
 const NO_TEMPLATES: MarketplaceTemplate[] = [];
@@ -86,9 +91,9 @@ export const MarketplaceBrowser = () => {
 
   const typeOptions = useMemo(
     () =>
-      [...new Set(allTemplates.map((template) => template.documentType))]
-        .map((value) => ({ value, label: getDocumentTypeLabel(value) }))
-        .sort((first, second) => first.label.localeCompare(second.label)),
+      sortDocumentTypes([
+        ...new Set(allTemplates.map((template) => template.documentType)),
+      ]).map((value) => ({ value, label: getDocumentTypeLabel(value) })),
     [allTemplates],
   );
   const styleOptions = useMemo(
@@ -110,7 +115,13 @@ export const MarketplaceBrowser = () => {
   const templateSections = useMemo(() => {
     if (search.trim()) {
       return visibleTemplates.length > 0
-        ? [{ id: "searched", templates: visibleTemplates, title: "Searched templates" }]
+        ? [
+            {
+              id: "searched",
+              templates: visibleTemplates,
+              title: "Searched templates",
+            },
+          ]
         : [];
     }
 
@@ -129,7 +140,6 @@ export const MarketplaceBrowser = () => {
     setSearch("");
     setDocumentType("all");
     setStyle("all");
-    setSort("newest");
   };
   const handleCategoryChange = (nextDocumentType: "all" | DocumentType) => {
     setDocumentType(nextDocumentType);
@@ -144,6 +154,7 @@ export const MarketplaceBrowser = () => {
     <TemplateLibraryToolbar
       appearance="compact"
       documentType={documentType}
+      resultLabel={`${visibleTemplates.length} ${visibleTemplates.length === 1 ? "template" : "templates"}`}
       onCollectionChange={scrollContentToTop}
       onDocumentType={setDocumentType}
       onReset={resetFilters}
@@ -175,6 +186,30 @@ export const MarketplaceBrowser = () => {
       typeOptions={typeOptions}
     />
   );
+
+  const openCategory = useEffectEvent((next: DocumentType) =>
+    handleCategoryChange(next),
+  );
+
+  // Deep link to one category, e.g. the promo banner's `/marketplace?type=cv`.
+  // Read after mount (like `?template=` below), then dropped from the URL.
+  useEffect(() => {
+    const requested = new URLSearchParams(window.location.search).get("type");
+
+    if (!requested || !typeOptions.some(({ value }) => value === requested)) {
+      return;
+    }
+
+    const nextUrl = new URL(window.location.href);
+    nextUrl.searchParams.delete("type");
+    window.history.replaceState(
+      null,
+      "",
+      `${nextUrl.pathname}${nextUrl.search}${nextUrl.hash}`,
+    );
+    // Deferred like the other deep links: no setState in the effect body.
+    window.setTimeout(() => openCategory(requested as DocumentType), 0);
+  }, [typeOptions]);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -265,10 +300,16 @@ export const MarketplaceBrowser = () => {
         value={documentType as "all" | DocumentType}
       />
       <div className="flex min-w-0 flex-col gap-2">
-        <ResponsiveHeaderControls desktopContent={toolbar} desktopHeader={headerSearch}>
+        <ResponsiveHeaderControls
+          desktopContent={toolbar}
+          desktopHeader={headerSearch}
+        >
           {toolbar}
         </ResponsiveHeaderControls>
-        <div id="marketplace-template-sections" className="scroll-mt-6">
+        <div
+          id="marketplace-template-sections"
+          className="scroll-mt-6"
+        >
           {templateSections.length > 0 ? (
             <div className="grid min-w-0 gap-6">
               {templateSections.map(({ id, templates, title }) => (
@@ -284,17 +325,26 @@ export const MarketplaceBrowser = () => {
               ))}
             </div>
           ) : (
-            <section className="grid min-h-72 w-full flex-1 place-items-center rounded-box border border-dashed border-steel-mist bg-base-100 p-10 text-center">
-              <div>
-                <h2 className="font-title text-lg font-bold text-nox-noir">
-                  No matching templates
-                </h2>
-                <p className="mt-2 max-w-sm text-sm leading-6 text-nox-noir/60">
-                  Try another search or reset the filters to browse the full
-                  marketplace.
-                </p>
-              </div>
-            </section>
+            <EmptyState
+              action={
+                <Button
+                  onClick={resetFilters}
+                  size="sm"
+                  variant="outline"
+                >
+                  Clear filters
+                </Button>
+              }
+              description="Try another search, or clear the filters to browse the full marketplace."
+              icon={
+                <MagnifyingGlassIcon
+                  aria-hidden
+                  size={iconSize.feature}
+                  weight="bold"
+                />
+              }
+              title="No templates match"
+            />
           )}
         </div>
       </div>

@@ -37,6 +37,7 @@ const OWNER_EMAIL = "owner@example.com";
 type FirestoreStub = {
   ledger: string[];
   sharedDocument: "absent" | "denied" | Record<string, unknown>;
+  senderField: boolean;
   signable: boolean;
   sourceDocument: boolean;
 };
@@ -53,7 +54,13 @@ let commitStatus: number;
 const string = (value: string) => ({ stringValue: value });
 const timestamp = (value: string) => ({ timestampValue: value });
 
-const buildUserDocument = (signable: boolean) => ({
+const field = (key: string, label: string) => ({
+  mapValue: {
+    fields: { key: string(key), label: string(label), type: string("text") },
+  },
+});
+
+const buildUserDocument = (signable: boolean, senderField: boolean) => ({
   fields: {
     createdAt: timestamp("2026-10-01T00:00:00.000Z"),
     name: string("NDA"),
@@ -66,15 +73,13 @@ const buildUserDocument = (signable: boolean) => ({
           fields: {
             arrayValue: {
               values: [
-                {
-                  mapValue: {
-                    fields: {
-                      key: string(signable ? "recipientSignature" : "notes"),
-                      label: string("Recipient signature"),
-                      type: string("text"),
-                    },
-                  },
-                },
+                field(
+                  signable ? "recipientSignature" : "notes",
+                  "Recipient signature",
+                ),
+                ...(senderField
+                  ? [field("senderSignature", "Sender signature")]
+                  : []),
               ],
             },
           },
@@ -113,7 +118,7 @@ const installFetch = () =>
       }
       if (url.includes("/users/owner-uid/documents/doc_1")) {
         return stub.sourceDocument
-          ? json(buildUserDocument(stub.signable))
+          ? json(buildUserDocument(stub.signable, stub.senderField))
           : json({}, 404);
       }
       if (url.includes("/users/owner-uid/shareRecipients")) {
@@ -141,6 +146,7 @@ const installFetch = () =>
 
 const sharedDocument = (overrides: {
   locked?: boolean;
+  ownerSignedAt?: string;
   recipientEmail?: string;
   status?: string;
   viewed?: boolean;
@@ -167,7 +173,24 @@ const sharedDocument = (overrides: {
         ],
       },
     },
-    signatures: { mapValue: { fields: {} } },
+    signatures: {
+      mapValue: {
+        fields: overrides.ownerSignedAt
+          ? {
+              "owner-uid": {
+                mapValue: {
+                  fields: {
+                    email: string(OWNER_EMAIL),
+                    signedAt: timestamp(overrides.ownerSignedAt),
+                    type: string("typed"),
+                    value: string("Olivia Owner"),
+                  },
+                },
+              },
+            }
+          : {},
+      },
+    },
     sourceDocumentId: string("doc_1"),
     templateId: string("nda"),
     updatedAt: timestamp("2026-10-02T00:00:00.000Z"),
@@ -240,6 +263,7 @@ beforeEach(() => {
   stub = {
     ledger: [],
     sharedDocument: "denied",
+    senderField: false,
     signable: true,
     sourceDocument: true,
   };
@@ -278,6 +302,158 @@ describe("POST /api/documents/:id/share", () => {
     expect(copied).not.toHaveProperty("recipientSignature");
   });
 
+  describe("sender signature", () => {
+    type StoredSignatures = {
+      mapValue: {
+        fields: Record<
+          string,
+          {
+            mapValue: {
+              fields: {
+                email: { stringValue: string };
+                signedAt: { timestampValue: string };
+                type: { stringValue: string };
+                value: { stringValue: string };
+              };
+            };
+          }
+        >;
+      };
+    };
+
+    const writtenSignatures = () =>
+      (
+        commits[0].writes[0].update?.fields as unknown as {
+          signatures: StoredSignatures;
+        }
+      ).signatures.mapValue.fields;
+
+    beforeEach(() => {
+      stub.senderField = true;
+    });
+
+    it("stores the typed signature under the owner's uid in the same commit as the copy", async () => {
+      const response = await post({
+        email: "bob@example.com",
+        senderSignature: "  Olivia Owner ",
+      });
+
+      expect(response.status).toBe(201);
+      expect(commits).toHaveLength(1);
+      const entry = writtenSignatures()["owner-uid"].mapValue.fields;
+      expect(entry.value.stringValue).toBe("Olivia Owner");
+      expect(entry.email.stringValue).toBe(OWNER_EMAIL);
+      expect(entry.type.stringValue).toBe("typed");
+      expect(entry.signedAt.timestampValue).toBeTruthy();
+      expect(Object.keys(writtenSignatures())).toEqual(["owner-uid"]);
+    });
+
+    it("refuses a missing or blank signature when the layout asks for one", async () => {
+      for (const body of [
+        { email: "bob@example.com" },
+        { email: "bob@example.com", senderSignature: "   " },
+      ]) {
+        const response = await post(body);
+
+        expect(response.status).toBe(400);
+        expect((await response.json()).error).toMatch(/sign/i);
+      }
+      expect(commits).toHaveLength(0);
+    });
+
+    it("refuses a signature over 200 characters", async () => {
+      const response = await post({
+        email: "bob@example.com",
+        senderSignature: "x".repeat(201),
+      });
+
+      expect(response.status).toBe(400);
+      expect(commits).toHaveLength(0);
+    });
+
+    it("rewrites the signature with a new signedAt on a re-share", async () => {
+      stub.sharedDocument = sharedDocument({});
+      stub.ledger = ["bob@example.com"];
+
+      const response = await post({
+        email: "bob@example.com",
+        senderSignature: "Olivia O.",
+      });
+
+      expect(response.status).toBe(200);
+      const entry = writtenSignatures()["owner-uid"].mapValue.fields;
+      expect(entry.value.stringValue).toBe("Olivia O.");
+      expect(
+        Date.parse(entry.signedAt.timestampValue) > Date.parse("2026-10-02"),
+      ).toBe(true);
+    });
+
+    it("keeps the stored signature and its signedAt on a resend", async () => {
+      stub.sharedDocument = sharedDocument({
+        ownerSignedAt: "2026-10-02T00:00:00.000Z",
+      });
+      stub.ledger = ["bob@example.com"];
+
+      const response = await post({ email: "bob@example.com" });
+
+      expect(response.status).toBe(200);
+      const entry = writtenSignatures()["owner-uid"].mapValue.fields;
+      expect(entry.value.stringValue).toBe("Olivia Owner");
+      expect(entry.signedAt.timestampValue).toBe("2026-10-02T00:00:00.000Z");
+    });
+
+    it("still refuses a resend when the copy carries no signature", async () => {
+      stub.sharedDocument = sharedDocument({});
+      stub.ledger = ["bob@example.com"];
+
+      expect((await post({ email: "bob@example.com" })).status).toBe(400);
+      expect(commits).toHaveLength(0);
+    });
+
+    it("does not ask a view-only share for a signature", async () => {
+      stub.signable = false;
+
+      const response = await post({
+        email: "bob@example.com",
+        senderSignature: "Olivia Owner",
+      });
+
+      expect(response.status).toBe(201);
+      expect(writtenSignatures()).toEqual({});
+    });
+
+    it("changes nothing once the recipient has signed", async () => {
+      stub.sharedDocument = sharedDocument({ locked: true });
+
+      const response = await post({
+        email: "bob@example.com",
+        senderSignature: "Olivia Owner",
+      });
+
+      expect(response.status).toBe(409);
+      expect(commits).toHaveLength(0);
+    });
+
+    it("ignores a signature for a layout without a sender signature field", async () => {
+      stub.senderField = false;
+
+      const response = await post({
+        email: "bob@example.com",
+        senderSignature: "Olivia Owner",
+      });
+
+      expect(response.status).toBe(201);
+      expect(writtenSignatures()).toEqual({});
+    });
+
+    it("shares a layout without the field exactly as before when none is sent", async () => {
+      stub.senderField = false;
+
+      expect((await post({ email: "bob@example.com" })).status).toBe(201);
+      expect(writtenSignatures()).toEqual({});
+    });
+  });
+
   it("treats an absent shared document the same as a refused read", async () => {
     stub.sharedDocument = "absent";
 
@@ -311,11 +487,18 @@ describe("POST /api/documents/:id/share", () => {
     expect(commits).toHaveLength(0);
   });
 
-  it("returns 400 when the document type has no recipient signature", async () => {
+  it("shares a document with no recipient signature view-only", async () => {
     stub.signable = false;
 
-    expect((await post({ email: "bob@example.com" })).status).toBe(400);
-    expect(commits).toHaveLength(0);
+    const response = await post({ email: "bob@example.com" });
+    expect(response.status).toBe(201);
+    expect(commits).toHaveLength(1);
+
+    await Promise.all(email.scheduled.map((callback) => callback()));
+    expect(email.notify).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.objectContaining({ signable: false }),
+    );
   });
 
   it("returns 401 without a session", async () => {
@@ -423,6 +606,7 @@ describe("POST /api/documents/:id/share notification", () => {
         recipientEmail: "bob@example.com",
         sharedDocumentId: "owner-uid_doc_1",
         sharedAt: expect.any(Number),
+        signable: true,
       }),
     );
   });

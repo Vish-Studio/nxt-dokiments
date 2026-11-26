@@ -1,5 +1,6 @@
 "use client";
 
+import { useAutofillSubmit } from "@altalyst/hookify";
 import { useQueryClient } from "@tanstack/react-query";
 import Link from "next/link";
 import type { SubmitEvent } from "react";
@@ -10,7 +11,6 @@ import { Button } from "@/components/commons/button/button";
 import { GoogleSignInButton } from "@/components/commons/google-sign-in-button/google-sign-in-button";
 import { Input } from "@/components/commons/input/input";
 import { PromoCodeDisclosure } from "@/components/commons/promo-code-disclosure/promo-code-disclosure";
-import { useAutofillSubmit } from "@/hooks/use-autofill-submit";
 import { trackEvent } from "@/lib/analytics/track";
 import { syncAutofilledFields } from "@/lib/forms/autofill";
 import { withPromoStatus } from "@/lib/promo/promo-status";
@@ -79,7 +79,7 @@ export const SignInForm = ({ notice, onSubmit }: SignInFormProps) => {
 
   // Picking a saved login from the keyboard is a complete sign-in gesture on its
   // own, so it submits without a second tap on the button.
-  useAutofillSubmit(formRef, AUTOFILLED_FIELDS);
+  useAutofillSubmit(formRef, { fields: AUTOFILLED_FIELDS });
 
   const activeNotice = notice ?? urlNotice;
 

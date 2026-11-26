@@ -285,6 +285,87 @@ export const Success: Story = {
   },
 };
 
+/** A view-only share: the copy asks the recipient to view, not sign. */
+export const ViewOnlySuccess: Story = {
+  args: {
+    document: { id: "doc_1", name: "Project status report", signable: false },
+  },
+  play: async () => {
+    mockShareApi("success");
+
+    await expect(
+      screen.getByText(/someone who needs to view it/i),
+    ).toBeVisible();
+    await typeAndShare("Sam@Example.com");
+
+    await expect(await screen.findByText(/can now view/i)).toBeVisible();
+    await expect(screen.queryByText(/view and sign/i)).not.toBeInTheDocument();
+  },
+};
+
+const signableDocument = {
+  id: "doc_1",
+  name: "Website redesign NDA",
+  senderSignature: { value: "Alex Morgan" },
+};
+
+/** The signature field is prefilled from the draft, with the binding notice. */
+export const AsksForSenderSignature: Story = {
+  args: { document: signableDocument },
+  play: async () => {
+    mockShareApi("success");
+
+    await expect(screen.getByLabelText("Your signature")).toHaveValue(
+      "Alex Morgan",
+    );
+    await expect(
+      screen.getByText(/binding for the shared copy/i),
+    ).toBeVisible();
+  },
+};
+
+/** Sends the typed (and trimmed) signature along with the address. */
+export const SharesWithSenderSignature: Story = {
+  args: { document: signableDocument },
+  play: async () => {
+    const sent = mockShareApi("success");
+
+    const field = screen.getByLabelText("Your signature");
+    await userEvent.clear(field);
+    await userEvent.type(field, "  A. Morgan ");
+    await typeAndShare("sam@example.com");
+
+    await expect(
+      await screen.findByRole("heading", { name: /document shared/i }),
+    ).toBeVisible();
+    await expect(sent).toEqual([
+      { email: "sam@example.com", senderSignature: "A. Morgan" },
+    ]);
+  },
+};
+
+/** A blank signature blocks sharing in the UI, and nothing is sent. */
+export const BlankSenderSignatureBlocked: Story = {
+  args: { document: { ...signableDocument, senderSignature: { value: "" } } },
+  play: async () => {
+    const sent = mockShareApi("success");
+
+    await typeAndShare("sam@example.com");
+
+    await expect(
+      await screen.findByText(/sign the document to share it/i),
+    ).toBeVisible();
+    await expect(sent).toEqual([]);
+  },
+};
+
+/** Without a sender signature field there is no extra input. */
+export const NoSenderSignatureField: Story = {
+  play: async () => {
+    await expect(screen.queryByLabelText("Your signature")).toBeNull();
+  },
+};
+
 /** Closed — renders nothing at all, rather than a hidden dialog. */
 export const Closed: Story = {
   args: { open: false },

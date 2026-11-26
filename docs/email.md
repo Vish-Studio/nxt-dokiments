@@ -104,7 +104,7 @@ When the identifying parts can be long (addresses, ids), build the key with `has
 Build it on `EmailLayout` and keep to what mail clients support:
 
 - Inline styles only. The font stack is Urbanist (loaded via a Google Fonts link where supported) with an Arial fallback.
-- No SVG for the logo, as many clients block it. The layout uses the hosted PNG `/icons/icon-192.png` on a gold tile, served from the public site origin (production when `NEXT_PUBLIC_SITE_URL` is localhost).
+- No SVG for the logo, as many clients block it. The layout uses the hosted PNG `/icons/mark-192.png` (the black mark on transparent, not the yellow app icon) on a gold tile, served from the public site origin (production when `NEXT_PUBLIC_SITE_URL` is localhost).
 - The layout sets `color-scheme: light` so clients don't invert colours automatically.
 - Absolute URLs built from `siteUrl` (`src/lib/seo/site.ts`).
 
@@ -180,7 +180,7 @@ The Resend free plan allows 100 emails per day and 3,000 per month. Callers that
 
 When a document is shared, the share route schedules `notifyDocumentShared` (`src/lib/sharing/notify-document-shared.ts`) with `after()`, so the response never waits on the email and a failure never affects the share. The notifier never throws.
 
-- **Template:** `SharedDocumentEmail` (`src/lib/email/templates/shared-document-email.tsx`) on `EmailLayout`. The `shared` variant is sent on the first share, `updated` on every explicit re-share. It links to the personal invite page `/shared/<token>` (see [document sharing](./document-sharing.md#invite-links-ds-7)), falling back to `/my-documents?tab=shared` if the invite cannot be created, and tells people without an account to preview the document, then sign up with the address the email was sent to.
+- **Template:** `SharedDocumentEmail` (`src/lib/email/templates/shared-document-email.tsx`) on `EmailLayout`. The `shared` variant is sent on the first share, `updated` on every explicit re-share. With `signable: false` (a view-only share) it asks the recipient to view the document rather than sign it. It links to the personal invite page `/shared/<token>` (see [document sharing](./document-sharing.md#invite-links-ds-7)), falling back to `/my-documents?tab=shared` if the invite cannot be created, and tells people without an account to preview the document, then sign up with the address the email was sent to.
 - **Labels:** the sender name and document name go through `cleanEmailLabel` (`clean-label.ts`), which strips control characters, collapses whitespace and truncates, so they can't break the subject or spoof the body.
 - **Idempotency key:** `share-<sha256 of "sharedDocumentId|email|sharedAt">`. Hashed to stay under Resend's 256-character limit.
 - **Limits** (`share-email-limits.ts`): one email per recipient per document every 10 minutes, and 20 share emails per sender per 24 hours. A suppressed email still shares the document.

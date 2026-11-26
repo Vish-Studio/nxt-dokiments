@@ -1,75 +1,88 @@
+import { type AppScreen, appScreens } from "@/lib/website/app-screens";
+
 export interface FeatureTabContent {
-  /** Background token behind the visual, e.g. `bg-play-teal`. */
+  /** Tone of the tab's call-to-action link, e.g. `bg-play-teal`. */
   accent: string;
   description: string;
-  fit: "contain" | "cover";
   href: string;
   id: string;
-  imageAlt: string;
-  /** Omitted when the tab renders a coded mockup instead of an image. */
-  imageSrc?: string;
   linkLabel: string;
+  /** Background behind the screen. Defaults to `accent`. */
+  panel?: string;
+  /** The real app page shown for this tab. */
+  screen: AppScreen;
   title: string;
+  /** `dark` for a noir `panel`; see `FeatureTabVisual`. */
+  tone?: "dark" | "light";
 }
 
+/**
+ * The workspace tabs, in the same order as the app's sidebar (Dashboard, My
+ * Documents with its CVs tab, My Templates, My Clients, Marketplace). Each
+ * shows the real page in its own page tone; the screens are captured by
+ * `npm run capture:marketing` and are not shared with the auth pages.
+ */
 export const featureTabs: FeatureTabContent[] = [
   {
     accent: "bg-golden-harvest",
     description:
       "Saved templates, recent documents, and your plan status all live on one home screen, so you always know where to pick up.",
-    fit: "contain",
     href: "/sign-up",
     id: "dashboard",
-    imageAlt: "Dokiments dashboard showing the workspace snapshot",
-    imageSrc: "/images/mockups/hero-laptop-cutout.webp",
     linkLabel: "Create your free account",
+    screen: appScreens.dashboard,
     title: "Start from a calm dashboard.",
   },
   {
-    accent: "bg-play-teal",
+    accent: "bg-play-purple",
     description:
-      "From invoices and contracts to purchase orders and meeting minutes, in a growing collection of styles. Preview any template before you commit to it.",
-    fit: "cover",
-    href: "/marketplace",
-    id: "marketplace",
-    imageAlt: "Four document templates laid out on a teal surface",
-    imageSrc: "/images/page-headers/marketplace.webp",
-    linkLabel: "Browse the marketplace",
-    title: "Find the right template fast.",
+      "Every document is grouped by the company it's for, with its type, amount and status at a glance. Fill the guided fields and watch it take shape, then export a PDF.",
+    href: "/sign-up",
+    id: "documents",
+    linkLabel: "Create a document",
+    screen: appScreens.documents,
+    title: "Keep every document in order.",
+  },
+  {
+    accent: "bg-play-amber",
+    description:
+      "Build a polished CV from guided sections for your experience, education, skills and languages. It lives in its own tab, apart from client work.",
+    href: "/sign-up",
+    id: "cvs",
+    linkLabel: "Write your CV",
+    panel: "bg-nox-noir",
+    screen: appScreens.cv,
+    title: "Write a CV that looks the part.",
+    tone: "dark",
   },
   {
     accent: "bg-play-pink",
     description:
       "Save the templates you trust into your own library, so repeat work always starts from the right source.",
-    fit: "cover",
     href: "/sign-up",
     id: "templates",
-    imageAlt: "A stack of saved document templates held with a paperclip",
-    imageSrc: "/images/page-headers/templates.webp",
     linkLabel: "Build your library",
+    screen: appScreens.templates,
     title: "Keep the ones you reuse.",
   },
   {
     accent: "bg-play-blue",
     description:
       "Save each client's name, phone, email, address, and BRN once. Pick them while creating a document and their details fill in for you.",
-    fit: "contain",
     href: "/sign-up",
     id: "clients",
-    imageAlt: "A saved client card prefilling an invoice's recipient details",
     linkLabel: "Add your clients",
+    screen: appScreens.clients,
     title: "Prefill your clients in one click.",
   },
   {
-    accent: "bg-play-purple",
+    accent: "bg-play-teal",
     description:
-      "Fill the guided fields, with your client already prefilled, and watch the finished document take shape beside the form. Export it as a PDF. No formatting, no blank page.",
-    fit: "cover",
-    href: "/sign-up",
-    id: "documents",
-    imageAlt: "A finished document with a pen resting on top",
-    imageSrc: "/images/page-headers/documents.webp",
-    linkLabel: "Create a document",
-    title: "Turn a template into a document.",
+      "From invoices and contracts to purchase orders and CVs, in a growing collection of styles. Preview any template before you commit to it.",
+    href: "/marketplace",
+    id: "marketplace",
+    linkLabel: "Browse the marketplace",
+    screen: appScreens.marketplace,
+    title: "Find the right template fast.",
   },
 ];
