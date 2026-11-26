@@ -90,7 +90,8 @@ The Marketplace promo banner reuses these screens. `npm run compose:banners`
 (`scripts/compose-marketplace-banners.mjs`) writes
 `public/images/marketplace/promo-*.webp`: transparent 1400 × 1080 images of a
 dark browser window bleeding off the bottom-right, with an iPhone in front on
-two of them. Run it after `capture:marketing`.
+two of them. Run it after `capture:marketing`. Which slide uses which image,
+and the copy rules, are in the `dokiments-ui` skill (Marketplace layout).
 
 | Banner image | Desktop screen | Phone screen |
 | --- | --- | --- |
@@ -98,6 +99,7 @@ two of them. Run it after `capture:marketing`.
 | `promo-clients.webp` | My Clients | none |
 | `promo-templates-offer.webp` | Dashboard (plan, free slots) | notifications |
 | `promo-templates.webp` | My Templates | none |
+| `promo-cv.webp` | a CV in the editor | none |
 
 ## Server and client boundaries
 

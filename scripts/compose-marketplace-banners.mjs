@@ -36,6 +36,7 @@ const banners = [
     phone: "notifications-phone",
   },
   { name: "templates", desktop: "templates-desktop" },
+  { name: "cv", desktop: "cv-desktop" },
 ];
 
 const dataUrl = (file) =>

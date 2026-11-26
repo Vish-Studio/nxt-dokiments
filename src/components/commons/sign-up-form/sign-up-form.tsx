@@ -9,7 +9,7 @@ import { Button } from "@/components/commons/button/button";
 import { GoogleSignInButton } from "@/components/commons/google-sign-in-button/google-sign-in-button";
 import { Input } from "@/components/commons/input/input";
 import { LinkButton } from "@/components/commons/link-button/link-button";
-import { PromoCodeCallout } from "@/components/commons/promo-code-callout/promo-code-callout";
+import { PromoCodeDisclosure } from "@/components/commons/promo-code-disclosure/promo-code-disclosure";
 import { trackEvent } from "@/lib/analytics/track";
 import { syncAutofilledFields } from "@/lib/forms/autofill";
 import { withNext } from "@/lib/auth/auth-link";
@@ -183,21 +183,6 @@ export const SignUpForm = ({ onSubmit }: SignUpFormProps) => {
         })}
       />
 
-      <PromoCodeCallout />
-      <Input
-        autoCapitalize="characters"
-        autoComplete="off"
-        label="Promo code (optional)"
-        // Capped like the fields above, and here it also keeps an oversized paste
-        // from failing the *body* — which would take the whole sign-up with it.
-        maxLength={MAX_PROMO_CODE}
-        name="promoCode"
-        onChange={(event) => setPromoCode(event.target.value)}
-        placeholder="Enter your promo code"
-        spellCheck={false}
-        value={promoCode}
-      />
-
       <Button
         className="w-full"
         disabled={isSubmitting}
@@ -205,6 +190,26 @@ export const SignUpForm = ({ onSubmit }: SignUpFormProps) => {
       >
         {isSubmitting ? "Creating account..." : "Create account"}
       </Button>
+
+      {/* Optional, so it stays collapsed under the button, as on sign-in. It
+          still applies to both paths: the field stays mounted while closed, and
+          `promoCode` feeds the submit body and the Google link below. Opening it
+          shows the launch offer. */}
+      <PromoCodeDisclosure value={promoCode}>
+        <Input
+          autoCapitalize="characters"
+          autoComplete="off"
+          label="Promo code (optional)"
+          // Capped like the fields above, and here it also keeps an oversized paste
+          // from failing the *body* — which would take the whole sign-up with it.
+          maxLength={MAX_PROMO_CODE}
+          name="promoCode"
+          onChange={(event) => setPromoCode(event.target.value)}
+          placeholder="Enter your promo code"
+          spellCheck={false}
+          value={promoCode}
+        />
+      </PromoCodeDisclosure>
 
       <div className="flex items-center gap-3 text-xs font-title uppercase text-nox-noir/40">
         <span className="h-px flex-1 bg-steel-mist" />

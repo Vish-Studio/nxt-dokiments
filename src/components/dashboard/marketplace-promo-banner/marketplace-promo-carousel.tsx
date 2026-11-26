@@ -1,7 +1,7 @@
 "use client";
 
 import { CaretLeftIcon, CaretRightIcon } from "@phosphor-icons/react";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 import { ButtonIcon } from "@/components/commons/button-icon/button-icon";
 import { StepIndicator } from "@/components/commons/step-indicator/step-indicator";
@@ -19,6 +19,10 @@ export const MarketplacePromoCarousel = ({
   slides,
 }: MarketplacePromoCarouselProps) => {
   const [activeIndex, setActiveIndex] = useState(0);
+  // Paused while the pointer or keyboard focus is inside, so a slide never
+  // changes under someone reading it or about to press its button.
+  const [isPaused, setIsPaused] = useState(false);
+  const touchStartX = useRef<number | null>(null);
   const slideCount = slides.length;
 
   const selectNext = useCallback(() => {
@@ -33,6 +37,7 @@ export const MarketplacePromoCarousel = ({
 
   useEffect(() => {
     if (
+      isPaused ||
       slideCount < 2 ||
       window.matchMedia("(prefers-reduced-motion: reduce)").matches
     ) {
@@ -42,7 +47,16 @@ export const MarketplacePromoCarousel = ({
     const interval = window.setInterval(selectNext, 6500);
 
     return () => window.clearInterval(interval);
-  }, [selectNext, slideCount]);
+  }, [isPaused, selectNext, slideCount]);
+
+  // A horizontal swipe of 40px or more changes slide on touch screens.
+  const handleTouchEnd = (endX: number) => {
+    const startX = touchStartX.current;
+    touchStartX.current = null;
+    if (startX === null || Math.abs(endX - startX) < 40) return;
+    if (endX < startX) selectNext();
+    else selectPrevious();
+  };
 
   if (slideCount === 0) {
     return null;
@@ -53,17 +67,33 @@ export const MarketplacePromoCarousel = ({
     <div
       aria-label="Marketplace updates"
       aria-roledescription="carousel"
-      className="marketplace-promo-carousel relative h-[37rem] sm:h-96"
+      className="marketplace-promo-carousel"
+      onBlur={(event) => {
+        if (!event.currentTarget.contains(event.relatedTarget)) {
+          setIsPaused(false);
+        }
+      }}
+      onFocus={() => setIsPaused(true)}
+      onMouseEnter={() => setIsPaused(true)}
+      onMouseLeave={() => setIsPaused(false)}
       role="region"
     >
-      <MarketplacePromoSlide
-        key={activeSlide.title}
-        {...activeSlide}
-      />
+      {/* The card holds only the slide; the controls sit below it, never on
+          the copy or the picture. */}
+      <div
+        className="relative h-[35rem] sm:h-[23rem]"
+        onTouchEnd={(event) => handleTouchEnd(event.changedTouches[0].clientX)}
+        onTouchStart={(event) => {
+          touchStartX.current = event.touches[0].clientX;
+        }}
+      >
+        <MarketplacePromoSlide
+          key={activeSlide.title}
+          {...activeSlide}
+        />
+      </div>
       {slideCount > 1 ? (
-        // Full width on mobile, so the stepper sits left and the arrows right;
-        // from `sm` up the two sit together in the bottom-left corner.
-        <div className="absolute right-5 bottom-5 left-5 z-20 flex items-center justify-between gap-4 sm:right-auto sm:bottom-8 sm:left-8 sm:justify-start lg:bottom-10 lg:left-10">
+        <div className="mt-3 flex items-center justify-between gap-4 px-1">
           <StepIndicator
             current={activeIndex + 1}
             label="Slide"
@@ -72,7 +102,6 @@ export const MarketplacePromoCarousel = ({
           <div className="flex items-center gap-2">
             <ButtonIcon
               aria-label="Previous marketplace update"
-              className="border-nox-noir/25 bg-base-100/70 !text-nox-noir hover:bg-base-100"
               icon={
                 <CaretLeftIcon
                   aria-hidden
@@ -87,7 +116,6 @@ export const MarketplacePromoCarousel = ({
             />
             <ButtonIcon
               aria-label="Next marketplace update"
-              className="border-nox-noir bg-nox-noir !text-base-100 hover:bg-nox-noir/85"
               icon={
                 <CaretRightIcon
                   aria-hidden
