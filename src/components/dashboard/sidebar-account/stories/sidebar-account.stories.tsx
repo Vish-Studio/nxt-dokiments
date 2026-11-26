@@ -39,14 +39,24 @@ export const Expanded: Story = {
     const canvas = within(canvasElement);
     await expect(canvas.getByText("Anthony Alverizko")).toBeVisible();
     await expect(canvas.getByText("AA")).toBeVisible();
-    await expect(
-      canvas.getByRole("button", { name: /log out/i }),
-    ).toBeVisible();
+    // Log out is a quiet icon button in the account row, not a full-width one.
+    const logOut = canvas.getByRole("button", { name: "Log out" });
+    await expect(logOut).toBeVisible();
+    await expect(logOut).toHaveAttribute("title", "Log out");
   },
 };
 
+/** Collapsed on desktop: the avatar, named by its title, above the log-out icon. */
 export const Collapsed: Story = {
   args: { isCollapsed: true },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await expect(canvas.getByTitle("Anthony Alverizko")).toBeVisible();
+    const logOut = canvas
+      .getAllByRole("button", { name: "Log out" })
+      .find((button) => button.checkVisibility());
+    await expect(logOut).toBeDefined();
+  },
 };
 
 export const SignedOut: Story = {
@@ -98,7 +108,11 @@ export const LongUserDetails: Story = {
     const nameElement = canvas.getByText(/Divesh Heeramun/);
 
     await expect(nameElement).toBeVisible();
-    await expect(nameElement.scrollWidth).toBeGreaterThan(nameElement.offsetWidth);
-    await expect(canvasElement.scrollWidth).toBeLessThanOrEqual(canvasElement.clientWidth);
+    await expect(nameElement.scrollWidth).toBeGreaterThan(
+      nameElement.offsetWidth,
+    );
+    await expect(canvasElement.scrollWidth).toBeLessThanOrEqual(
+      canvasElement.clientWidth,
+    );
   },
 };

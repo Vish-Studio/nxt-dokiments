@@ -269,9 +269,7 @@ export const Modal = ({
           ) : null}
         </div>
 
-        {children ? (
-          <div className={cn("mt-5", tone && "sm:pl-14")}>{children}</div>
-        ) : null}
+        {children ? <div className="mt-5">{children}</div> : null}
 
         {actions ? (
           <div className="mt-6 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
