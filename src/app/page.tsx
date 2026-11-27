@@ -4,9 +4,8 @@ import { Landing } from "@/components/website/landing/landing";
 import { homeStructuredData } from "@/lib/seo/home-structured-data";
 import {
   defaultDescription,
-  defaultTitle,
+  homeTitle,
   pageMetadata,
-  siteName,
   toJsonLd,
 } from "@/lib/seo/site";
 
@@ -14,7 +13,7 @@ export const metadata: Metadata = pageMetadata({
   absoluteTitle: true,
   description: defaultDescription,
   path: "/",
-  title: `${defaultTitle} | ${siteName}`,
+  title: homeTitle,
 });
 
 const Page = () => {

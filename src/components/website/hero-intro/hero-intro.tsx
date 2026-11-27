@@ -8,24 +8,21 @@ import { HeroActions } from "@/components/website/hero-actions/hero-actions";
 import { HeroCredit } from "@/components/website/hero-credit/hero-credit";
 import { HeroFeatureTile } from "@/components/website/hero-feature-tile/hero-feature-tile";
 import { heroIntroSteps } from "@/components/website/hero-intro/hero-intro-steps";
-import { HeroTypedHeadline } from "@/components/website/hero-typed-headline/hero-typed-headline";
+import { HeroHeadline } from "@/components/website/hero-headline/hero-headline";
 import { cn } from "@/lib/utils";
 
-// Reveal timing, in seconds. On load the headline types in, then the paragraph, stepper, credit
-// and CTAs fade up one after another; on every step change the new headline types in the same way
-// and its paragraph follows. Delays derive from the headline length so the chain stays even if the
-// copy changes. Slow, symmetric easing lives in `.hero-reveal` / `.hero-type-char` (globals.css).
-const typeStep = 0.055;
-const loadTypeStart = 0.4;
-const stepTypeStart = 0.25;
-const typedEndFor = (step: (typeof heroIntroSteps)[number], start: number) =>
-  start + (step.lead.length + 1 + step.highlight.length) * typeStep;
-const loadTypedEnd = typedEndFor(heroIntroSteps[0], loadTypeStart);
-const revealAt = {
-  stepper: loadTypedEnd + 0.7,
-  credit: loadTypedEnd + 1.1,
-  actions: loadTypedEnd + 1.5,
+// Reveal timing, in seconds. One quick, subtle sequence: each block fades up 8px over 0.5s
+// (`.hero-reveal` in globals.css) on a short stagger, so the whole card is readable within about
+// 0.8s of load. On a step change only the headline and paragraph replay, almost at once.
+const loadRevealAt = {
+  pill: 0,
+  headline: 0.06,
+  description: 0.14,
+  actions: 0.22,
+  stepper: 0.3,
+  credit: 0.34,
 };
+const stepRevealAt = { headline: 0, description: 0.06 };
 const revealStyle = (delay: number) =>
   ({ "--reveal-delay": `${delay}s` }) as CSSProperties;
 
@@ -52,19 +49,19 @@ export const HeroIntro = ({ onStepChange }: HeroIntroProps) => {
     onStepChange?.(index);
   };
   const activeStep = heroIntroSteps[activeIndex];
-  const typeStart = isFirstRun ? loadTypeStart : stepTypeStart;
+  const copyRevealAt = isFirstRun ? loadRevealAt : stepRevealAt;
 
   return (
     <div
       className={cn(
-        "hero-intro flex flex-1 flex-col rounded-box px-6 pt-10 pb-6 text-center transition-colors duration-1000 ease-in-out motion-reduce:transition-none sm:px-10 lg:px-12 lg:pt-6 lg:pb-5 lg:text-left",
+        "hero-intro flex flex-1 flex-col rounded-box px-6 pt-10 pb-6 text-center transition-colors duration-500 ease-out motion-reduce:transition-none sm:px-10 lg:px-12 lg:pt-6 lg:pb-5 lg:text-left",
         activeStep.accent,
       )}
     >
       <div className="my-auto">
         <span
           className="hero-reveal inline-flex items-center gap-2 rounded-full bg-white/65 px-3 py-1 font-title text-xs font-bold uppercase text-nox-noir mb-4"
-          style={revealStyle(0.15)}
+          style={revealStyle(loadRevealAt.pill)}
         >
           <Sparkle
             aria-hidden
@@ -73,29 +70,28 @@ export const HeroIntro = ({ onStepChange }: HeroIntroProps) => {
           />
           Document workspace
         </span>
-        {/* Re-keyed per step so each step replays the same type-in + fade-up as the first load.
+        {/* Re-keyed per step so each step replays the same quick fade-up as the first load.
             The min height (sized for the longest step) keeps the CTAs from jumping between steps. */}
         <div
           className="lg:min-h-60"
           key={activeStep.id}
         >
-          <HeroTypedHeadline
-            className={headlineClassName}
+          <HeroHeadline
+            className={cn("hero-reveal", headlineClassName)}
             highlight={activeStep.highlight}
             lead={activeStep.lead}
-            startDelay={typeStart}
-            stepDelay={typeStep}
+            style={revealStyle(copyRevealAt.headline)}
           />
           <p
             className="hero-reveal mx-auto mt-5 max-w-md text-base leading-7 text-nox-noir/70 sm:text-lg sm:leading-8 lg:mx-0 lg:mt-4"
-            style={revealStyle(typedEndFor(activeStep, typeStart) + 0.2)}
+            style={revealStyle(copyRevealAt.description)}
           >
             {activeStep.description}
           </p>
         </div>
         <HeroActions
           className="hero-reveal mt-8 lg:mt-6"
-          style={revealStyle(revealAt.actions)}
+          style={revealStyle(loadRevealAt.actions)}
           secondaryClassName="border-transparent bg-white hover:bg-white/80"
         />
       </div>
@@ -103,7 +99,7 @@ export const HeroIntro = ({ onStepChange }: HeroIntroProps) => {
       <ol
         aria-label="How Dokiments works"
         className="hero-reveal mt-8 grid grid-cols-3 gap-2 lg:mt-6"
-        style={revealStyle(revealAt.stepper)}
+        style={revealStyle(loadRevealAt.stepper)}
       >
         {heroIntroSteps.map((step, index) => (
           <HeroFeatureTile
@@ -123,7 +119,7 @@ export const HeroIntro = ({ onStepChange }: HeroIntroProps) => {
 
       <HeroCredit
         className="hero-reveal mt-6 text-nox-noir/55 lg:mt-4"
-        style={revealStyle(revealAt.credit)}
+        style={revealStyle(loadRevealAt.credit)}
       />
     </div>
   );

@@ -12,8 +12,16 @@ export const homeStructuredData = {
       "@type": "Organization",
       "@id": `${siteUrl}/#organization`,
       name: siteName,
+      // Helps the brand query: people type it a few ways.
+      alternateName: ["Dokiments app", "dokiments.com"],
+      description:
+        "Dokiments is an online invoice, quotation and contract maker for small businesses and freelancers.",
       url: siteUrl,
       logo: `${siteUrl}/apple-icon.png`,
+      areaServed: [
+        { "@type": "Country", name: "Mauritius" },
+        { "@type": "Place", name: "Worldwide" },
+      ],
       // The footer's social profiles belong to the studio behind the product.
       parentOrganization: {
         "@type": "Organization",
@@ -30,6 +38,8 @@ export const homeStructuredData = {
       "@type": "WebSite",
       "@id": `${siteUrl}/#website`,
       name: siteName,
+      alternateName: "Dokiments app",
+      inLanguage: "en",
       url: siteUrl,
       publisher: { "@id": `${siteUrl}/#organization` },
     },

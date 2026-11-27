@@ -10,6 +10,18 @@ const nextConfig: NextConfig = {
     // display the running app version without shipping the whole package.json.
     APP_VERSION: packageJson.version,
   },
+  // Vercel's own *.vercel.app address serves the same site. Keep it out of
+  // search results so it never competes with www.dokiments.com (its pages
+  // already point their canonical there).
+  async headers() {
+    return [
+      {
+        has: [{ type: "host", value: "(?<host>.*)\\.vercel\\.app" }],
+        headers: [{ key: "X-Robots-Tag", value: "noindex, nofollow" }],
+        source: "/:path*",
+      },
+    ];
+  },
   images: {
     remotePatterns: [
       {

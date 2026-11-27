@@ -1,6 +1,7 @@
 import type { MetadataRoute } from "next";
 
 import { siteUrl } from "@/lib/seo/site";
+import { mauritiusPage } from "@/lib/website/local-pages";
 
 // Only public, indexable pages. Signed-in routes (marketplace, subscription, dashboard…) redirect
 // crawlers to /sign-in, so listing them would only feed search engines redirects.
@@ -10,6 +11,12 @@ const routes: Array<{
   priority: number;
 }> = [
   { changeFrequency: "weekly", path: "/", priority: 1 },
+  // Local landing pages (src/lib/website/local-pages.ts).
+  {
+    changeFrequency: "monthly",
+    path: `/${mauritiusPage.slug}`,
+    priority: 0.9,
+  },
   { changeFrequency: "monthly", path: "/sign-up", priority: 0.8 },
   { changeFrequency: "monthly", path: "/sign-in", priority: 0.5 },
   { changeFrequency: "yearly", path: "/privacy", priority: 0.3 },
