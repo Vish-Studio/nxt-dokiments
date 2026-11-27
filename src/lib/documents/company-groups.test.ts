@@ -9,6 +9,7 @@ import {
   countEntriesByType,
   getEntryStatus,
   getDocumentCompanyName,
+  isEntryStatus,
   getSharedCompanyName,
   groupEntriesByCompany,
   groupEntriesByMonth,
@@ -65,13 +66,21 @@ const northline: Client = {
 
 describe("company names", () => {
   it("reads the client block, then the NDA receiving party", () => {
-    expect(getDocumentCompanyName(doc("a", "2026-01-01", { toName: " Acme " }))).toBe("Acme");
-    expect(getDocumentCompanyName(doc("b", "2026-01-01", { partyTwo: "Globex" }))).toBe("Globex");
+    expect(
+      getDocumentCompanyName(doc("a", "2026-01-01", { toName: " Acme " })),
+    ).toBe("Acme");
+    expect(
+      getDocumentCompanyName(doc("b", "2026-01-01", { partyTwo: "Globex" })),
+    ).toBe("Globex");
     expect(getDocumentCompanyName(doc("c", "2026-01-01"))).toBeNull();
   });
 
   it("names a shared document by its sender block, then the owner", () => {
-    expect(getSharedCompanyName(shared("s", "2026-01-01", { values: { fromName: "Northline Studio" } }))).toBe("Northline Studio");
+    expect(
+      getSharedCompanyName(
+        shared("s", "2026-01-01", { values: { fromName: "Northline Studio" } }),
+      ),
+    ).toBe("Northline Studio");
     expect(getSharedCompanyName(shared("t", "2026-01-01"))).toBe("Alex Morgan");
   });
 });
@@ -79,19 +88,31 @@ describe("company names", () => {
 describe("buildCompanyEntries + groupEntriesByCompany", () => {
   const entries = buildCompanyEntries(
     [
-      doc("old", "2026-03-01", { title: "March invoice", toName: "northline  studio" }),
+      doc("old", "2026-03-01", {
+        title: "March invoice",
+        toName: "northline  studio",
+      }),
       doc("new", "2026-06-18", { toName: "Maya Chen" }),
       doc("loose", "2026-06-03"),
     ],
     [shared("in", "2026-05-01", { values: { fromName: "Northline Studio" } })],
-    [shared("out", "2026-06-19", { recipients: [{ email: "maya@northline.com", invitedAt: 0, status: "viewed" }], sourceDocumentId: "new" })],
+    [
+      shared("out", "2026-06-19", {
+        recipients: [
+          { email: "maya@northline.com", invitedAt: 0, status: "viewed" },
+        ],
+        sourceDocumentId: "new",
+      }),
+    ],
   );
 
   it("marks direction, titles and share status", () => {
     const created = entries.find((entry) => entry.id === "doc:new");
     expect(created?.source).toBe("created");
     expect(created?.shareStatus).toBe("viewed");
-    expect(entries.find((entry) => entry.id === "doc:old")?.title).toBe("March invoice");
+    expect(entries.find((entry) => entry.id === "doc:old")?.title).toBe(
+      "March invoice",
+    );
     const received = entries.find((entry) => entry.id === "shared:in");
     expect(received?.source).toBe("received");
     expect(received?.sharedBy).toBe("Alex Morgan");
@@ -99,18 +120,30 @@ describe("buildCompanyEntries + groupEntriesByCompany", () => {
 
   it("joins both directions under one client, newest first, with counts", () => {
     const groups = groupEntriesByCompany(entries, [northline]);
-    const company = groups.find((group) => group.key === "client-client_northline");
+    const company = groups.find(
+      (group) => group.key === "client-client_northline",
+    );
 
     expect(company?.name).toBe("Northline Studio");
-    expect(company?.entries.map((entry) => entry.id)).toEqual(["doc:new", "shared:in", "doc:old"]);
+    expect(company?.entries.map((entry) => entry.id)).toEqual([
+      "doc:new",
+      "shared:in",
+      "doc:old",
+    ]);
     expect(company?.createdCount).toBe(2);
     expect(company?.receivedCount).toBe(1);
     expect(company?.firstAt).toBe(new Date("2026-03-01").getTime());
-    expect(groups.find((group) => group.key === NO_CLIENT_GROUP_KEY)?.name).toBeNull();
+    expect(
+      groups.find((group) => group.key === NO_CLIENT_GROUP_KEY)?.name,
+    ).toBeNull();
   });
 
   it("groups companies outside the client book by a URL-safe name key", () => {
-    const groups = groupEntriesByCompany(buildCompanyEntries([doc("a", "2026-06-01", { toName: "Lumina Events & Co" })]));
+    const groups = groupEntriesByCompany(
+      buildCompanyEntries([
+        doc("a", "2026-06-01", { toName: "Lumina Events & Co" }),
+      ]),
+    );
     expect(groups[0].key).toBe("name-lumina-events-co");
   });
 });
@@ -125,9 +158,15 @@ describe("sorting, months and types", () => {
   );
 
   it("keeps 'No client yet' last whatever the sort", () => {
-    expect(sortCompanyGroups(groups, "newest").map((group) => group.name)).toEqual(["Zeta", "Alpha", null]);
-    expect(sortCompanyGroups(groups, "oldest").map((group) => group.name)).toEqual(["Alpha", "Zeta", null]);
-    expect(sortCompanyGroups(groups, "name").map((group) => group.name)).toEqual(["Alpha", "Zeta", null]);
+    expect(
+      sortCompanyGroups(groups, "newest").map((group) => group.name),
+    ).toEqual(["Zeta", "Alpha", null]);
+    expect(
+      sortCompanyGroups(groups, "oldest").map((group) => group.name),
+    ).toEqual(["Alpha", "Zeta", null]);
+    expect(
+      sortCompanyGroups(groups, "name").map((group) => group.name),
+    ).toEqual(["Alpha", "Zeta", null]);
   });
 
   it("splits into months and counts types", () => {
@@ -136,13 +175,18 @@ describe("sorting, months and types", () => {
       doc("b", "2026-06-18T09:30:00"),
     ]).map((entry) => ({ ...entry, documentType: "invoice" as const }));
 
-    expect(groupEntriesByMonth(entries).map((month) => month.label)).toEqual(["June 2026", "May 2026"]);
-    expect(countEntriesByType(entries)).toEqual([{ count: 2, type: "invoice" }]);
+    expect(groupEntriesByMonth(entries).map((month) => month.label)).toEqual([
+      "June 2026",
+      "May 2026",
+    ]);
+    expect(countEntriesByType(entries)).toEqual([
+      { count: 2, type: "invoice" },
+    ]);
   });
 });
 
 describe("getEntryStatus", () => {
-  it("reads signed, awaiting, not shared and received", () => {
+  it("reads signed, awaiting, viewed, not shared and received", () => {
     const [a, b, c, d, e] = buildCompanyEntries([
       doc("a", "2026-06-01"),
       doc("b", "2026-06-02"),
@@ -171,11 +215,29 @@ describe("getEntryStatus", () => {
     ).toEqual([
       "signed",
       "awaiting",
-      "awaiting",
+      // Opened by the recipient but not signed: its own status now.
+      "viewed",
       "not-shared",
       "not-shared",
       "received",
       "signed",
     ]);
+  });
+});
+
+describe("isEntryStatus", () => {
+  it("accepts every status and rejects anything else", () => {
+    for (const status of [
+      "awaiting",
+      "not-shared",
+      "received",
+      "signed",
+      "viewed",
+    ]) {
+      expect(isEntryStatus(status)).toBe(true);
+    }
+    expect(isEntryStatus("all")).toBe(false);
+    expect(isEntryStatus("toString")).toBe(false);
+    expect(isEntryStatus("")).toBe(false);
   });
 });

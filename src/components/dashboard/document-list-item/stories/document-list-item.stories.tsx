@@ -67,7 +67,9 @@ export const Default: Story = {
     await expect(args.onPreview).toHaveBeenCalledOnce();
 
     // The row itself has only Download PDF and the ⋮ menu.
-    await expect(canvas.queryByRole("button", { name: `Edit ${documentTitle}` })).toBeNull();
+    await expect(
+      canvas.queryByRole("button", { name: `Edit ${documentTitle}` }),
+    ).toBeNull();
     await userEvent.click(
       canvas.getByRole("button", { name: `Download PDF of ${documentTitle}` }),
     );
@@ -76,13 +78,15 @@ export const Default: Story = {
     // Every action is in the menu, Delete last.
     const openMenu = () =>
       userEvent.click(
-        canvas.getByRole("button", { name: `More actions for ${documentTitle}` }),
+        canvas.getByRole("button", {
+          name: `More actions for ${documentTitle}`,
+        }),
       );
     await openMenu();
-    await userEvent.click(await page.findByRole("button", { name: "Edit" }));
+    await userEvent.click(await page.findByRole("menuitem", { name: "Edit" }));
     await expect(args.onEdit).toHaveBeenCalledOnce();
     await openMenu();
-    await userEvent.click(await page.findByRole("button", { name: "Delete" }));
+    await userEvent.click(await page.findByRole("menuitem", { name: "Delete" }));
     await expect(args.onDelete).toHaveBeenCalledWith(document);
   },
 };
@@ -113,6 +117,14 @@ export const KeyDetails: Story = {
   },
 };
 
+/** My documents tab: a shared document the recipient has opened reads "Viewed". */
+export const Viewed: Story = {
+  args: { status: "viewed" },
+  play: async ({ canvasElement }) => {
+    await expect(within(canvasElement).getByText("Viewed")).toBeVisible();
+  },
+};
+
 export const KeyDetailsPhone: Story = {
   ...KeyDetails,
   globals: { viewport: { value: "mobile1", isRotated: false } },
@@ -128,7 +140,10 @@ export const Cv: Story = {
   args: {
     document: {
       ...document,
-      templateSnapshot: { ...document.templateSnapshot, documentType: "cv" as const },
+      templateSnapshot: {
+        ...document.templateSnapshot,
+        documentType: "cv" as const,
+      },
       values: {
         fullName: "Maya Chen",
         jobTitle: "Product Designer",
@@ -138,7 +153,9 @@ export const Cv: Story = {
   },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    await expect(canvas.getByText("Maya Chen · Product Designer")).toBeVisible();
+    await expect(
+      canvas.getByText("Maya Chen · Product Designer"),
+    ).toBeVisible();
     await expect(canvas.getByText("CV")).toBeVisible();
     await expect(canvas.queryByText("No client yet")).toBeNull();
   },
@@ -151,7 +168,7 @@ export const WithShare: Story = {
     await userEvent.click(
       canvas.getByRole("button", { name: `More actions for ${documentTitle}` }),
     );
-    await userEvent.click(canvas.getByRole("button", { name: "Share" }));
+    await userEvent.click(canvas.getByRole("menuitem", { name: "Share" }));
     await expect(args.onShare).toHaveBeenCalledWith(document);
   },
 };
@@ -165,7 +182,7 @@ export const WithViewShared: Story = {
       canvas.getByRole("button", { name: `More actions for ${documentTitle}` }),
     );
     await userEvent.click(
-      canvas.getByRole("button", { name: "View shared copy" }),
+      canvas.getByRole("menuitem", { name: "View shared copy" }),
     );
     await expect(args.onViewShared).toHaveBeenCalledWith(document);
   },
@@ -179,9 +196,9 @@ export const WithDuplicate: Story = {
     await userEvent.click(
       canvas.getByRole("button", { name: `More actions for ${documentTitle}` }),
     );
-    await userEvent.click(canvas.getByRole("button", { name: "Duplicate" }));
+    await userEvent.click(canvas.getByRole("menuitem", { name: "Duplicate" }));
     await expect(args.onDuplicate).toHaveBeenCalledWith(document);
-    await expect(canvas.queryByRole("button", { name: "Share" })).toBeNull();
+    await expect(canvas.queryByRole("menuitem", { name: "Share" })).toBeNull();
   },
 };
 
@@ -196,8 +213,12 @@ export const DuplicateHiddenWithoutSnapshot: Story = {
     await userEvent.click(
       canvas.getByRole("button", { name: `More actions for ${documentTitle}` }),
     );
-    await expect(canvas.getByRole("button", { name: "Edit" })).toBeInTheDocument();
-    await expect(canvas.queryByRole("button", { name: "Duplicate" })).toBeNull();
+    await expect(
+      canvas.getByRole("menuitem", { name: "Edit" }),
+    ).toBeInTheDocument();
+    await expect(
+      canvas.queryByRole("menuitem", { name: "Duplicate" }),
+    ).toBeNull();
   },
 };
 
@@ -212,9 +233,11 @@ export const MenuOnPhone: Story = {
     );
     const sheet = await page.findByRole("dialog", { name: documentTitle });
     await expect(sheet).toHaveAttribute("data-layout", "sheet");
-    await userEvent.click(within(sheet).getByRole("button", { name: "Share" }));
+    await userEvent.click(within(sheet).getByRole("menuitem", { name: "Share" }));
     await expect(args.onShare).toHaveBeenCalledWith(document);
-    await expect(page.queryByRole("dialog", { name: documentTitle })).toBeNull();
+    await expect(
+      page.queryByRole("dialog", { name: documentTitle }),
+    ).toBeNull();
   },
 };
 
@@ -224,9 +247,11 @@ export const WithoutShare: Story = {
     await userEvent.click(
       canvas.getByRole("button", { name: `More actions for ${documentTitle}` }),
     );
-    await expect(canvas.getByRole("button", { name: "Download PDF" })).toBeInTheDocument();
-    await expect(canvas.queryByRole("button", { name: "Share" })).toBeNull();
-    await expect(canvas.queryByRole("button", { name: "Delete" })).toBeNull();
+    await expect(
+      canvas.getByRole("menuitem", { name: "Download PDF" }),
+    ).toBeInTheDocument();
+    await expect(canvas.queryByRole("menuitem", { name: "Share" })).toBeNull();
+    await expect(canvas.queryByRole("menuitem", { name: "Delete" })).toBeNull();
   },
 };
 
@@ -249,7 +274,7 @@ export const ActionsSheetOnPhone: Story = {
     const sheet = await page.findByRole("dialog", { name: documentTitle });
     await expect(sheet).toHaveAttribute("data-layout", "sheet");
     await userEvent.click(
-      within(sheet).getByRole("button", { hidden: true, name: "Download PDF" }),
+      within(sheet).getByRole("menuitem", { hidden: true, name: "Download PDF" }),
     );
     await expect(args.onPrint).toHaveBeenCalledWith(document);
   },

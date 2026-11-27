@@ -11,6 +11,7 @@ import { Avatar } from "@/components/commons/avatar/avatar";
 import { Button } from "@/components/commons/button/button";
 import { ButtonIcon } from "@/components/commons/button-icon/button-icon";
 import { Dropdown } from "@/components/commons/dropdown/dropdown";
+import { DropdownMenuItem } from "@/components/commons/dropdown-menu-item/dropdown-menu-item";
 import { isOptimisticClient } from "@/hooks/queries/use-clients";
 import { getAvatarColorClass } from "@/lib/clients/avatar-color";
 import { iconSize } from "@/lib/icons";
@@ -76,26 +77,19 @@ export const ClientListItem = ({
             sheetIcon={UsersThreeIcon}
             sheetTitle={client.name}
           >
-            <Button
-              className="w-full justify-start gap-2 px-3 whitespace-nowrap"
-              icon={<PencilSimpleIcon aria-hidden size={16} weight="bold" />}
-              iconPosition="left"
+            <DropdownMenuItem
+              icon={PencilSimpleIcon}
               onClick={() => onEdit(client)}
-              size="sm"
-              variant="ghost"
             >
               Edit client
-            </Button>
-            <Button
-              className="w-full justify-start gap-2 px-3 whitespace-nowrap text-error hover:bg-error/10"
-              icon={<TrashIcon aria-hidden size={16} weight="bold" />}
-              iconPosition="left"
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              icon={TrashIcon}
               onClick={() => onDelete(client)}
-              size="sm"
-              variant="ghost"
+              tone="danger"
             >
               Delete
-            </Button>
+            </DropdownMenuItem>
           </Dropdown>
         )}
       </div>

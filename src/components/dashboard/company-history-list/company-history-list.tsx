@@ -65,7 +65,7 @@ export const CompanyHistoryList = ({
     <section
       aria-label="Documents"
       className={cn(
-        "company-history-list flex min-w-0 flex-col rounded-box border border-steel-mist bg-base-100 p-4 sm:p-6",
+        "company-history-list flex min-w-0 flex-col rounded-xl border border-steel-mist bg-base-100 p-4 sm:p-6",
         className,
       )}
     >

@@ -49,7 +49,7 @@ export const CompanySummaryCard = ({
     <section
       aria-label={`${name} details`}
       className={cn(
-        "company-summary-card rounded-box border border-steel-mist bg-base-100 p-4",
+        "company-summary-card rounded-xl border border-steel-mist bg-base-100 p-4",
         className,
       )}
     >

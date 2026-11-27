@@ -54,14 +54,14 @@ export const Default: Story = {
     await userEvent.click(
       canvas.getByRole("button", { name: "More actions for Maya Chen" }),
     );
-    await userEvent.click(canvas.getByRole("button", { name: "Edit client" }));
+    await userEvent.click(canvas.getByRole("menuitem", { name: "Edit client" }));
     await expect(args.onEdit).toHaveBeenCalledOnce();
 
     // The menu closes after each action, so reopen it for the next one.
     await userEvent.click(
       canvas.getByRole("button", { name: "More actions for Maya Chen" }),
     );
-    await userEvent.click(canvas.getByRole("button", { name: "Delete" }));
+    await userEvent.click(canvas.getByRole("menuitem", { name: "Delete" }));
     await expect(args.onDelete).toHaveBeenCalledOnce();
     await expect(args.onPreview).toHaveBeenCalledOnce();
   },
@@ -118,7 +118,7 @@ export const MenuOnPhone: Story = {
     await expect(sheet).toHaveAttribute("data-layout", "sheet");
 
     await userEvent.click(
-      within(sheet).getByRole("button", { name: "Edit client" }),
+      within(sheet).getByRole("menuitem", { name: "Edit client" }),
     );
     await expect(args.onEdit).toHaveBeenCalledOnce();
     await expect(page.queryByRole("dialog", { name: "Maya Chen" })).toBeNull();

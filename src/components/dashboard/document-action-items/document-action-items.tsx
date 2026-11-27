@@ -2,15 +2,12 @@ import {
   ArrowSquareOutIcon,
   CopyIcon,
   DownloadSimpleIcon,
-  type Icon,
   PencilSimpleIcon,
   ShareNetworkIcon,
   TrashIcon,
 } from "@phosphor-icons/react";
 
-import { Button } from "@/components/commons/button/button";
-import { iconSize } from "@/lib/icons";
-import { cn } from "@/lib/utils";
+import { DropdownMenuItem } from "@/components/commons/dropdown-menu-item/dropdown-menu-item";
 import type { UserDocument } from "@/types/template";
 
 export interface DocumentActionItemsProps {
@@ -32,44 +29,12 @@ export interface DocumentActionItemsProps {
   onDelete?: (document: UserDocument) => void;
 }
 
-/** One menu action: icon and label, red for destructive ones. */
-const ActionItem = ({
-  icon: ItemIcon,
-  label,
-  onClick,
-  tone = "default",
-}: {
-  icon: Icon;
-  label: string;
-  onClick: () => void;
-  tone?: "danger" | "default";
-}) => (
-  <Button
-    className={cn(
-      "w-full justify-start gap-2 px-3 whitespace-nowrap",
-      tone === "danger" && "text-error hover:bg-error/10",
-    )}
-    icon={
-      <ItemIcon
-        aria-hidden
-        size={iconSize.control}
-        weight="bold"
-      />
-    }
-    iconPosition="left"
-    onClick={onClick}
-    size="sm"
-    variant="ghost"
-  >
-    {label}
-  </Button>
-);
-
 /**
  * Every action on one of the user's own documents, in one fixed order, for a
  * row's ⋮ menu (`Dropdown` children: a popover on desktop, a bottom sheet on
  * phones): Edit, Download PDF, Duplicate, Share, View shared copy, then a
- * divider and Delete. Shared by the My documents / CVs rows and the Companies
+ * divider and Delete. Each is a {@link DropdownMenuItem} (`role="menuitem"`),
+ * so the Dropdown's arrow-key navigation reaches it. Shared by the My documents / CVs rows and the Companies
  * rows so the two menus never drift apart. Optional actions appear only when
  * their handler is passed.
  *
@@ -88,49 +53,55 @@ export const DocumentActionItems = ({
   onViewShared,
 }: DocumentActionItemsProps) => (
   <>
-    <ActionItem
+    <DropdownMenuItem
       icon={PencilSimpleIcon}
-      label="Edit"
       onClick={() => onEdit(document)}
-    />
-    <ActionItem
+    >
+      Edit
+    </DropdownMenuItem>
+    <DropdownMenuItem
       icon={DownloadSimpleIcon}
-      label="Download PDF"
       onClick={() => onDownload(document)}
-    />
+    >
+      Download PDF
+    </DropdownMenuItem>
     {onDuplicate && document.templateSnapshot ? (
-      <ActionItem
+      <DropdownMenuItem
         icon={CopyIcon}
-        label="Duplicate"
         onClick={() => onDuplicate(document)}
-      />
+      >
+        Duplicate
+      </DropdownMenuItem>
     ) : null}
     {onShare ? (
-      <ActionItem
+      <DropdownMenuItem
         icon={ShareNetworkIcon}
-        label="Share"
         onClick={() => onShare(document)}
-      />
+      >
+        Share
+      </DropdownMenuItem>
     ) : null}
     {onShare && onViewShared ? (
-      <ActionItem
+      <DropdownMenuItem
         icon={ArrowSquareOutIcon}
-        label="View shared copy"
         onClick={() => onViewShared(document)}
-      />
+      >
+        View shared copy
+      </DropdownMenuItem>
     ) : null}
     {onDelete ? (
       <>
         <div
-          aria-hidden
           className="my-1 h-px bg-steel-mist/60"
+          role="separator"
         />
-        <ActionItem
+        <DropdownMenuItem
           icon={TrashIcon}
-          label="Delete"
           onClick={() => onDelete(document)}
           tone="danger"
-        />
+        >
+          Delete
+        </DropdownMenuItem>
       </>
     ) : null}
   </>

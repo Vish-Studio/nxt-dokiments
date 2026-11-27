@@ -25,6 +25,13 @@ type DropdownOption = SelectOption & {
   description?: string;
 };
 
+/**
+ * Every item the keyboard can reach in an open menu: the `groups` radios and
+ * the `DropdownMenuItem`s of an action menu. Disabled items are skipped.
+ */
+const menuItemSelector =
+  '[role="menuitem"]:not(:disabled), [role="menuitemradio"]:not(:disabled)';
+
 export interface DropdownGroup {
   label: string;
   value: string;
@@ -34,7 +41,23 @@ export interface DropdownGroup {
 
 export interface DropdownProps {
   ariaLabel: string;
+  /**
+   * Custom popup content. By default it is an action menu (`role="menu"`) whose
+   * actionable children must be `DropdownMenuItem`s, so the arrow keys work.
+   * Content that isn't a list of actions sets `popupRole="dialog"`.
+   */
   children?: ReactNode;
+  /**
+   * What a `children` popup is, for assistive technology and the keyboard.
+   * Ignored with `groups`, which is always a menu.
+   * - `menu` (default): an action menu. The trigger opens it with Enter,
+   *   Space or ArrowDown (ArrowUp focuses the last item), focus moves to the
+   *   first item, arrows, Home and End move between items, Escape and
+   *   Shift+Tab close it on the trigger, and Tab leaves it.
+   * - `dialog`: a panel with its own controls, such as the notification feed.
+   *   Opening leaves focus on the trigger and Tab walks the panel.
+   */
+  popupRole?: "dialog" | "menu";
   trigger?: ReactNode;
   iconTrigger?: ReactNode;
   /** Shape of the `iconTrigger` button. Defaults to `circle`. */
@@ -67,7 +90,7 @@ export interface DropdownProps {
 
 export const Dropdown = ({
   align = "end", ariaLabel, buttonClassName, children, className,
-  closeOnSelect = true, disabled = false, groups, iconTrigger, iconTriggerShape = "circle", menuClassName, sheetIcon, sheetSecondaryAction, sheetTitle, trigger,
+  closeOnSelect = true, disabled = false, groups, iconTrigger, iconTriggerShape = "circle", menuClassName, popupRole = "menu", sheetIcon, sheetSecondaryAction, sheetTitle, trigger,
 }: DropdownProps) => {
   const isPhone = useMediaQuery(phoneMediaQuery);
   const isSheet = Boolean(sheetTitle) && isPhone;
@@ -76,13 +99,15 @@ export const Dropdown = ({
   const triggerRef = useRef<HTMLButtonElement>(null);
   const menuRef = useRef<HTMLDivElement>(null);
   const menuId = useId();
-  const hasMenu = Boolean(groups);
+  // A `children` popup is a menu unless the caller says it is a dialog.
+  const hasMenu = Boolean(groups) || (Boolean(children) && popupRole === "menu");
+  const haspopup = groups ? "menu" : children ? popupRole : undefined;
   const initialFocus = useRef<"first" | "last">("first");
 
   useEffect(() => {
     if (!isOpen) return;
     if (hasMenu) {
-      const items = menuRef.current?.querySelectorAll<HTMLButtonElement>('[role="menuitemradio"]:not(:disabled)');
+      const items = menuRef.current?.querySelectorAll<HTMLButtonElement>(menuItemSelector);
       const target = initialFocus.current === "last" ? items?.[items.length - 1] : items?.[0];
       target?.focus();
     }
@@ -112,8 +137,17 @@ export const Dropdown = ({
   }, [isOpen, hasMenu, isSheet]);
 
   const handleMenuKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
-    if (!groups) return;
-    const items = Array.from(menuRef.current?.querySelectorAll<HTMLButtonElement>('[role="menuitemradio"]:not(:disabled)') ?? []);
+    if (!hasMenu) return;
+    // Shift+Tab would land on the trigger with the menu still open; close it
+    // there, as Escape does. Tab needs nothing: the items are `tabIndex={-1}`,
+    // so focus leaves the dropdown and the focus-out listener closes it.
+    if (!groups && event.key === "Tab" && event.shiftKey && !isSheet) {
+      event.preventDefault();
+      setIsOpen(false);
+      triggerRef.current?.focus();
+      return;
+    }
+    const items = Array.from(menuRef.current?.querySelectorAll<HTMLButtonElement>(menuItemSelector) ?? []);
     const current = items.indexOf(document.activeElement as HTMLButtonElement);
     let next = current;
     if (event.key === "ArrowDown") next = (current + 1) % items.length;
@@ -131,7 +165,7 @@ export const Dropdown = ({
   };
 
   const openWithKeyboard = (event: KeyboardEvent<HTMLButtonElement>) => {
-    if (groups && ["ArrowDown", "ArrowUp"].includes(event.key)) {
+    if (hasMenu && ["ArrowDown", "ArrowUp"].includes(event.key)) {
       event.preventDefault();
       initialFocus.current = event.key === "ArrowUp" ? "last" : "first";
       setIsOpen(true);
@@ -139,20 +173,23 @@ export const Dropdown = ({
   };
 
   // One menu body, shown in the anchored popover or, on phones, in the sheet,
-  // where every item grows to a 44px touch target.
+  // where every menu item grows to a 44px touch target (a dialog body such as
+  // the notification feed keeps its own sizes). The `!` is needed: the
+  // unlayered `.btn.btn-sm` rule in globals.css outranks layered utilities.
   const menu = (
     <div
       aria-label={ariaLabel}
-      className={isSheet ? "-mx-2 [&_button]:h-11 [&_button]:min-h-11" : cn("dropdown-content z-50 mt-2 max-h-80 overflow-y-auto rounded-box border border-steel-mist bg-base-100 p-2 text-nox-noir shadow-sm", menuClassName)}
+      className={isSheet ? cn("-mx-2", hasMenu && "[&_button]:h-11! [&_button]:min-h-11!") : cn("dropdown-content z-50 mt-2 max-h-80 overflow-y-auto rounded-box border border-steel-mist bg-base-100 p-2 text-nox-noir shadow-sm", menuClassName)}
       id={menuId}
-      // Custom action menus (children) close once one of their buttons or links
+      // Custom popups (children) close once one of their buttons or links
       // is used; a link would otherwise leave the sheet open over the next page.
       onClick={(event) => {
         if (!groups && closeOnSelect && (event.target as Element).closest("button, a[href]")) setIsOpen(false);
       }}
       onKeyDown={handleMenuKeyDown}
       ref={menuRef}
-      role={groups ? "menu" : undefined}
+      // In the sheet the Modal is already the dialog, so a dialog body needs no role.
+      role={hasMenu ? "menu" : isSheet ? undefined : popupRole}
     >
       {groups?.map((group) => (
         <div aria-label={group.label} className="border-t border-steel-mist/50 py-1 first:border-0" key={group.label} role="group">
@@ -195,7 +232,7 @@ export const Dropdown = ({
         <ButtonIcon
           aria-controls={isOpen ? menuId : undefined}
           aria-expanded={isOpen}
-          aria-haspopup={groups || children ? "menu" : undefined}
+          aria-haspopup={haspopup}
           aria-label={ariaLabel}
           className={buttonClassName}
           disabled={disabled}
@@ -211,7 +248,7 @@ export const Dropdown = ({
         <Button
           aria-controls={isOpen ? menuId : undefined}
           aria-expanded={isOpen}
-          aria-haspopup={groups || children ? "menu" : undefined}
+          aria-haspopup={haspopup}
           aria-label={ariaLabel}
           className={cn(dropdownControlClassName, buttonClassName)}
           disabled={disabled}

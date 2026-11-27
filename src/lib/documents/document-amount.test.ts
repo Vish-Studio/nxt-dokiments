@@ -6,7 +6,9 @@ import { getDocumentAmount } from "./document-amount";
 
 describe("getDocumentAmount", () => {
   it("prefers the typed total and keeps a typed currency", () => {
-    expect(getDocumentAmount({ fee: "500", total: "Rs 10,000" })).toBe("Rs 10,000");
+    expect(getDocumentAmount({ fee: "500", total: "Rs 10,000" })).toBe(
+      "Rs 10,000",
+    );
   });
 
   it("formats plain numbers", () => {

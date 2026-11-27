@@ -223,7 +223,7 @@ const openRowAction = async (
     await canvas.findByRole("button", { name: `More actions for ${title}` }),
   );
   await userEvent.click(
-    await within(canvasElement.ownerDocument.body).findByRole("button", {
+    await within(canvasElement.ownerDocument.body).findByRole("menuitem", {
       name: action,
     }),
   );
@@ -307,7 +307,11 @@ export const WithDocuments: Story = {
     await expect(canvas.getByText("18/06/26")).toBeVisible();
     // The row shows who it is for, not the template style.
     await expect(canvas.queryByText("Classic designs")).toBeNull();
-    await expect(canvas.getAllByText("Not shared")[0]).toBeVisible();
+    await expect(
+      canvas
+        .getAllByText("Not shared")
+        .some((element) => element.checkVisibility()),
+    ).toBe(true);
     await userEvent.click(
       canvas.getByRole("button", {
         name: "Open preview for Lumina Events Invoice",
@@ -392,7 +396,7 @@ export const DuplicateDocument: Story = {
           name: "More actions for Lumina Events Invoice",
         }),
       );
-      await userEvent.click(canvas.getByRole("button", { name: "Duplicate" }));
+      await userEvent.click(canvas.getByRole("menuitem", { name: "Duplicate" }));
       await expect(
         await canvas.findByDisplayValue("Copy of March Invoice"),
       ).toBeVisible();
@@ -920,11 +924,10 @@ export const ByCompany: Story = {
       "href",
       "/my-documents/companies/client-client_northline_01",
     );
+    // The company card has no "+"; new documents start from the toolbar.
     await expect(
-      within(northline).getByRole("link", {
-        name: "New document for Northline Studio",
-      }),
-    ).toHaveAttribute("href", "/my-documents?new=1&client=client_northline_01");
+      within(northline).queryByRole("link", { name: /^New document for/ }),
+    ).toBeNull();
 
     // Collapse and reopen a company.
     const toggle = within(northline).getByRole("button", {
@@ -936,7 +939,12 @@ export const ByCompany: Story = {
     await expect(toggle).toHaveAttribute("aria-expanded", "true");
 
     // Amounts at a glance; CVs stay out of the company groups.
-    await expect(within(northline).getByText("1,250.00")).toBeVisible();
+    // Phone and desktop rows both carry the amount; one is shown per size.
+    await expect(
+      within(northline)
+        .getAllByText("1,250.00")
+        .some((element) => element.checkVisibility()),
+    ).toBe(true);
     await expect(canvas.queryByText("Product designer CV")).toBeNull();
 
     // Each row has a vertical menu.

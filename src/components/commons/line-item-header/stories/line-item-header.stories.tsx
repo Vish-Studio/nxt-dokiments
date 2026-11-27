@@ -34,10 +34,10 @@ export const FirstItem: Story = {
       canvas.getByRole("button", { name: "More actions for item 1" }),
     );
     await expect(
-      canvas.getByRole("button", { name: "Move up" }),
+      canvas.getByRole("menuitem", { name: "Move up" }),
     ).toBeDisabled();
     await expect(
-      canvas.getByRole("button", { name: "Move down" }),
+      canvas.getByRole("menuitem", { name: "Move down" }),
     ).toBeEnabled();
   },
 };

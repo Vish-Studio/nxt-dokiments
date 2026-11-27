@@ -78,6 +78,7 @@ import {
   entryStatusLabels,
   getDocumentCompanyName,
   getEntryStatus,
+  isEntryStatus,
   getSharedCompanyName,
   groupEntriesByCompany,
   sortCompanyGroups,
@@ -495,22 +496,18 @@ export const DocumentsView = () => {
                 defaultValue: "all",
                 options: [
                   { label: "Any status", value: "all" },
-                  ...(["awaiting", "signed", "not-shared"] as const).map(
-                    (value) => ({ label: entryStatusLabels[value], value }),
-                  ),
+                  ...(
+                    ["awaiting", "viewed", "signed", "not-shared"] as const
+                  ).map((value) => ({
+                    label: entryStatusLabels[value],
+                    value,
+                  })),
                   ...(documentSharingEnabled
                     ? [{ label: entryStatusLabels.received, value: "received" }]
                     : []),
                 ],
                 onChange: (value: string) =>
-                  setStatus(
-                    value === "awaiting" ||
-                      value === "signed" ||
-                      value === "not-shared" ||
-                      value === "received"
-                      ? value
-                      : "all",
-                  ),
+                  setStatus(isEntryStatus(value) ? value : "all"),
               },
             ]
           : []),
