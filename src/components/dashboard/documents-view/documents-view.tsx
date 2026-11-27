@@ -6,11 +6,12 @@ import {
   MagnifyingGlassIcon,
   IdentificationCardIcon,
   PlusIcon,
+  StackIcon,
+  StorefrontIcon,
   TrashIcon,
   UserIcon,
   UsersThreeIcon,
 } from "@phosphor-icons/react";
-import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import {
   Suspense,
@@ -24,13 +25,12 @@ import {
 import { Button } from "@/components/commons/button/button";
 import CollectionToolbar from "@/components/commons/collection-toolbar/collection-toolbar";
 import { ConfirmDialog } from "@/components/commons/confirm-dialog/confirm-dialog";
+import { DocumentPaper } from "@/components/commons/document-paper/document-paper";
 import { EmptyState } from "@/components/commons/empty-state/empty-state";
 import { FloatingActionButton } from "@/components/commons/floating-action-button/floating-action-button";
 import { Input } from "@/components/commons/input/input";
-import { LoadingStatus } from "@/components/commons/loading-status/loading-status";
 import { SidePanel } from "@/components/commons/side-panel/side-panel";
-import { TemplateCardSkeletonGrid } from "@/components/commons/template-card-skeleton/template-card-skeleton";
-import { TemplateCard } from "@/components/commons/template-card/template-card";
+import { LinkButton } from "@/components/commons/link-button/link-button";
 import { TemplateDocument } from "@/components/commons/template-document/template-document";
 import { TemplateForm } from "@/components/commons/template-form/template-form";
 import { TemplatePreviewDialog } from "@/components/commons/template-preview-dialog/template-preview-dialog";
@@ -46,6 +46,8 @@ import {
   documentListColumns,
   documentSkeletonRow,
 } from "@/components/dashboard/document-list/document-list";
+import { TemplatePicker } from "@/components/dashboard/template-picker/template-picker";
+import { TemplatePickerSkeleton } from "@/components/dashboard/template-picker/template-picker-skeleton";
 import { ShareDialog } from "@/components/dashboard/share-dialog/share-dialog";
 import { SharedCopyStatus } from "@/components/dashboard/shared-copy-status/shared-copy-status";
 import { ResponsiveHeaderControls } from "@/components/dashboard/responsive-header-controls/responsive-header-controls";
@@ -73,6 +75,7 @@ import {
   groupEntriesByCompany,
   sortCompanyGroups,
 } from "@/lib/documents/company-groups";
+import { getTemplateLastUsed } from "@/lib/documents/template-picker";
 import { buildDuplicateDraft } from "@/lib/documents/duplicate-draft";
 import { getDocumentDetails } from "@/lib/documents/document-details";
 import { getEmptyDocumentFields } from "@/lib/documents/empty-fields";
@@ -118,6 +121,13 @@ import {
 import { iconSize, navIconWeight } from "@/lib/icons";
 
 type Mode = "list" | "picker" | "editor";
+
+/**
+ * Marks the history entry pushed when the picker or editor opens, so the
+ * top-bar back arrow knows it can go back through it instead of stacking a
+ * second list entry.
+ */
+const subPageHistoryKey = "dokimentsSubPage";
 
 const EMPTY_DOCUMENTS: UserDocument[] = [];
 const EMPTY_SHARED_DOCUMENTS: SharedDocument[] = [];
@@ -256,6 +266,30 @@ export const DocumentsView = () => {
     () => saved.map((item) => item.template),
     [saved],
   );
+
+  // Orders each picker group by what the user reached for last.
+  const templateLastUsed = useMemo(
+    () => getTemplateLastUsed(documents),
+    [documents],
+  );
+
+  // The picker's "For: …" chip: the client-book record when the company page
+  // passed one, else the bare company name.
+  const pickerContextLabel = pendingPrefill
+    ? (() => {
+        const client = pendingPrefill.clientId
+          ? clients.find(
+              (candidate) => candidate.id === pendingPrefill.clientId,
+            )
+          : undefined;
+        return (
+          client?.companyName?.trim() ||
+          client?.name?.trim() ||
+          pendingPrefill.companyName?.trim() ||
+          undefined
+        );
+      })()
+    : undefined;
 
   const sharedCopyIds = useMemo(
     () =>
@@ -535,6 +569,38 @@ export const DocumentsView = () => {
     setIsEmptyFieldsDialogOpen(false);
     setIsEditorExportOpen(false);
     setIsEditorPreviewOpen(false);
+  };
+
+  // The picker and editor are sub-pages without a URL of their own. One
+  // history entry is pushed on the way in, so the browser back button and the
+  // phone back gesture return to the list instead of leaving My Documents.
+  const isSubPage = mode !== "list";
+  const onHistoryBack = useEffectEvent(() => goToList());
+  useEffect(() => {
+    if (!isSubPage) return;
+
+    if (!window.history.state?.[subPageHistoryKey]) {
+      // Keeps Next's own state (the router tree) so its popstate handler can
+      // restore this same route rather than reload it.
+      window.history.pushState(
+        { ...window.history.state, [subPageHistoryKey]: true },
+        "",
+      );
+    }
+
+    const handlePopState = () => onHistoryBack();
+    window.addEventListener("popstate", handlePopState);
+    return () => window.removeEventListener("popstate", handlePopState);
+  }, [isSubPage]);
+
+  // The top bar's back arrow. Goes back through the pushed entry when there is
+  // one, so a later Back doesn't land on the same list a second time.
+  const leaveSubPage = () => {
+    if (window.history.state?.[subPageHistoryKey]) {
+      window.history.back();
+    } else {
+      goToList();
+    }
   };
 
   // The client details for a document started from a company page: the
@@ -890,10 +956,10 @@ export const DocumentsView = () => {
     mode === "list"
       ? null
       : {
-          back: { label: "My Documents", onClick: goToList },
+          back: { label: "My Documents", onClick: leaveSubPage },
           title:
             mode === "picker"
-              ? "Choose a template"
+              ? "New document"
               : activeDocumentId
                 ? "Edit document"
                 : duplicateSource
@@ -1037,14 +1103,17 @@ export const DocumentsView = () => {
             </div>
           </div>
 
-          <div className="hidden lg:sticky lg:top-2 lg:block">
-            <TemplateDocument
-              density="compact"
-              highlightedFields={highlightedFields}
-              showPlaceholders
-              template={editorTemplate}
-              values={draftValues}
-            />
+          {/* The live page on a grey desk, so it reads as the paper being filled. */}
+          <div className="hidden rounded-box bg-base-200 p-6 lg:sticky lg:top-2 lg:block">
+            <DocumentPaper>
+              <TemplateDocument
+                density="compact"
+                highlightedFields={highlightedFields}
+                showPlaceholders
+                template={editorTemplate}
+                values={draftValues}
+              />
+            </DocumentPaper>
           </div>
         </div>
 
@@ -1095,14 +1164,16 @@ export const DocumentsView = () => {
           title="Document preview"
           tone="purple"
         >
-          <div className="min-h-full bg-app-panel p-3 sm:p-5">
-            <TemplateDocument
-              density="compact"
-              highlightedFields={highlightedFields}
-              showPlaceholders
-              template={editorTemplate}
-              values={draftValues}
-            />
+          <div className="min-h-full bg-base-200 p-4 sm:p-6">
+            <DocumentPaper>
+              <TemplateDocument
+                density="compact"
+                highlightedFields={highlightedFields}
+                showPlaceholders
+                template={editorTemplate}
+                values={draftValues}
+              />
+            </DocumentPaper>
           </div>
         </SidePanel>
 
@@ -1170,48 +1241,47 @@ export const DocumentsView = () => {
   // --- Template picker ------------------------------------------------------
   if (mode === "picker") {
     return (
-      <div className="w-full pt-6">
-        <div className="border-b border-steel-mist pb-4">
-          <h3 className="font-title text-lg font-bold text-nox-noir">
-            Choose a template
-          </h3>
-          <p className="mt-1 text-sm leading-6 text-nox-noir/60">
-            Start a new document from one of your saved templates.
-          </p>
-        </div>
-
+      <div className="flex w-full flex-col pt-6">
         {isSavedLoading ? (
-          <div className="mt-6 w-full">
-            <LoadingStatus message="Loading your templates…" />
-            <TemplateCardSkeletonGrid />
-          </div>
+          <TemplatePickerSkeleton />
         ) : ownedTemplates.length === 0 ? (
-          <div className="mt-6 grid place-items-center rounded-box border border-dashed border-steel-mist bg-base-100 p-10 text-center">
-            <p className="font-title text-base font-bold text-nox-noir">
-              No templates yet
-            </p>
-            <p className="mt-1 max-w-sm text-sm text-nox-noir/60">
-              Save a template from the marketplace, then come back to create a
-              document from it.
-            </p>
-            <Link
-              className="btn btn-sm btn-primary mt-5 font-title font-semibold tracking-normal"
-              href="/marketplace"
-            >
-              Browse marketplace
-            </Link>
-          </div>
-        ) : (
-          <div className="mt-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-            {ownedTemplates.map((template) => (
-              <TemplateCard
-                key={template.id}
-                onPreview={() => setPreviewTemplate(template)}
-                saved
-                template={template}
+          <EmptyState
+            action={
+              <LinkButton
+                href="/marketplace"
+                icon={
+                  <StorefrontIcon
+                    aria-hidden
+                    size={iconSize.control}
+                    weight="bold"
+                  />
+                }
+                iconPosition="left"
+                size="sm"
+                variant="accent"
+              >
+                Browse marketplace
+              </LinkButton>
+            }
+            description="Save a template from the marketplace, then come back to create a document from it."
+            icon={
+              <StackIcon
+                aria-hidden
+                size={iconSize.feature}
+                weight="bold"
               />
-            ))}
-          </div>
+            }
+            title="No templates yet"
+          />
+        ) : (
+          <TemplatePicker
+            contextLabel={pickerContextLabel}
+            lastUsed={templateLastUsed}
+            onClearContext={() => setPendingPrefill(null)}
+            onPreview={setPreviewTemplate}
+            onUse={startNewDocument}
+            templates={ownedTemplates}
+          />
         )}
 
         <TemplatePreviewDialog

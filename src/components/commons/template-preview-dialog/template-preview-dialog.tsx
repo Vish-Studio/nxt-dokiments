@@ -10,6 +10,7 @@ import Link from "next/link";
 
 import { Badge } from "@/components/commons/badge/badge";
 import { Button } from "@/components/commons/button/button";
+import { DocumentPaper } from "@/components/commons/document-paper/document-paper";
 import type { SidePanelTone } from "@/components/commons/side-panel/side-panel";
 import { SidePanel } from "@/components/commons/side-panel/side-panel";
 import { TemplateDocument } from "@/components/commons/template-document/template-document";
@@ -209,7 +210,7 @@ export const TemplatePreviewDialog = ({
       title={documentName ?? template?.name}
     >
       {template && resolvedValues ? (
-        <div className="template-preview-document bg-base-200 p-3">
+        <div className="template-preview-document min-h-full bg-base-200 p-4 sm:p-5">
           {details ? (
             <div className="mb-4">
               <DocumentInfoTabs
@@ -232,12 +233,15 @@ export const TemplatePreviewDialog = ({
             </section>
           )}
 
-          <TemplateDocument
-            className="template-preview-paper"
-            density="compact"
-            template={template}
-            values={resolvedValues}
-          />
+          {/* Narrower than the info card, so the page reads as paper on the
+              desk rather than another card in the stack. */}
+          <DocumentPaper className="px-2 pb-2 sm:px-4">
+            <TemplateDocument
+              density="compact"
+              template={template}
+              values={resolvedValues}
+            />
+          </DocumentPaper>
         </div>
       ) : null}
     </SidePanel>

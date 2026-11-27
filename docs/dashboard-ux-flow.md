@@ -30,7 +30,14 @@ phones, Download PDF, Share and Save in reach; Delete stays in the row menu) →
 and Download PDF, plus Back to documents (closing it keeps editing).
 
 **B. Repeat client.** Dashboard "Continue work", or My Documents → Companies →
-company → "New document for {company}" → editor with the client prefilled.
+company → "New document for {company}" → template picker (a "For: {company}"
+chip) → editor with the client prefilled.
+
+**A2. New document from My Documents.** "New document" (yellow toolbar button,
+"+" on phones) → template picker → editor. Desktop: pick a row, check the live
+preview, "Use this template" (or Enter). Phones: the list only; one tap opens the
+editor. Back (top bar, browser or phone gesture) returns to the list. See
+`docs/choose-template-redesign.md`.
 
 **C. Send for signature.** My Documents → row ⋮ → Share → recipients → Send. The
 row's status pill then reads "Awaiting signature", then "Signed". Shared copy via
@@ -106,8 +113,9 @@ State          Loading skeleton → Empty → Error, always in the content area
 
 ## 5. Navigation and feedback
 
-- Sub-pages (company page, shared document, editor) show a back arrow in the top
-  bar; there is no "Back to …" button inside content.
+- Sub-pages (company page, shared document, template picker, editor) show a back
+  arrow in the top bar; there is no "Back to …" button inside content. In-place
+  sub-pages push a history entry, so the browser and phone back return to the list.
 - Side panels hold create/edit (clients, documents); dialogs only for decisions.
 - Success is a toast; failure is inline where it happened, with a way to retry.
 

@@ -1,0 +1,783 @@
+# Theme
+## Token summary
+- Fonts: Urbanist (title + body), Raleway (logo), Dancing Script (signature)
+- nox-noir #141414 (text, primary buttons, app chrome); golden-harvest #ffd066 (accent/active/brand); steel-mist #cfcfcf (borders)
+- base-100 #ffffff, base-200 #f6f6f6, base-300 #cfcfcf
+- Play tones (page banners/accents): pink #f7cad8, teal #6ccaba, purple #c9b6f4 (My Documents), blue #93cdf6, amber #f4d06a
+- success #16a34a, error #b42318
+- Radius: field/selector 0.5rem, box 1rem, tab 0.625rem, shell panel rounded-4xl
+- Shadow: soft 0 16px 40px rgb(20 20 20 / .08); depth 0 (flat)
+- Text muted: text-nox-noir/60; borders border-steel-mist
+- Breakpoints: Tailwind defaults (sm 640, lg 1024 = sidebar + desktop banner)
+## Raw globals.css
+```css
+@import "tailwindcss";
+@plugin "daisyui";
+@plugin "daisyui/theme" {
+  name: "dokiments";
+  default: true;
+  prefersdark: false;
+  color-scheme: light;
+  --color-base-100: #ffffff;
+  --color-base-200: #f6f6f6;
+  --color-base-300: #cfcfcf;
+  --color-base-content: #141414;
+  --color-primary: #141414;
+  --color-primary-content: #ffffff;
+  --color-secondary: #ffd066;
+  --color-secondary-content: #141414;
+  --color-accent: #141414;
+  --color-accent-content: #ffffff;
+  --color-neutral: #141414;
+  --color-neutral-content: #ffffff;
+  --color-info: #141414;
+  --color-info-content: #ffffff;
+  --color-success: #16a34a;
+  --color-success-content: #ffffff;
+  --color-warning: #ffd066;
+  --color-warning-content: #141414;
+  --color-error: #b42318;
+  --color-error-content: #ffffff;
+  --radius-selector: 0.5rem;
+  --radius-field: 0.5rem;
+  --radius-box: 1rem;
+  --size-selector: 0.25rem;
+  --size-field: 0.25rem;
+  --border: 1px;
+  --depth: 0;
+  --noise: 0;
+}
+
+:root {
+  --background: #ffffff;
+  --foreground: #141414;
+  --font-title: var(--font-urbanist), "Urbanist", Arial, Helvetica, sans-serif;
+  --font-body: var(--font-urbanist), "Urbanist", Arial, Helvetica, sans-serif;
+  --font-logo: var(--font-raleway), "Raleway", Arial, Helvetica, sans-serif;
+  --font-signature: var(--font-dancing-script), "Dancing Script", cursive;
+  --color-golden-harvest: #ffd066;
+  --color-nox-noir: #141414;
+  --color-steel-mist: #cfcfcf;
+  --color-play-pink: #f7cad8;
+  --color-play-teal: #6ccaba;
+  --color-play-purple: #c9b6f4;
+  --color-play-blue: #93cdf6;
+  --color-play-amber: #f4d06a;
+  --color-app-chrome: var(--color-nox-noir);
+  --color-app-chrome-content: #ffffff;
+  --color-app-panel: #ffffff;
+  --color-app-control: rgb(255 255 255 / 0.1);
+  --color-app-nav: rgb(255 255 255 / 0.5);
+  --color-app-nav-hover: rgb(255 255 255 / 0.1);
+  --color-app-active: var(--color-golden-harvest);
+  --color-app-active-content: var(--color-nox-noir);
+  --color-app-brand: var(--color-golden-harvest);
+  --color-app-brand-content: var(--color-nox-noir);
+  --shadow-soft: 0 16px 40px rgb(20 20 20 / 0.08);
+}
+
+@theme inline {
+  /* Segmented tab bars (`TabMenu`): tighter than `rounded-box` so a full-width
+     bar on mobile doesn't read as a pill. */
+  --radius-tab: 0.625rem;
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-golden-harvest: var(--color-golden-harvest);
+  --color-nox-noir: var(--color-nox-noir);
+  --color-steel-mist: var(--color-steel-mist);
+  --color-play-pink: var(--color-play-pink);
+  --color-play-teal: var(--color-play-teal);
+  --color-play-purple: var(--color-play-purple);
+  --color-play-blue: var(--color-play-blue);
+  --color-play-amber: var(--color-play-amber);
+  --color-app-chrome: var(--color-app-chrome);
+  --color-app-chrome-content: var(--color-app-chrome-content);
+  --color-app-panel: var(--color-app-panel);
+  --color-app-control: var(--color-app-control);
+  --color-app-nav: var(--color-app-nav);
+  --color-app-nav-hover: var(--color-app-nav-hover);
+  --color-app-active: var(--color-app-active);
+  --color-app-active-content: var(--color-app-active-content);
+  --color-app-brand: var(--color-app-brand);
+  --color-app-brand-content: var(--color-app-brand-content);
+  --font-sans: var(--font-body);
+  --font-title: var(--font-title);
+  --font-body: var(--font-body);
+  --font-logo: var(--font-logo);
+  --font-signature: var(--font-signature);
+  --shadow-soft: var(--shadow-soft);
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-body);
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+/* Tailwind v4 sets buttons to the default cursor; restore the pointer. */
+button:not(:disabled),
+label[role="button"],
+[role="button"]:not([aria-disabled="true"]) {
+  cursor: pointer;
+}
+
+button:disabled {
+  cursor: not-allowed;
+}
+
+.button-arrow-icon,
+.link-button-arrow-icon,
+.arrow-cta-icon {
+  display: inline-flex;
+  transition: transform 0.2s ease;
+}
+
+.group:hover .button-arrow-icon[data-direction="right"],
+.group:hover .link-button-arrow-icon[data-direction="right"],
+.group:hover .arrow-cta-icon {
+  transform: translateX(0.25rem);
+}
+
+.group:hover .button-arrow-icon[data-direction="left"],
+.group:hover .link-button-arrow-icon[data-direction="left"],
+.group:hover .arrow-cta-icon[data-direction="left"] {
+  transform: translateX(-0.25rem);
+}
+
+.group:hover .button-arrow-icon[data-direction="up-right"],
+.group:hover .link-button-arrow-icon[data-direction="up-right"] {
+  transform: translate(0.25rem, -0.25rem);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .button-arrow-icon,
+  .link-button-arrow-icon,
+  .arrow-cta-icon {
+    transition: none;
+  }
+}
+
+.btn.btn-sm {
+  min-height: 2.5rem;
+  height: 2.5rem;
+  padding-inline: 1rem;
+  font-size: 0.875rem;
+}
+
+.btn.btn-square.btn-sm,
+.btn.btn-circle.btn-sm {
+  width: 2.5rem;
+  padding-inline: 0;
+}
+
+@keyframes side-panel-in {
+  from {
+    transform: translateX(100%);
+  }
+
+  to {
+    transform: translateX(0);
+  }
+}
+
+.side-panel-enter {
+  animation: side-panel-in 0.25s cubic-bezier(0.2, 0.85, 0.2, 1);
+}
+
+/* `Modal` on phones: the sheet slides up from the bottom edge. */
+@keyframes app-modal-sheet-in {
+  from {
+    transform: translateY(100%);
+  }
+
+  to {
+    transform: translateY(0);
+  }
+}
+
+.app-modal-sheet-enter {
+  animation: app-modal-sheet-in 0.28s cubic-bezier(0.2, 0.85, 0.2, 1);
+}
+
+/*
+ * `Modal` centred: a short rise and settle, calm rather than bouncy. No fade,
+ * like the toast: the content is readable from its first frame.
+ */
+@keyframes app-modal-in {
+  from {
+    transform: translateY(0.5rem) scale(0.98);
+  }
+
+  to {
+    transform: none;
+  }
+}
+
+.app-modal-enter {
+  animation: app-modal-in 0.2s cubic-bezier(0.2, 0.85, 0.2, 1);
+}
+
+/*
+ * While a phone bottom sheet is open, toasts move to the top of the screen so
+ * they never cover the sheet's actions (both are anchored to the bottom).
+ */
+body:has([data-layout="sheet"]) .toaster {
+  top: 0;
+  bottom: auto;
+  padding-top: 1rem;
+}
+
+/* Slide only, no fade: the toast is readable from its first frame. */
+@keyframes toast-item-in {
+  from {
+    transform: translateY(0.75rem);
+  }
+
+  to {
+    transform: translateY(0);
+  }
+}
+
+.toast-item-enter {
+  animation: toast-item-in 0.2s cubic-bezier(0.2, 0.85, 0.2, 1);
+}
+
+@keyframes marketplace-promo-color-in {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+.marketplace-promo-color-enter {
+  animation: marketplace-promo-color-in 0.8s ease-in-out both;
+  will-change: opacity;
+}
+
+@keyframes marketplace-promo-fade-in {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+.marketplace-promo-title-enter {
+  animation: marketplace-promo-fade-in 0.55s ease-in-out 0.35s both;
+  will-change: opacity;
+}
+
+.marketplace-promo-detail-enter {
+  animation: marketplace-promo-fade-in 0.55s ease-in-out 0.65s both;
+  will-change: opacity;
+}
+
+.marketplace-promo-action-enter {
+  animation: marketplace-promo-fade-in 0.55s ease-in-out 0.85s both;
+  will-change: opacity;
+}
+
+@keyframes marketplace-promo-visual-in {
+  from {
+    opacity: 0;
+    transform: translateX(1.5rem);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.marketplace-promo-visual-enter {
+  animation: marketplace-promo-visual-in 0.85s ease-in-out 0.75s both;
+  will-change: opacity, transform;
+}
+
+.marketplace-promo-mockup {
+  clip-path: inset(1px 0 0);
+}
+
+/* Auth showcase: the active step's bar is the autoplay timer — its
+   `animationend` advances the carousel, so the duration here is the slide time. */
+@keyframes auth-showcase-progress {
+  from {
+    width: 0%;
+  }
+
+  to {
+    width: 100%;
+  }
+}
+
+@keyframes auth-showcase-visual-in {
+  from {
+    opacity: 0;
+    transform: translateY(1rem) scale(0.97);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.auth-showcase-progress {
+  animation: auth-showcase-progress 5s linear forwards;
+}
+
+.auth-showcase-progress[data-paused="true"] {
+  animation-play-state: paused;
+}
+
+.auth-showcase-visual-enter {
+  animation: auth-showcase-visual-in 0.7s cubic-bezier(0.2, 0.85, 0.2, 1) both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .auth-showcase-progress {
+    animation: none;
+    width: 100%;
+  }
+
+  .auth-showcase-visual-enter {
+    animation: none;
+  }
+}
+
+.collection-toolbar-clear-search,
+.collection-toolbar-clear-search:hover {
+  background-color: transparent !important;
+}
+
+/* An A4 document is 210 × 297. Container units keep the preview's minimum
+   paper height proportional to its rendered width, while ordinary content flow
+   allows field-heavy templates to extend beyond that baseline. */
+.template-preview-document {
+  container-type: inline-size;
+}
+
+.template-preview-paper {
+  min-height: 141.428571cqi;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .app-modal-enter,
+  .app-modal-sheet-enter,
+  .side-panel-enter,
+  .toast-item-enter {
+    animation: none;
+  }
+
+  .marketplace-promo-color-enter,
+  .marketplace-promo-title-enter,
+  .marketplace-promo-detail-enter,
+  .marketplace-promo-action-enter,
+  .marketplace-promo-visual-enter {
+    animation: none;
+  }
+}
+
+@keyframes website-reveal {
+  from {
+    opacity: 0;
+    filter: blur(10px);
+    transform: translateY(42px) scale(0.97);
+  }
+
+  to {
+    opacity: 1;
+    filter: blur(0);
+    transform: translateY(0);
+  }
+}
+
+@keyframes website-hero-copy {
+  from {
+    opacity: 0;
+    filter: blur(14px);
+    transform: translateY(34px);
+  }
+
+  to {
+    opacity: 1;
+    filter: blur(0);
+    transform: translateY(0);
+  }
+}
+
+/* The hero picture: a plain fade with a slight scale, as subtle as the copy beside it (no blur). */
+@keyframes website-hero-visual {
+  from {
+    opacity: 0;
+    transform: scale(0.98);
+  }
+
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes website-hero-parallax {
+  from {
+    transform: translateY(0);
+  }
+
+  to {
+    transform: translateY(3rem);
+  }
+}
+
+@keyframes website-hero-sheen {
+  from {
+    transform: translateX(-120%) skewX(-18deg);
+  }
+
+  to {
+    transform: translateX(220%) skewX(-18deg);
+  }
+}
+
+@keyframes website-card-in {
+  from {
+    opacity: 0;
+    filter: blur(8px);
+    transform: translateY(34px) scale(0.98);
+  }
+
+  to {
+    opacity: 1;
+    filter: blur(0);
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes website-float {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0) rotate(0deg);
+  }
+
+  50% {
+    transform: translate3d(0, -16px, 0) rotate(1deg);
+  }
+}
+
+@keyframes website-drift {
+  from {
+    transform: translateX(-12%);
+  }
+
+  to {
+    transform: translateX(12%);
+  }
+}
+
+.website-reveal {
+  animation: website-reveal 0.95s cubic-bezier(0.2, 0.85, 0.2, 1);
+  animation-timeline: view();
+  animation-range: entry 0% cover 34%;
+}
+
+.footer-logo {
+  background-color: var(--color-app-chrome-content);
+  mask: url("/images/svg/logo-white.svg") center / contain no-repeat;
+  -webkit-mask: url("/images/svg/logo-white.svg") center / contain no-repeat;
+}
+
+.website-card-reveal {
+  animation: website-card-in 0.9s cubic-bezier(0.2, 0.85, 0.2, 1) both;
+  animation-delay: var(--reveal-delay, 0ms);
+  animation-timeline: view();
+  animation-range: entry 4% cover 30%;
+}
+
+.website-hero-copy {
+  animation: website-hero-copy 0.95s cubic-bezier(0.2, 0.85, 0.2, 1) both;
+}
+
+.website-hero-visual {
+  animation: website-hero-visual 0.6s cubic-bezier(0.22, 1, 0.36, 1) 0.1s both;
+}
+
+.website-hero-parallax {
+  animation: website-hero-parallax 1s linear both;
+  animation-range: 0 100vh;
+  animation-timeline: scroll(root block);
+  will-change: transform;
+}
+
+.website-hero-proof {
+  animation: website-hero-copy 0.85s cubic-bezier(0.2, 0.85, 0.2, 1) 0.28s both;
+}
+
+.website-hero-sheen::after {
+  animation: website-hero-sheen 3.8s ease-in-out 1.15s infinite;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgb(255 255 255 / 0.38),
+    transparent
+  );
+  content: "";
+  inset: 0 auto 0 0;
+  position: absolute;
+  width: 34%;
+}
+
+.website-hero-card {
+  animation: website-card-in 0.9s cubic-bezier(0.2, 0.85, 0.2, 1) both;
+  animation-delay: var(--hero-card-delay, 0ms);
+}
+
+.website-float {
+  animation: website-float 7s ease-in-out infinite;
+}
+
+.website-float-delayed {
+  animation: website-float 8s ease-in-out 0.8s infinite;
+}
+
+.website-drift {
+  animation: website-drift 12s ease-in-out alternate infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  .website-reveal,
+  .website-card-reveal,
+  .website-hero-card,
+  .website-hero-copy,
+  .website-hero-parallax,
+  .website-hero-visual,
+  .website-hero-proof,
+  .website-hero-sheen::after,
+  .website-float,
+  .website-float-delayed,
+  .website-drift {
+    animation: none;
+  }
+}
+
+/* Landing page: staggered entrances for grid children. Scroll-driven
+   animations ignore delays, so each child also gets a later animation range. */
+.website-stagger > .website-card-reveal:nth-child(2) {
+  --reveal-delay: 90ms;
+  animation-range: entry 9% cover 34%;
+}
+
+.website-stagger > .website-card-reveal:nth-child(3) {
+  --reveal-delay: 180ms;
+  animation-range: entry 14% cover 38%;
+}
+
+.website-stagger > .website-card-reveal:nth-child(4) {
+  --reveal-delay: 270ms;
+  animation-range: entry 19% cover 42%;
+}
+
+@keyframes feature-tab-details-in {
+  from {
+    opacity: 0;
+    transform: translateY(0.5rem);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.feature-tab-details-enter {
+  animation: feature-tab-details-in 0.45s cubic-bezier(0.2, 0.85, 0.2, 1) both;
+}
+
+/* The active testimonial's bar is the autoplay timer: its animationend
+   advances the quote, so change the duration here, not in JS. Hovering or
+   focusing anywhere in the region pauses it. */
+@keyframes autoplay-progress {
+  from {
+    transform: scaleX(0);
+  }
+
+  to {
+    transform: scaleX(1);
+  }
+}
+
+.testimonial-progress {
+  animation: autoplay-progress 7s linear forwards;
+  transform-origin: left;
+}
+
+.testimonials-region:hover .testimonial-progress,
+.testimonials-region:focus-within .testimonial-progress {
+  animation-play-state: paused;
+}
+
+/* Same pattern for the style switcher: the active style's bar is the timer. */
+.style-switcher-progress {
+  animation: autoplay-progress 5s linear forwards;
+  transform-origin: left;
+}
+
+.style-switcher-region:hover .style-switcher-progress,
+.style-switcher-region:focus-within .style-switcher-progress {
+  animation-play-state: paused;
+}
+
+/* Same pattern for the workspace feature tabs: the active tab's vertical bar
+   (under its number) is the timer. Unlike the others it keeps running on
+   hover and focus. */
+@keyframes autoplay-progress-vertical {
+  from {
+    transform: scaleY(0);
+  }
+
+  to {
+    transform: scaleY(1);
+  }
+}
+
+.feature-tab-progress {
+  animation: autoplay-progress-vertical 5s linear forwards;
+  transform-origin: top;
+}
+
+/* Same pattern for the hero's "how it works" steps: the active step tile's bar is the timer.
+   A little longer than the other carousels, so each step's copy can be read. */
+.hero-step-progress {
+  animation: autoplay-progress 7s linear forwards;
+  transform-origin: left;
+}
+
+/* The first run waits a few seconds after page load before the walkthrough starts moving. */
+.hero-step-progress-delayed {
+  /* A short pause after the load reveal (HeroIntro, under 1s) before the walkthrough moves. */
+  animation-delay: 2s;
+  /* "both" holds the empty bar during the delay instead of flashing it full. */
+  animation-fill-mode: both;
+}
+
+/* Hero reveal (HeroIntro): every block fades up 8px over 0.5s with a soft ease-out, staggered by
+   `--reveal-delay` (inline, computed in HeroIntro). Quick and subtle: the card is readable within
+   about 0.8s. `both` keeps each block hidden until its turn. */
+@keyframes hero-reveal-up {
+  from {
+    opacity: 0;
+    transform: translateY(0.5rem);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.hero-reveal {
+  animation: hero-reveal-up 0.5s cubic-bezier(0.22, 1, 0.36, 1)
+    var(--reveal-delay, 0s) both;
+}
+
+/* Animate native <details> open/close where the browser supports it; other
+   browsers simply open instantly. */
+.faq-item {
+  interpolate-size: allow-keywords;
+}
+
+.faq-item::details-content {
+  height: 0;
+  overflow: clip;
+  transition:
+    height 0.35s cubic-bezier(0.2, 0.85, 0.2, 1),
+    content-visibility 0.35s allow-discrete;
+}
+
+.faq-item[open]::details-content {
+  height: auto;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .feature-tab-details-enter {
+    animation: none;
+  }
+
+  .testimonial-progress,
+  .style-switcher-progress,
+  .feature-tab-progress,
+  .hero-step-progress,
+  .hero-reveal {
+    animation: none;
+    transform: none;
+  }
+
+  .faq-item::details-content {
+    transition: none;
+  }
+}
+
+/* Template strip: the track holds two identical copies, so shifting by half its
+   width loops seamlessly. Hover pauses; reduced motion becomes a plain swipe row. */
+@keyframes template-strip-scroll {
+  from {
+    transform: translateX(0);
+  }
+
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+.template-strip-track {
+  animation: template-strip-scroll 70s linear infinite;
+}
+
+.template-strip:hover .template-strip-track {
+  animation-play-state: paused;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .template-strip-track {
+    animation: none;
+  }
+
+  .template-strip-viewport {
+    overflow-x: auto;
+  }
+}
+
+/* Auth guard: an indeterminate bar — a third-width segment sweeping across. */
+@keyframes auth-guard-progress {
+  from {
+    transform: translateX(-100%);
+  }
+
+  to {
+    transform: translateX(300%);
+  }
+}
+
+.auth-guard-progress {
+  animation: auth-guard-progress 1.2s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .auth-guard-progress {
+    animation: none;
+    transform: translateX(100%);
+  }
+}
+```

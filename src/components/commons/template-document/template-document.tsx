@@ -36,6 +36,11 @@ type StyleConfig = {
   eyebrow: string;
   header: string;
   label: string;
+  /**
+   * The style's own frame on the sheet (brutalist's black rule). Never
+   * rounding, a hairline border or a shadow: the page is square paper, and
+   * screens add the shadow with `DocumentPaper` / `TemplateThumbnail`.
+   */
   paper: string;
   sectionTitle: string;
   title: string;
@@ -49,7 +54,7 @@ const styleConfig: Record<TemplateStyleId, StyleConfig> = {
     header: "border-b-2 border-nox-noir bg-play-pink px-6 py-6",
     label:
       "font-title text-[11px] font-black uppercase tracking-wide text-nox-noir",
-    paper: "rounded-md border-2 border-nox-noir",
+    paper: "border-2 border-nox-noir",
     sectionTitle: "font-title text-sm font-black uppercase text-nox-noir",
     title: "mt-1 font-title text-2xl font-black text-nox-noir",
   },
@@ -60,7 +65,7 @@ const styleConfig: Record<TemplateStyleId, StyleConfig> = {
     header: "border-b-2 border-nox-noir px-8 pb-4 pt-8",
     label:
       "font-title text-xs font-semibold uppercase tracking-wide text-nox-noir/45",
-    paper: "rounded-box border border-steel-mist",
+    paper: "",
     sectionTitle: "font-title text-sm font-bold text-nox-noir",
     title: "mt-1 font-title text-2xl font-bold text-nox-noir",
   },
@@ -71,7 +76,7 @@ const styleConfig: Record<TemplateStyleId, StyleConfig> = {
     header: "bg-nox-noir px-6 py-6 text-white",
     label:
       "font-title text-xs font-semibold uppercase tracking-wide text-nox-noir/45",
-    paper: "overflow-hidden rounded-box border border-steel-mist",
+    paper: "overflow-hidden",
     sectionTitle: "font-title text-sm font-bold text-nox-noir",
     title: "mt-1 font-title text-2xl font-bold text-white",
   },
@@ -82,7 +87,7 @@ const styleConfig: Record<TemplateStyleId, StyleConfig> = {
     header: "px-10 pb-6 pt-10",
     label:
       "font-title text-[11px] font-medium uppercase tracking-wider text-nox-noir/40",
-    paper: "rounded-box border border-steel-mist",
+    paper: "",
     sectionTitle: "font-title text-sm font-semibold text-nox-noir",
     title: "mt-2 font-title text-3xl font-bold text-nox-noir",
   },
@@ -170,7 +175,11 @@ const StandardDocument = ({
   };
   const emptyClassName = showPlaceholders ? "italic text-nox-noir/35" : "";
   const renderText = (text: string, isHighlighted: boolean) =>
-    isHighlighted ? <mark className={missingFieldClassName}>{text}</mark> : text;
+    isHighlighted ? (
+      <mark className={missingFieldClassName}>{text}</mark>
+    ) : (
+      text
+    );
 
   return (
     <article

@@ -29,7 +29,7 @@ export const StyleSwitcherPreview = ({
     >
       <TemplateDocument
         className={cn(
-          "h-fit w-full max-w-md transition-[translate] duration-700 ease-out motion-reduce:transition-none",
+          "h-fit w-full max-w-md shadow-paper transition-[translate] duration-700 ease-out motion-reduce:transition-none",
           isActive ? "translate-y-0" : "translate-y-6",
         )}
         template={template}

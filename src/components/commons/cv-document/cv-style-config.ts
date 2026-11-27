@@ -10,6 +10,11 @@ export interface CvStyleConfig {
   header: string;
   jobTitle: string;
   name: string;
+  /**
+   * The style's own frame on the sheet (brutalist's black rule). Never
+   * rounding, a hairline border or a shadow: the page is square paper, and
+   * screens add the shadow with `DocumentPaper` / `TemplateThumbnail`.
+   */
   paper: string;
   period: string;
   sectionTitle: string;
@@ -28,7 +33,7 @@ export const cvStyleConfig: Record<TemplateStyleId, CvStyleConfig> = {
     jobTitle:
       "font-title text-sm font-black uppercase tracking-widest text-nox-noir",
     name: "font-title text-3xl font-black text-nox-noir",
-    paper: "rounded-md border-2 border-nox-noir",
+    paper: "border-2 border-nox-noir",
     period:
       "font-title text-[11px] font-black uppercase tracking-wide text-nox-noir/60",
     sectionTitle:
@@ -44,7 +49,7 @@ export const cvStyleConfig: Record<TemplateStyleId, CvStyleConfig> = {
     header: "border-b-2 border-nox-noir px-8 pb-6 pt-8",
     jobTitle: "font-title text-base font-semibold text-nox-noir/60",
     name: "font-title text-3xl font-bold text-nox-noir",
-    paper: "rounded-box border border-steel-mist",
+    paper: "",
     period:
       "font-title text-xs font-semibold uppercase tracking-wide text-nox-noir/45",
     sectionTitle:
@@ -61,7 +66,7 @@ export const cvStyleConfig: Record<TemplateStyleId, CvStyleConfig> = {
     jobTitle:
       "font-title text-[11px] font-semibold uppercase tracking-[0.3em] text-nox-noir/40",
     name: "font-title text-4xl font-bold text-nox-noir",
-    paper: "rounded-box border border-steel-mist",
+    paper: "",
     period:
       "font-title text-[11px] font-medium uppercase tracking-wider text-nox-noir/40",
     sectionTitle:
@@ -78,7 +83,7 @@ export const cvStyleConfig: Record<TemplateStyleId, CvStyleConfig> = {
     jobTitle:
       "font-title text-sm font-bold uppercase tracking-widest text-golden-harvest",
     name: "font-title text-3xl font-bold text-white",
-    paper: "overflow-hidden rounded-box border border-steel-mist",
+    paper: "overflow-hidden",
     period:
       "font-title text-xs font-semibold uppercase tracking-wide text-nox-noir/45",
     sectionTitle:

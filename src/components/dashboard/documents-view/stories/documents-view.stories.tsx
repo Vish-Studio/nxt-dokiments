@@ -609,8 +609,8 @@ export const MobileEditorPreview: Story = {
 };
 
 /**
- * Walks the full new-document path — New document → template preview → Use
- * document — then prefills the recipient block from a saved client.
+ * Walks the full new-document path — New document → pick a template row →
+ * editor — then prefills the recipient block from a saved client.
  *
  * Uses `classic-invoice` because invoices are one of the four billing types that
  * carry `recipientContactFields`, so this also covers `toEmail`/`toPhone`/`toBrn`
@@ -630,14 +630,10 @@ export const PrefillFromClient: Story = {
     await userEvent.click(
       (await canvas.findAllByRole("button", { name: /new document/i }))[0],
     );
-    await userEvent.click(
-      await canvas.findByRole("button", {
-        name: "Preview Invoice, saved",
-      }),
-    );
-    await userEvent.click(
-      await canvas.findByRole("button", { name: "Use document" }),
-    );
+    // Enter on a picker row starts the document on every screen size (a click
+    // only selects it on desktop).
+    (await canvas.findAllByRole("button", { name: /^Invoice, / }))[0].focus();
+    await userEvent.keyboard("{Enter}");
 
     // The form is an accordion that opens on Document details; open the sections under test.
     await userEvent.click(
@@ -730,14 +726,10 @@ export const PrefillWithNoClients: Story = {
     await userEvent.click(
       (await canvas.findAllByRole("button", { name: /new document/i }))[0],
     );
-    await userEvent.click(
-      await canvas.findByRole("button", {
-        name: "Preview Invoice, saved",
-      }),
-    );
-    await userEvent.click(
-      await canvas.findByRole("button", { name: "Use document" }),
-    );
+    // Enter on a picker row starts the document on every screen size (a click
+    // only selects it on desktop).
+    (await canvas.findAllByRole("button", { name: /^Invoice, / }))[0].focus();
+    await userEvent.keyboard("{Enter}");
     // The client picker lives in the collapsed Client details accordion section.
     await userEvent.click(
       await canvas.findByRole("button", { name: /^Client details/ }),
@@ -1019,5 +1011,37 @@ export const DeleteFromRowMenu: Story = {
     await expect(
       within(canvasElement).getByText("Lumina Events Invoice"),
     ).toBeVisible();
+  },
+};
+
+/**
+ * The picker pushes one history entry, so the browser back button and the
+ * phone back gesture return to the document list instead of leaving My
+ * Documents.
+ */
+export const BackFromPickerReturnsToList: Story = {
+  decorators: [
+    (Story) => {
+      seedUser();
+      mockDocumentsApi([]);
+      return <Story />;
+    },
+  ],
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+
+    await userEvent.click(
+      (await canvas.findAllByRole("button", { name: /new document/i }))[0],
+    );
+    await expect(
+      await canvas.findByRole("heading", { name: "Choose a template" }),
+    ).toBeInTheDocument();
+
+    window.history.back();
+
+    await expect(await canvas.findByText(/no documents yet/i)).toBeVisible();
+    await expect(
+      canvas.queryByRole("heading", { name: "Choose a template" }),
+    ).not.toBeInTheDocument();
   },
 };

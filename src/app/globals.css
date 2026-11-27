@@ -61,6 +61,10 @@
   --color-app-brand: var(--color-golden-harvest);
   --color-app-brand-content: var(--color-nox-noir);
   --shadow-soft: 0 16px 40px rgb(20 20 20 / 0.08);
+  /* A sheet of paper lifted off the desk: a tight contact shadow plus a soft
+     drop. Only for document pages (DocumentPaper, thumbnails), never cards. */
+  --shadow-paper:
+    0 1px 2px rgb(20 20 20 / 0.08), 0 14px 36px rgb(20 20 20 / 0.14);
 }
 
 @theme inline {
@@ -93,6 +97,7 @@
   --font-logo: var(--font-logo);
   --font-signature: var(--font-signature);
   --shadow-soft: var(--shadow-soft);
+  --shadow-paper: var(--shadow-paper);
 }
 
 body {
@@ -349,11 +354,13 @@ body:has([data-layout="sheet"]) .toaster {
 /* An A4 document is 210 × 297. Container units keep the preview's minimum
    paper height proportional to its rendered width, while ordinary content flow
    allows field-heavy templates to extend beyond that baseline. */
-.template-preview-document {
+/* DocumentPaper: the sheet is at least one A4 page tall (297 / 210 of its
+   width), measured against its own wrapper so it works at any width. */
+.document-paper {
   container-type: inline-size;
 }
 
-.template-preview-paper {
+.document-paper-sheet {
   min-height: 141.428571cqi;
 }
 
