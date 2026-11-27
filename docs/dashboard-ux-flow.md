@@ -46,6 +46,11 @@ row's status pill then reads "Awaiting signature", then "Signed". Shared copy vi
 **D. Add a client.** My Clients → Add client (side panel) → the client is offered
 when preparing a document.
 
+**D2. Add a client while writing a document.** Editor → Client details → "New
+client" → type their details → Next → "Save this client?" → Save client (added
+to My Clients, toast) or Not now. Either way the document keeps the details and
+Items opens. Picking "Saved client" instead fills the fields from My Clients.
+
 **E. Sign something sent to me.** Notification bell, or My Documents → Shared with
 me → open → sign.
 

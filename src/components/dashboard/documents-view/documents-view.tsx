@@ -34,7 +34,10 @@ import { LinkButton } from "@/components/commons/link-button/link-button";
 import { TemplateDocument } from "@/components/commons/template-document/template-document";
 import { TemplateForm } from "@/components/commons/template-form/template-form";
 import { TemplatePreviewDialog } from "@/components/commons/template-preview-dialog/template-preview-dialog";
-import { ClientPicker } from "@/components/dashboard/client-picker/client-picker";
+import {
+  ClientDetailsChooser,
+  type ClientMode,
+} from "@/components/dashboard/client-details-chooser/client-details-chooser";
 import { CompanyDocumentGroups } from "@/components/dashboard/company-document-groups/company-document-groups";
 import { CompanyDocumentGroupsSkeleton } from "@/components/dashboard/company-document-groups/company-document-groups-skeleton";
 import { DashboardListSkeleton } from "@/components/dashboard/dashboard-list-skeleton/dashboard-list-skeleton";
@@ -48,6 +51,7 @@ import {
 } from "@/components/dashboard/document-list/document-list";
 import { TemplatePicker } from "@/components/dashboard/template-picker/template-picker";
 import { TemplatePickerSkeleton } from "@/components/dashboard/template-picker/template-picker-skeleton";
+import { SaveClientDialog } from "@/components/dashboard/save-client-dialog/save-client-dialog";
 import { ShareDialog } from "@/components/dashboard/share-dialog/share-dialog";
 import { SharedCopyStatus } from "@/components/dashboard/shared-copy-status/shared-copy-status";
 import { ResponsiveHeaderControls } from "@/components/dashboard/responsive-header-controls/responsive-header-controls";
@@ -58,7 +62,10 @@ import {
   useDuplicateDocumentMutation,
   useUpdateDocumentMutation,
 } from "@/hooks/queries/use-documents";
-import { useClientsQuery } from "@/hooks/queries/use-clients";
+import {
+  useClientsQuery,
+  useCreateClientMutation,
+} from "@/hooks/queries/use-clients";
 import { useSavedTemplatesQuery } from "@/hooks/queries/use-saved-templates";
 import { usePageHeader } from "@/hooks/use-page-header";
 import { useScrollContentToTopOnMobile } from "@/hooks/use-scroll-content-to-top-on-mobile";
@@ -76,6 +83,11 @@ import {
   sortCompanyGroups,
 } from "@/lib/documents/company-groups";
 import { getTemplateLastUsed } from "@/lib/documents/template-picker";
+import {
+  clientFromDocument,
+  documentClientName,
+  findSavedClient,
+} from "@/lib/documents/client-from-document";
 import { buildDuplicateDraft } from "@/lib/documents/duplicate-draft";
 import { getDocumentDetails } from "@/lib/documents/document-details";
 import { getEmptyDocumentFields } from "@/lib/documents/empty-fields";
@@ -198,6 +210,18 @@ export const DocumentsView = () => {
     enabled: documentSharingEnabled,
   });
   const showToast = useToastStore((state) => state.showToast);
+  const { mutate: createClient } = useCreateClientMutation();
+  // Client details: the user's Saved/New choice, or null for the default
+  // (Saved when they have clients, otherwise New). Reset per document.
+  const [clientModeChoice, setClientModeChoice] = useState<ClientMode | null>(
+    null,
+  );
+  // "Save this client?", open while Next on Client details waits for an answer.
+  const [saveClientPrompt, setSaveClientPrompt] = useState<{
+    proceed: () => void;
+  } | null>(null);
+  // The client name already asked about, so Next doesn't ask twice for them.
+  const [askedClientName, setAskedClientName] = useState("");
   const { isPending: isResending, mutate: resendShare } =
     useShareDocumentMutation();
   const { isPending: isRevoking, mutate: revokeShare } =
@@ -560,6 +584,8 @@ export const DocumentsView = () => {
 
   const goToList = () => {
     setMode("list");
+    setClientModeChoice(null);
+    setAskedClientName("");
     setPendingPrefill(null);
     setActiveTemplate(null);
     setActiveDocumentId(null);
@@ -637,6 +663,8 @@ export const DocumentsView = () => {
       });
       setSharedContent("");
       setPendingPrefill(null);
+      setClientModeChoice(null);
+      setAskedClientName("");
       setIsSaveConfirmationOpen(false);
       setIsEmptyFieldsHighlighted(false);
       setIsEmptyFieldsDialogOpen(false);
@@ -764,6 +792,8 @@ export const DocumentsView = () => {
     setDuplicateSource(null);
     setDraftName(document.name);
     setDraftValues(valuesWithSignedSender(document));
+    setClientModeChoice(null);
+    setAskedClientName("");
     setIsSaveConfirmationOpen(false);
     setIsEmptyFieldsHighlighted(false);
     setIsEmptyFieldsDialogOpen(false);
@@ -968,6 +998,55 @@ export const DocumentsView = () => {
         },
   );
 
+  const clientMode: ClientMode =
+    clientModeChoice ?? (clients.length > 0 ? "saved" : "new");
+
+  // Next on "Client details" with a new client typed in asks once whether to
+  // save them to My Clients. Anyone already saved, or an empty block, moves on.
+  const handleBeforeNext = (sectionId: string, proceed: () => void) => {
+    const name = documentClientName(draftValues);
+    if (
+      sectionId !== "to" ||
+      clientMode !== "new" ||
+      !name ||
+      name === askedClientName ||
+      findSavedClient(clients, draftValues)
+    ) {
+      proceed();
+      return;
+    }
+    setAskedClientName(name);
+    setSaveClientPrompt({ proceed });
+  };
+
+  const saveClientFromDraft = () => {
+    const result = clientFromDocument(draftValues);
+    const prompt = saveClientPrompt;
+    setSaveClientPrompt(null);
+    prompt?.proceed();
+    if (!result.ok) return;
+
+    const name = result.input.companyName;
+    createClient(result.input, {
+      onError: () =>
+        showToast({
+          message: `Couldn't save ${name} to My Clients. This document keeps their details.`,
+          tone: "error",
+        }),
+      onSuccess: () =>
+        showToast({
+          message: `${name} saved to My Clients.`,
+          tone: "success",
+        }),
+    });
+  };
+
+  const skipSaveClient = () => {
+    const prompt = saveClientPrompt;
+    setSaveClientPrompt(null);
+    prompt?.proceed();
+  };
+
   // --- Editor ---------------------------------------------------------------
   const editorTemplate = activeTemplate;
 
@@ -1074,9 +1153,12 @@ export const DocumentsView = () => {
                     value={draftName}
                   />
                 }
+                onBeforeNext={handleBeforeNext}
                 recipientPicker={
-                  <ClientPicker
+                  <ClientDetailsChooser
                     fields={editorTemplate.fields}
+                    mode={clientMode}
+                    onModeChange={setClientModeChoice}
                     onSelect={(client) => {
                       setDraftValues((previous) => ({
                         ...previous,
@@ -1148,6 +1230,26 @@ export const DocumentsView = () => {
                   ? "Creating…"
                   : "Create document"
           }
+        />
+
+        <SaveClientDialog
+          client={{
+            address: (
+              draftValues.toAddress ??
+              draftValues.partyTwoAddress ??
+              ""
+            ).trim(),
+            email: draftValues.toEmail?.trim(),
+            name: documentClientName(draftValues),
+            phone: draftValues.toPhone?.trim(),
+          }}
+          missing={(() => {
+            const result = clientFromDocument(draftValues);
+            return result.ok ? [] : result.missing;
+          })()}
+          onSave={saveClientFromDraft}
+          onSkip={skipSaveClient}
+          open={Boolean(saveClientPrompt)}
         />
 
         <ShareDialog

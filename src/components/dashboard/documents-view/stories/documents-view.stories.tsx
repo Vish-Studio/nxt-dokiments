@@ -44,13 +44,27 @@ const northlineClient: Client = {
  * `DocumentsView`'s queries and mutations all resolve against in-memory fixture
  * data, dispatching on request URL/method.
  */
+/** Clients a story's "Save client" sent to `POST /api/clients`, newest last. */
+const createdClients: Array<Record<string, string>> = [];
+
 const mockDocumentsApi = (
   initialDocuments: UserDocument[],
   clients: Client[] = [northlineClient],
 ) => {
   let documents = initialDocuments;
+  createdClients.length = 0;
 
   window.fetch = (async (url: string, init?: RequestInit) => {
+    if (url.includes("/api/clients") && init?.method === "POST") {
+      const input = JSON.parse((init.body as string) ?? "{}");
+      createdClients.push(input);
+      return new Response(
+        JSON.stringify({
+          client: { ...input, createdAt: 1, id: "client_new", updatedAt: 1 },
+        }),
+        { status: 201 },
+      );
+    }
     // Must precede the /api/documents handling below: the editor renders
     // `ClientPicker`, so this request fires as soon as the editor mounts.
     if (url.includes("/api/clients")) {
@@ -652,7 +666,7 @@ export const PrefillFromClient: Story = {
       canvas.getByRole("button", { name: /^Client details/ }),
     );
     await userEvent.click(
-      canvas.getByRole("button", { name: "Prefill from client (optional)" }),
+      canvas.getByRole("button", { name: "Choose a client" }),
     );
     await userEvent.click(
       canvas.getByRole("menuitemradio", {
@@ -660,10 +674,10 @@ export const PrefillFromClient: Story = {
       }),
     );
 
-    // companyName wins over the contact name for `toName`. Asserted via the "To"
+    // companyName wins over the contact name for `toName`. Asserted via the "Client name"
     // label rather than `findByDisplayValue`, so this remains specific to the
     // recipient field rather than the picker trigger.
-    await expect(await canvas.findByLabelText("To")).toHaveValue(
+    await expect(await canvas.findByLabelText("Client name")).toHaveValue(
       "Northline Studio",
     );
     await expect(
@@ -737,12 +751,79 @@ export const PrefillWithNoClients: Story = {
       await canvas.findByRole("button", { name: /^Client details/ }),
     );
 
+    // No saved clients: the section starts on "New client", with a tip that
+    // says what to type and that Next will offer to save them.
     await expect(
-      await canvas.findByRole("link", { name: "My clients" }),
+      await canvas.findByRole("tab", { name: "New client" }),
+    ).toHaveAttribute("aria-selected", "true");
+    await expect(
+      canvas.getByText(/When you press Next, you can save them/),
     ).toBeVisible();
     await expect(
-      canvas.queryByLabelText("Prefill from client (optional)"),
+      canvas.queryByRole("button", { name: "Choose a client" }),
     ).not.toBeInTheDocument();
+  },
+};
+
+/**
+ * A new client typed into Client details: Next asks once whether to save them
+ * to My Clients. "Save client" posts them, then the next section (Items)
+ * opens; a second Next doesn't ask again.
+ */
+export const SaveNewClientOnNext: Story = {
+  decorators: [
+    (Story) => {
+      seedUser();
+      mockDocumentsApi([], []);
+      return <Story />;
+    },
+  ],
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const page = within(canvasElement.ownerDocument.body);
+
+    await userEvent.click(
+      (await canvas.findAllByRole("button", { name: /new document/i }))[0],
+    );
+    (await canvas.findAllByRole("button", { name: /^Invoice, / }))[0].focus();
+    await userEvent.keyboard("{Enter}");
+    await userEvent.click(
+      await canvas.findByRole("button", { name: /^Client details/ }),
+    );
+
+    await userEvent.type(
+      await canvas.findByLabelText("Client name"),
+      "Blue Harbour",
+    );
+    await userEvent.type(canvas.getByLabelText("Email"), "ravi@blueharbour.mu");
+    await userEvent.type(canvas.getByLabelText("Phone number"), "57120044");
+
+    const section = canvas
+      .getByRole("button", { name: /^Client details/ })
+      .closest("fieldset") as HTMLElement;
+    await expect(within(section).getByText("Items")).toBeVisible();
+    await userEvent.click(
+      within(section).getByRole("button", { name: "Next" }),
+    );
+
+    const dialog = await page.findByRole("dialog", {
+      name: "Save this client?",
+    });
+    await userEvent.click(
+      within(dialog).getByRole("button", { name: "Save client" }),
+    );
+
+    await expect(
+      await page.findByText("Blue Harbour saved to My Clients."),
+    ).toBeVisible();
+    await expect(createdClients.at(-1)).toMatchObject({
+      companyName: "Blue Harbour",
+      email: "ravi@blueharbour.mu",
+      phone: "57120044",
+    });
+    await expect(
+      canvas.getByRole("button", { name: /^Items/ }),
+    ).toHaveAttribute("aria-expanded", "true");
   },
 };
 

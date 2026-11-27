@@ -22,6 +22,19 @@ const partyKeys = {
     "partyTwoAddress",
   ],
 };
+/**
+ * Labels for the client block under the "Client details" heading. Display
+ * only: templates and saved snapshots keep their own labels ("To", "Recipient
+ * email"), which read oddly once the section already says who it is for.
+ */
+const clientFieldLabels: Record<string, string> = {
+  toAddress: "Address",
+  toBrn: "BRN (optional)",
+  toEmail: "Email",
+  toName: "Client name",
+  toPhone: "Phone number",
+};
+
 const paymentKeys = [
   "subtotal",
   "tax",
@@ -87,15 +100,11 @@ export const getFormSections = (fields: TemplateField[]) => {
     },
     {
       id: "to",
+      // Whoever the document is for is a client, on every document type;
+      // only an NDA keeps its legal party label.
       title: fields.some((field) => field.key === "partyTwo")
         ? "Receiving party"
-        : fields.some((field) =>
-              ["invoiceNumber", "quoteNumber", "receiptNumber"].includes(
-                field.key,
-              ),
-            )
-          ? "Client details"
-          : "Recipient details",
+        : "Client details",
     },
     {
       id: "content",
@@ -139,6 +148,14 @@ export const getFormSections = (fields: TemplateField[]) => {
         (a, b) =>
           partyKeys[side].indexOf(a.key) - partyKeys[side].indexOf(b.key),
       );
+  }
+  const client = sections.find((section) => section.id === "to")!;
+  if (client.title === "Client details") {
+    client.fields = client.fields.map((field) =>
+      clientFieldLabels[field.key]
+        ? { ...field, label: clientFieldLabels[field.key] }
+        : field,
+    );
   }
   return sections;
 };
