@@ -700,7 +700,9 @@ export const NewDocumentDeepLink: Story = {
     const canvas = within(canvasElement);
 
     await expect(
-      await canvas.findByRole("heading", { name: "Choose a template" }),
+      await canvas.findByRole("heading", {
+        name: "Choose your available templates",
+      }),
     ).toBeVisible();
     // The picker replaced the list rather than stacking on top of it.
     await expect(
@@ -1034,14 +1036,18 @@ export const BackFromPickerReturnsToList: Story = {
       (await canvas.findAllByRole("button", { name: /new document/i }))[0],
     );
     await expect(
-      await canvas.findByRole("heading", { name: "Choose a template" }),
+      await canvas.findByRole("heading", {
+        name: "Choose your available templates",
+      }),
     ).toBeInTheDocument();
 
     window.history.back();
 
     await expect(await canvas.findByText(/no documents yet/i)).toBeVisible();
     await expect(
-      canvas.queryByRole("heading", { name: "Choose a template" }),
+      canvas.queryByRole("heading", {
+        name: "Choose your available templates",
+      }),
     ).not.toBeInTheDocument();
   },
 };

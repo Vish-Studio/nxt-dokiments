@@ -118,15 +118,18 @@ export const TemplatePicker = ({
   // Desktop: one fixed-height row, so the list card and the preview end on
   // the same line; the list scrolls inside its card.
   return (
-    <div className="template-picker grid w-full gap-4 lg:h-[calc(100dvh-13rem)] lg:min-h-[32rem] lg:grid-cols-[22rem_minmax(0,1fr)]">
-      <div className="flex min-w-0 flex-col gap-4 lg:min-h-0 lg:overflow-hidden lg:rounded-box lg:border lg:border-steel-mist lg:bg-base-100 lg:p-4">
+    <div className="template-picker grid w-full gap-4 lg:h-[calc(100dvh-13rem)] lg:min-h-[32rem] lg:grid-cols-[24rem_minmax(0,1fr)]">
+      <div className="flex min-w-0 flex-col gap-4 lg:min-h-0 lg:overflow-hidden lg:rounded-box lg:border lg:border-steel-mist lg:bg-base-100 lg:p-5">
         {/* Says what to do here in one line, so nobody wonders whether a
             click starts the document or only shows it. */}
-        <div>
-          <h2 className="font-title text-lg font-bold text-nox-noir">
+        <div className="max-lg:mb-2">
+          <p className="font-title text-xs font-bold tracking-wider text-nox-noir/55 uppercase">
+            Step 1 of 2
+          </p>
+          <h2 className="mt-1 font-title text-xl font-bold text-nox-noir">
             Choose your available templates
           </h2>
-          <p className="mt-0.5 text-sm leading-5 text-nox-noir/65">
+          <p className="mt-1 text-sm leading-5 text-nox-noir/65">
             <span className="lg:hidden">Tap one to start your document.</span>
             <span className="hidden lg:inline">
               Pick one to preview it, then use it to start.
@@ -170,19 +173,24 @@ export const TemplatePicker = ({
             title="No templates match"
           />
         ) : (
-          <div className="-mx-4 grid content-start gap-4 lg:min-h-0 lg:flex-1 lg:overflow-y-auto">
+          // `p-0.5` keeps the selected card's ring clear of the scroll edge.
+          <div className="-m-0.5 grid grid-cols-1 content-start gap-6 p-0.5 max-lg:mb-4 lg:min-h-0 lg:flex-1 lg:gap-4 lg:overflow-y-auto">
             {groups.map((group) => {
               const label = getDocumentTypeLabel(group.documentType);
 
               return (
                 <section
                   aria-label={`${label} templates`}
+                  className="grid grid-cols-1 gap-2.5"
                   key={group.documentType}
                 >
-                  <h3 className="px-4 pb-1.5 font-title text-xs font-bold tracking-wider text-nox-noir/60 uppercase">
-                    {label} · {group.templates.length}
+                  <h3 className="flex items-center justify-between gap-2 font-title text-xs font-bold tracking-wider text-nox-noir/55 uppercase">
+                    {label}
+                    <span className="rounded-full bg-base-200 px-2 py-px tracking-normal">
+                      {group.templates.length}
+                    </span>
                   </h3>
-                  <ul className="divide-y divide-steel-mist/50 border-y border-steel-mist/70 bg-base-100">
+                  <ul className="grid grid-cols-1 gap-2.5">
                     {group.templates.map((template) => (
                       <li key={template.id}>
                         <TemplatePickerRow

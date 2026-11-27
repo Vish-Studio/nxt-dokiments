@@ -1,16 +1,15 @@
-import { CaretRightIcon } from "@phosphor-icons/react";
+import { ArrowRightIcon, CheckIcon } from "@phosphor-icons/react";
 import type { KeyboardEvent, Ref } from "react";
 
 import { TemplateThumbnail } from "@/components/commons/template-thumbnail/template-thumbnail";
 import { getTemplateDisplayName } from "@/lib/market-place/document-labels";
-import { iconSize } from "@/lib/icons";
 import { cn } from "@/lib/utils";
 import type { MarketplaceTemplate } from "@/types/template";
 
 export interface TemplatePickerRowProps {
   /** Muted second line, e.g. "Modern · used 2 days ago". */
   caption: string;
-  /** Desktop only: the row shown in the preview pane. */
+  /** Desktop only: the card shown in the preview pane. */
   isSelected?: boolean;
   /** Click or tap. The picker decides whether that selects or starts. */
   onActivate: () => void;
@@ -23,10 +22,14 @@ export interface TemplatePickerRowProps {
 }
 
 /**
- * One saved template in the picker list: a 48px A4 thumbnail (a real page
- * scaled down, like the marketplace cards), the name and a
- * caption. On desktop the selected row gets a golden edge and drives the
- * preview pane; on phones the chevron signals that a tap opens the editor.
+ * One saved template in the picker list, as its own card: a 40px A4
+ * thumbnail (a real page scaled down, like the marketplace cards), the name
+ * in bold and a muted caption.
+ *
+ * The marker on the right says what a click does. Desktop shows a radio
+ * circle (pick one to preview), filled golden with a check on the selected
+ * card, which also gets a golden ring and a pale gold fill. Phones show an
+ * arrow, because a tap starts the document straight away.
  */
 export const TemplatePickerRow = ({
   caption,
@@ -44,9 +47,9 @@ export const TemplatePickerRow = ({
       aria-current={isSelected ? "true" : undefined}
       aria-label={`${name}, ${caption}`}
       className={cn(
-        "template-picker-row relative flex min-h-16 w-full items-center gap-3 px-4 py-2 text-left transition-colors hover:bg-base-200 focus-visible:z-10 focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-nox-noir/30",
+        "template-picker-row flex min-h-18 w-full items-center gap-3 rounded-box border border-steel-mist bg-base-100 px-3 py-2.5 text-left transition-colors hover:bg-base-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-nox-noir/30",
         isSelected &&
-          "lg:bg-base-200 lg:before:absolute lg:before:inset-y-0 lg:before:left-0 lg:before:w-1 lg:before:bg-golden-harvest",
+          "lg:border-golden-harvest lg:bg-golden-harvest/15 lg:ring-1 lg:ring-golden-harvest lg:hover:bg-golden-harvest/20",
       )}
       data-template-id={template.id}
       onClick={onActivate}
@@ -55,13 +58,7 @@ export const TemplatePickerRow = ({
       ref={ref}
       type="button"
     >
-      <span
-        className={cn(
-          "w-12 shrink-0",
-          isSelected &&
-            "lg:outline-2 lg:outline-offset-2 lg:outline-golden-harvest",
-        )}
-      >
+      <span className="w-10 shrink-0">
         <TemplateThumbnail
           elevation="small"
           tiny
@@ -69,19 +66,41 @@ export const TemplatePickerRow = ({
         />
       </span>
       <span className="min-w-0 flex-1">
-        <span className="block truncate font-title text-[0.9375rem] font-semibold text-nox-noir lg:text-sm">
+        <span className="block truncate font-title text-[0.9375rem] font-bold text-nox-noir">
           {name}
         </span>
-        <span className="block truncate text-[0.8125rem] text-nox-noir/60 lg:text-xs">
+        <span className="block truncate text-[0.8125rem] text-nox-noir/60">
           {caption}
         </span>
       </span>
-      <CaretRightIcon
+
+      {/* Desktop: a radio circle, because a click selects. */}
+      {isSelected ? (
+        <span
+          aria-hidden
+          className="hidden size-6 shrink-0 place-items-center rounded-full bg-golden-harvest text-nox-noir lg:grid"
+        >
+          <CheckIcon
+            size={13}
+            weight="bold"
+          />
+        </span>
+      ) : (
+        <span
+          aria-hidden
+          className="hidden size-5.5 shrink-0 rounded-full border-2 border-steel-mist lg:block"
+        />
+      )}
+      {/* Phones: an arrow, because a tap starts the document. */}
+      <span
         aria-hidden
-        className="shrink-0 text-nox-noir/40 lg:hidden"
-        size={iconSize.control}
-        weight="bold"
-      />
+        className="grid size-8 shrink-0 place-items-center rounded-full bg-base-200 text-nox-noir lg:hidden"
+      >
+        <ArrowRightIcon
+          size={14}
+          weight="bold"
+        />
+      </span>
     </button>
   );
 };

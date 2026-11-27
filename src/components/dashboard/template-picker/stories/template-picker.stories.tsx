@@ -77,7 +77,7 @@ export const Desktop: Story = {
 
     // The card says what to do before anything is clicked.
     await expect(
-      canvas.getByRole("heading", { name: "Choose a template" }),
+      canvas.getByRole("heading", { name: "Choose your available templates" }),
     ).toBeVisible();
     await expect(
       canvas.getByText(

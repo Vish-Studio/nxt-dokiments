@@ -16,9 +16,9 @@ export interface TemplatePickerFiltersProps {
 }
 
 /**
- * Search box and a row of type chips above the template picker list. The
- * chips scroll sideways on phones rather than wrapping, so the row keeps one
- * height. Chips are toggle buttons (`aria-pressed`), one per owned type.
+ * Search box (the app's grey input fill) and a row of type chips above the
+ * template picker list. The chips scroll sideways on every screen rather
+ * than wrapping, so the row keeps one height. Chips are toggle buttons (`aria-pressed`), one per owned type.
  */
 export const TemplatePickerFilters = ({
   documentType,
@@ -46,7 +46,7 @@ export const TemplatePickerFilters = ({
         />
         <input
           aria-label="Search your templates"
-          className="h-11 w-full rounded-field border border-steel-mist bg-base-100 pl-9 pr-10 font-body text-base text-nox-noir placeholder:text-nox-noir/45 focus:border-nox-noir/40 focus:outline-none lg:h-10 lg:text-sm"
+          className="h-11 w-full rounded-field border border-transparent bg-base-200 pl-9 pr-10 font-body text-base text-nox-noir placeholder:text-nox-noir/50 focus:border-nox-noir focus:ring-2 focus:ring-nox-noir/15 focus:outline-none lg:h-10 lg:text-sm"
           onChange={(event) => onSearch(event.target.value)}
           placeholder="Search your templates"
           role="searchbox"
@@ -70,7 +70,7 @@ export const TemplatePickerFilters = ({
       {documentTypes.length > 1 ? (
         <div
           aria-label="Template type"
-          className="-mx-4 flex gap-2 overflow-x-auto px-4 [scrollbar-width:none] lg:mx-0 lg:flex-wrap lg:px-0"
+          className="-mx-4 mb-3.5 flex gap-2 overflow-x-auto px-4 [scrollbar-width:none] lg:-mx-5 lg:px-5"
           role="group"
         >
           {chips.map((chip) => {

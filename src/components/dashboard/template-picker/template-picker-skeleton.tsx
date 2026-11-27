@@ -6,7 +6,7 @@ import { LoadingStatus } from "@/components/commons/loading-status/loading-statu
  * same two-column frame as the loaded picker so nothing jumps.
  */
 export const TemplatePickerSkeleton = () => (
-  <div className="template-picker-skeleton grid gap-4 lg:min-h-0 lg:flex-1 lg:grid-cols-[22rem_minmax(0,1fr)]">
+  <div className="template-picker-skeleton grid gap-4 lg:min-h-0 lg:flex-1 lg:grid-cols-[24rem_minmax(0,1fr)]">
     <div className="rounded-box border border-steel-mist bg-base-100 p-4">
       <LoadingStatus message="Loading your templates…" />
       <div className="skeleton h-10 w-full rounded-field" />
