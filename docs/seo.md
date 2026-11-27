@@ -45,8 +45,8 @@ queries ("invoicing in Mauritius") take longer and depend on links.
 | Verification tags | `siteVerification` in `src/lib/seo/site.ts` | Google and Bing meta tags from `GOOGLE_SITE_VERIFICATION` / `BING_SITE_VERIFICATION` (server-only; unset means no tag) |
 | Structured data (home) | `src/lib/seo/home-structured-data.ts` | Organization (with `alternateName`, `areaServed` Mauritius), WebSite, SoftwareApplication; FAQPage from the FAQ section |
 | Local landing pages | `src/lib/website/local-pages.ts`, `LocalLanding`, `/invoice-maker-mauritius` | A page per market search, with WebPage, BreadcrumbList, SoftwareApplication (`areaServed`) and FAQPage JSON-LD built from the same data it renders |
-| Sitemap | `src/app/sitemap.ts` | Public pages only, including local landing pages |
-| Robots | `src/app/robots.ts` | Allows the site, disallows signed-in routes (kept in sync with `src/proxy.ts`) |
+| Sitemap | `src/app/sitemap.ts` | Public pages only, including local landing pages. Each has a fixed `lastModified` (bump it when that page's content changes; a date that moves on every request is ignored by Google) and the home and local pages list the social image for Google Images. `sitemap.test.ts` checks no listed path is disallowed in robots |
+| Robots | `src/app/robots.ts` | Allows the site, disallows signed-in routes (kept in sync with `src/proxy.ts`) and `/shared/` invitation links |
 | Preview host | `next.config.ts` `headers()` | `X-Robots-Tag: noindex` on `*.vercel.app`, so only `www.dokiments.com` is indexed |
 | Footer link | `footerProductLinks` | "Invoicing in Mauritius" on every public page, so crawlers find the local page |
 

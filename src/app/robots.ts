@@ -4,7 +4,7 @@ import { siteUrl } from "@/lib/seo/site";
 
 // Signed-in app routes redirect to /sign-in for crawlers (see src/proxy.ts) and carry noindex
 // metadata, so crawling them only wastes budget. Keep this list in sync with PROTECTED_PREFIXES.
-const privatePaths = [
+export const privatePaths = [
   "/api/",
   "/dashboard",
   "/my-documents",
@@ -16,6 +16,8 @@ const privatePaths = [
   "/forgot-password",
   "/offline",
   "/share-target",
+  // Invitation links carry a private token; they are noindex as well.
+  "/shared/",
 ];
 
 export default function robots(): MetadataRoute.Robots {
