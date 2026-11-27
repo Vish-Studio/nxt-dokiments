@@ -30,7 +30,9 @@ describe("getDocumentDetails", () => {
   it("leaves out an empty amount, adds last edited and reads the share", () => {
     const share = {
       locked: false,
-      recipients: [{ email: "maya@northline.com", invitedAt: 0, status: "pending" }],
+      recipients: [
+        { email: "maya@northline.com", invitedAt: 0, status: "pending" },
+      ],
       sourceDocumentId: "doc-1",
     } as unknown as SharedDocument;
 

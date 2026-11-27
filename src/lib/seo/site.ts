@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 
 /** Canonical origin for every absolute URL (metadata, sitemap, robots, JSON-LD). */
 export const siteUrl = (
-  process.env.NEXT_PUBLIC_SITE_URL ?? "https://dokiments.com"
+  process.env.NEXT_PUBLIC_SITE_URL ?? "https://www.dokiments.com"
 ).replace(/\/$/, "");
 
 export const siteName = "Dokiments";
@@ -10,6 +10,27 @@ export const siteName = "Dokiments";
 /** Default title/description: lead with what people search for (invoice, quotation, contract). */
 export const defaultTitle =
   "Free Invoice, Quotation & Contract Templates for Small Businesses";
+
+/**
+ * The home page `<title>`: the brand first, so a search for "Dokiments" matches
+ * the start of the title, then what the product is. Under 60 characters so
+ * Google shows it whole.
+ */
+export const homeTitle = `${siteName}: Free Invoice, Quote & Contract Maker`;
+
+/**
+ * Search engine ownership tags, from server-only env vars. Each is the token
+ * the console gives you (the `content` value only, not the whole tag). Unset
+ * means no tag; the property can also be verified by DNS instead.
+ * - `GOOGLE_SITE_VERIFICATION`: Google Search Console, "HTML tag" method.
+ * - `BING_SITE_VERIFICATION`: Bing Webmaster Tools, "Meta tag" method.
+ */
+export const siteVerification: Metadata["verification"] = {
+  google: process.env.GOOGLE_SITE_VERIFICATION || undefined,
+  other: process.env.BING_SITE_VERIFICATION
+    ? { "msvalidate.01": process.env.BING_SITE_VERIFICATION }
+    : undefined,
+};
 
 export const defaultDescription =
   "Create professional invoices, quotations, contracts, and receipts from ready-made templates. Save your clients, prefill their details in one click, and export a polished PDF in minutes. Free to start.";

@@ -5,8 +5,15 @@ import { northlineGroup } from "@/lib/storybook/company-document-fixtures";
 
 import { CompanyHistoryRow } from "../company-history-row";
 
-const created = northlineGroup.entries.find((entry) => entry.id === "doc:nl-1")!;
-const received = northlineGroup.entries.find((entry) => entry.source === "received")!;
+const created = northlineGroup.entries.find(
+  (entry) => entry.id === "doc:nl-1",
+)!;
+const received = northlineGroup.entries.find(
+  (entry) => entry.source === "received",
+)!;
+const notShared = northlineGroup.entries.find(
+  (entry) => entry.source === "created" && !entry.shareStatus,
+)!;
 
 /** Phones and desktop render different meta lines; count only the visible one. */
 const visibleCount = (elements: HTMLElement[]) =>
@@ -18,7 +25,7 @@ const meta = {
   parameters: { layout: "padded", nextjs: { appDirectory: true } },
   decorators: [
     (Story) => (
-      <ol className="w-[40rem] rounded-box bg-base-100 p-4">
+      <ol className="w-full max-w-[40rem] rounded-box bg-base-100 p-4">
         <Story />
       </ol>
     ),
@@ -57,4 +64,24 @@ export const Received: Story = {
       canvas.getByRole("link", { name: "Open Mutual NDA" }),
     ).toHaveAttribute("href", "/my-documents/shared/sh-in-1");
   },
+};
+
+/**
+ * Not shared on the grey row: the grey pill turns white, so its shape still
+ * shows against the `bg-base-200` row.
+ */
+export const NotShared: Story = {
+  args: { entry: notShared },
+  play: async ({ canvasElement }) => {
+    const pill = [...canvasElement.querySelectorAll(".status-pill")].find(
+      (element) => element.checkVisibility(),
+    ) as HTMLElement;
+    await expect(pill).toHaveTextContent("Not shared");
+    await expect(pill).toHaveClass("bg-base-100");
+  },
+};
+
+/** Phones: the row fits the screen, with the status word in the meta line. */
+export const Phone: Story = {
+  globals: { viewport: { value: "mobile1", isRotated: false } },
 };

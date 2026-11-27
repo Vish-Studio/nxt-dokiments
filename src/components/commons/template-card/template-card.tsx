@@ -11,7 +11,7 @@ export interface TemplateCardProps {
   saved?: boolean;
   template: MarketplaceTemplate;
   values?: Record<string, string>;
-};
+}
 
 export const TemplateCard = ({
   className,
@@ -36,7 +36,6 @@ export const TemplateCard = ({
     >
       <TemplateThumbnail
         compact={variant === "gallery"}
-        className="rounded-box bg-base-100 shadow-soft"
         template={template}
         values={values}
       />

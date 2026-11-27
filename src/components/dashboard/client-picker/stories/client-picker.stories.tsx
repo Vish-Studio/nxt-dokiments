@@ -93,7 +93,7 @@ export const WithClients: Story = {
   play: async ({ args, canvasElement }) => {
     const canvas = within(canvasElement);
     const trigger = await canvas.findByRole("button", {
-      name: "Prefill from client (optional)",
+      name: "Choose a client",
     });
 
     await userEvent.click(trigger);
@@ -120,8 +120,11 @@ export const WithClients: Story = {
       }),
     );
     await expect(args.onSelect).toHaveBeenCalledWith(clients[0]);
-    await expect(trigger).toHaveTextContent(
-      "Northline Studio · accounts@northline.com",
+    // The trigger now shows who was picked, and a line confirms the fill.
+    await expect(trigger).toHaveTextContent("Northline Studio");
+    await expect(trigger).toHaveTextContent("accounts@northline.com");
+    await expect(canvas.getByRole("status")).toHaveTextContent(
+      "Details filled in. Edits below only change this document.",
     );
   },
 };
@@ -135,11 +138,11 @@ export const NoClients: Story = {
   ],
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
+    // Points to the "New client" side of ClientDetailsChooser instead of an
+    // empty dropdown.
+    await expect(await canvas.findByText(/No saved clients yet/)).toBeVisible();
     await expect(
-      await canvas.findByRole("link", { name: "My clients" }),
-    ).toBeVisible();
-    await expect(
-      canvas.queryByLabelText("Prefill from client (optional)"),
+      canvas.queryByRole("button", { name: "Choose a client" }),
     ).not.toBeInTheDocument();
   },
 };
@@ -159,10 +162,10 @@ export const UnsupportedTemplate: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     await expect(
-      canvas.queryByLabelText("Prefill from client (optional)"),
+      canvas.queryByRole("button", { name: "Choose a client" }),
     ).not.toBeInTheDocument();
     await expect(
-      canvas.queryByRole("link", { name: "My clients" }),
+      canvas.queryByText(/No saved clients/),
     ).not.toBeInTheDocument();
   },
 };

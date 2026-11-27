@@ -1,8 +1,13 @@
-import { CaretDownIcon, CheckCircleIcon } from "@phosphor-icons/react";
+import {
+  ArrowRightIcon,
+  CaretDownIcon,
+  CheckCircleIcon,
+} from "@phosphor-icons/react";
 import type { Icon } from "@phosphor-icons/react";
 import type { ReactNode } from "react";
 
 import { Button } from "@/components/commons/button/button";
+import { iconSize } from "@/lib/icons";
 import { cn } from "@/lib/utils";
 
 interface Props {
@@ -12,6 +17,11 @@ interface Props {
   isComplete?: boolean;
   isLast?: boolean;
   isOpen: boolean;
+  /**
+   * The next section's title, shown as "Up next: …" beside the Next button
+   * so people know where it takes them. Omit on the last section.
+   */
+  nextTitle?: string;
   onNext: () => void;
   onToggle: () => void;
   title: string;
@@ -24,6 +34,7 @@ export const FormAccordionSection = ({
   isComplete = false,
   isLast = false,
   isOpen,
+  nextTitle,
   onNext,
   onToggle,
   title,
@@ -70,8 +81,28 @@ export const FormAccordionSection = ({
         id={panelId}
       >
         {children}
-        <div className="flex justify-end">
+        <div className="flex items-center justify-between gap-4 pt-1">
+          {!isLast && nextTitle ? (
+            <p className="min-w-0 truncate text-sm text-nox-noir/60">
+              Up next:{" "}
+              <span className="font-semibold text-nox-noir">{nextTitle}</span>
+            </p>
+          ) : (
+            <span />
+          )}
           <Button
+            className="shrink-0"
+            icon={
+              isLast ? undefined : (
+                <ArrowRightIcon
+                  aria-hidden
+                  size={iconSize.control}
+                  weight="bold"
+                />
+              )
+            }
+            iconMotion="right"
+            iconPosition="right"
             onClick={onNext}
             size="sm"
             variant="primary"

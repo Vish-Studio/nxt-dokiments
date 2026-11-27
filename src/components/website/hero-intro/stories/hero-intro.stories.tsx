@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from "@storybook/nextjs-vite";
-import { expect, userEvent } from "storybook/test";
+import { expect, userEvent, waitFor } from "storybook/test";
 
 import { HeroIntro } from "../hero-intro";
 
@@ -22,12 +22,22 @@ type Story = StoryObj<typeof meta>;
 
 export const Default: Story = {
   play: async ({ canvas }) => {
-    await expect(
-      canvas.getByRole("heading", { level: 1, name: /without the blank page/i }),
-    ).toBeVisible();
-    await userEvent.click(canvas.getByRole("button", { name: /add your client/i }));
-    await expect(
-      canvas.getByRole("heading", { level: 1, name: /filled in for you/i }),
-    ).toBeVisible();
+    // The headline fades up in 0.5s, so wait for it rather than expect it at once.
+    await waitFor(async () => {
+      await expect(
+        canvas.getByRole("heading", {
+          level: 1,
+          name: /without the blank page/i,
+        }),
+      ).toBeVisible();
+    });
+    await userEvent.click(
+      canvas.getByRole("button", { name: /add your client/i }),
+    );
+    await waitFor(async () => {
+      await expect(
+        canvas.getByRole("heading", { level: 1, name: /filled in for you/i }),
+      ).toBeVisible();
+    });
   },
 };

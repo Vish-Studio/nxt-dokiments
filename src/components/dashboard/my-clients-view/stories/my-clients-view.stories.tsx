@@ -96,7 +96,7 @@ export const WithClients: Story = {
     );
     // `toBeInTheDocument`, not `toBeVisible`: daisyUI fades the menu in from opacity 0.
     await expect(
-      await canvas.findByRole("button", { name: "Delete" }),
+      await canvas.findByRole("menuitem", { name: "Delete" }),
     ).toBeInTheDocument();
   },
 };

@@ -1,14 +1,11 @@
 "use client";
 
-import {
-  EyeIcon,
-  LockSimpleIcon,
-  PrinterIcon,
-} from "@phosphor-icons/react";
+import { EyeIcon, LockSimpleIcon, PrinterIcon } from "@phosphor-icons/react";
 import { useMemo, useState } from "react";
 
 import { Button } from "@/components/commons/button/button";
 import { ConfirmDialog } from "@/components/commons/confirm-dialog/confirm-dialog";
+import { DocumentPaper } from "@/components/commons/document-paper/document-paper";
 import { TemplateDocument } from "@/components/commons/template-document/template-document";
 import { DocumentExportDialog } from "@/components/dashboard/document-export-dialog/document-export-dialog";
 import { ShareTimeline } from "@/components/dashboard/share-timeline/share-timeline";
@@ -110,7 +107,6 @@ export const SharedDocumentSheet = ({
 
   return (
     <div className="shared-document-sheet w-full">
-
       <div className="mx-auto flex w-full max-w-3xl flex-col gap-4 pt-6">
         <div className="flex items-start justify-between gap-3">
           <div>
@@ -188,12 +184,15 @@ export const SharedDocumentSheet = ({
         ) : null}
 
         {template ? (
-          <TemplateDocument
-            className="rounded-box border border-steel-mist"
-            fieldSlots={fieldSlots}
-            template={template}
-            values={values}
-          />
+          <div className="rounded-box bg-base-200 p-4 sm:p-6">
+            <DocumentPaper>
+              <TemplateDocument
+                fieldSlots={fieldSlots}
+                template={template}
+                values={values}
+              />
+            </DocumentPaper>
+          </div>
         ) : (
           <p className="rounded-box border border-dashed border-steel-mist bg-base-100 p-6 text-center text-sm text-nox-noir/60">
             This document&apos;s layout is no longer available.

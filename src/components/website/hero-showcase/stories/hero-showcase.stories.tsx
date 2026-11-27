@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from "@storybook/nextjs-vite";
-import { expect, userEvent, waitFor } from "storybook/test";
+import { expect, userEvent, waitFor, within } from "storybook/test";
 
 import { HeroShowcase } from "../hero-showcase";
 
@@ -24,44 +24,59 @@ const meta = {
 export default meta;
 type Story = StoryObj<typeof meta>;
 
-/** Desktop: the steps on the left, the workspace photo on the right. */
+/**
+ * Desktop: step 1 shows the workspace photo; picking step 2 cross-fades to its
+ * own scene in the desktop layout.
+ */
 export const Desktop: Story = {
-  play: async ({ canvas }) => {
-    const photo = canvas.getByAltText(
-      "Dokiments workspace displayed on a laptop",
-    );
-    // The test frame is short, so check the desktop layout is the one shown
-    // rather than that the photo has a visible size.
-    await expect(getComputedStyle(photo.parentElement!).display).not.toBe(
-      "none",
-    );
+  play: async ({ canvas, canvasElement }) => {
+    const desktop = canvasElement.querySelector<HTMLElement>(
+      ".hero-product-mockup-desktop",
+    )!;
+    const phone = canvasElement.querySelector<HTMLElement>(
+      ".hero-product-mockup-phone",
+    )!;
+    // The test frame is short, so check which layout is shown rather than
+    // that the photo has a visible size.
+    await expect(getComputedStyle(desktop).display).not.toBe("none");
+    await expect(getComputedStyle(phone).display).toBe("none");
     await expect(
-      getComputedStyle(
-        canvas.getByAltText(/marketplace on a laptop/).parentElement!,
-      ).display,
-    ).toBe("none");
-  },
-};
-
-/** Phones: picking a step switches the device scene under the intro card. */
-export const FollowsTheSteps: Story = {
-  globals: { viewport: { value: "mobile1", isRotated: false } },
-  play: async ({ canvas }) => {
-    await expect(
-      canvas.getByAltText(/marketplace on a laptop/),
+      within(desktop).getByAltText("Dokiments workspace displayed on a laptop"),
     ).toBeInTheDocument();
 
     await userEvent.click(
       canvas.getByRole("button", { name: /Add your client/ }),
     );
     await waitFor(async () => {
-      await expect(canvas.getByAltText(/on two phones/)).toBeInTheDocument();
+      await expect(
+        within(desktop).getByAltText(/on two phones/),
+      ).toBeInTheDocument();
+    });
+  },
+};
+
+/** Phones: picking a step switches the device scene under the intro card. */
+export const FollowsTheSteps: Story = {
+  globals: { viewport: { value: "mobile1", isRotated: false } },
+  play: async ({ canvas, canvasElement }) => {
+    const phone = within(
+      canvasElement.querySelector<HTMLElement>(".hero-product-mockup-phone")!,
+    );
+    await expect(
+      phone.getByAltText(/marketplace on a laptop/),
+    ).toBeInTheDocument();
+
+    await userEvent.click(
+      canvas.getByRole("button", { name: /Add your client/ }),
+    );
+    await waitFor(async () => {
+      await expect(phone.getByAltText(/on two phones/)).toBeInTheDocument();
     });
 
     await userEvent.click(canvas.getByRole("button", { name: /Send the PDF/ }));
     await waitFor(async () => {
       await expect(
-        canvas.getByAltText(/ready to download on a phone/),
+        phone.getByAltText(/ready to download on a phone/),
       ).toBeInTheDocument();
     });
   },

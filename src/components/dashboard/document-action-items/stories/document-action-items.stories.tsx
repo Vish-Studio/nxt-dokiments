@@ -1,6 +1,8 @@
 import type { Meta, StoryObj } from "@storybook/nextjs-vite";
+import { DotsThreeVerticalIcon } from "@phosphor-icons/react";
 import { expect, fn, userEvent, within } from "storybook/test";
 
+import { Dropdown } from "@/components/commons/dropdown/dropdown";
 import { getTemplateById } from "@/lib/market-place";
 import type { MarketplaceTemplate, UserDocument } from "@/types/template";
 
@@ -28,12 +30,21 @@ const meta = {
   title: "Dashboard/Document Action Items",
   component: DocumentActionItems,
   args: { document, onDownload: fn(), onEdit: fn() },
+  // The items are `menuitem`s, so they sit in a menu, as in a row's ⋮ Dropdown.
+  // A story that renders its own Dropdown sets `parameters.menuWrapper: false`.
   decorators: [
-    (Story) => (
-      <div className="w-52 rounded-box border border-steel-mist bg-base-100 p-1">
+    (Story, { parameters }) =>
+      parameters.menuWrapper === false ? (
         <Story />
-      </div>
-    ),
+      ) : (
+        <div
+          aria-label="Document actions"
+          className="w-52 rounded-box border border-steel-mist bg-base-100 p-1"
+          role="menu"
+        >
+          <Story />
+        </div>
+      ),
   ],
 } satisfies Meta<typeof DocumentActionItems>;
 
@@ -45,7 +56,7 @@ export const Minimal: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     await expect(
-      canvas.getAllByRole("button").map((b) => b.textContent),
+      canvas.getAllByRole("menuitem").map((b) => b.textContent),
     ).toEqual(["Edit", "Download PDF"]);
   },
 };
@@ -61,7 +72,7 @@ export const AllActions: Story = {
   play: async ({ args, canvasElement }) => {
     const canvas = within(canvasElement);
     await expect(
-      canvas.getAllByRole("button").map((b) => b.textContent),
+      canvas.getAllByRole("menuitem").map((b) => b.textContent),
     ).toEqual([
       "Edit",
       "Download PDF",
@@ -70,7 +81,55 @@ export const AllActions: Story = {
       "View shared copy",
       "Delete",
     ]);
-    await userEvent.click(canvas.getByRole("button", { name: "Delete" }));
+    await userEvent.click(canvas.getByRole("menuitem", { name: "Delete" }));
     await expect(args.onDelete).toHaveBeenCalledWith(document);
+    // The divider before Delete is a separator, not a focus stop.
+    await expect(canvas.getByRole("separator")).not.toHaveAttribute("tabindex");
+  },
+};
+
+/**
+ * In a real ⋮ `Dropdown` the arrow keys walk every action in order and wrap,
+ * stepping over the divider, and Enter runs the focused one.
+ */
+export const InDropdownKeyboard: Story = {
+  args: AllActions.args,
+  decorators: [
+    (Story) => (
+      <Dropdown
+        ariaLabel="More actions for June retainer invoice"
+        iconTrigger={
+          <DotsThreeVerticalIcon
+            aria-hidden
+            size={20}
+            weight="bold"
+          />
+        }
+        menuClassName="w-52"
+      >
+        <Story />
+      </Dropdown>
+    ),
+  ],
+  parameters: { layout: "centered", menuWrapper: false },
+  play: async ({ args, canvasElement }) => {
+    const canvas = within(canvasElement);
+    const trigger = canvas.getByRole("button", {
+      name: "More actions for June retainer invoice",
+    });
+    trigger.focus();
+    await userEvent.keyboard("{ArrowDown}");
+    const items = within(canvas.getByRole("menu")).getAllByRole("menuitem");
+    await expect(items[0]).toHaveFocus();
+    await userEvent.keyboard("{End}");
+    await expect(items[5]).toHaveTextContent("Delete");
+    await expect(items[5]).toHaveFocus();
+    await userEvent.keyboard("{ArrowUp}");
+    await expect(items[4]).toHaveFocus();
+    await userEvent.keyboard("{ArrowDown}{ArrowDown}");
+    await expect(items[0]).toHaveFocus();
+    await userEvent.keyboard("{ArrowDown}{Enter}");
+    await expect(args.onDownload).toHaveBeenCalledWith(document);
+    await expect(canvas.queryByRole("menu")).toBeNull();
   },
 };

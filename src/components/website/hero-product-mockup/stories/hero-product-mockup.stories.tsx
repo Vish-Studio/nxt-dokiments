@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from "@storybook/nextjs-vite";
-import { expect, waitFor } from "storybook/test";
+import { expect, waitFor, within } from "storybook/test";
 
 import { HeroProductMockup } from "../hero-product-mockup";
 
@@ -23,8 +23,8 @@ export default meta;
 type Story = StoryObj<typeof meta>;
 
 /**
- * Desktop: the workspace photo, the dashboard on a laptop on a log, with the
- * app on an iPhone. The phone scenes are in the DOM but hidden at this width.
+ * Desktop, step 1: the workspace photo, the dashboard on a laptop on a log,
+ * with the app on an iPhone. The phone scenes are in the DOM but hidden.
  */
 export const Desktop: Story = {
   play: async ({ canvas, canvasElement }) => {
@@ -36,23 +36,48 @@ export const Desktop: Story = {
     await expect(
       canvas.getByAltText("Dokiments dashboard displayed on a mobile phone"),
     ).toBeVisible();
-    // Two desktop images plus the three phone scenes.
-    await expect(canvasElement.querySelectorAll("img")).toHaveLength(5);
+    // Desktop: the step 1 photo pair and the step 2 and 3 scenes; phones: three scenes.
+    await expect(canvasElement.querySelectorAll("img")).toHaveLength(7);
   },
 };
+
+/**
+ * Desktop, step 2 "Add your client": the client scene replaces the workspace
+ * photo.
+ */
+export const DesktopClient: Story = {
+  args: { activeStepId: "client" },
+  play: async ({ canvasElement }) => {
+    const visible = [...canvasElement.querySelectorAll("img")].filter(
+      (img) => img.checkVisibility() && img.alt,
+    );
+    await expect(visible.map((img) => img.alt)).toEqual([
+      expect.stringMatching(/on two phones/),
+    ]);
+  },
+};
+
+/** The phone layout's container, so phone stories query only its scenes. */
+const phoneScenes = (canvasElement: HTMLElement) =>
+  within(
+    canvasElement.querySelector<HTMLElement>(".hero-product-mockup-phone")!,
+  );
 
 /** Phone, step 1, "Pick a template": the marketplace on a laptop on a rock. */
 export const Template: Story = {
   globals: { viewport: { value: "mobile1", isRotated: false } },
-  play: async ({ canvas, canvasElement }) => {
+  play: async ({ canvasElement }) => {
+    const phone = phoneScenes(canvasElement);
     await waitFor(async () => {
       await expect(
-        canvas.getByAltText(/marketplace on a laptop/),
+        phone.getByAltText(/marketplace on a laptop/),
       ).toBeInTheDocument();
     });
     // The other scenes stay mounted for a seamless swap, but are not announced.
     await expect(
-      canvasElement.querySelectorAll('img[aria-hidden="true"]'),
+      canvasElement.querySelectorAll(
+        '.hero-product-mockup-phone img[aria-hidden="true"]',
+      ),
     ).toHaveLength(2);
   },
 };
@@ -61,8 +86,10 @@ export const Template: Story = {
 export const Client: Story = {
   globals: { viewport: { value: "mobile1", isRotated: false } },
   args: { activeStepId: "client" },
-  play: async ({ canvas }) => {
-    await expect(canvas.getByAltText(/on two phones/)).toBeInTheDocument();
+  play: async ({ canvasElement }) => {
+    await expect(
+      phoneScenes(canvasElement).getByAltText(/on two phones/),
+    ).toBeInTheDocument();
   },
 };
 
@@ -70,9 +97,9 @@ export const Client: Story = {
 export const Send: Story = {
   globals: { viewport: { value: "mobile1", isRotated: false } },
   args: { activeStepId: "send" },
-  play: async ({ canvas }) => {
+  play: async ({ canvasElement }) => {
     await expect(
-      canvas.getByAltText(/ready to download on a phone/),
+      phoneScenes(canvasElement).getByAltText(/ready to download on a phone/),
     ).toBeInTheDocument();
   },
 };

@@ -1,0 +1,33 @@
+{
+  "targets": {
+    "my-documents/choose-template": {
+      "projectId": "b97dbee9-da4d-47a0-bbcc-0080bba0c83e",
+      "baselineDraftId": "f30e3ad7-88bd-474a-8566-4363c3bf5b53",
+      "activeDraftId": "18e3acf1-5d4d-4577-9f90-eb1283aab37f",
+      "branches": {
+        "A-gallery": "43699b6d-ef4c-4c28-825b-09ee9e7fab22",
+        "B-split": "18e3acf1-5d4d-4577-9f90-eb1283aab37f"
+      },
+      "brandAssets": {
+        "logo": "public-icons-mark-192.png"
+      },
+      "references": {
+        "currentDesktop": "154d5413-fad6-461f-96f1-5a5873744a98",
+        "currentPhone": "4089338f-eded-487b-a40e-196a7740d712",
+        "myTemplatesGallery": "24481fd9-1329-4f69-b1e7-34c7e3f4ca47"
+      },
+      "contextFiles": [
+        ".superdesign/design-system.md",
+        ".superdesign/init/theme.md:1:20",
+        "src/app/globals.css:1:100",
+        "src/components/dashboard/my-templates-view/my-templates-view.tsx",
+        "src/components/commons/collection-toolbar/collection-toolbar.tsx",
+        "src/components/commons/template-card/template-card.tsx",
+        "src/components/commons/tab-menu/tab-menu.tsx"
+      ],
+      "model": "gemini-3.1-pro",
+      "phoneDraftId": "e5defe8c-334f-488f-b175-7d5e47610226",
+      "selected": "B-split"
+    }
+  }
+}

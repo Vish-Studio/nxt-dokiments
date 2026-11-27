@@ -1,4 +1,5 @@
-import { Badge, type BadgeVariant } from "@/components/commons/badge/badge";
+import { StatusPill } from "@/components/commons/status-pill/status-pill";
+import type { StatusTone } from "@/lib/ui/status-tone";
 import type { ShareRecipientStatus } from "@/types/sharing";
 
 export interface ShareStatusBadgeProps {
@@ -13,21 +14,29 @@ export interface ShareStatusBadgeProps {
 
 const statusDisplay: Record<
   ShareRecipientStatus,
-  { label: string; variant: BadgeVariant }
+  { label: string; tone: StatusTone }
 > = {
-  pending: { label: "Pending", variant: "accent" },
-  revoked: { label: "Revoked", variant: "neutral" },
-  signed: { label: "Signed", variant: "success" },
-  viewed: { label: "Viewed", variant: "neutral" },
+  pending: { label: "Pending", tone: "golden" },
+  revoked: { label: "Revoked", tone: "grey" },
+  signed: { label: "Signed", tone: "green" },
+  viewed: { label: "Viewed", tone: "blue" },
 };
 
-/** A recipient's progress on a shared document. */
+/**
+ * A recipient's progress on a shared document, as a dot + word `StatusPill`
+ * in the same colours as the document lists: Pending golden (grey "Not
+ * opened" for a view-only share), Viewed blue, Signed green, Revoked grey.
+ */
 export const ShareStatusBadge = ({
   signable = true,
   status,
 }: ShareStatusBadgeProps) => {
-  const { label: defaultLabel, variant } = statusDisplay[status];
-  const label = !signable && status === "pending" ? "Not opened" : defaultLabel;
+  const { label: defaultLabel, tone: defaultTone } = statusDisplay[status];
+  const isNotOpened = !signable && status === "pending";
 
-  return <Badge variant={variant}>{label}</Badge>;
+  return (
+    <StatusPill tone={isNotOpened ? "grey" : defaultTone}>
+      {isNotOpened ? "Not opened" : defaultLabel}
+    </StatusPill>
+  );
 };

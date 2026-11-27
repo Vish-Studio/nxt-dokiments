@@ -12,7 +12,8 @@ import { COOKIE_CONSENT_STORAGE_KEY } from "@/lib/cookie-consent";
 import { QueryProvider } from "@/lib/query/query-provider";
 import {
   defaultDescription,
-  defaultTitle,
+  homeTitle,
+  siteVerification,
   siteName,
   siteUrl,
 } from "@/lib/seo/site";
@@ -42,7 +43,7 @@ const dancingScript = Dancing_Script({
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
   title: {
-    default: `${defaultTitle} | ${siteName}`,
+    default: homeTitle,
     template: `%s | ${siteName}`,
   },
   description: defaultDescription,
@@ -61,7 +62,12 @@ export const metadata: Metadata = {
     "small business documents",
     "freelancer invoice",
     "PDF invoice generator",
+    "Dokiments",
+    "invoice maker Mauritius",
+    "invoicing in Mauritius",
+    "quotation template Mauritius",
   ],
+  verification: siteVerification,
   authors: [{ name: "VISH studio", url: "https://www.vish.studio" }],
   creator: "VISH studio",
   publisher: siteName,
@@ -76,7 +82,7 @@ export const metadata: Metadata = {
     title: siteName,
   },
   openGraph: {
-    title: `${defaultTitle} | ${siteName}`,
+    title: homeTitle,
     description: defaultDescription,
     siteName,
     locale: "en_US",
@@ -95,7 +101,7 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: `${defaultTitle} | ${siteName}`,
+    title: homeTitle,
     description: defaultDescription,
   },
 };

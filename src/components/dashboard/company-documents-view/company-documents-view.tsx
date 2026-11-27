@@ -101,10 +101,10 @@ export const CompanyDocumentsView = ({
           aria-hidden
           className="grid gap-4 lg:grid-cols-[1.3fr_0.7fr]"
         >
-          <div className="skeleton h-96 rounded-box" />
+          <div className="skeleton h-96 rounded-xl" />
           <div className="grid gap-4">
-            <div className="skeleton h-48 rounded-box" />
-            <div className="skeleton h-48 rounded-box" />
+            <div className="skeleton h-48 rounded-xl" />
+            <div className="skeleton h-48 rounded-xl" />
           </div>
         </div>
       </div>

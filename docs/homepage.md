@@ -10,7 +10,7 @@ app").
 
 | Section | Component | Visual |
 | --- | --- | --- |
-| Hero (right column) | `HeroShowcase` → `HeroProductMockup` | **Desktop (`lg`+):** the workspace photo, `hero-laptop-rock.webp` (the dashboard on a laptop on a log) with `hero-mobile-cutout.webp` floating over it, unchanged from before. **Phones and tablets:** one device scene per hero step, cross-fading as the step changes: **Template** = marketplace on the laptop on a rock; **Client** = My Clients and a prefilled invoice on two iPhones (blue); **Send PDF** = finished invoice on a MacBook plus "Document ready" on an iPhone (purple) |
+| Hero (right column) | `HeroShowcase` → `HeroProductMockup` | **Desktop (`lg`+):** step 1 shows the workspace photo, `hero-laptop-rock.webp` (the dashboard on a laptop on a log) with `hero-mobile-cutout.webp` floating over it; steps 2 and 3 show the Client and Send PDF scenes below. **Phones and tablets:** one device scene per hero step, cross-fading as the step changes: **Template** = marketplace on the laptop on a rock; **Client** = My Clients and a prefilled invoice on two iPhones (blue); **Send PDF** = finished invoice on a MacBook plus "Document ready" on an iPhone (purple) |
 | Your whole document workspace | `FeatureTabs` → `FeatureTabVisual` | Six tabs in the app's sidebar order (Dashboard, My Documents, CVs, My Templates, My Clients, Marketplace), each a real page in `DeviceBrowser` on its page tone (CVs on noir). Not shared with the auth pages |
 | How it works | `Workflow` → `WorkflowStep` | Text only: numbered markers on a connector, no images |
 | Share and e-sign | `SignShowcase` → `SignShowcaseMockup` | Share dialog still, status card with `ShareTimeline`, `SignedSignature`, floating notification. **Only when document sharing is on** |

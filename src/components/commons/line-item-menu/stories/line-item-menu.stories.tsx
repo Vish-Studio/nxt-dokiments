@@ -34,12 +34,12 @@ export const FirstItem: Story = {
       canvas.getByRole("button", { name: "More actions for item 1" }),
     );
     await expect(
-      canvas.getByRole("button", { name: "Move up" }),
+      canvas.getByRole("menuitem", { name: "Move up" }),
     ).toBeDisabled();
-    await userEvent.click(canvas.getByRole("button", { name: "Move down" }));
+    await userEvent.click(canvas.getByRole("menuitem", { name: "Move down" }));
     await expect(args.onMoveDown).toHaveBeenCalled();
     await expect(
-      canvas.queryByRole("button", { name: "Delete" }),
+      canvas.queryByRole("menuitem", { name: "Delete" }),
     ).not.toBeInTheDocument();
   },
 };

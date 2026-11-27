@@ -317,7 +317,7 @@ export const DashboardView = () => {
               {latestDocumentTemplate ? (
                 <TemplateThumbnail
                   compact
-                  className="mx-auto hidden md:flex w-28 rounded-box bg-base-100 shadow-soft sm:justify-self-end"
+                  className="mx-auto hidden md:flex w-28 sm:justify-self-end"
                   template={latestDocumentTemplate}
                   values={latestDocument.values}
                 />

@@ -58,6 +58,8 @@ export const NotificationBellView = ({
     )}
     // The popover is taller and wider than a plain menu: it is a feed.
     menuClassName="w-[24rem] max-w-[calc(100vw-2rem)] max-h-[min(34rem,75dvh)]! p-0"
+    // A feed with its own buttons and links, not a list of actions.
+    popupRole="dialog"
     sheetIcon={BellIcon}
     sheetTitle="Notifications"
     trigger={

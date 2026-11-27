@@ -44,12 +44,7 @@ export const ShowcaseDocument = ({
   }
 
   return (
-    <div
-      className={cn(
-        "showcase-document overflow-hidden rounded-md bg-base-100 shadow-soft ring-1 ring-nox-noir/8",
-        className,
-      )}
-    >
+    <div className={cn("showcase-document", className)}>
       <TemplateThumbnail
         compact={compact}
         template={template}

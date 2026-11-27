@@ -48,7 +48,14 @@ export type TemplateFormProps = {
   onChange: (key: string, value: string) => void;
   values: Record<string, string>;
   documentNameField?: ReactNode;
+  /** Rendered at the top of the client section, e.g. `ClientDetailsChooser`. */
   recipientPicker?: ReactNode;
+  /**
+   * Called when Next is pressed on a section. Call `proceed` to mark it done
+   * and open the next one, now or later (after a prompt). Omit to always
+   * proceed straight away.
+   */
+  onBeforeNext?: (sectionId: string, proceed: () => void) => void;
   /** Replaces a field's input, by key — e.g. a read-only status once a recipient has been sent the document. */
   fieldSlots?: Partial<Record<string, ReactNode>>;
 };
@@ -60,6 +67,7 @@ export const TemplateForm = ({
   documentNameField,
   recipientPicker,
   fieldSlots,
+  onBeforeNext,
 }: TemplateFormProps) => {
   const isBilling =
     fields.some((entry) => entry.key === "subtotal") &&
@@ -108,7 +116,12 @@ export const TemplateForm = ({
             isLast={index === sections.length - 1}
             isOpen={openId === section.id}
             key={section.id}
-            onNext={() => saveSection(index)}
+            nextTitle={sections[index + 1]?.title}
+            onNext={() =>
+              onBeforeNext
+                ? onBeforeNext(section.id, () => saveSection(index))
+                : saveSection(index)
+            }
             onToggle={() =>
               setOpenId((current) =>
                 current === section.id ? null : section.id,

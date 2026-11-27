@@ -8,15 +8,17 @@ import {
 } from "@phosphor-icons/react";
 import Link from "next/link";
 
-import { Badge } from "@/components/commons/badge/badge";
 import {
   ButtonIcon,
   buttonIconClasses,
 } from "@/components/commons/button-icon/button-icon";
+import { StatusPill } from "@/components/commons/status-pill/status-pill";
+import { iconSize } from "@/lib/icons";
 import type { CompanyEntry } from "@/lib/documents/company-groups";
 import { formatFullDate } from "@/lib/documents/format-document-date";
 import { documentIcons } from "@/lib/market-place/document-icons";
 import { getDocumentTypeLabel } from "@/lib/market-place/document-labels";
+import type { StatusTone } from "@/lib/ui/status-tone";
 import type { UserDocument } from "@/types/template";
 
 export interface CompanyHistoryRowProps {
@@ -51,12 +53,24 @@ const statusOf = (entry: CompanyEntry) => {
   }
 };
 
-const iconActionClassName = "size-8 min-h-8 text-nox-noir/70 hover:bg-base-100 hover:text-nox-noir";
+/** The same colour families as the document lists (see `StatusTone`). */
+const statusTone: Record<ReturnType<typeof statusOf>, StatusTone> = {
+  "Not shared": "grey",
+  Received: "teal",
+  Revoked: "grey",
+  Sent: "golden",
+  Signed: "green",
+  Viewed: "blue",
+};
+
+const iconActionClassName =
+  "size-8 min-h-8 text-nox-noir/70 hover:bg-base-100 hover:text-nox-noir";
 
 /**
  * One document in a company page's "Documents" card, styled like the
  * dashboard's grey rows: a white type tile, the title, a muted line "type ·
- * from · date, time", a status pill (green only when signed) and quiet icon
+ * from · date, time", a `StatusPill` in the shared tones (keeping this
+ * page's own words, "Sent" and "Revoked") and quiet icon
  * actions (export PDF and edit for created documents, open for received ones).
  * The whole row opens the entry and turns a shade darker on hover.
  */
@@ -75,36 +89,32 @@ export const CompanyHistoryRow = ({
   const from = isReceived ? `From ${entry.sharedBy}` : "By you";
 
   return (
-    <li className="company-history-row group relative flex min-w-0 items-center gap-3 rounded-box bg-base-200 p-3 transition-colors hover:bg-base-300/60">
+    <li className="company-history-row group relative flex min-w-0 items-center gap-3 rounded-lg bg-base-200 p-3 transition-colors hover:bg-base-300/60">
       {/* Whole-row target behind the content, so the row can hold its own buttons. */}
       <button
         aria-label={`${isReceived ? "Open" : "Preview"} ${title}`}
-        className="absolute inset-0 rounded-box focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-nox-noir"
+        className="absolute inset-0 rounded-lg focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-nox-noir"
         onClick={() => onOpen(entry)}
         type="button"
       />
 
-      <span className="pointer-events-none relative flex size-10 shrink-0 items-center justify-center rounded-box bg-base-100 text-nox-noir/70">
+      <span className="pointer-events-none relative flex size-10 shrink-0 items-center justify-center rounded-lg bg-base-100 text-nox-noir/70">
         <TypeIcon
           aria-hidden
-          size={18}
+          size={iconSize.tile}
           weight="bold"
         />
       </span>
 
       <div className="pointer-events-none relative min-w-0 flex-1">
-        <p className="truncate text-sm font-semibold text-nox-noir">
-          {title}
-        </p>
+        <p className="truncate text-sm font-semibold text-nox-noir">{title}</p>
         {/* Phones: the icon already says the type, so just who, when and status. */}
-        <p className="mt-0.5 truncate text-xs text-nox-noir/55 sm:hidden">
+        <p className="mt-0.5 truncate text-xs text-nox-noir/70 sm:hidden">
           {isReceived ? `From ${entry.sharedBy} · ` : ""}
           {formatFullDate(entry.createdAt)} ·{" "}
-          <span className={status === "Signed" ? "font-semibold text-success" : ""}>
-            {status}
-          </span>
+          <span className="font-semibold text-nox-noir">{status}</span>
         </p>
-        <p className="mt-0.5 hidden truncate text-xs text-nox-noir/55 sm:block">
+        <p className="mt-0.5 hidden truncate text-xs text-nox-noir/70 sm:block">
           {entry.documentType
             ? getDocumentTypeLabel(entry.documentType)
             : "Document"}{" "}
@@ -116,9 +126,12 @@ export const CompanyHistoryRow = ({
       </div>
 
       <span className="pointer-events-none relative hidden shrink-0 sm:block">
-        <Badge variant={status === "Signed" ? "success" : "neutral"}>
+        <StatusPill
+          surface="grey"
+          tone={statusTone[status]}
+        >
           {status}
-        </Badge>
+        </StatusPill>
       </span>
 
       <div className="relative flex shrink-0 items-center gap-1">
@@ -130,7 +143,7 @@ export const CompanyHistoryRow = ({
               icon={
                 <PrinterIcon
                   aria-hidden
-                  size={16}
+                  size={iconSize.control}
                   weight="bold"
                 />
               }
@@ -151,7 +164,7 @@ export const CompanyHistoryRow = ({
             >
               <PencilSimpleIcon
                 aria-hidden
-                size={16}
+                size={iconSize.control}
                 weight="bold"
               />
             </Link>
@@ -169,7 +182,7 @@ export const CompanyHistoryRow = ({
           >
             <ArrowSquareOutIcon
               aria-hidden
-              size={16}
+              size={iconSize.control}
               weight="bold"
             />
           </Link>

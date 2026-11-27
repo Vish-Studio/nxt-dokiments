@@ -44,13 +44,27 @@ const northlineClient: Client = {
  * `DocumentsView`'s queries and mutations all resolve against in-memory fixture
  * data, dispatching on request URL/method.
  */
+/** Clients a story's "Save client" sent to `POST /api/clients`, newest last. */
+const createdClients: Array<Record<string, string>> = [];
+
 const mockDocumentsApi = (
   initialDocuments: UserDocument[],
   clients: Client[] = [northlineClient],
 ) => {
   let documents = initialDocuments;
+  createdClients.length = 0;
 
   window.fetch = (async (url: string, init?: RequestInit) => {
+    if (url.includes("/api/clients") && init?.method === "POST") {
+      const input = JSON.parse((init.body as string) ?? "{}");
+      createdClients.push(input);
+      return new Response(
+        JSON.stringify({
+          client: { ...input, createdAt: 1, id: "client_new", updatedAt: 1 },
+        }),
+        { status: 201 },
+      );
+    }
     // Must precede the /api/documents handling below: the editor renders
     // `ClientPicker`, so this request fires as soon as the editor mounts.
     if (url.includes("/api/clients")) {
@@ -209,7 +223,7 @@ const openRowAction = async (
     await canvas.findByRole("button", { name: `More actions for ${title}` }),
   );
   await userEvent.click(
-    await within(canvasElement.ownerDocument.body).findByRole("button", {
+    await within(canvasElement.ownerDocument.body).findByRole("menuitem", {
       name: action,
     }),
   );
@@ -293,7 +307,11 @@ export const WithDocuments: Story = {
     await expect(canvas.getByText("18/06/26")).toBeVisible();
     // The row shows who it is for, not the template style.
     await expect(canvas.queryByText("Classic designs")).toBeNull();
-    await expect(canvas.getAllByText("Not shared")[0]).toBeVisible();
+    await expect(
+      canvas
+        .getAllByText("Not shared")
+        .some((element) => element.checkVisibility()),
+    ).toBe(true);
     await userEvent.click(
       canvas.getByRole("button", {
         name: "Open preview for Lumina Events Invoice",
@@ -378,7 +396,7 @@ export const DuplicateDocument: Story = {
           name: "More actions for Lumina Events Invoice",
         }),
       );
-      await userEvent.click(canvas.getByRole("button", { name: "Duplicate" }));
+      await userEvent.click(canvas.getByRole("menuitem", { name: "Duplicate" }));
       await expect(
         await canvas.findByDisplayValue("Copy of March Invoice"),
       ).toBeVisible();
@@ -609,8 +627,8 @@ export const MobileEditorPreview: Story = {
 };
 
 /**
- * Walks the full new-document path — New document → template preview → Use
- * document — then prefills the recipient block from a saved client.
+ * Walks the full new-document path — New document → pick a template row →
+ * editor — then prefills the recipient block from a saved client.
  *
  * Uses `classic-invoice` because invoices are one of the four billing types that
  * carry `recipientContactFields`, so this also covers `toEmail`/`toPhone`/`toBrn`
@@ -630,14 +648,10 @@ export const PrefillFromClient: Story = {
     await userEvent.click(
       (await canvas.findAllByRole("button", { name: /new document/i }))[0],
     );
-    await userEvent.click(
-      await canvas.findByRole("button", {
-        name: "Preview Invoice, saved",
-      }),
-    );
-    await userEvent.click(
-      await canvas.findByRole("button", { name: "Use document" }),
-    );
+    // Enter on a picker row starts the document on every screen size (a click
+    // only selects it on desktop).
+    (await canvas.findAllByRole("button", { name: /^Invoice, / }))[0].focus();
+    await userEvent.keyboard("{Enter}");
 
     // The form is an accordion that opens on Document details; open the sections under test.
     await userEvent.click(
@@ -656,7 +670,7 @@ export const PrefillFromClient: Story = {
       canvas.getByRole("button", { name: /^Client details/ }),
     );
     await userEvent.click(
-      canvas.getByRole("button", { name: "Prefill from client (optional)" }),
+      canvas.getByRole("button", { name: "Choose a client" }),
     );
     await userEvent.click(
       canvas.getByRole("menuitemradio", {
@@ -664,10 +678,10 @@ export const PrefillFromClient: Story = {
       }),
     );
 
-    // companyName wins over the contact name for `toName`. Asserted via the "To"
+    // companyName wins over the contact name for `toName`. Asserted via the "Client name"
     // label rather than `findByDisplayValue`, so this remains specific to the
     // recipient field rather than the picker trigger.
-    await expect(await canvas.findByLabelText("To")).toHaveValue(
+    await expect(await canvas.findByLabelText("Client name")).toHaveValue(
       "Northline Studio",
     );
     await expect(
@@ -704,7 +718,9 @@ export const NewDocumentDeepLink: Story = {
     const canvas = within(canvasElement);
 
     await expect(
-      await canvas.findByRole("heading", { name: "Choose a template" }),
+      await canvas.findByRole("heading", {
+        name: "Choose your available templates",
+      }),
     ).toBeVisible();
     // The picker replaced the list rather than stacking on top of it.
     await expect(
@@ -730,25 +746,88 @@ export const PrefillWithNoClients: Story = {
     await userEvent.click(
       (await canvas.findAllByRole("button", { name: /new document/i }))[0],
     );
-    await userEvent.click(
-      await canvas.findByRole("button", {
-        name: "Preview Invoice, saved",
-      }),
-    );
-    await userEvent.click(
-      await canvas.findByRole("button", { name: "Use document" }),
-    );
+    // Enter on a picker row starts the document on every screen size (a click
+    // only selects it on desktop).
+    (await canvas.findAllByRole("button", { name: /^Invoice, / }))[0].focus();
+    await userEvent.keyboard("{Enter}");
     // The client picker lives in the collapsed Client details accordion section.
     await userEvent.click(
       await canvas.findByRole("button", { name: /^Client details/ }),
     );
 
+    // No saved clients: the section starts on "New client", with a tip that
+    // says what to type and that Next will offer to save them.
     await expect(
-      await canvas.findByRole("link", { name: "My clients" }),
+      await canvas.findByRole("tab", { name: "New client" }),
+    ).toHaveAttribute("aria-selected", "true");
+    await expect(
+      canvas.getByText(/When you press Next, you can save them/),
     ).toBeVisible();
     await expect(
-      canvas.queryByLabelText("Prefill from client (optional)"),
+      canvas.queryByRole("button", { name: "Choose a client" }),
     ).not.toBeInTheDocument();
+  },
+};
+
+/**
+ * A new client typed into Client details: Next asks once whether to save them
+ * to My Clients. "Save client" posts them, then the next section (Items)
+ * opens; a second Next doesn't ask again.
+ */
+export const SaveNewClientOnNext: Story = {
+  decorators: [
+    (Story) => {
+      seedUser();
+      mockDocumentsApi([], []);
+      return <Story />;
+    },
+  ],
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const page = within(canvasElement.ownerDocument.body);
+
+    await userEvent.click(
+      (await canvas.findAllByRole("button", { name: /new document/i }))[0],
+    );
+    (await canvas.findAllByRole("button", { name: /^Invoice, / }))[0].focus();
+    await userEvent.keyboard("{Enter}");
+    await userEvent.click(
+      await canvas.findByRole("button", { name: /^Client details/ }),
+    );
+
+    await userEvent.type(
+      await canvas.findByLabelText("Client name"),
+      "Blue Harbour",
+    );
+    await userEvent.type(canvas.getByLabelText("Email"), "ravi@blueharbour.mu");
+    await userEvent.type(canvas.getByLabelText("Phone number"), "57120044");
+
+    const section = canvas
+      .getByRole("button", { name: /^Client details/ })
+      .closest("fieldset") as HTMLElement;
+    await expect(within(section).getByText("Items")).toBeVisible();
+    await userEvent.click(
+      within(section).getByRole("button", { name: "Next" }),
+    );
+
+    const dialog = await page.findByRole("dialog", {
+      name: "Save this client?",
+    });
+    await userEvent.click(
+      within(dialog).getByRole("button", { name: "Save client" }),
+    );
+
+    await expect(
+      await page.findByText("Blue Harbour saved to My Clients."),
+    ).toBeVisible();
+    await expect(createdClients.at(-1)).toMatchObject({
+      companyName: "Blue Harbour",
+      email: "ravi@blueharbour.mu",
+      phone: "57120044",
+    });
+    await expect(
+      canvas.getByRole("button", { name: /^Items/ }),
+    ).toHaveAttribute("aria-expanded", "true");
   },
 };
 
@@ -845,11 +924,10 @@ export const ByCompany: Story = {
       "href",
       "/my-documents/companies/client-client_northline_01",
     );
+    // The company card has no "+"; new documents start from the toolbar.
     await expect(
-      within(northline).getByRole("link", {
-        name: "New document for Northline Studio",
-      }),
-    ).toHaveAttribute("href", "/my-documents?new=1&client=client_northline_01");
+      within(northline).queryByRole("link", { name: /^New document for/ }),
+    ).toBeNull();
 
     // Collapse and reopen a company.
     const toggle = within(northline).getByRole("button", {
@@ -861,7 +939,12 @@ export const ByCompany: Story = {
     await expect(toggle).toHaveAttribute("aria-expanded", "true");
 
     // Amounts at a glance; CVs stay out of the company groups.
-    await expect(within(northline).getByText("1,250.00")).toBeVisible();
+    // Phone and desktop rows both carry the amount; one is shown per size.
+    await expect(
+      within(northline)
+        .getAllByText("1,250.00")
+        .some((element) => element.checkVisibility()),
+    ).toBe(true);
     await expect(canvas.queryByText("Product designer CV")).toBeNull();
 
     // Each row has a vertical menu.
@@ -1019,5 +1102,41 @@ export const DeleteFromRowMenu: Story = {
     await expect(
       within(canvasElement).getByText("Lumina Events Invoice"),
     ).toBeVisible();
+  },
+};
+
+/**
+ * The picker pushes one history entry, so the browser back button and the
+ * phone back gesture return to the document list instead of leaving My
+ * Documents.
+ */
+export const BackFromPickerReturnsToList: Story = {
+  decorators: [
+    (Story) => {
+      seedUser();
+      mockDocumentsApi([]);
+      return <Story />;
+    },
+  ],
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+
+    await userEvent.click(
+      (await canvas.findAllByRole("button", { name: /new document/i }))[0],
+    );
+    await expect(
+      await canvas.findByRole("heading", {
+        name: "Choose your available templates",
+      }),
+    ).toBeInTheDocument();
+
+    window.history.back();
+
+    await expect(await canvas.findByText(/no documents yet/i)).toBeVisible();
+    await expect(
+      canvas.queryByRole("heading", {
+        name: "Choose your available templates",
+      }),
+    ).not.toBeInTheDocument();
   },
 };

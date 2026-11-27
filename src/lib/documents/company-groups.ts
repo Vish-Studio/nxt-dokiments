@@ -1,6 +1,10 @@
 import { currentRecipient } from "@/lib/sharing/share-activity";
 import type { Client } from "@/types/client";
-import type { ShareRecipientStatus, SharedDocument } from "@/types/sharing";
+import type {
+  ShareRecipient,
+  ShareRecipientStatus,
+  SharedDocument,
+} from "@/types/sharing";
 import type { DocumentType, UserDocument } from "@/types/template";
 
 import { getDocumentAmount } from "./document-amount";
@@ -30,6 +34,10 @@ export type CompanyEntry = {
   sharedBy?: string;
   /** The share's status when a `created` document was shared out. */
   shareStatus?: ShareRecipientStatus;
+  /** Who a `created` document was shared with, and when it was sent or signed. */
+  recipient?: ShareRecipient;
+  /** Epoch ms of the last change, for the "Updated" column. */
+  updatedAt: number;
 };
 
 /** One company (client) and everything exchanged with it. */
@@ -110,23 +118,24 @@ export const buildCompanyEntries = (
         document,
         documentType: document.templateSnapshot?.documentType,
         id: `doc:${document.id}`,
+        recipient: share ? currentRecipient(share) : undefined,
         shareStatus: share ? currentRecipient(share)?.status : undefined,
         source: "created",
         title: document.values.title?.trim() || document.name,
+        updatedAt: Math.max(document.updatedAt, share?.updatedAt ?? 0),
       };
     }),
-    ...sharedWithMe.map(
-      (shared): CompanyEntry => ({
-        amount: getDocumentAmount(shared.values),
-        createdAt: shared.createdAt,
-        documentType: shared.templateSnapshot?.documentType,
-        id: `shared:${shared.id}`,
-        shared,
-        sharedBy: shared.ownerName || shared.ownerEmail,
-        source: "received",
-        title: shared.values.title?.trim() || shared.name,
-      }),
-    ),
+    ...sharedWithMe.map((shared): CompanyEntry => ({
+      amount: getDocumentAmount(shared.values),
+      createdAt: shared.createdAt,
+      documentType: shared.templateSnapshot?.documentType,
+      id: `shared:${shared.id}`,
+      shared,
+      sharedBy: shared.ownerName || shared.ownerEmail,
+      source: "received",
+      title: shared.values.title?.trim() || shared.name,
+      updatedAt: shared.updatedAt,
+    })),
   ];
 };
 
@@ -154,7 +163,8 @@ export const groupEntriesByCompany = (
         clientsByName.set(normalise(name), client);
       }
     });
-    if (client.email.trim()) clientsByEmail.set(normalise(client.email), client);
+    if (client.email.trim())
+      clientsByEmail.set(normalise(client.email), client);
   });
 
   const groups = new Map<string, CompanyDocumentGroup>();
@@ -220,7 +230,8 @@ export const sortCompanyGroups = (
   [...groups].sort((first, second) => {
     if (first.key === NO_CLIENT_GROUP_KEY) return 1;
     if (second.key === NO_CLIENT_GROUP_KEY) return -1;
-    if (sort === "name") return (first.name ?? "").localeCompare(second.name ?? "");
+    if (sort === "name")
+      return (first.name ?? "").localeCompare(second.name ?? "");
     if (sort === "oldest") return first.firstAt - second.firstAt;
     return second.latestAt - first.latestAt;
   });
@@ -254,7 +265,12 @@ export const groupEntriesByMonth = (
       const month = months.get(key);
 
       if (month) month.entries.push(entry);
-      else months.set(key, { entries: [entry], key, label: monthFormatter.format(date) });
+      else
+        months.set(key, {
+          entries: [entry],
+          key,
+          label: monthFormatter.format(date),
+        });
     });
 
   return [...months.values()];
@@ -273,29 +289,42 @@ export const countEntriesByType = (entries: readonly CompanyEntry[]) => {
     .sort((first, second) => second.count - first.count);
 };
 
-/** Where a document stands, from the user's side. */
-export type EntryStatus = "awaiting" | "not-shared" | "received" | "signed";
+/**
+ * Where a document stands, from the user's side.
+ * - `not-shared`: never sent, or access was revoked.
+ * - `awaiting`: sent, and the recipient hasn't opened it yet.
+ * - `viewed`: the recipient opened it but hasn't signed.
+ * - `signed`: signed back (or, for a received document, locked).
+ * - `received`: shared with the user and not yet locked.
+ */
+export type EntryStatus =
+  "awaiting" | "not-shared" | "received" | "signed" | "viewed";
 
 export const entryStatusLabels: Record<EntryStatus, string> = {
   awaiting: "Awaiting signature",
   "not-shared": "Not shared",
   received: "Received",
   signed: "Signed",
+  viewed: "Viewed",
 };
 
+/** Whether a value (e.g. a filter choice) is one of the {@link EntryStatus} values. */
+export const isEntryStatus = (value: string): value is EntryStatus =>
+  Object.hasOwn(entryStatusLabels, value);
+
 /**
- * The status shown on a document row: documents you sent are "signed" once
- * signed back and "awaiting" while sent or viewed (revoked or never sent is
- * "not-shared"); documents shared with you are "signed" once locked, else
- * "received".
+ * The status shown on a document row. Documents you sent follow the share's
+ * recipient status, which the server resolves from the view and signature
+ * records (`resolveRecipientStatus`), so "viewed" appears as soon as the
+ * recipient opens the document even though they can't edit `recipients`.
+ * Documents shared with you are "signed" once locked, else "received".
  */
 export const getEntryStatus = (entry: CompanyEntry): EntryStatus => {
   if (entry.source === "received") {
     return entry.shared?.locked ? "signed" : "received";
   }
   if (entry.shareStatus === "signed") return "signed";
-  if (entry.shareStatus === "pending" || entry.shareStatus === "viewed") {
-    return "awaiting";
-  }
+  if (entry.shareStatus === "viewed") return "viewed";
+  if (entry.shareStatus === "pending") return "awaiting";
   return "not-shared";
 };

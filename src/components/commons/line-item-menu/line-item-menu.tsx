@@ -5,8 +5,8 @@ import {
   TrashIcon,
 } from "@phosphor-icons/react";
 
-import { Button } from "@/components/commons/button/button";
 import { Dropdown } from "@/components/commons/dropdown/dropdown";
+import { DropdownMenuItem } from "@/components/commons/dropdown-menu-item/dropdown-menu-item";
 
 interface Props {
   index: number;
@@ -16,8 +16,6 @@ interface Props {
   onMoveUp: () => void;
   onRemove: () => void;
 }
-
-const itemClassName = "w-full justify-start gap-2 px-3 whitespace-nowrap";
 
 export const LineItemMenu = ({
   index,
@@ -41,56 +39,27 @@ export const LineItemMenu = ({
     iconTriggerShape="square"
     menuClassName="w-40"
   >
-    <Button
-      className={itemClassName}
+    <DropdownMenuItem
       disabled={isFirst}
-      icon={
-        <ArrowUpIcon
-          aria-hidden
-          size={16}
-          weight="bold"
-        />
-      }
-      iconPosition="left"
+      icon={ArrowUpIcon}
       onClick={onMoveUp}
-      size="sm"
-      variant="ghost"
     >
       Move up
-    </Button>
-    <Button
-      className={itemClassName}
+    </DropdownMenuItem>
+    <DropdownMenuItem
       disabled={isLast}
-      icon={
-        <ArrowDownIcon
-          aria-hidden
-          size={16}
-          weight="bold"
-        />
-      }
-      iconPosition="left"
+      icon={ArrowDownIcon}
       onClick={onMoveDown}
-      size="sm"
-      variant="ghost"
     >
       Move down
-    </Button>
-    <Button
-      className={`${itemClassName} text-error hover:bg-error/10`}
-      icon={
-        <TrashIcon
-          aria-hidden
-          size={16}
-          weight="bold"
-        />
-      }
-      iconPosition="left"
+    </DropdownMenuItem>
+    <DropdownMenuItem
+      icon={TrashIcon}
       onClick={onRemove}
-      size="sm"
-      variant="ghost"
+      tone="danger"
     >
       Delete
-    </Button>
+    </DropdownMenuItem>
   </Dropdown>
 );
 

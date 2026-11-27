@@ -28,4 +28,6 @@ export const footerProductLinks: WebsiteNavItem[] = [
   { href: "/#cvs", label: "CVs for students" },
   { href: "/#marketplace", label: "Templates" },
   { href: "/#faq", label: "FAQ" },
+  // A crawlable link to the local landing page, from every public page.
+  { href: "/invoice-maker-mauritius", label: "Invoicing in Mauritius" },
 ];
