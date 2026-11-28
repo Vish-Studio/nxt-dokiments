@@ -27,10 +27,9 @@ import {
  * outage still surfaces as a `503`, via `UpstreamUnavailableError` in
  * `handleApiError`.
  *
- * There is no `GET`. Reading submissions is an administrator action, done through
- * the Firebase console at launch; the `listFeedback` helper exists for the deferred
- * admin screen but is not exposed over HTTP yet, because an endpoint with no
- * consumer is an attack surface with no upside.
+ * There is no `GET` here. Reading submissions is an administrator action: the
+ * admin portal's Feedback inbox reads them through `GET /api/admin/feedback`,
+ * which is wrapped in `withSuperadmin`.
  *
  * @returns `{ feedback: FeedbackEntry }` with status `201` once stored.
  * @returns `{ error: string }` with status `400` when the body is malformed, the

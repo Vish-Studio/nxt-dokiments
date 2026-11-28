@@ -25,7 +25,7 @@ The cost is that ownership is no longer implied by the path, so it has to be ass
 |---|---|---|---|---|---|---|
 | `POST` | `/api/feedback` | Store one piece of feedback or one problem report from the signed-in account. | Session required (`401` if absent). No role gating — every signed-in user may send feedback. | `{ type: "feedback" \| "problem", message: string, path?: string }` — `message` trimmed, 1–2000 chars; `path` ≤ 512 chars. | `201 { feedback: FeedbackEntry }` / `400` on a malformed body, an empty or whitespace-only message, or one over 2000 chars / `429` inside the one-minute window / `503` if Firestore is unreachable. | `POST` to create a new record with a server-generated ID. Not idempotent, and deliberately so: a user who sends two messages meant to send two messages. |
 
-**There is no `GET`, no `PATCH` and no `DELETE`.** Reading submissions is an administrator action, done through the Firebase console until an admin screen exists — [`listFeedback`](../src/lib/firebase/server-feedback.ts) is written and ready but not exposed over HTTP, because an endpoint with no consumer is an attack surface with no upside. `PATCH`/`DELETE` are absent because the collection is append-only (below).
+**There is no `GET`, no `PATCH` and no `DELETE` on this route.** Reading submissions is an administrator action: the admin portal's Feedback inbox reads them through `GET /api/admin/feedback`, which wraps [`listFeedback`](../src/lib/firebase/server-feedback.ts) in `withSuperadmin` (see [admin-portal.md](admin-portal.md)). `PATCH`/`DELETE` are absent because the collection is append-only (below).
 
 ### Who the sender is, is never asked
 
@@ -45,7 +45,7 @@ The field assertions in the rules bound a record from both directions: `hasOnly(
 
 ### Read access
 
-`read` is `superadmin`-only. Note that the **Firebase console bypasses security rules entirely** — it authenticates through Google Cloud project permissions — so reviewing submissions at launch needs no application account with `role: superadmin`. The read rule exists for the deferred admin screen.
+`read` is `superadmin`-only. Note that the **Firebase console bypasses security rules entirely** — it authenticates through Google Cloud project permissions — so reviewing submissions at launch needs no application account with `role: superadmin`. The admin portal's Feedback inbox is what uses the read rule.
 
 ### One submission per minute
 

@@ -285,9 +285,8 @@ export const stampFeedbackThrottle = async (
 /**
  * Lists every submission, newest first.
  *
- * **Not yet reachable from the app.** Written now, alongside the write path, so
- * the deferred admin screen at `/admin/feedback` is a UI-only change rather than
- * one that reopens this module. Reading requires a `superadmin` account: the rules
+ * Read by the admin portal's Feedback inbox (`GET /api/admin/feedback`) and
+ * user pages (`getUserDetail`). Reading requires a `superadmin` account: the rules
  * grant `read` on this collection to nobody else. Note that browsing the Firebase
  * console — how feedback is reviewed at launch — bypasses rules entirely and needs
  * no such account.

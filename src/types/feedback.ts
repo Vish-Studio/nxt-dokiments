@@ -49,8 +49,8 @@ export type FeedbackInput = {
 };
 
 /**
- * One stored submission — the shape `POST /api/feedback` returns and the
- * deferred admin screen will list.
+ * One stored submission — the shape `POST /api/feedback` returns and the admin
+ * portal's Feedback inbox lists.
  *
  * `email` and `displayName` are denormalised copies taken from the session at
  * write time, not looked up from `users/{uid}` when read. Whoever reviews a

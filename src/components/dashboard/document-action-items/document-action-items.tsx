@@ -33,7 +33,8 @@ export interface DocumentActionItemsProps {
 }
 
 /** One menu action: icon and label, red for destructive ones. */
-const ActionItem = ({
+/** One row of a ⋮ menu: a full-width ghost button with an icon; `danger` turns it red. Shared by the document menus and the admin portal. */
+export const ActionItem = ({
   icon: ItemIcon,
   label,
   onClick,

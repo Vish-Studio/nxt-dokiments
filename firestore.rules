@@ -461,6 +461,10 @@ service cloud.firestore {
     // public site, and the schema is deliberately narrow to prevent this collection
     // from becoming a general public write surface.
     match /newsletter/{subscriberId} {
+      // The admin portal's Newsletter page lists subscribers. Nobody else reads
+      // this collection — the public site only ever writes to it.
+      allow read: if isSuperadmin();
+
       allow create, update: if request.resource.data.keys().hasOnly([
           'createdAt', 'email', 'status'
         ])

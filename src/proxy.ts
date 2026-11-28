@@ -12,6 +12,10 @@ import {
 
 /** Route prefixes that require an authenticated session. */
 const PROTECTED_PREFIXES = [
+  // Signed-out visitors go to sign-in like any other page; the superadmin check
+  // itself happens in each admin page (`requireSuperadmin`), which this proxy
+  // cannot do without reading Firestore.
+  "/admin",
   "/dashboard",
   "/my-documents",
   "/my-clients",

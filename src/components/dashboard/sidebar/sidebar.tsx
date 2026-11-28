@@ -7,13 +7,30 @@ import SidebarFeedback from "@/components/dashboard/sidebar-feedback/sidebar-fee
 import SidebarItem from "@/components/dashboard/sidebar-item/sidebar-item";
 import SidebarOnboarding from "@/components/dashboard/sidebar-onboarding/sidebar-onboarding";
 import { SidebarToggleButton } from "@/components/dashboard/sidebar-toggle-button/sidebar-toggle-button";
-import { sidebarItems, settingsNavigationItem } from "@/lib/dashboard-navigation";
+import { isSuperadmin } from "@/lib/admin/access";
+import {
+  adminNavigationItem,
+  adminNavigationSections,
+  openAppNavigationItem,
+  sidebarItems,
+  settingsNavigationItem,
+} from "@/lib/dashboard-navigation";
 import { cn } from "@/lib/utils";
+import { useAuthStore } from "@/stores/auth-store";
 import Image from "next/image";
 import Link from "next/link";
 
+/**
+ * Which navigation the sidebar shows.
+ * - `admin`: the admin portal's grouped sections, with "Open app" at the foot.
+ * - `app`: the product, plus "Admin portal" above Settings for a superadmin.
+ */
+export type SidebarArea = "admin" | "app";
+
 interface Props {
   activeItem?: string;
+  /** Defaults to `app`. */
+  area?: SidebarArea;
   isCollapsed?: boolean;
   isMobileOpen?: boolean;
   onCloseMobile?: () => void;
@@ -23,11 +40,16 @@ interface Props {
 
 const Sidebar: FunctionComponent<Props> = ({
   activeItem = "Dashboard",
+  area = "app",
   isCollapsed = false,
   isMobileOpen = false,
   onCloseMobile,
   onToggleCollapse,
 }) => {
+  // Only decides whether the row is shown; every /admin page and route checks
+  // the role on the server.
+  const canOpenAdmin = isSuperadmin(useAuthStore((state) => state.user));
+
   return (
     <aside
       className={cn(
@@ -108,35 +130,93 @@ const Sidebar: FunctionComponent<Props> = ({
         ) : null}
       </div>
 
-      <nav className="mt-10 grid gap-3">
-        {sidebarItems.map((item) => (
+      {area === "admin" ? (
+        <nav
+          aria-label="Admin portal"
+          className="sidebar-scroll -mx-1 mt-10 grid min-h-0 content-start gap-5 overflow-y-auto px-1"
+        >
+          {adminNavigationSections.map((section) => (
+            <div
+              className={cn(
+                "grid gap-1",
+                // Collapsed, the group labels are hidden, so a hairline and
+                // extra space are what tell one group from the next.
+                section.label && isCollapsed && "lg:border-t lg:border-white/15 lg:pt-4",
+              )}
+              key={section.label ?? "top"}
+            >
+              {section.label ? (
+                <p
+                  className={cn(
+                    "px-3 pb-1 font-title text-xs font-bold uppercase text-app-nav",
+                    isCollapsed && "lg:sr-only",
+                  )}
+                >
+                  {section.label}
+                </p>
+              ) : null}
+              {section.items.map((item) => (
+                <SidebarItem
+                  {...item}
+                  isActive={item.label === activeItem}
+                  isCollapsed={isCollapsed}
+                  key={item.label}
+                  onCloseMobile={onCloseMobile}
+                />
+              ))}
+            </div>
+          ))}
+        </nav>
+      ) : (
+        <nav className="mt-10 grid gap-3">
+          {sidebarItems.map((item) => (
+            <SidebarItem
+              {...item}
+              isActive={item.label === activeItem}
+              isCollapsed={isCollapsed}
+              key={item.label}
+              onCloseMobile={onCloseMobile}
+            />
+          ))}
+        </nav>
+      )}
+
+      {area === "admin" ? (
+        <div className="mt-auto grid gap-3 pt-6">
           <SidebarItem
-            {...item}
-            isActive={item.label === activeItem}
+            {...openAppNavigationItem}
+            className="bg-app-control"
             isCollapsed={isCollapsed}
-            key={item.label}
             onCloseMobile={onCloseMobile}
           />
-        ))}
-      </nav>
-
-      <div className="mt-auto grid gap-3 pt-8">
-        <SidebarOnboarding
-          isCollapsed={isCollapsed}
-          onCloseMobile={onCloseMobile}
-        />
-        <SidebarFeedback
-          isCollapsed={isCollapsed}
-          onCloseMobile={onCloseMobile}
-        />
-        <SidebarItem
-          {...settingsNavigationItem}
-          isActive={activeItem === "Settings"}
-          isCollapsed={isCollapsed}
-          onCloseMobile={onCloseMobile}
-        />
-        <SidebarAccount isCollapsed={isCollapsed} />
-      </div>
+          <SidebarAccount isCollapsed={isCollapsed} />
+        </div>
+      ) : (
+        <div className="mt-auto grid gap-3 pt-8">
+          <SidebarOnboarding
+            isCollapsed={isCollapsed}
+            onCloseMobile={onCloseMobile}
+          />
+          <SidebarFeedback
+            isCollapsed={isCollapsed}
+            onCloseMobile={onCloseMobile}
+          />
+          {canOpenAdmin ? (
+            <SidebarItem
+              {...adminNavigationItem}
+              isCollapsed={isCollapsed}
+              onCloseMobile={onCloseMobile}
+            />
+          ) : null}
+          <SidebarItem
+            {...settingsNavigationItem}
+            isActive={activeItem === "Settings"}
+            isCollapsed={isCollapsed}
+            onCloseMobile={onCloseMobile}
+          />
+          <SidebarAccount isCollapsed={isCollapsed} />
+        </div>
+      )}
     </aside>
   );
 };

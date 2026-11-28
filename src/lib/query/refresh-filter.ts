@@ -5,9 +5,11 @@ import { queryKeys } from "@/lib/query/keys";
 /**
  * Resources the dashboard refresh button re-reads. Deliberately excludes the
  * template catalog, session and promo queries so a refresh costs only the
- * user's own data plus notifications.
+ * user's own data plus notifications. Admin reads are included: they only
+ * exist on `/admin` pages, where refetching them is what the button is for.
  */
 const refreshableRoots: ReadonlySet<unknown> = new Set([
+  queryKeys.admin.all()[0],
   queryKeys.documents.all()[0],
   queryKeys.clients.all()[0],
   queryKeys.savedTemplates.all()[0],

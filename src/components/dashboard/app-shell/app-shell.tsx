@@ -17,13 +17,19 @@ import type {
 import { PageBanner } from "@/components/dashboard/page-banner/page-banner";
 import { PromoStatusBanner } from "@/components/dashboard/promo-status-banner/promo-status-banner";
 import { PublicLaunchBanner } from "@/components/dashboard/public-launch-banner/public-launch-banner";
-import Sidebar from "@/components/dashboard/sidebar/sidebar";
+import Sidebar, { type SidebarArea } from "@/components/dashboard/sidebar/sidebar";
 import { VerifyEmailNotice } from "@/components/dashboard/verify-email-notice/verify-email-notice";
 import { documentSharingEnabled } from "@/lib/sharing/feature-flag";
 import { type PageBack, useUiStore } from "@/stores/ui-store";
 
 export type AppShellProps = {
   activeItem?: string;
+  /**
+   * `admin` swaps the sidebar for the admin portal's navigation and leaves out
+   * the customer-facing banners (promo, launch, verify email, onboarding).
+   * Defaults to `app`.
+   */
+  area?: SidebarArea;
   /**
    * Sub-page routes: a back arrow before the title in the top bar, e.g.
    * `{ href: "/my-documents", label: "Companies" }`. Content can override it
@@ -57,10 +63,25 @@ const pageThemes: Record<string, PageTheme> = {
     tone: "purple",
   },
   Settings: { tone: "golden" },
+  // Admin portal: each area keeps the tone of the app page it looks after.
+  Overview: { tone: "noir" },
+  Users: { tone: "blue" },
+  Plans: { tone: "purple" },
+  Templates: { tone: "pink" },
+  "Marketplace banner": { tone: "teal" },
+  Documents: { tone: "purple" },
+  Sharing: { tone: "teal" },
+  Feedback: { tone: "golden" },
+  Newsletter: { tone: "teal" },
+  Promotions: { tone: "golden" },
+  Notifications: { tone: "blue" },
+  System: { tone: "mist" },
+  "Audit log": { tone: "noir" },
 };
 
 export const AppShell = ({
   activeItem = "Dashboard",
+  area = "app",
   back,
   bannerTone,
   bannerVariant,
@@ -82,6 +103,7 @@ export const AppShell = ({
   const resolvedTone = bannerTone ?? theme.tone;
   const resolvedVariant = bannerVariant ?? theme.variant ?? "solid";
   const isDashboardHome = activeItem === "Dashboard";
+  const isAdmin = area === "admin";
 
   useEffect(() => {
     const themeColor = document.querySelector<HTMLMetaElement>(
@@ -121,6 +143,7 @@ export const AppShell = ({
         <div className="flex h-dvh w-full overflow-hidden bg-app-chrome">
           <Sidebar
             activeItem={activeItem}
+            area={area}
             isCollapsed={isSidebarCollapsed}
             isMobileOpen={isMobileSidebarOpen}
             onCloseMobile={() => setIsMobileSidebarOpen(false)}
@@ -143,10 +166,10 @@ export const AppShell = ({
                   actions={
                     <div className="flex items-center gap-2">
                       <RefreshButton
-                        tone={isDashboardHome ? "dark" : "light"}
+                        tone={isDashboardHome || resolvedTone === "noir" ? "dark" : "light"}
                       />
                       <NotificationBell
-                        tone={isDashboardHome ? "dark" : "light"}
+                        tone={isDashboardHome || resolvedTone === "noir" ? "dark" : "light"}
                       />
                     </div>
                   }
@@ -178,12 +201,16 @@ export const AppShell = ({
                     variant={resolvedVariant}
                   />
                 ) : null}
-                <PromoStatusBanner />
-                <PublicLaunchBanner />
-                {documentSharingEnabled ? <VerifyEmailNotice /> : null}
+                {isAdmin ? null : (
+                  <>
+                    <PromoStatusBanner />
+                    <PublicLaunchBanner />
+                    {documentSharingEnabled ? <VerifyEmailNotice /> : null}
+                  </>
+                )}
                 {children}
               </ContentContainer>
-              <OnboardingLauncher />
+              {isAdmin ? null : <OnboardingLauncher />}
             </div>
           </section>
         </div>

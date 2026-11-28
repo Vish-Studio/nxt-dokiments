@@ -7,6 +7,22 @@
  * consistent for partial invalidation (`invalidateQueries` matches by prefix).
  */
 export const queryKeys = {
+  /** The admin portal's reads (`/api/admin/*`). Superadmin only. */
+  admin: {
+    /** Prefix covering every admin query. */
+    all: () => ["admin"] as const,
+    /** Every feedback submission. */
+    feedback: () => ["admin", "feedback"] as const,
+    /** Every newsletter subscriber. */
+    newsletter: () => ["admin", "newsletter"] as const,
+    /** Flags, configuration checks, version and administrators. */
+    system: () => ["admin", "system"] as const,
+    /** One account's detail page. */
+    user: (uid: string) => ["admin", "users", uid] as const,
+    /** Every account. */
+    users: () => ["admin", "users"] as const,
+  },
+
   /** The current signed-in user's session (`GET /api/auth/me`). */
   session: () => ["session"] as const,
 
